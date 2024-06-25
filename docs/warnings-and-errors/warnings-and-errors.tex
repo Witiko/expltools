@@ -1,0 +1,23 @@
+\documentclass{expl3check/warnings-and-errors}
+\begin{markdown*}{snippet=witiko/expl3check/warnings-and-errors/metadata}
+title: Warnings and errors for the expl3 analysis tool
+author: Vít Starý Novotný
+\end{markdown*}
+\begin{document}
+\tableofcontents
+\clearpage
+\setcounter{secnumdepth}{0}
+\markdownSetup{snippet=witiko/expl3check/warnings-and-errors/body}
+\markdownInput{00-introduction.md}
+\setcounter{secnumdepth}{1}
+\markdownInput{01-preprocessing.md}
+\markdownInput{02-lexical-analysis.md}
+\markdownInput{03-syntactic-analysis.md}
+\setcounter{secnumdepth}{2}
+\markdownInput{04-semantic-analysis.md}
+\markdownInput{05-flow-analysis.md}
+\setcounter{secnumdepth}{0}
+\markdownInput{99-caveats.md}
+\printbibliography[heading=bibintoc]
+\printindex
+\end{document}

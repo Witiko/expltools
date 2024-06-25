@@ -1,0 +1,44 @@
+name: Build and release
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+env:
+  DEBIAN_FRONTEND: noninteractive
+jobs:
+  docs:
+    name: Typeset documentation
+    runs-on: ubuntu-latest
+    container:
+      image: texlive/texlive:TL2023-historic
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install additional packages
+        run: |
+          set -ex
+          apt -qy update
+          apt -qy install --no-install-recommends parallel
+      - name: Typeset documentation
+        run: |
+          set -ex
+          export TEXMFHOME=../../texmf
+          parallel --halt now,fail=1 -- latexmk -r docs/latexmkrc -cd ':::' docs/*/*.tex
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/*/*.pdf
+      - name: Create a prerelease
+        if: github.ref == 'refs/heads/main'
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          title: The latest version
+          automatic_release_tag: latest
+          prerelease: true
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          files: docs/*/*.pdf

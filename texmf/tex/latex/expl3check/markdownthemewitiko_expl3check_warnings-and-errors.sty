@@ -1,0 +1,175 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesExplPackage
+  {markdownthemewitiko_expl3check_warnings-and-errors}%
+  {2024-06-24}%
+  {0.0.1}%
+  {Snippets for typesetting the documentation of the warnings and errors for the expl3check tool}
+\int_new:N
+  \g_subsection_int
+\tl_new:N
+  \g_subsection_tl
+\tl_new:N
+  \l_current_label_tl
+\tl_new:N
+  \l_current_identifier_tl
+\prop_new:N
+  \g_labels_prop
+\cs_new:Nn
+  \increment_counters:
+  {
+    \int_gincr:N
+      \g_subsection_int
+    \int_compare:nTF
+      { \g_subsection_int < 10 }
+      {
+        \tl_gset:Nn
+          \g_subsection_tl
+          { 0 }
+        \tl_gput_right:NV
+          \g_subsection_tl
+          \g_subsection_int
+      }
+      {
+        \tl_gset:NV
+          \g_subsection_tl
+          \g_subsection_int
+      }
+    \tl_if_empty:NF
+      \l_current_identifier_tl
+      {
+        \prop_gput:NVV
+          \g_labels_prop
+          \l_current_identifier_tl
+          \l_current_label_tl
+        \exp_args:NV
+          \label
+          \l_current_identifier_tl
+      }
+    \exp_args:NV
+      \index
+      \l_current_label_tl
+  }
+\markdownSetupSnippet
+  { metadata }
+  {
+    jekyll_data,
+    expect_jekyll_data,
+  }
+\markdownSetupSnippet
+  { body }
+  {
+    citations,
+    content_blocks,
+    definition_lists,
+    fenced_code,
+    footnotes,
+    header_attributes,
+    html,
+    raw_attribute,
+    relative_references,
+    renderers = {
+      underscore = {
+        \discretionary
+          { _ \textnormal { - } }
+          { }
+          { _ }
+      },
+      link = {
+        \tl_set:Nn
+          \l_tmpa_tl
+          { #3 }
+        \tl_set:Nx
+          \l_tmpb_tl
+          {
+            \tl_range:Nnn
+              \l_tmpa_tl
+              { 1 }
+              { 1 }
+          }
+        \str_if_eq:NNT
+          \l_tmpb_tl
+          \c_hash_str
+          {
+            \tl_set:Nx
+              \l_tmpb_tl
+              {
+                \tl_range:Nnn
+                  \l_tmpa_tl
+                  { 2 }
+                  { -1 }
+              }
+            \tl_set:Nn
+              \l_tmpa_tl
+              { \hyperref [ }
+            \tl_put_right:NV
+              \l_tmpa_tl
+              \l_tmpb_tl
+            \tl_put_right:Nn
+              \l_tmpa_tl
+              { ] }
+            \prop_get:NVN
+              \g_labels_prop
+              \l_tmpb_tl
+              \l_tmpb_tl
+            \tl_put_right:Nx
+              \l_tmpa_tl
+              { { \l_tmpb_tl } }
+            \tl_use:N
+              \l_tmpa_tl
+          }
+      },
+      headingOne = {
+        \section { #1 }
+        \int_gset:Nn
+          \g_subsection_int
+          { 0 }
+        \tl_gset:Nn
+          \g_subsection_tl
+          { 00 }
+      },
+      headerAttributeContextBegin = {
+        \group_begin:
+        \markdownSetup
+          {
+            renderers = {
+              attributeIdentifier = {
+                \tl_set:Nn
+                  \l_current_identifier_tl
+                  { ##1 }
+              },
+              attributeClassName = {
+                \tl_set:Nx
+                  \l_current_label_tl
+                  {
+                    \str_uppercase:n { ##1 }
+                    \thesection
+                    \g_subsection_tl
+                  }
+                \markdownSetup
+                  {
+                    renderers = {
+                      headingTwo = {
+                        \subsection
+                          {
+                            ####1~[ \l_current_label_tl ]
+                          }
+                        \increment_counters:
+                      },
+                      headingThree = {
+                        \subsubsection
+                          {
+                            ####1~[ \l_current_label_tl ]
+                          }
+                        \increment_counters:
+                      },
+                    },
+                  }
+              }
+            },
+          }
+      },
+      headerAttributeContextEnd = {
+        \group_end:
+      },
+    },
+  }
