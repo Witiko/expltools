@@ -11,8 +11,6 @@ jobs:
   docs:
     name: Typeset documentation
     runs-on: ubuntu-latest
-    container:
-      image: texlive/texlive:TL2023-historic
     permissions:
       contents: write
     steps:
@@ -21,18 +19,25 @@ jobs:
       - name: Install additional packages
         run: |
           set -ex
-          apt -qy update
-          apt -qy install --no-install-recommends parallel
+          sudo apt -qy update
+          sudo apt -qy install --no-install-recommends parallel
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            scheme-basic
+          package-file: |
+            **/DEPENDS.txt
       - name: Typeset documentation
         run: |
           set -ex
-          export TEXMFHOME=../../texmf
-          parallel --halt now,fail=1 -- latexmk -r docs/latexmkrc -cd ':::' docs/*/*.tex
+          export TEXMFHOME="$PWD"/texmf
+          find docs/ -type f -name '*.tex' | parallel --halt now,fail=1 -- latexmk -r docs/latexmkrc -cd
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: docs
-          path: docs/*/*.pdf
+          name: Documentation
+          path: docs/**/*.pdf
       - name: Create a prerelease
         if: github.ref == 'refs/heads/main'
         uses: marvinpinto/action-automatic-releases@latest
@@ -41,4 +46,4 @@ jobs:
           automatic_release_tag: latest
           prerelease: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          files: docs/*/*.pdf
+          files: docs/**/*.pdf

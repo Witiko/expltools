@@ -1,0 +1,8 @@
+biber
+biblatex
+embedfile
+hyperref
+imakeidx
+lua-widow-control
+markdown
+minted
