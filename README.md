@@ -5,10 +5,11 @@ This repository will contain the documentation and the code for an expl3 static 
 - [Static analysis of expl3 programs (1): Introduction][1]
 - [Static analysis of expl3 programs (2): Requirements][2]
 - [Static analysis of expl3 programs (3): Related work][3]
-- Static analysis of expl3 programs (4): Design *(to appear)*
+- [Static analysis of expl3 programs (4): Design][4]
 
 In the future, this repository may also contain the code of other useful development tools for expl3 programmers, such as a command-line utility similar to `grep` that will ignore whitespaces and newlines, and other tools.
 
  [1]: https://witiko.github.io/Expl3-Linter-1/
  [2]: https://witiko.github.io/Expl3-Linter-2/
  [3]: https://witiko.github.io/Expl3-Linter-3/
+ [4]: https://witiko.github.io/Expl3-Linter-4/
