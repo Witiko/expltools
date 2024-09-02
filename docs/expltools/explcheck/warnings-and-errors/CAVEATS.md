@@ -81,12 +81,15 @@
       [@latexteam2024interfaces, Chapter 27]:
         - Are keys defined at the point of use or is the module
           or its subdivision set up to accept unknown keys?
-          [@latexteam2024interfaces, sections 27.2, 27.5, and 27.6]
+          [@latexteam2024interfaces, sections 27.2, 27.5,
+          and 27.6]
         - Are inheritance parents, choices, multi-choices, and
           groups used in a key definition defined at points of
-          use? [@latexteam2024interfaces, sections 27.1, 27.3, and 27.7]
+          use? [@latexteam2024interfaces, sections 27.1, 27.3,
+          and 27.7]
     - Floating-point symbolic expressions and user-defined
-      functions [@latexteam2024interfaces, sections 29.6 and 29.7]
+      functions [@latexteam2024interfaces, sections 29.6
+      and 29.7]
     - Names of bitset indexes
       [@latexteam2024interfaces, Section 31.1]
     - BCP-47 language tags
@@ -94,7 +97,8 @@
     - Color support
       [@latexteam2024interfaces, Chapter 37]:
         - Named colors [@latexteam2024interfaces, Section 37.4]
-        - Color export targets [@latexteam2024interfaces, Section 37.8]
+        - Color export targets [@latexteam2024interfaces,
+          Section 37.8]
         - Color models and their families and params
           [@latexteam2024interfaces, sections 37.2 and 37.9]
 - Function `\file_input_stop:` not used on its own line
