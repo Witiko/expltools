@@ -1,7 +1,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass%
   {warnings-and-errors}%
-  [2024-07-04 0.0.2 Documentation for typesetting the documentation of the warnings and errors for the expl3 analysis tool]
+  [2024-09-06 0.0.3 Document class for typesetting the documentation of the warnings and errors for the expl3 analysis tool]
 \LoadClass{article}
 \RequirePackage{lua-widow-control}
 \RequirePackage{minted}
@@ -9,7 +9,8 @@
 \RequirePackage{markdown}
 \markdownSetup {
   import = {
-    witiko/expltools/explcheck/warnings-and-errors = {metadata, body},
+    witiko/expltools = metadata,
+    witiko/expltools/explcheck/warnings-and-errors = body,
   }
 }
 \RequirePackage{biblatex}
