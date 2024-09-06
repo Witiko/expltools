@@ -67,7 +67,7 @@ programmers other than the linter.
  [3]: https://github.com/Witiko/expltools
  [4]: https://github.com/astoff/digestif/blob/7962d25/digestif/Parser.lua
  [5]: https://ctan.org/pkg/digestif
- [6]: https://github.com/Witiko/expltools/releases/download/latest/warnings-and-errors.pdf
+ [6]: https://github.com/Witiko/expltools/releases/download/2024-09-06/warnings-and-errors.pdf
  [7]: https://github.com/latex3/latex3/pull/1556
  [8]: https://en.wikibooks.org/wiki/TeX/catcode
  [9]: /Expl3-Linter-2#license-terms
