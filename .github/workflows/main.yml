@@ -8,7 +8,7 @@ on:
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
-  docs:
+  doc:
     name: Typeset documentation
     runs-on: ubuntu-latest
     permissions:
@@ -27,17 +27,17 @@ jobs:
           packages: |
             scheme-basic
           package-file: |
-            **/DEPENDS.txt
+            texmf/**/DEPENDS.txt
       - name: Typeset documentation
         run: |
           set -ex
           export TEXMFHOME="$PWD"/texmf
-          find docs/ -type f -name '*.tex' | parallel --halt now,fail=1 -- latexmk -r docs/latexmkrc -cd
+          find doc/ -type f -name '*.tex' -follow | parallel --halt now,fail=1 -- latexmk -r texmf/doc/luatex/expltools/latexmkrc -cd
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Documentation
-          path: docs/**/*.pdf
+          path: doc/*/*/*.pdf
       - name: Create a prerelease
         if: github.ref == 'refs/heads/main'
         uses: marvinpinto/action-automatic-releases@latest
@@ -46,4 +46,4 @@ jobs:
           automatic_release_tag: latest
           prerelease: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          files: docs/**/*.pdf
+          files: doc/*/*/*.pdf
