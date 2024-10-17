@@ -7,3 +7,4 @@ imakeidx
 lua-widow-control
 markdown
 minted
+upquote
