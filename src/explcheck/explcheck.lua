@@ -128,4 +128,8 @@ local function main(filenames)
   end
 end
 
-main(arg)
+if #arg == 0 then
+  print("Usage: " .. arg[0] .. " FILENAMES")
+else
+  main(arg)
+end
