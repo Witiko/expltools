@@ -36,21 +36,21 @@ local function colorize(text, ...)
 end
 
 -- Print warnings and errors after analyzing a file.
-local function print_warnings_and_errors(state)
+local function print_warnings_and_errors(state, is_last_file)
   -- Display an overview.
   local issues = {}
   if(#state.errors > 0) then
     io.write("\t\t" .. colorize(tostring(#state.errors) .. " " .. pluralize("error", #state.errors), 1, 31))
     table.insert(issues, state.errors)
     if(#state.warnings > 0) then
-      print(", " .. colorize(tostring(#state.warnings) .. " " .. pluralize("warning", #state.warnings), 1, 33))
+      io.write(", " .. colorize(tostring(#state.warnings) .. " " .. pluralize("warning", #state.warnings), 1, 33))
       table.insert(issues, state.warnings)
     end
   elseif(#state.warnings > 0) then
-    print("\t\t" .. colorize(tostring(#state.warnings) .. " " .. pluralize("warning", #state.warnings), 1, 33))
+    io.write("\t\t" .. colorize(tostring(#state.warnings) .. " " .. pluralize("warning", #state.warnings), 1, 33))
     table.insert(issues, state.warnings)
   else
-    print("\t\t" .. colorize("OK", 1, 32))
+    io.write("\t\t" .. colorize("OK", 1, 32))
   end
   
   -- Display the errors, followed by warnings.
@@ -61,12 +61,14 @@ local function print_warnings_and_errors(state)
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
-        io.write("\t" .. state.filename)
+        io.write("\n\t" .. state.filename)
         if range ~= nil then
           io.write(":" .. tostring(range[1]))  -- TODO: Convert starting byte number to line and character number.
         end
-        print(":\t" .. code .. " " .. message)
+        io.write(":\t" .. code .. " " .. message)
       end
+    end
+    if(not is_last_file) then
       print()
     end
   end
@@ -92,9 +94,9 @@ local function main(filenames)
   local num_warnings = 0
   local num_errors = 0
 
-  print("Checking " .. #filenames .. " files\n")
+  print("Checking " .. #filenames .. " files")
 
-  for _, filename in ipairs(filenames) do
+  for filename_number, filename in ipairs(filenames) do
 
     -- Load an input file.
     local file = assert(io.open(filename, "r"), "Could not open " .. filename .. " for reading")
@@ -108,7 +110,7 @@ local function main(filenames)
     }
 
     -- Run all processing steps.
-    io.write("Checking " .. filename)
+    io.write("\nChecking " .. filename)
     preprocessing(state)
     if #state.errors > 0 then
       goto continue
@@ -122,11 +124,11 @@ local function main(filenames)
     ::continue::
     num_warnings = num_warnings + #state.warnings
     num_errors = num_errors + #state.errors
-    print_warnings_and_errors(state)
+    print_warnings_and_errors(state, filename_number == #filenames)
   end
 
   -- Print a summary.
-  io.write("\nTotal: ")
+  io.write("\n\nTotal: ")
 
   local errors_message = tostring(num_errors) .. " " .. pluralize("error", num_errors)
   errors_message = colorize(errors_message, 1, (num_errors > 0 and 31) or 32)
