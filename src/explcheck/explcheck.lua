@@ -71,8 +71,8 @@ local function print_warnings_and_errors(state, is_last_file)
 
   -- Display the errors, followed by warnings.
   if #issues > 0 then
-    print()
     for _, warnings_or_errors in ipairs(issues) do
+      print()
       for _, issue in ipairs(warnings_or_errors) do
         local code = issue[1]
         local message = issue[2]
