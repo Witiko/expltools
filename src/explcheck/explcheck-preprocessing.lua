@@ -1,5 +1,5 @@
 local lpeg = require("lpeg")
-local P, R, S, V = lpeg.P, lpeg.R, lpeg.S, lpeg.V
+local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
 
 -- Define base parsers.
 ---- Generic
@@ -68,6 +68,22 @@ local expl_syntax_on = P([[\ExplSyntaxOn]])
 local expl_syntax_off = P([[\ExplSyntaxOff]])
 
 local function preprocessing(state)
+  -- Determine the bytes where lines begin.
+  state.line_starting_byte_numbers = {}
+  local function record_line(line_start)
+    table.insert(state.line_starting_byte_numbers, line_start)
+  end
+  local line_numbers_grammar = (
+    Cp() / record_line
+    * (
+      (
+        linechar^0
+        * newline
+        * Cp()
+      ) / record_line
+    )^0
+  )
+  lpeg.match(line_numbers_grammar, state.content)
   -- Determine which parts of the input files contain expl3 code.
   state.ranges = {}
   local function capture_range(range_start, range_end)
@@ -75,11 +91,11 @@ local function preprocessing(state)
   end
   local function unexpected_pattern(pattern, code, message)
     local issues = (code:sub(1, 1) == "e" and state.errors) or state.warnings
-    return lpeg.Cp() * pattern * lpeg.Cp() / function(range_start, range_end)
+    return Cp() * pattern * Cp() / function(range_start, range_end)
       table.insert(issues, {code, message, {range_start, range_end + 1}})
     end
   end
-  local grammar = P{
+  local analysis_grammar = P{
     "Root";
     Root = (
       (
@@ -105,7 +121,7 @@ local function preprocessing(state)
     ),
     ExplPart = (
       V"Opener"
-      * lpeg.Cp()
+      * Cp()
       * (
           unexpected_pattern(
             V"Opener",
@@ -114,13 +130,13 @@ local function preprocessing(state)
           )
           + (any - V"Closer")
         )^0
-      * lpeg.Cp()
+      * Cp()
       * (V"Closer" + eof)
     ),
     Opener = expl_syntax_on + provides,
     Closer = expl_syntax_off,
   }
-  lpeg.match(grammar, state.content)
+  lpeg.match(analysis_grammar, state.content)
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#state.ranges == 0 and #state.content > 0) then
     table.insert(state.ranges, {0, #state.content})
