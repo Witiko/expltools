@@ -28,7 +28,7 @@ local function preprocessing(state)
   )^0
   lpeg.match(grammar, state.content)
   -- If no parts were detected, assume that the whole input file is in expl3.
-  if(#state.ranges == 0) then
+  if(#state.ranges == 0 and #state.content > 0) then
     table.insert(state.ranges, {0, #state.content})
     table.insert(state.warnings, {'W100', 'no standard delimiters', nil})
   end
