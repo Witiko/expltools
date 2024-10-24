@@ -73,11 +73,17 @@ local function preprocessing(state)
   local function record_line(line_start)
     table.insert(state.line_starting_byte_numbers, line_start)
   end
+  local function line_too_long(range_start, range_end)
+    table.insert(state.warnings, {'s103', 'line too long', {range_start, range_end + 1}})
+  end
   local line_numbers_grammar = (
     Cp() / record_line
     * (
       (
-        linechar^0
+        (
+          Cp() * linechar^81 * Cp() / line_too_long
+          + linechar^0
+        )
         * newline
         * Cp()
       ) / record_line
