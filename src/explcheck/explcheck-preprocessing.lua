@@ -1,5 +1,5 @@
 local lpeg = require("lpeg")
-local P, S = lpeg.P, lpeg.S
+local P, R, S, V = lpeg.P, lpeg.R, lpeg.S, lpeg.V
 
 -- Define base parsers.
 ---- Generic
@@ -10,6 +10,10 @@ local eof = -any
 local lbrace = P("{")
 local rbrace = P("}")
 local percent_sign = P("%")
+local backslash = P([[\]])
+local letter = R("AZ","az")
+local underscore = P("_")
+local colon = P(":")
 
 ---- Spacing
 local newline = P("\n")
@@ -30,6 +34,10 @@ local argument = lbrace
                  + (any - rbrace)
                )^0
                * rbrace
+local expl3like_control_sequence = backslash
+                                 * (letter - underscore - colon)^1
+                                 * (underscore + colon)
+                                 * letter^1
 
 ---- Standard delimiters
 local provides = P([[\ProvidesExpl]])
@@ -60,21 +68,53 @@ local function preprocessing(state)
   local function capture_range(range_start, range_end)
     table.insert(state.ranges, {range_start, range_end + 1})
   end
-  local function unexpected_delimiter(delimiter)
-    return (lpeg.Cp() * delimiter * lpeg.Cp()) / function(range_start, range_end)
-      table.insert(state.warnings, {'W101', 'unexpected delimiters', {range_start, range_end + 1}})
+  local function unexpected_pattern(pattern, code, message)
+    local issues = (code:sub(1, 1) == "e" and state.errors) or state.warnings
+    return lpeg.Cp() * pattern * lpeg.Cp() / function(range_start, range_end)
+      table.insert(issues, {code, message, {range_start, range_end + 1}})
     end
   end
-  local grammar = (
-    (
-      (unexpected_delimiter(Closer) + (any - Opener))^0
-      * Opener
+  local grammar = P{
+    "Root";
+    Root = (
+      (
+        V"NonExplPart"
+        * V"ExplPart" / capture_range
+      )^0
+      * V"NonExplPart"
+    ),
+    NonExplPart = (
+      (
+        unexpected_pattern(
+          V"Closer",
+          "w101",
+          "unexpected delimiters"
+        )
+        + unexpected_pattern(
+            expl3like_control_sequence,
+            "e102",
+            "expl3 control sequences in non-expl3 parts"
+          )
+        + (any - V"Opener")
+      )^0
+    ),
+    ExplPart = (
+      V"Opener"
       * lpeg.Cp()
-      * (unexpected_delimiter(Opener) + (any - Closer))^0
+      * (
+          unexpected_pattern(
+            V"Opener",
+            "w101",
+            "unexpected delimiters"
+          )
+          + (any - V"Closer")
+        )^0
       * lpeg.Cp()
-      * (Closer + eof)
-    ) / capture_range
-  )^0
+      * (V"Closer" + eof)
+    ),
+    Opener = Opener,
+    Closer = Closer,
+  }
   lpeg.match(grammar, state.content)
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#state.ranges == 0 and #state.content > 0) then
