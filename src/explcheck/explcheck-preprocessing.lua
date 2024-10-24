@@ -146,7 +146,7 @@ local function preprocessing(state)
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#state.ranges == 0 and #state.content > 0) then
     table.insert(state.ranges, {0, #state.content})
-    table.insert(state.warnings, {'W100', 'no standard delimiters', nil})
+    table.insert(state.warnings, {'w100', 'no standard delimiters', nil})
   end
 end
 
