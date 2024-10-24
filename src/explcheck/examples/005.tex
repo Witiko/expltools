@@ -1,0 +1,14 @@
+\input expl3-generic
+\ExplSyntaxOff % warning on this line
+\ExplSyntaxOn
+\tl_new:N
+  \g_example_tl
+\tl_gset:Nn
+  \g_example_tl
+  { Hello,~ }
+\ExplSyntaxOn % warning on this line
+\tl_gput_right:Nn
+  \g_example_tl
+  { world! }
+\tl_use:N
+  \g_example_tl

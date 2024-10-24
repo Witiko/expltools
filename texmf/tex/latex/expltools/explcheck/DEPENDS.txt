@@ -4,6 +4,8 @@ embedfile
 hologo
 hyperref
 imakeidx
+lineno
 lua-widow-control
 markdown
 minted
+upquote
