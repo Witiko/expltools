@@ -72,6 +72,21 @@ local function print_warnings_and_errors(state)
   end
 end
 
+-- Deduplicate filenames.
+local function deduplicate_filenames(filenames)
+  local deduplicated_filenames = {}
+  local seen_filenames = {}
+  for _, filename in ipairs(filenames) do
+    if seen_filenames[filename] ~= nil then
+      goto continue
+    end
+    seen_filenames[filename] = true
+    table.insert(deduplicated_filenames, filename)
+    ::continue::
+  end
+  return deduplicated_filenames
+end
+
 -- Process all input files.
 local function main(filenames)
   local num_warnings = 0
@@ -131,5 +146,6 @@ end
 if #arg == 0 then
   print("Usage: " .. arg[0] .. " FILENAMES")
 else
-  main(arg)
+  local filenames = deduplicate_filenames(arg)
+  main(filenames)
 end
