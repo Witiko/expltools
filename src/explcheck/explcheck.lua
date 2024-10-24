@@ -73,7 +73,21 @@ local function print_warnings_and_errors(state, is_last_file)
   if #issues > 0 then
     for _, warnings_or_errors in ipairs(issues) do
       print()
+      -- Before display, copy and sort the warnings/errors using location as the primary key.
+      local sorted_warnings_or_errors = {}
       for _, issue in ipairs(warnings_or_errors) do
+        local code = issue[1]
+        local message = issue[2]
+        local range = issue[3]
+        table.insert(sorted_warnings_or_errors, {code, message, range})
+      end
+      table.sort(sorted_warnings_or_errors, function(a, b)
+        local a_code, b_code = a[1], b[1]
+        local a_range, b_range = (a[3] and a[3][1]) or 0, (b[3] and b[3][1]) or 0
+        return a_range < b_range or (a_range == b_range and a_code < b_code)
+      end)
+      -- Display the warnings/errors.
+      for _, issue in ipairs(sorted_warnings_or_errors) do
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
