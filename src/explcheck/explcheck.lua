@@ -35,6 +35,22 @@ local function colorize(text, ...)
   return table.concat(buffer, "")
 end
 
+-- Convert a byte number in a file to a line and column number in a file.
+local function convert_byte_to_line_and_column(state, byte_number)
+  local line_number = 0
+  for _, line_starting_byte_number in ipairs(state.line_starting_byte_numbers) do
+    if line_starting_byte_number > byte_number then
+      break
+    end
+    line_number = line_number + 1
+  end
+  assert(line_number > 0)
+  local line_starting_byte_number = state.line_starting_byte_numbers[line_number]
+  assert(line_starting_byte_number <= byte_number)
+  local column_number = byte_number - line_starting_byte_number + 1
+  return line_number, column_number
+end
+
 -- Print warnings and errors after analyzing a file.
 local function print_warnings_and_errors(state, is_last_file)
   -- Display an overview.
@@ -52,7 +68,7 @@ local function print_warnings_and_errors(state, is_last_file)
   else
     io.write("\t\t" .. colorize("OK", 1, 32))
   end
-  
+
   -- Display the errors, followed by warnings.
   if #issues > 0 then
     print()
@@ -63,7 +79,8 @@ local function print_warnings_and_errors(state, is_last_file)
         local range = issue[3]
         io.write("\n\t" .. state.filename)
         if range ~= nil then
-          io.write(":" .. tostring(range[1]))  -- TODO: Convert starting byte number to line and character number.
+          local line_number, column_number = convert_byte_to_line_and_column(state, range[1])
+          io.write(":" .. tostring(line_number) .. ":" .. tostring(column_number))
         end
         io.write(":\t" .. code .. " " .. message)
       end
@@ -119,7 +136,7 @@ local function main(filenames)
     -- syntactic_analysis(state)
     -- semantic_analysis(state)
     -- pseudo_flow_analysis(state)
-    
+
     -- Print warnings and errors.
     ::continue::
     num_warnings = num_warnings + #state.warnings
