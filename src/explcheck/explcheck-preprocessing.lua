@@ -60,12 +60,17 @@ local function preprocessing(state)
   local function capture_range(range_start, range_end)
     table.insert(state.ranges, {range_start, range_end + 1})
   end
+  local function unexpected_delimiter(delimiter)
+    return (lpeg.Cp() * delimiter * lpeg.Cp()) / function(range_start, range_end)
+      table.insert(state.warnings, {'W101', 'unexpected delimiters', {range_start, range_end + 1}})
+    end
+  end
   local grammar = (
     (
-      (any - Opener)^0
+      (unexpected_delimiter(Closer) + (any - Opener))^0
       * Opener
       * lpeg.Cp()
-      * (any - Closer)^0
+      * (unexpected_delimiter(Opener) + (any - Closer))^0
       * lpeg.Cp()
       * (Closer + eof)
     ) / capture_range
