@@ -87,7 +87,7 @@ local function print_warnings_and_errors(state, is_last_file)
           local line_number, column_number = convert_byte_to_line_and_column(state, range[1])
           io.write(":" .. tostring(line_number) .. ":" .. tostring(column_number))
         end
-        io.write(":\t" .. code .. " " .. message)
+        io.write(":\t" .. code:upper() .. " " .. message)
       end
     end
     if(not is_last_file) then
