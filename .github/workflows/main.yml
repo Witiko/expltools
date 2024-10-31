@@ -8,6 +8,19 @@ on:
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
+  luacheck:
+    name: Style check (Lua)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install additional packages
+        run: |
+          set -ex
+          sudo apt -qy update
+          sudo apt -qy install --no-install-recommends lua-check
+      - name: Run luacheck
+        run: find src/ -type f -name '*.lua' -follow -exec luacheck {} +
   doc:
     name: Typeset documentation
     runs-on: ubuntu-latest
