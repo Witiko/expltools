@@ -4,15 +4,6 @@ local preprocessing = require("explcheck-preprocessing")
 -- local semantic_analysis = require("explcheck-semantic-analysis")
 -- local pseudo_flow_analysis = require("explcheck-pseudo-flow-analysis")
 
--- Count the number of items in a table.
-local function count_items(t)
-  local count = 0
-  for _ in pairs(t) do
-    count = count + 1
-  end
-  return count
-end
-
 -- Transform a singular into plural if the count is zero or greater than two.
 local function pluralize(singular, count)
   if count == 1 then
