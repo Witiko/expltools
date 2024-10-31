@@ -20,7 +20,7 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends lua-check
       - name: Run luacheck
-        run: find src/ -type f -name '*.lua' -follow -exec luacheck {} +
+        run: find */src/ -type f -name '*.lua' -follow -exec luacheck {} +
   doc:
     name: Typeset documentation
     runs-on: ubuntu-latest
@@ -44,13 +44,17 @@ jobs:
       - name: Typeset documentation
         run: |
           set -ex
-          export TEXMFHOME="$PWD"/texmf
-          find doc/ -type f -name '*.tex' -follow | parallel --halt now,fail=1 -- latexmk -r texmf/doc/luatex/expltools/latexmkrc -cd
+          for MODULE in *
+          do
+            export TEXMFHOME="$PWD"/"$MODULE"
+            find doc/ -type f -name '*.tex' -follow |
+            parallel --halt now,fail=1 -- latexmk -r texmf/doc/luatex/expltools/latexmkrc -cd
+          done
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Documentation
-          path: doc/*/*/*.pdf
+          path: '*/doc/**/*.pdf'
       - name: Create a prerelease
         if: github.ref == 'refs/heads/main'
         uses: marvinpinto/action-automatic-releases@latest
@@ -59,4 +63,4 @@ jobs:
           automatic_release_tag: latest
           prerelease: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          files: doc/*/*/*.pdf
+          files: '*/doc/**/*.pdf'
