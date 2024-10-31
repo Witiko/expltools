@@ -9,7 +9,7 @@ env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   luacheck:
-    name: Style check (Lua)
+    name: Check code style
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,6 +21,20 @@ jobs:
           sudo apt -qy install --no-install-recommends lua-check
       - name: Run luacheck
         run: find */src/ -type f -name '*.lua' -follow -exec luacheck {} +
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            l3build
+      - name: Run tests
+        run: |
+          l3build check
   doc:
     name: Typeset documentation
     runs-on: ubuntu-latest
@@ -40,15 +54,15 @@ jobs:
           packages: |
             scheme-basic
           package-file: |
-            texmf/**/DEPENDS.txt
+            **/DEPENDS.txt
       - name: Typeset documentation
         run: |
           set -ex
-          for MODULE in *
+          for MODULE in */
           do
-            export TEXMFHOME="$PWD"/"$MODULE"
-            find doc/ -type f -name '*.tex' -follow |
-            parallel --halt now,fail=1 -- latexmk -r texmf/doc/luatex/expltools/latexmkrc -cd
+            export TEXMFHOME="$PWD"/"$MODULE"texmf
+            find "$MODULE"doc/ -type f -name '*.tex' -follow |
+            parallel --halt now,fail=1 -- latexmk -r "$MODULE"texmf/doc/luatex/expltools/latexmkrc -cd
           done
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

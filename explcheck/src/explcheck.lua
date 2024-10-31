@@ -1,3 +1,4 @@
+local common = require("explcheck-common")
 local preprocessing = require("explcheck-preprocessing")
 -- local lexical_analysis = require("explcheck-lexical-analysis")
 -- local syntactic_analysis = require("explcheck-syntactic-analysis")
@@ -121,15 +122,7 @@ local function main(filenames)
   for filename_number, filename in ipairs(filenames) do
 
     -- Load an input file.
-    local file = assert(io.open(filename, "r"), "Could not open " .. filename .. " for reading")
-    local content = assert(file:read("*a"))
-    assert(file:close())
-    local state = {
-      filename = filename,
-      content = content,
-      warnings = {},
-      errors = {},
-    }
+    local state = common.initialize_state(filename)
 
     -- Run all processing steps.
     io.write("\nChecking " .. filename)

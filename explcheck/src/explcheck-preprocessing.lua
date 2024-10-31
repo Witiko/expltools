@@ -147,6 +147,13 @@ local function preprocessing(state)
   if(#state.ranges == 0 and #state.content > 0) then
     table.insert(state.ranges, {0, #state.content})
     table.insert(state.warnings, {'w100', 'no standard delimiters', nil})
+    local updated_errors = {}
+    for _, issue in ipairs(state.errors) do
+      if issue[1] ~= 'e102' then
+        table.insert(updated_errors, issue)
+      end
+    end
+    state.errors = updated_errors
   end
 end
 
