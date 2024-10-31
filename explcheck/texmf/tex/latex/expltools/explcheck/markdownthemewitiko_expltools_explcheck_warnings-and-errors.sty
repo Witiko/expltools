@@ -1,8 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesExplPackage
   {markdownthemewitiko_expltools_explcheck_warnings-and-errors}%
-  {2024-07-04}%
-  {0.0.2}%
+  {2024-10-31}%
+  {0.0.1}%
   {Snippets for typesetting the documentation of the warnings and errors for the expl3 analysis tool}
 \int_new:N
   \g__expltools_explcheck_subsection_int
@@ -164,6 +164,23 @@
       },
       headerAttributeContextEnd = {
         \group_end:
+      },
+      contentBlock = {
+        \str_case:nnF
+          { #1 }
+          {
+            { tex }
+              {
+                \markdownRendererInputFencedCode
+                  { #3 }
+                  { tex }
+                  { tex }
+              }
+          }
+          {
+            \markdownInput
+              { #3 }
+          }
       },
     },
   }

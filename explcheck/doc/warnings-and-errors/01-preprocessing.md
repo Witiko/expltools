@@ -4,19 +4,7 @@ In the preprocessing step, the expl3 analysis tool determines which parts of the
 ## No standard delimiters {.w}
 An input file contains no delimiters such as `\ExplSyntaxOn`, `\ExplSyntaxOff`, `\ProvidesExplPackage`, `\ProvidesExplClass`, and `\ProvidesExplFile` [@latexteam2024interfaces, Section 2.1]. The analysis tool should assume that the whole input file is in expl3.
 
-``` tex
-% file-wide warning
-\tl_new:N
-  \g_example_tl
-\tl_gset:Nn
-  \g_example_tl
-  { Hello,~ }
-\tl_gput_right:Nn
-  \g_example_tl
-  { world! }
-\tl_use:N
-  \g_example_tl
-```
+ /../../testfiles/w100.tex
 
 ## Unexpected delimiters {.w}
 An input file contains extraneous `\ExplSyntaxOn` delimiters [@latexteam2024interfaces, Section 2.1] in expl3 parts or extraneous `\ExplSyntaxOff` delimiters in non-expl3 parts.
