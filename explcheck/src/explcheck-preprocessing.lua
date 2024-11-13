@@ -67,14 +67,14 @@ local provides = (
 local expl_syntax_on = P([[\ExplSyntaxOn]])
 local expl_syntax_off = P([[\ExplSyntaxOff]])
 
-local function preprocessing(state, content)
+local function preprocessing(issues, content)
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
   local function record_line(line_start)
     table.insert(line_starting_byte_numbers, line_start)
   end
   local function line_too_long(range_start, range_end)
-    table.insert(state.warnings, {'s103', 'line too long', {range_start, range_end + 1}})
+    issues:add('s103', 'line too long', range_start, range_end)
   end
   local line_numbers_grammar = (
     Cp() / record_line
@@ -96,9 +96,8 @@ local function preprocessing(state, content)
     table.insert(expl_ranges, {range_start, range_end + 1})
   end
   local function unexpected_pattern(pattern, code, message)
-    local issues = (code:sub(1, 1) == "e" and state.errors) or state.warnings
     return Cp() * pattern * Cp() / function(range_start, range_end)
-      table.insert(issues, {code, message, {range_start, range_end + 1}})
+      issues:add(code, message, range_start, range_end)
     end
   end
   local analysis_grammar = P{
@@ -146,14 +145,8 @@ local function preprocessing(state, content)
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
     table.insert(expl_ranges, {0, #content})
-    table.insert(state.warnings, {'w100', 'no standard delimiters', nil})
-    local updated_errors = {}
-    for _, issue in ipairs(state.errors) do
-      if issue[1] ~= 'e102' then
-        table.insert(updated_errors, issue)
-      end
-    end
-    state.errors = updated_errors
+    issues:add('w100', 'no standard delimiters')
+    issues:ignore('e102')
   end
   return line_starting_byte_numbers, expl_ranges
 end

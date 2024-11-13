@@ -1,4 +1,4 @@
-local common = require("explcheck-common")
+local new_issues = require("explcheck-issues")
 local preprocessing = require("explcheck-preprocessing")
 -- local lexical_analysis = require("explcheck-lexical-analysis")
 -- local syntactic_analysis = require("explcheck-syntactic-analysis")
@@ -44,26 +44,26 @@ local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_
 end
 
 -- Print warnings and errors after analyzing a file.
-local function print_warnings_and_errors(filename, state, line_starting_byte_numbers, is_last_file)
+local function print_warnings_and_errors(filename, issues, line_starting_byte_numbers, is_last_file)
   -- Display an overview.
-  local issues = {}
-  if(#state.errors > 0) then
-    io.write("\t\t" .. colorize(tostring(#state.errors) .. " " .. pluralize("error", #state.errors), 1, 31))
-    table.insert(issues, state.errors)
-    if(#state.warnings > 0) then
-      io.write(", " .. colorize(tostring(#state.warnings) .. " " .. pluralize("warning", #state.warnings), 1, 33))
-      table.insert(issues, state.warnings)
+  local all_issues = {}
+  if(#issues.errors > 0) then
+    io.write("\t\t" .. colorize(tostring(#issues.errors) .. " " .. pluralize("error", #issues.errors), 1, 31))
+    table.insert(all_issues, issues.errors)
+    if(#issues.warnings > 0) then
+      io.write(", " .. colorize(tostring(#issues.warnings) .. " " .. pluralize("warning", #issues.warnings), 1, 33))
+      table.insert(all_issues, issues.warnings)
     end
-  elseif(#state.warnings > 0) then
-    io.write("\t\t" .. colorize(tostring(#state.warnings) .. " " .. pluralize("warning", #state.warnings), 1, 33))
-    table.insert(issues, state.warnings)
+  elseif(#issues.warnings > 0) then
+    io.write("\t\t" .. colorize(tostring(#issues.warnings) .. " " .. pluralize("warning", #issues.warnings), 1, 33))
+    table.insert(all_issues, issues.warnings)
   else
     io.write("\t\t" .. colorize("OK", 1, 32))
   end
 
   -- Display the errors, followed by warnings.
-  if #issues > 0 then
-    for _, warnings_or_errors in ipairs(issues) do
+  if #all_issues > 0 then
+    for _, warnings_or_errors in ipairs(all_issues) do
       print()
       -- Before display, copy and sort the warnings/errors using location as the primary key.
       local sorted_warnings_or_errors = {}
@@ -129,7 +129,7 @@ local function main(filenames)
     local file = assert(io.open(filename, "r"), "Could not open " .. filename .. " for reading")
     local content = assert(file:read("*a"))
     assert(file:close())
-    local state = common.initialize_state()
+    local issues = new_issues()
 
     -- Run all processing steps.
     local max_filename_length = 46
@@ -137,20 +137,20 @@ local function main(filenames)
       filename = "..." .. filename:sub(-(max_filename_length - 3))
     end
     io.write("\nChecking " .. filename)
-    local line_starting_byte_numbers, _ = preprocessing(state, content)
-    if #state.errors > 0 then
+    local line_starting_byte_numbers, _ = preprocessing(issues, content)
+    if #issues.errors > 0 then
       goto continue
     end
-    -- lexical_analysis(state)
-    -- syntactic_analysis(state)
-    -- semantic_analysis(state)
-    -- pseudo_flow_analysis(state)
+    -- lexical_analysis(issues)
+    -- syntactic_analysis(issues)
+    -- semantic_analysis(issues)
+    -- pseudo_flow_analysis(issues)
 
     -- Print warnings and errors.
     ::continue::
-    num_warnings = num_warnings + #state.warnings
-    num_errors = num_errors + #state.errors
-    print_warnings_and_errors(filename, state, line_starting_byte_numbers, filename_number == #filenames)
+    num_warnings = num_warnings + #issues.warnings
+    num_errors = num_errors + #issues.errors
+    print_warnings_and_errors(filename, issues, line_starting_byte_numbers, filename_number == #filenames)
   end
 
   -- Print a summary.
