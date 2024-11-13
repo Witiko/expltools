@@ -122,11 +122,14 @@ local function main(filenames)
   for filename_number, filename in ipairs(filenames) do
 
     -- Load an input file.
+    local file = assert(io.open(filename, "r"), "Could not open " .. filename .. " for reading")
+    local content = assert(file:read("*a"))
+    assert(file:close())
     local state = common.initialize_state(filename)
 
     -- Run all processing steps.
     io.write("\nChecking " .. filename)
-    local line_starting_byte_numbers, expl_ranges = preprocessing(state)
+    local line_starting_byte_numbers, expl_ranges = preprocessing(state, content)
     if #state.errors > 0 then
       goto continue
     end

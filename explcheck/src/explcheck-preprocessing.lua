@@ -67,7 +67,7 @@ local provides = (
 local expl_syntax_on = P([[\ExplSyntaxOn]])
 local expl_syntax_off = P([[\ExplSyntaxOff]])
 
-local function preprocessing(state)
+local function preprocessing(state, content)
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
   local function record_line(line_start)
@@ -89,7 +89,7 @@ local function preprocessing(state)
       ) / record_line
     )^0
   )
-  lpeg.match(line_numbers_grammar, state.content)
+  lpeg.match(line_numbers_grammar, content)
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}
   local function capture_range(range_start, range_end)
@@ -142,10 +142,10 @@ local function preprocessing(state)
     Opener = expl_syntax_on + provides,
     Closer = expl_syntax_off,
   }
-  lpeg.match(analysis_grammar, state.content)
+  lpeg.match(analysis_grammar, content)
   -- If no parts were detected, assume that the whole input file is in expl3.
-  if(#expl_ranges == 0 and #state.content > 0) then
-    table.insert(expl_ranges, {0, #state.content})
+  if(#expl_ranges == 0 and #content > 0) then
+    table.insert(expl_ranges, {0, #content})
     table.insert(state.warnings, {'w100', 'no standard delimiters', nil})
     local updated_errors = {}
     for _, issue in ipairs(state.errors) do
