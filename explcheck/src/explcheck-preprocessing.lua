@@ -1,3 +1,5 @@
+-- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
+
 local lpeg = require("lpeg")
 local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
 

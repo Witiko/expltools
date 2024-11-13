@@ -1,3 +1,5 @@
+-- A command-line interface for the static analyzer explcheck.
+
 local new_issues = require("explcheck-issues")
 local preprocessing = require("explcheck-preprocessing")
 -- local lexical_analysis = require("explcheck-lexical-analysis")

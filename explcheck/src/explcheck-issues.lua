@@ -1,3 +1,5 @@
+-- A registry of warnings and errors identified by different processing steps.
+
 local Issues = {}
 
 function Issues.new(cls)

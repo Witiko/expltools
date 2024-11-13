@@ -1,3 +1,5 @@
+-- A testing framework for the static analyzer explcheck.
+
 local lfs = require("lfs")
 
 -- Convert a pathname of a file to the base name of a file.
