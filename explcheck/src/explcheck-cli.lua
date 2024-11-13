@@ -28,23 +28,23 @@ local function colorize(text, ...)
 end
 
 -- Convert a byte number in a file to a line and column number in a file.
-local function convert_byte_to_line_and_column(state, byte_number)
+local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_number)
   local line_number = 0
-  for _, line_starting_byte_number in ipairs(state.line_starting_byte_numbers) do
+  for _, line_starting_byte_number in ipairs(line_starting_byte_numbers) do
     if line_starting_byte_number > byte_number then
       break
     end
     line_number = line_number + 1
   end
   assert(line_number > 0)
-  local line_starting_byte_number = state.line_starting_byte_numbers[line_number]
+  local line_starting_byte_number = line_starting_byte_numbers[line_number]
   assert(line_starting_byte_number <= byte_number)
   local column_number = byte_number - line_starting_byte_number + 1
   return line_number, column_number
 end
 
 -- Print warnings and errors after analyzing a file.
-local function print_warnings_and_errors(state, is_last_file)
+local function print_warnings_and_errors(state, line_starting_byte_numbers, is_last_file)
   -- Display an overview.
   local issues = {}
   if(#state.errors > 0) then
@@ -85,7 +85,7 @@ local function print_warnings_and_errors(state, is_last_file)
         local range = issue[3]
         io.write("\n\t" .. state.filename)
         if range ~= nil then
-          local line_number, column_number = convert_byte_to_line_and_column(state, range[1])
+          local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
           io.write(":" .. tostring(line_number) .. ":" .. tostring(column_number))
         end
         io.write(":\t" .. code:upper() .. " " .. message)
@@ -126,7 +126,7 @@ local function main(filenames)
 
     -- Run all processing steps.
     io.write("\nChecking " .. filename)
-    preprocessing(state)
+    local line_starting_byte_numbers = preprocessing(state)
     if #state.errors > 0 then
       goto continue
     end
@@ -139,7 +139,7 @@ local function main(filenames)
     ::continue::
     num_warnings = num_warnings + #state.warnings
     num_errors = num_errors + #state.errors
-    print_warnings_and_errors(state, filename_number == #filenames)
+    print_warnings_and_errors(state, line_starting_byte_numbers, filename_number == #filenames)
   end
 
   -- Print a summary.

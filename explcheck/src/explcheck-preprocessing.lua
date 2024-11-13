@@ -69,9 +69,9 @@ local expl_syntax_off = P([[\ExplSyntaxOff]])
 
 local function preprocessing(state)
   -- Determine the bytes where lines begin.
-  state.line_starting_byte_numbers = {}
+  local line_starting_byte_numbers = {}
   local function record_line(line_start)
-    table.insert(state.line_starting_byte_numbers, line_start)
+    table.insert(line_starting_byte_numbers, line_start)
   end
   local function line_too_long(range_start, range_end)
     table.insert(state.warnings, {'s103', 'line too long', {range_start, range_end + 1}})
@@ -155,6 +155,7 @@ local function preprocessing(state)
     end
     state.errors = updated_errors
   end
+  return line_starting_byte_numbers
 end
 
 return preprocessing
