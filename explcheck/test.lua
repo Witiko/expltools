@@ -32,8 +32,9 @@ local function colorize(text, ...)
   return table.concat(buffer, "")
 end
 
--- Create the test directory and copy support files and testfiles to it.
-local function main(test_directory, support_files, test_files)
+-- Run the tests.
+local function run_tests(test_directory, support_files, test_files)
+  -- Create the test directory and copy support files and testfiles to it.
   assert(lfs.mkdir(test_directory))
   for _, filename in ipairs(support_files) do
     assert(lfs.link(filename, test_directory .. "/" .. get_basename(filename)))
@@ -85,23 +86,9 @@ local function main(test_directory, support_files, test_files)
     end
     assert(lfs.rmdir(test_directory))
   else
-    os.exit(1)
+    return false
   end
+  return true
 end
 
-if #arg == 0 then
-  print("Usage: " .. arg[0] .. "  SUPPORT_FILES -- TESTFILES")
-else
-  local after_support_files = false
-  local support_files = {}
-  local test_files = {}
-  for _, filename in ipairs(arg) do
-    if filename == '--' then
-      after_support_files = true
-      goto continue
-    end
-    table.insert(after_support_files and test_files or support_files, filename)
-    ::continue::
-  end
-  main("test", support_files, test_files)
-end
+return run_tests

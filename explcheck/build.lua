@@ -22,6 +22,7 @@ function checkinit_hook()
       table.insert(testfiles, "testfiles/" .. filename)
     end
   end
-  local exit_code = os.execute("texlua test.lua " .. table.concat(support_files, " ") .. " -- " .. table.concat(testfiles, " "))
-  os.exit(exit_code == 0 and 0 or 1)
+  local run_tests = require("test")
+  local test_result = run_tests("test", support_files, testfiles)
+  os.exit(test_result and 0 or 1)
 end
