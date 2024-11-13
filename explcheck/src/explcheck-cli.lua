@@ -7,6 +7,8 @@ local preprocessing = require("explcheck-preprocessing")
 -- local semantic_analysis = require("explcheck-semantic-analysis")
 -- local pseudo_flow_analysis = require("explcheck-pseudo-flow-analysis")
 
+local max_filename_length = 63
+
 -- Transform a singular into plural if the count is zero or greater than two.
 local function pluralize(singular, count)
   if count == 1 then
@@ -85,7 +87,6 @@ local function print_warnings_and_errors(filename, issues, line_starting_byte_nu
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
-        local max_filename_length = 23
         if #filename > max_filename_length then
           filename = "..." .. filename:sub(-(max_filename_length - 3))
         end
@@ -134,7 +135,6 @@ local function main(filenames)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local max_filename_length = 46
     if #filename > max_filename_length then
       filename = "..." .. filename:sub(-(max_filename_length - 3))
     end
