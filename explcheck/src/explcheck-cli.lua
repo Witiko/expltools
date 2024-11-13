@@ -83,7 +83,12 @@ local function print_warnings_and_errors(state, line_starting_byte_numbers, is_l
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
-        io.write("\n\t" .. state.filename)
+        local filename = state.filename
+        local max_filename_length = 23
+        if #filename > max_filename_length then
+          filename = "..." .. filename:sub(-(max_filename_length - 3))
+        end
+        io.write("\n\t" .. filename)
         if range ~= nil then
           local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
           io.write(":" .. tostring(line_number) .. ":" .. tostring(column_number))
@@ -128,6 +133,10 @@ local function main(filenames)
     local state = common.initialize_state(filename)
 
     -- Run all processing steps.
+    local max_filename_length = 46
+    if #filename > max_filename_length then
+      filename = "..." .. filename:sub(-(max_filename_length - 3))
+    end
     io.write("\nChecking " .. filename)
     local line_starting_byte_numbers, _ = preprocessing(state, content)
     if #state.errors > 0 then

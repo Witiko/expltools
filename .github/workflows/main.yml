@@ -9,7 +9,7 @@ env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   luacheck:
-    name: Check code style
+    name: Check code style (Lua)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -20,7 +20,24 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends lua-check
       - name: Run luacheck
-        run: find -type f -follow -name '*.lua' -not -name 'build.lua' -exec luacheck {} +
+        run: |
+          find -type f -follow -name '*.lua' -not -name 'build.lua' -exec luacheck {} +
+  explcheck:
+    name: Check code style (expl3)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            luatex
+      - name: Run tests
+        run: |
+          set -ex
+          cd explcheck/src
+          find "$OLDPWD"/*/texmf -type f '(' -name '*.tex' -o -name '*.sty' -o -name '*.cls' ')' -exec texlua explcheck-cli.lua {} +
   tests:
     name: Run tests
     runs-on: ubuntu-latest
