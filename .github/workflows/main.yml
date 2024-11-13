@@ -20,7 +20,7 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends lua-check
       - name: Run luacheck
-        run: find */src/ -type f -name '*.lua' -follow -exec luacheck {} +
+        run: find -type f -follow -name '*.lua' -not -name 'build.lua' -exec luacheck {} +
   tests:
     name: Run tests
     runs-on: ubuntu-latest
