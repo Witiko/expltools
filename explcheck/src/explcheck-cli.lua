@@ -7,8 +7,6 @@ local preprocessing = require("explcheck-preprocessing")
 -- local semantic_analysis = require("explcheck-semantic-analysis")
 -- local pseudo_flow_analysis = require("explcheck-pseudo-flow-analysis")
 
-local max_filename_length = 63
-
 -- Transform a singular into plural if the count is zero or greater than two.
 local function pluralize(singular, count)
   if count == 1 then
@@ -52,17 +50,17 @@ local function print_warnings_and_errors(filename, issues, line_starting_byte_nu
   -- Display an overview.
   local all_issues = {}
   if(#issues.errors > 0) then
-    io.write("\t\t" .. colorize(tostring(#issues.errors) .. " " .. pluralize("error", #issues.errors), 1, 31))
+    io.write(colorize(tostring(#issues.errors) .. " " .. pluralize("error", #issues.errors), 1, 31))
     table.insert(all_issues, issues.errors)
     if(#issues.warnings > 0) then
       io.write(", " .. colorize(tostring(#issues.warnings) .. " " .. pluralize("warning", #issues.warnings), 1, 33))
       table.insert(all_issues, issues.warnings)
     end
   elseif(#issues.warnings > 0) then
-    io.write("\t\t" .. colorize(tostring(#issues.warnings) .. " " .. pluralize("warning", #issues.warnings), 1, 33))
+    io.write(colorize(tostring(#issues.warnings) .. " " .. pluralize("warning", #issues.warnings), 1, 33))
     table.insert(all_issues, issues.warnings)
   else
-    io.write("\t\t" .. colorize("OK", 1, 32))
+    io.write(colorize("OK", 1, 32))
   end
 
   -- Display the errors, followed by warnings.
@@ -87,15 +85,13 @@ local function print_warnings_and_errors(filename, issues, line_starting_byte_nu
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
-        if #filename > max_filename_length then
-          filename = "..." .. filename:sub(-(max_filename_length - 3))
-        end
-        io.write("\n\t" .. filename)
+        local status = ":"
         if range ~= nil then
           local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
-          io.write(":" .. tostring(line_number) .. ":" .. tostring(column_number))
+          status = status .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
         end
-        io.write(":\t" .. code:upper() .. " " .. message)
+        local label = "    " .. filename .. status .. (" "):rep(math.max(10 - #status, 1))
+        io.write("\n" .. label .. (" "):rep(math.max(38 - #label, 1)) .. code:upper() .. " " .. message)
       end
     end
     if(not is_last_file) then
@@ -135,10 +131,8 @@ local function main(filenames)
     local issues = new_issues()
 
     -- Run all processing steps.
-    if #filename > max_filename_length then
-      filename = "..." .. filename:sub(-(max_filename_length - 3))
-    end
-    io.write("\nChecking " .. filename)
+    local label = "Checking " .. filename
+    io.write("\n" .. label .. (" "):rep(math.max(70 - #label, 1)))
     local line_starting_byte_numbers, _ = preprocessing(issues, content)
     if #issues.errors > 0 then
       goto continue
