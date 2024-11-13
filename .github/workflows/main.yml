@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Install additional packages
         run: |
-          set -ex
+          set -e
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends lua-check
       - name: Run luacheck
@@ -35,7 +35,7 @@ jobs:
             luatex
       - name: Run tests
         run: |
-          set -ex
+          set -e
           cd explcheck/src
           find "$OLDPWD"/*/texmf -type f '(' -name '*.tex' -o -name '*.sty' -o -name '*.cls' ')' -exec texlua explcheck-cli.lua {} +
   tests:
@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Install additional packages
         run: |
-          set -ex
+          set -e
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends parallel
       - name: Install TeX Live
@@ -74,7 +74,7 @@ jobs:
             **/DEPENDS.txt
       - name: Typeset documentation
         run: |
-          set -ex
+          set -e
           for MODULE in */
           do
             export TEXMFHOME="$PWD"/"$MODULE"texmf
