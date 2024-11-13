@@ -6,7 +6,7 @@ local filename = "w100.tex"
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
-local state = common.initialize_state(filename)
+local state = common.initialize_state()
 
 preprocessing(state, content)
 

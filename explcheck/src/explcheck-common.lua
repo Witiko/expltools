@@ -1,7 +1,6 @@
 -- Transform a filename into a state object that can be passed to the processing steps.
-local function initialize_state(filename)
+local function initialize_state()
   local state = {
-    filename = filename,
     warnings = {},
     errors = {},
   }

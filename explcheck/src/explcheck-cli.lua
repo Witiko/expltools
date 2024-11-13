@@ -44,7 +44,7 @@ local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_
 end
 
 -- Print warnings and errors after analyzing a file.
-local function print_warnings_and_errors(state, line_starting_byte_numbers, is_last_file)
+local function print_warnings_and_errors(filename, state, line_starting_byte_numbers, is_last_file)
   -- Display an overview.
   local issues = {}
   if(#state.errors > 0) then
@@ -83,7 +83,6 @@ local function print_warnings_and_errors(state, line_starting_byte_numbers, is_l
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
-        local filename = state.filename
         local max_filename_length = 23
         if #filename > max_filename_length then
           filename = "..." .. filename:sub(-(max_filename_length - 3))
@@ -130,7 +129,7 @@ local function main(filenames)
     local file = assert(io.open(filename, "r"), "Could not open " .. filename .. " for reading")
     local content = assert(file:read("*a"))
     assert(file:close())
-    local state = common.initialize_state(filename)
+    local state = common.initialize_state()
 
     -- Run all processing steps.
     local max_filename_length = 46
@@ -151,7 +150,7 @@ local function main(filenames)
     ::continue::
     num_warnings = num_warnings + #state.warnings
     num_errors = num_errors + #state.errors
-    print_warnings_and_errors(state, line_starting_byte_numbers, filename_number == #filenames)
+    print_warnings_and_errors(filename, state, line_starting_byte_numbers, filename_number == #filenames)
   end
 
   -- Print a summary.
