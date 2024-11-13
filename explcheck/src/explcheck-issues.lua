@@ -38,7 +38,7 @@ function Issues:add(identifier, message, range_start, range_end)
 end
 
 -- Prevent an issue from being present in the table of issues.
-function Issues:ignore(identifier, message, range)
+function Issues:ignore(identifier)
   -- Remove the issue if it has already been added.
   local issue_table = self:_get_issue_table(identifier)
   local updated_issues = {}
