@@ -62,7 +62,7 @@ jobs:
           do
             export TEXMFHOME="$PWD"/"$MODULE"texmf
             find "$MODULE"doc/ -type f -name '*.tex' -follow |
-            parallel --halt now,fail=1 -- latexmk -r "$MODULE"texmf/doc/luatex/expltools/latexmkrc -cd
+            parallel --halt now,fail=1 -- latexmk -r "$MODULE"latexmkrc -cd
           done
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
