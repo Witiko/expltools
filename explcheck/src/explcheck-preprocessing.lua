@@ -91,9 +91,9 @@ local function preprocessing(state)
   )
   lpeg.match(line_numbers_grammar, state.content)
   -- Determine which parts of the input files contain expl3 code.
-  state.ranges = {}
+  local expl_ranges = {}
   local function capture_range(range_start, range_end)
-    table.insert(state.ranges, {range_start, range_end + 1})
+    table.insert(expl_ranges, {range_start, range_end + 1})
   end
   local function unexpected_pattern(pattern, code, message)
     local issues = (code:sub(1, 1) == "e" and state.errors) or state.warnings
@@ -144,8 +144,8 @@ local function preprocessing(state)
   }
   lpeg.match(analysis_grammar, state.content)
   -- If no parts were detected, assume that the whole input file is in expl3.
-  if(#state.ranges == 0 and #state.content > 0) then
-    table.insert(state.ranges, {0, #state.content})
+  if(#expl_ranges == 0 and #state.content > 0) then
+    table.insert(expl_ranges, {0, #state.content})
     table.insert(state.warnings, {'w100', 'no standard delimiters', nil})
     local updated_errors = {}
     for _, issue in ipairs(state.errors) do
@@ -155,7 +155,7 @@ local function preprocessing(state)
     end
     state.errors = updated_errors
   end
-  return line_starting_byte_numbers
+  return line_starting_byte_numbers, expl_ranges
 end
 
 return preprocessing

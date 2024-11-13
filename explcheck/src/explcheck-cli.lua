@@ -126,7 +126,7 @@ local function main(filenames)
 
     -- Run all processing steps.
     io.write("\nChecking " .. filename)
-    local line_starting_byte_numbers = preprocessing(state)
+    local line_starting_byte_numbers, expl_ranges = preprocessing(state)
     if #state.errors > 0 then
       goto continue
     end
