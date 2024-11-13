@@ -33,7 +33,7 @@ jobs:
         with:
           packages: |
             luatex
-      - name: Run tests
+      - name: Run explcheck
         run: |
           set -e
           cd explcheck/src
