@@ -16,6 +16,21 @@ local function pluralize(singular, count)
   end
 end
 
+-- Shorten a pathname, so that it does not exceed maximum length.
+local function format_pathname(pathname, max_length)
+  local first_iteration = true
+  while #pathname > max_length do
+    local pattern = first_iteration and "([^/]*)/[^/]*/(.*)" or "([^/]*)/%.%.%./[^/]*/(.*)"
+    first_iteration = false
+    local prefix_start, _, prefix, suffix = pathname:find(pattern)
+    if prefix == nil or prefix_start > 1 then
+      break
+    end
+    pathname = prefix .. "/.../" .. suffix
+  end
+  return pathname
+end
+
 -- Colorize a string using ASCII color codes.
 local function colorize(text, ...)
   local buffer = {}
@@ -46,7 +61,7 @@ local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_
 end
 
 -- Print warnings and errors after analyzing a file.
-local function print_warnings_and_errors(filename, issues, line_starting_byte_numbers, is_last_file)
+local function print_warnings_and_errors(pathname, issues, line_starting_byte_numbers, is_last_file)
   -- Display an overview.
   local all_issues = {}
   if(#issues.errors > 0) then
@@ -90,7 +105,7 @@ local function print_warnings_and_errors(filename, issues, line_starting_byte_nu
           local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
           status = status .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
         end
-        local label = "    " .. filename .. status .. (" "):rep(math.max(10 - #status, 1))
+        local label = "    " .. format_pathname(pathname, 37) .. status .. (" "):rep(math.max(10 - #status, 1))
         io.write("\n" .. label .. (" "):rep(math.max(38 - #label, 1)) .. code:upper() .. " " .. message)
       end
     end
@@ -100,38 +115,38 @@ local function print_warnings_and_errors(filename, issues, line_starting_byte_nu
   end
 end
 
--- Deduplicate filenames.
-local function deduplicate_filenames(filenames)
-  local deduplicated_filenames = {}
-  local seen_filenames = {}
-  for _, filename in ipairs(filenames) do
-    if seen_filenames[filename] ~= nil then
+-- Deduplicate pathnames.
+local function deduplicate_pathnames(pathnames)
+  local deduplicated_pathnames = {}
+  local seen_pathnames = {}
+  for _, pathname in ipairs(pathnames) do
+    if seen_pathnames[pathname] ~= nil then
       goto continue
     end
-    seen_filenames[filename] = true
-    table.insert(deduplicated_filenames, filename)
+    seen_pathnames[pathname] = true
+    table.insert(deduplicated_pathnames, pathname)
     ::continue::
   end
-  return deduplicated_filenames
+  return deduplicated_pathnames
 end
 
 -- Process all input files.
-local function main(filenames)
+local function main(pathnames)
   local num_warnings = 0
   local num_errors = 0
 
-  print("Checking " .. #filenames .. " files")
+  print("Checking " .. #pathnames .. " files")
 
-  for filename_number, filename in ipairs(filenames) do
+  for pathname_number, pathname in ipairs(pathnames) do
 
     -- Load an input file.
-    local file = assert(io.open(filename, "r"), "Could not open " .. filename .. " for reading")
+    local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
     local content = assert(file:read("*a"))
     assert(file:close())
     local issues = new_issues()
 
     -- Run all processing steps.
-    local label = "Checking " .. filename
+    local label = "Checking " .. format_pathname(pathname, 60)
     io.write("\n" .. label .. (" "):rep(math.max(70 - #label, 1)))
     local line_starting_byte_numbers, _ = preprocessing(issues, content)
     if #issues.errors > 0 then
@@ -146,7 +161,7 @@ local function main(filenames)
     ::continue::
     num_warnings = num_warnings + #issues.warnings
     num_errors = num_errors + #issues.errors
-    print_warnings_and_errors(filename, issues, line_starting_byte_numbers, filename_number == #filenames)
+    print_warnings_and_errors(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames)
   end
 
   -- Print a summary.
@@ -160,7 +175,7 @@ local function main(filenames)
   warnings_message = colorize(warnings_message, 1, (num_warnings > 0 and 33) or 32)
   io.write(warnings_message .. " in ")
 
-  print(tostring(#filenames) .. " " .. pluralize("file", #filenames))
+  print(tostring(#pathnames) .. " " .. pluralize("file", #pathnames))
 
   if(num_errors > 0) then
     os.exit(1)
@@ -170,6 +185,6 @@ end
 if #arg == 0 then
   print("Usage: " .. arg[0] .. " FILENAMES")
 else
-  local filenames = deduplicate_filenames(arg)
-  main(filenames)
+  local pathnames = deduplicate_pathnames(arg)
+  main(pathnames)
 end
