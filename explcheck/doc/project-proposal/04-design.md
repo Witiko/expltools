@@ -47,7 +47,7 @@ check for simple cases of the warnings and errors from flow analysis. Future
 versions of the linter should improve their code understanding to the point
 where proper flow analysis can be performed.
 
-The warnings and errors in this documents do not cover the complete expl3
+The warnings and errors in this document do not cover the complete expl3
 language. The limitations currently include the areas outlined in a section
 of [the document with warnings and errors][6] titled "Caveats". Future versions
 of the linter should improve the coverage.
