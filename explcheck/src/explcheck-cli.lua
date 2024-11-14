@@ -18,15 +18,37 @@ end
 
 -- Shorten a pathname, so that it does not exceed maximum length.
 local function format_pathname(pathname, max_length)
+  -- First, replace path segments with `/.../`, keeping other segments.
   local first_iteration = true
   while #pathname > max_length do
-    local pattern = first_iteration and "([^/]*)/[^/]*/(.*)" or "([^/]*)/%.%.%./[^/]*/(.*)"
-    first_iteration = false
+    local pattern
+    if first_iteration then
+      pattern = "([^/]*)/[^/]*/(.*)"
+    else
+      pattern = "([^/]*)/%.%.%./[^/]*/(.*)"
+    end
     local prefix_start, _, prefix, suffix = pathname:find(pattern)
-    if prefix == nil or prefix_start > 1 then
+    if prefix_start == nil or prefix_start > 1 then
       break
     end
     pathname = prefix .. "/.../" .. suffix
+    first_iteration = false
+  end
+  -- If this isn't enough, remove the initial path segment and prefix the filename with `...`.
+  if #pathname > max_length then
+    local pattern
+    if first_iteration then
+      pattern = "([^/]*/?)(.*)"
+    else
+      pattern = "([^/]*/%.%.%./)(.*)"
+    end
+    local prefix_start, _, prefix, suffix = pathname:find(pattern)
+    if prefix_start == 1 then
+      pathname = ".../" .. suffix
+      if #pathname > max_length then
+        pathname = "..." .. suffix:sub(-(max_length - #("...")))
+      end
+    end
   end
   return pathname
 end
@@ -105,8 +127,23 @@ local function print_warnings_and_errors(pathname, issues, line_starting_byte_nu
           local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
           status = status .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
         end
-        local label = "    " .. format_pathname(pathname, 37) .. status .. (" "):rep(math.max(10 - #status, 1))
-        io.write("\n" .. label .. (" "):rep(math.max(38 - #label, 1)) .. code:upper() .. " " .. message)
+        local label_indent = 4
+        local max_label_length = 38
+        local max_status_length = 10
+        local label = (
+          (" "):rep(label_indent)
+          .. format_pathname(pathname, max_label_length - max_status_length - label_indent - #(" "))
+          .. status
+          .. (" "):rep(math.max(max_status_length - #status, 1))
+        )
+        io.write(
+          "\n"
+          .. label
+          .. (" "):rep(math.max(max_label_length - #label, 1))
+          .. code:upper()
+          .. " "
+          .. message
+        )
       end
     end
     if(not is_last_file) then
@@ -146,8 +183,16 @@ local function main(pathnames)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local label = "Checking " .. format_pathname(pathname, 60)
-    io.write("\n" .. label .. (" "):rep(math.max(70 - #label, 1)))
+    local max_label_length = 70
+    local label = (
+      "Checking "
+      .. format_pathname(pathname, max_label_length - #("Checking ") - #(" "))
+    )
+    io.write(
+      "\n"
+      .. label
+      .. (" "):rep(math.max(max_label_length - #label, 1))
+    )
     local line_starting_byte_numbers, _ = preprocessing(issues, content)
     if #issues.errors > 0 then
       goto continue
