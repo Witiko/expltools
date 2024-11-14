@@ -66,6 +66,11 @@ local function colorize(text, ...)
   return table.concat(buffer, "")
 end
 
+-- Remove ASCII color codes from a string.
+local function decolorize(text)
+  return text:gsub("\27%[[0-9]+m", "")
+end
+
 -- Convert a byte number in a file to a line and column number in a file.
 local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_number)
   local line_number = 0
@@ -82,23 +87,78 @@ local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_
   return line_number, column_number
 end
 
--- Print warnings and errors after analyzing a file.
-local function print_warnings_and_errors(pathname, issues, line_starting_byte_numbers, is_last_file)
+-- Print the results of analyzing a file.
+local function print_results(pathname, issues, line_starting_byte_numbers, is_last_file)
   -- Display an overview.
   local all_issues = {}
+  local status
   if(#issues.errors > 0) then
-    io.write(colorize(tostring(#issues.errors) .. " " .. pluralize("error", #issues.errors), 1, 31))
+    status = (
+      colorize(
+        (
+          tostring(#issues.errors)
+          .. " "
+          .. pluralize("error", #issues.errors)
+        ), 1, 31
+      )
+    )
     table.insert(all_issues, issues.errors)
     if(#issues.warnings > 0) then
-      io.write(", " .. colorize(tostring(#issues.warnings) .. " " .. pluralize("warning", #issues.warnings), 1, 33))
+      status = (
+        status
+        .. ", "
+        .. colorize(
+          (
+            tostring(#issues.warnings)
+            .. " "
+            .. pluralize("warning", #issues.warnings)
+          ), 1, 33
+        )
+      )
       table.insert(all_issues, issues.warnings)
     end
   elseif(#issues.warnings > 0) then
-    io.write(colorize(tostring(#issues.warnings) .. " " .. pluralize("warning", #issues.warnings), 1, 33))
+    status = colorize(
+      (
+        tostring(#issues.warnings)
+        .. " "
+        .. pluralize("warning", #issues.warnings)
+      ), 1, 33
+    )
     table.insert(all_issues, issues.warnings)
   else
-    io.write(colorize("OK", 1, 32))
+    status = colorize("OK", 1, 32)
   end
+
+  local max_overview_length = 72
+  local prefix = "Checking "
+  local formatted_pathname = format_pathname(
+    pathname,
+    math.max(
+      (
+        max_overview_length
+        - #prefix
+        - #(" ")
+        - #decolorize(status)
+      ), 1
+    )
+  )
+  local overview = (
+    prefix
+    .. formatted_pathname
+    .. (" "):rep(
+      math.max(
+        (
+          max_overview_length
+          - #prefix
+          - #decolorize(status)
+          - #formatted_pathname
+        ), 1
+      )
+    )
+    .. status
+  )
+  io.write("\n" .. overview)
 
   -- Display the errors, followed by warnings.
   if #all_issues > 0 then
@@ -127,23 +187,42 @@ local function print_warnings_and_errors(pathname, issues, line_starting_byte_nu
           local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
           status = status .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
         end
-        local label_indent = 4
-        local max_label_length = 38
-        local max_status_length = 10
-        local label = (
-          (" "):rep(label_indent)
-          .. format_pathname(pathname, max_label_length - max_status_length - label_indent - #(" "))
+        local max_line_length = 88
+        local reserved_status_length = 10
+        local reserved_suffix_length = 30
+        local label_indent = (" "):rep(4)
+        local suffix = code:upper() .. " " .. message
+        local formatted_pathname = format_pathname(
+          pathname,
+          math.max(
+            (
+              max_line_length
+              - #label_indent
+              - reserved_status_length
+              - #(" ")
+              - math.max(#suffix, reserved_suffix_length)
+            ), 1
+          )
+        )
+        local line = (
+          label_indent
+          .. formatted_pathname
           .. status
-          .. (" "):rep(math.max(max_status_length - #status, 1))
+          .. (" "):rep(
+            math.max(
+              (
+                max_line_length
+                - #label_indent
+                - #formatted_pathname
+                - #decolorize(status)
+                - math.max(#suffix, reserved_suffix_length)
+              ), 1
+            )
+          )
+          .. suffix
+          .. (" "):rep(math.max(reserved_suffix_length - #suffix, 0))
         )
-        io.write(
-          "\n"
-          .. label
-          .. (" "):rep(math.max(max_label_length - #label, 1))
-          .. code:upper()
-          .. " "
-          .. message
-        )
+        io.write("\n" .. line)
       end
     end
     if(not is_last_file) then
@@ -183,16 +262,6 @@ local function main(pathnames)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local max_label_length = 70
-    local label = (
-      "Checking "
-      .. format_pathname(pathname, max_label_length - #("Checking ") - #(" "))
-    )
-    io.write(
-      "\n"
-      .. label
-      .. (" "):rep(math.max(max_label_length - #label, 1))
-    )
     local line_starting_byte_numbers, _ = preprocessing(issues, content)
     if #issues.errors > 0 then
       goto continue
@@ -206,7 +275,7 @@ local function main(pathnames)
     ::continue::
     num_warnings = num_warnings + #issues.warnings
     num_errors = num_errors + #issues.errors
-    print_warnings_and_errors(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames)
+    print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames)
   end
 
   -- Print a summary.
