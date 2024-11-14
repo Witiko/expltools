@@ -175,23 +175,23 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
-        local status = ":"
+        local position = ":"
         if range ~= nil then
           local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
-          status = status .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
+          position = position .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
         end
         local max_line_length = 88
-        local reserved_status_length = 10
+        local reserved_position_length = 10
         local reserved_suffix_length = 30
         local label_indent = (" "):rep(4)
         local suffix = code:upper() .. " " .. message
-        local formatted_pathname = format_pathname(
+        formatted_pathname = format_pathname(
           pathname,
           math.max(
             (
               max_line_length
               - #label_indent
-              - reserved_status_length
+              - reserved_position_length
               - #(" ")
               - math.max(#suffix, reserved_suffix_length)
             ), 1
@@ -200,14 +200,14 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         local line = (
           label_indent
           .. formatted_pathname
-          .. status
+          .. position
           .. (" "):rep(
             math.max(
               (
                 max_line_length
                 - #label_indent
                 - #formatted_pathname
-                - #decolorize(status)
+                - #decolorize(position)
                 - math.max(#suffix, reserved_suffix_length)
               ), 1
             )
