@@ -42,7 +42,7 @@ local function format_pathname(pathname, max_length)
     else
       pattern = "([^/]*/%.%.%./)(.*)"
     end
-    local prefix_start, _, prefix, suffix = pathname:find(pattern)
+    local prefix_start, _, _, suffix = pathname:find(pattern)
     if prefix_start == 1 then
       pathname = ".../" .. suffix
       if #pathname > max_length then
