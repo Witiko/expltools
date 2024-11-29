@@ -6,25 +6,10 @@ An input file contains no delimiters such as `\ExplSyntaxOn`, `\ExplSyntaxOff`, 
 
  /w100.tex
 
-## Unexpected delimiters {.w}
+## Unexpected delimiters {.w label=w101}
 An input file contains extraneous `\ExplSyntaxOn` delimiters [@latexteam2024interfaces, Section 2.1] in expl3 parts or extraneous `\ExplSyntaxOff` delimiters in non-expl3 parts.
 
-``` tex
-\input expl3-generic
-\ExplSyntaxOff  % warning on this line
-\ExplSyntaxOn
-\tl_new:N
-  \g_example_tl
-\tl_gset:Nn
-  \g_example_tl
-  { Hello,~ }
-\ExplSyntaxOn  % warning on this line
-\tl_gput_right:Nn
-  \g_example_tl
-  { world! }
-\tl_use:N
-  \g_example_tl
-```
+ /w101.tex
 
 ## Expl3 control sequences in non-expl3 parts {.e}
 An input file contains what looks like expl3 control sequences [@latexteam2024interfaces, Section 1.1] in non-expl3 parts.

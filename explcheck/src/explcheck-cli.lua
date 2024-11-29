@@ -1,7 +1,7 @@
 -- A command-line interface for the static analyzer explcheck.
 
 local new_issues = require("explcheck-issues")
-local print_results, print_summary = table.unpack(require("explcheck-format"))
+local format = require("explcheck-format")
 
 local preprocessing = require("explcheck-preprocessing")
 -- local lexical_analysis = require("explcheck-lexical-analysis")
@@ -53,11 +53,11 @@ local function main(pathnames, warnings_are_errors)
     ::continue::
     num_warnings = num_warnings + #issues.warnings
     num_errors = num_errors + #issues.errors
-    print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames)
+    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames)
   end
 
   -- Print a summary.
-  print_summary(#pathnames, num_warnings, num_errors)
+  format.print_summary(#pathnames, num_warnings, num_errors)
 
   if(num_errors > 0) then
     return 1

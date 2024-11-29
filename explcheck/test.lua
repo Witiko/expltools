@@ -52,11 +52,11 @@ local function run_tests(test_directory, support_files, test_files)
   -- Run the tests.
   local previous_directory = assert(lfs.currentdir())
   assert(lfs.chdir(test_directory))
-  print("Running " .. #lua_test_files .. " tests")
+  print("Running " .. #lua_test_files .. " tests\n")
   local num_errors = 0
   for _, filename in ipairs(lua_test_files) do
     local basename = get_basename(filename)
-    io.write("\nChecking " .. test_directory .. "/" .. basename)
+    io.write("Checking " .. test_directory .. "/" .. basename)
     local ran_ok, err = pcall(function()
       dofile(basename)
     end)

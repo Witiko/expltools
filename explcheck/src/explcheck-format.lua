@@ -239,4 +239,8 @@ local function print_summary(num_pathnames, num_warnings, num_errors)
   print(tostring(num_pathnames) .. " " .. pluralize("file", num_pathnames))
 end
 
-return {print_results, print_summary}
+return {
+  print_results = print_results,
+  print_summary = print_summary,
+  convert_byte_to_line_and_column = convert_byte_to_line_and_column,
+}
