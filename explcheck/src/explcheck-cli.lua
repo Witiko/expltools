@@ -25,7 +25,7 @@ local function deduplicate_pathnames(pathnames)
 end
 
 -- Process all input files.
-local function main(pathnames)
+local function main(pathnames, warnings_are_errors)
   local num_warnings = 0
   local num_errors = 0
 
@@ -60,13 +60,50 @@ local function main(pathnames)
   print_summary(#pathnames, num_warnings, num_errors)
 
   if(num_errors > 0) then
-    os.exit(1)
+    return 1
+  elseif(warnings_are_errors and num_warnings > 0) then
+    return 2
+  else
+    return 0
   end
 end
 
+local function print_usage()
+  print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
+  print("Run static analysis on expl3 files.\n")
+  print("Options:")
+  print("\t--warnings-are-errors\tProduce a non-zero exit code if any warnings are produced by the analysis.")
+end
+
 if #arg == 0 then
-  print("Usage: " .. arg[0] .. " FILENAMES")
+  print_usage()
+  os.exit(1)
 else
-  local pathnames = deduplicate_pathnames(arg)
-  main(pathnames)
+  -- Collect arguments.
+  local pathnames = {}
+  local warnings_are_errors = false
+  local only_pathnames_from_now_on = false
+  for _, argument in ipairs(arg) do
+    if only_pathnames_from_now_on then
+      table.insert(pathnames, argument)
+    elseif argument == "--" then
+      only_pathnames_from_now_on = true
+    elseif argument == "--help" then
+      print_usage()
+      os.exit(0)
+    elseif argument == "--warnings-are-errors" then
+      warnings_are_errors = true
+    elseif argument:sub(0, 2) == "--" then
+      -- An unknown argument
+      print_usage()
+      os.exit(1)
+    else
+      table.insert(pathnames, argument)
+    end
+  end
+  pathnames = deduplicate_pathnames(pathnames)
+
+  -- Run the analysis.
+  local exit_code = main(pathnames, warnings_are_errors)
+  os.exit(exit_code)
 end

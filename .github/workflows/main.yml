@@ -38,7 +38,7 @@ jobs:
           set -e
           export LUA_PATH=explcheck/src/?.lua
           find */texmf -type f '(' -name '*.tex' -o -name '*.sty' -o -name '*.cls' ')' -exec \
-            texlua explcheck/src/explcheck-cli.lua {} +
+            texlua explcheck/src/explcheck-cli.lua --warnings-are-errors {} +
   tests:
     name: Run tests
     runs-on: ubuntu-latest
