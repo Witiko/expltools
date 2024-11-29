@@ -78,7 +78,11 @@ local provides = (
 local expl_syntax_on = P([[\ExplSyntaxOn]])
 local expl_syntax_off = P([[\ExplSyntaxOff]])
 
-local function preprocessing(issues, content)
+local function preprocessing(issues, content, max_line_length)
+  if max_line_length == nil then
+    max_line_length = 80
+  end
+
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
   local function record_line(line_start)
@@ -92,7 +96,7 @@ local function preprocessing(issues, content)
     * (
       (
         (
-          Cp() * linechar^81 * Cp() / line_too_long
+          Cp() * linechar^(max_line_length + 1) * Cp() / line_too_long
           + linechar^0
         )
         * newline

@@ -25,7 +25,7 @@ local function deduplicate_pathnames(pathnames)
 end
 
 -- Process all input files.
-local function main(pathnames, warnings_are_errors)
+local function main(pathnames, warnings_are_errors, max_line_length)
   local num_warnings = 0
   local num_errors = 0
 
@@ -40,7 +40,7 @@ local function main(pathnames, warnings_are_errors)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local line_starting_byte_numbers, _ = preprocessing(issues, content)
+    local line_starting_byte_numbers, _ = preprocessing(issues, content, max_line_length)
     if #issues.errors > 0 then
       goto continue
     end
@@ -72,6 +72,7 @@ local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
   print("Options:")
+  print("\t--max-line-length=N\tThe maximum line length before the warning S103 (Line too long) is produced.")
   print("\t--warnings-are-errors\tProduce a non-zero exit code if any warnings are produced by the analysis.")
 end
 
@@ -83,6 +84,7 @@ else
   local pathnames = {}
   local warnings_are_errors = false
   local only_pathnames_from_now_on = false
+  local max_line_length = nil
   for _, argument in ipairs(arg) do
     if only_pathnames_from_now_on then
       table.insert(pathnames, argument)
@@ -93,7 +95,9 @@ else
       os.exit(0)
     elseif argument == "--warnings-are-errors" then
       warnings_are_errors = true
-    elseif argument:sub(0, 2) == "--" then
+    elseif argument:sub(1, 18) == "--max-line-length=" then
+      max_line_length = tonumber(argument:sub(19))
+    elseif argument:sub(1, 2) == "--" then
       -- An unknown argument
       print_usage()
       os.exit(1)
@@ -104,6 +108,6 @@ else
   pathnames = deduplicate_pathnames(pathnames)
 
   -- Run the analysis.
-  local exit_code = main(pathnames, warnings_are_errors)
+  local exit_code = main(pathnames, warnings_are_errors, max_line_length)
   os.exit(exit_code)
 end

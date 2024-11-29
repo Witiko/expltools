@@ -20,3 +20,5 @@ An input file contains what looks like expl3 control sequences [@latexteam2024in
 Some lines in expl3 parts are longer than 80 characters [@latexteam2024style, Section 2].
 
  /s103.tex
+
+The maximum line length can be configured using the command-line option `--max-line-length` or with the parameter `max_line_length` of the function returned by the Lua module `explcheck-preprocessing`.

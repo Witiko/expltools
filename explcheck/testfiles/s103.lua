@@ -31,5 +31,5 @@ local range_end_line_number = format.convert_byte_to_line_and_column(
   line_starting_byte_numbers,
   range_end_byte_number - 1
 )
-assert(range_start_line_number == 1)
-assert(range_end_line_number == 1)
+assert(range_start_line_number == 2)
+assert(range_end_line_number == 2)
