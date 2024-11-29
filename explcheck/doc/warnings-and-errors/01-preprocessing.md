@@ -11,23 +11,10 @@ An input file contains extraneous `\ExplSyntaxOn` delimiters [@latexteam2024inte
 
  /w101.tex
 
-## Expl3 control sequences in non-expl3 parts {.e}
+## Expl3 control sequences in non-expl3 parts {.e label=e102}
 An input file contains what looks like expl3 control sequences [@latexteam2024interfaces, Section 1.1] in non-expl3 parts.
 
-``` tex
-\ProvidesExplFile{example.tex}{2024-04-09}{1.0.0}{An example file}
-\tl_new:N
-  \g_example_tl
-\tl_gset:Nn
-  \g_example_tl
-  { Hello,~ }
-\tl_gput_right:Nn
-  \g_example_tl
-  { world! }
-\ExplSyntaxOff
-\tl_use:N  % error on this line
-  \g_example_tl  % error on this line
-```
+ /e102.tex
 
 ## Line too long {.s}
 Some lines in expl3 parts are longer than 80 characters [@latexteam2024style, Section 2].
