@@ -3,13 +3,9 @@ modules = {"explcheck"}
 
 -- A custom main function
 function main(target)
-  local errorlevel
-  if target == "check" then
-    errorlevel = call(modules, "check")
+  if target == "check" or target == "doc" then
+    os.exit(call(modules, target))
   else
     help()
-  end
-  if errorlevel ~=0 then
-    os.exit(1)
   end
 end

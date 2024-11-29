@@ -1,3 +1,6 @@
+# Caveats
+The warnings and errors in this documents do not cover the complete expl3 language. The caveats currently include the following areas, among others:
+
 - Functions with “weird” (`w`) argument specifiers
 - Verifying the `nopar` restriction on functions
   [@latexteam2024interfaces, Section 4.3.1]
