@@ -1,7 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass%
   {warnings-and-errors}%
-  [2024-09-06 0.0.3 Document class for typesetting the documentation of the warnings and errors for the expl3 analysis tool]
+  [2024-09-06 0.0.3 Document class for typesetting the documentation of the %
+   warnings and errors for the expl3 analysis tool]
 \LoadClass{article}
 \RequirePackage{lua-widow-control}
 \RequirePackage{minted}

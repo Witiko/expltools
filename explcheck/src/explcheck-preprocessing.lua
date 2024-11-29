@@ -25,6 +25,14 @@ local newline = (
 )
 local linechar = any - newline
 local spacechar = S("\t ")
+local optional_spaces = spacechar^0
+local optional_spaces_and_newline_after_cs = (
+  optional_spaces
+  * (
+    newline
+    * optional_spaces
+  )^-1
+)
 
 -- Define intermediate parsers.
 ---- Parts of TeX syntax
@@ -32,7 +40,7 @@ local comment = (
   percent_sign
   * linechar^0
   * newline
-  * spacechar^0
+  * optional_spaces
 )
 local argument = (
   lbrace
@@ -57,13 +65,14 @@ local provides = (
       + P("Class")
       + P("File")
     )
-  * spacechar^0
+  * optional_spaces_and_newline_after_cs
+  * comment^0
   * argument
-  * comment^-1
+  * comment^0
   * argument
-  * comment^-1
+  * comment^0
   * argument
-  * comment^-1
+  * comment^0
   * argument
 )
 local expl_syntax_on = P([[\ExplSyntaxOn]])
