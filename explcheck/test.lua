@@ -48,6 +48,10 @@ local function run_tests(test_directory, support_files, test_files)
     end
     assert(lfs.link(filename, test_directory .. "/" .. get_basename(filename)))
   end
+  table.sort(lua_test_files, function(a, b)
+    local a_number, b_number = tonumber(get_basename(a):sub(2, 4)), tonumber(get_basename(b):sub(2, 4))
+    return a_number < b_number or (a_number == b_number and a < b)
+  end)
 
   -- Run the tests.
   local previous_directory = assert(lfs.currentdir())
