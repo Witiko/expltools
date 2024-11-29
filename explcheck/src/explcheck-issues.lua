@@ -60,7 +60,7 @@ function Issues:ignore(identifier)
 end
 
 -- Sort the warnings/errors using location as the primary key.
-function Issues:sort(warnings_and_errors)
+function Issues.sort(warnings_and_errors)
   local sorted_warnings_and_errors = {}
   for _, issue in ipairs(warnings_and_errors) do
     local code = issue[1]

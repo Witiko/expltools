@@ -14,7 +14,7 @@ local line_starting_byte_numbers = preprocessing(issues, content)
 assert(#issues.errors == 0)
 assert(#issues.warnings == 2)
 
-local warnings = issues:sort(issues.warnings)
+local warnings = issues.sort(issues.warnings)
 
 assert(warnings[1][1] == "w100")
 assert(warnings[1][2] == "no standard delimiters")

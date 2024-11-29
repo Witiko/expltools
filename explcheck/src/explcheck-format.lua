@@ -158,7 +158,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
     for _, warnings_or_errors in ipairs(all_issues) do
       print()
       -- Display the warnings/errors.
-      for _, issue in ipairs(issues:sort(warnings_or_errors)) do
+      for _, issue in ipairs(issues.sort(warnings_or_errors)) do
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
