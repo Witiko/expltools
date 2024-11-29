@@ -59,6 +59,23 @@ function Issues:ignore(identifier)
   self.ignored_issues[identifier] = true
 end
 
+-- Sort the warnings/errors using location as the primary key.
+function Issues:sort(warnings_and_errors)
+  local sorted_warnings_and_errors = {}
+  for _, issue in ipairs(warnings_and_errors) do
+    local code = issue[1]
+    local message = issue[2]
+    local range = issue[3]
+    table.insert(sorted_warnings_and_errors, {code, message, range})
+  end
+  table.sort(sorted_warnings_and_errors, function(a, b)
+    local a_code, b_code = a[1], b[1]
+    local a_range, b_range = (a[3] and a[3][1]) or 0, (b[3] and b[3][1]) or 0
+    return a_range < b_range or (a_range == b_range and a_code < b_code)
+  end)
+  return sorted_warnings_and_errors
+end
+
 return function()
   return Issues:new()
 end

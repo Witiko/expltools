@@ -15,7 +15,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 2)
 
 local expected_line_numbers = {2, 9}
-for index, warning in ipairs(issues.warnings) do
+for index, warning in ipairs(issues:sort(issues.warnings)) do
   assert(warning[1] == "w101")
   assert(warning[2] == "unexpected delimiters")
   local range_start_byte_number, range_end_byte_number = table.unpack(warning[3])

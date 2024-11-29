@@ -15,7 +15,7 @@ assert(#issues.errors == 2)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {11, 12}
-for index, err in ipairs(issues.errors) do
+for index, err in ipairs(issues:sort(issues.errors)) do
   assert(err[1] == "e102")
   assert(err[2] == "expl3 control sequences in non-expl3 parts")
   local range_start_byte_number, range_end_byte_number = table.unpack(err[3])

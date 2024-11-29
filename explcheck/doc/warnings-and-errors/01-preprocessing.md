@@ -16,10 +16,7 @@ An input file contains what looks like expl3 control sequences [@latexteam2024in
 
  /e102.tex
 
-## Line too long {.s}
+## Line too long {.s label=s103}
 Some lines in expl3 parts are longer than 80 characters [@latexteam2024style, Section 2].
-<!-- The maximum line length should be configurable. -->
 
-``` tex
-This line is entirely too long. This line is entirely too long. This line is entirely too long.  % warning on this line
-```
+ /s103.tex
