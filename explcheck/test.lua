@@ -56,14 +56,14 @@ local function run_tests(test_directory, support_files, test_files)
   local num_errors = 0
   for _, filename in ipairs(lua_test_files) do
     local basename = get_basename(filename)
-    io.write("Checking " .. test_directory .. "/" .. basename)
+    io.write("Checking " .. basename)
     local ran_ok, err = pcall(function()
       dofile(basename)
     end)
     if ran_ok then
-      print("\t\t" .. colorize("OK", 1, 32))
+      print("\t" .. colorize("OK", 1, 32))
     else
-      print("\t\t" .. colorize(err, 1, 31))
+      print("\t" .. colorize(err, 1, 31))
       num_errors = num_errors + 1
     end
   end
