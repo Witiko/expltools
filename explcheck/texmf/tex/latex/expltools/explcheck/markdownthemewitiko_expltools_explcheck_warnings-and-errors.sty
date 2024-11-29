@@ -132,6 +132,26 @@
                   \l__expltools_explcheck_current_identifier_tl
                   { ##1 }
               },
+              attributeKeyValue = {
+                \str_if_eq:nnT
+                  { ##1 }
+                  { label }
+                  {
+                    \tl_set:Nx
+                      \l_tmpa_tl
+                      { \str_uppercase:n { ##2 } }
+                    \str_if_eq:VVF
+                      \l_tmpa_tl
+                      \l__expltools_explcheck_current_label_tl
+                      {
+                        \msg_error:nnVV
+                          { expltools / explcheck }
+                          { unexpected-label }
+                          \l_tmpa_tl
+                          \l__expltools_explcheck_current_label_tl
+                      }
+                  }
+              },
               attributeClassName = {
                 \tl_set:Nx
                   \l__expltools_explcheck_current_label_tl
@@ -185,3 +205,7 @@
       },
     },
   }
+\msg_new:nnn
+  { expltools / explcheck }
+  { unexpected-label }
+  { Expected~section~label~"#1",~but~"#2"~was~generated }

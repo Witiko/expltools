@@ -1,7 +1,7 @@
 # Preprocessing
 In the preprocessing step, the expl3 analysis tool determines which parts of the input files contain expl3 code. Inline `\TeX`{=tex} comments that disable warnings and errors are also analyzed in this step.
 
-## No standard delimiters {.w}
+## No standard delimiters {.w label=w100}
 An input file contains no delimiters such as `\ExplSyntaxOn`, `\ExplSyntaxOff`, `\ProvidesExplPackage`, `\ProvidesExplClass`, and `\ProvidesExplFile` [@latexteam2024interfaces, Section 2.1]. The analysis tool should assume that the whole input file is in expl3.
 
  /w100.tex
