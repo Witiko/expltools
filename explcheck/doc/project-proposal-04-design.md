@@ -26,7 +26,7 @@ test-driven development paradigm, all issues identified by a processing step
 should have at least one associated test in the code repository of the linter.
 
 In [a document titled "Warnings and errors for the expl3 analysis tool"][6],
-I compiled a list of 67 warnings and errors that should be recognized by the
+I compiled a list of 66 warnings and errors that should be recognized by the
 initial version of the linter. For each issue, there is also an example of
 expl3 code with and without the issue. These examples can be directly converted
 to tests and used during the development of the corresponding processing steps.
