@@ -1,6 +1,9 @@
 bundle = "expltools"
 modules = {"explcheck"}
 
+tdsroot = "generic"
+packtdszip = true
+
 -- A custom main function
 function main(target, names)
   local return_value

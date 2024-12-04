@@ -5,6 +5,7 @@ maindir = ".."
 supportdir = "support"
 docfiledir = "doc"
 sourcefiledir = "src"
+tdsroot = "generic"
 
 typesetfiles = {
   "*.tex",
@@ -26,6 +27,9 @@ typesetsuppfiles = {
   "latexmkrc",
   "*.pdf",
   "*.sty",
+}
+scriptfiles = {
+  "explcheck.lua",
 }
 
 -- Convert a pathname of a file to the base name of a file.

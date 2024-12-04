@@ -4,6 +4,7 @@ biber
 biblatex
 catchfile
 csvsimple
+datetime2
 embedfile
 etoolbox
 gobble

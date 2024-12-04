@@ -1,7 +1,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass%
   {warnings-and-errors}%
-  [2024-09-06 0.0.3 Document class for typesetting the documentation of the %
+  [2024-12-04 0.0.4 Document class for typesetting the documentation of the %
    warnings and errors for the expl3 analysis tool]
 \LoadClass{article}
 \RequirePackage{lua-widow-control}
@@ -21,3 +21,4 @@
 \makeindex[columns=3, intoc, options=-s warnings-and-errors.ist]
 \RequirePackage{hyperref}
 \def\meta#1{$\langle$\textrm{\textit{#1}}$\rangle$}
+\RequirePackage{datetime2}
