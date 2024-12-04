@@ -28,6 +28,10 @@ You can use the tool from command-line as follows:
 $ explcheck [options] [filenames]
 ```
 
+## Notes to distributors
+
+The file `explcheck.lua` should be installed in the TDS directory `scripts/expltools/explcheck`. Furthermore, it should be made executable, and either symlinked to system directories as `expltools` on Unix or have a wrapper `expltools.exe` installed on Windows.
+
 ## Authors
 
 - Vít Starý Novotný (<mailto:witiko@mail.muni.cz>)
