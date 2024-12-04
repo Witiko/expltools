@@ -4,10 +4,21 @@ maindir = ".."
 
 supportdir = "support"
 docfiledir = "doc"
+sourcefiledir = "src"
+
 typesetfiles = {
-  "*.bib",
-  "*.md",
   "*.tex",
+  "*.md",
+}
+sourcefiles = {
+  "*.lua",
+}
+bibfiles = {
+  "**/*.bib",
+}
+textfiles = {
+  "**/*.cls",
+  "**/*.sty",
 }
 typesetsuppfiles = {
   "*.cls",
@@ -29,8 +40,9 @@ end
 
 -- A custom main function
 function main(target, names)
-  if target == "check" or target == "doc" then
-    local return_value = target_list[target].func(names)
+  local return_value
+  if ({check=true, bundlecheck=true, ctan=true, bundlectan=true, doc=true})[target] ~= nil then
+    return_value = target_list[target].func(names)
     if target == "doc" then
       local lfs = require("lfs")
       -- After typesetting the documentation, remove .pdf files from supportdir, so that they are excluded from artefacts.
@@ -40,29 +52,16 @@ function main(target, names)
         end
       end
     end
-    os.exit(return_value)
   else
     help()
+    return_value = 0
   end
-end
-
-function docinit_hook()
-  local lfs = require("lfs")
-  -- Before typesetting the documentation, add .tex files from testfiledir, so that they can be used in code listings.
-  for filename in lfs.dir(testfiledir) do
-    if get_suffix(filename) == ".tex" then
-      cp(filename, testfiledir, typesetdir)
-    end
-  end
-  return 0
+  os.exit(return_value == 0 and 0 or 1)
 end
 
 function typeset(filename, dir)
   local lfs = require("lfs")
-  -- The caller will only call us once for every basename. Therefore, even if filename is e.g. "document.bib",
-  -- we must check whether "document.tex" exists, because we won't be called again for "document.tex".
-  if (get_suffix(filename) == ".tex" or file_exists(dir .. "/" .. jobname(filename) .. ".tex"))
-      and not file_exists(testfiledir .. "/" .. jobname(filename) .. ".tex") then
+  if get_suffix(filename) == ".tex" and not file_exists(testfiledir .. "/" .. jobname(filename) .. ".tex") then
     -- Use Latexmk to typeset the documentation.
     return run(dir, "latexmk " .. jobname(filename))
   else
