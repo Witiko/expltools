@@ -1,9 +1,0 @@
-biber
-biblatex
-embedfile
-hologo
-hyperref
-imakeidx
-lua-widow-control
-markdown
-minted

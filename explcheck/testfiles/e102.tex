@@ -1,0 +1,12 @@
+\ProvidesExplFile{example.tex}{2024-04-09}{1.0.0}{An example file}
+\tl_new:N
+  \g_example_tl
+\tl_gset:Nn
+  \g_example_tl
+  { Hello,~ }
+\tl_gput_right:Nn
+  \g_example_tl
+  { world! }
+\ExplSyntaxOff
+\tl_use:N  % error on this line
+  \g_example_tl  % error on this line
