@@ -28,6 +28,10 @@ You can use the tool from command-line as follows:
 $ explcheck [options] [filenames]
 ```
 
+## Authors
+
+- Vít Starý Novotný (<mailto:witiko@mail.muni.cz>)
+
 ## License
 
 This material is dual-licensed under GNU GPL 2.0 or later and LPPL 1.3c or later.
