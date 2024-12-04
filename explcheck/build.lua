@@ -43,7 +43,7 @@ function main(target, names)
   local return_value
   if ({check=true, bundlecheck=true, ctan=true, bundlectan=true, doc=true})[target] ~= nil then
     return_value = target_list[target].func(names)
-    if target == "doc" then
+    if ({ctan=true, bundlectan=true, doc=true})[target] ~= nil then
       local lfs = require("lfs")
       -- After typesetting the documentation, remove .pdf files from supportdir, so that they are excluded from artefacts.
       for filename in lfs.dir(supportdir) do
