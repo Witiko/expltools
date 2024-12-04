@@ -110,11 +110,14 @@ local function preprocessing(issues, content, max_line_length)
   local function capture_range(range_start, range_end)
     table.insert(expl_ranges, {range_start, range_end + 1})
   end
-  local function unexpected_pattern(pattern, code, message)
+  local function unexpected_pattern(pattern, code, message, test)
     return Cp() * pattern * Cp() / function(range_start, range_end)
-      issues:add(code, message, range_start, range_end)
+      if test == nil or test() then
+        issues:add(code, message, range_start, range_end)
+      end
     end
   end
+  local num_provides = 0
   local analysis_grammar = P{
     "Root";
     Root = (
@@ -153,7 +156,18 @@ local function preprocessing(issues, content, max_line_length)
       * Cp()
       * (V"Closer" + eof)
     ),
-    Opener = expl_syntax_on + provides,
+    Opener = (
+      expl_syntax_on
+      + unexpected_pattern(
+        provides,
+        "e104",
+        [[multiple delimiters `\ProvidesExpl*` in a single file]],
+        function()
+          num_provides = num_provides + 1
+          return num_provides > 1
+        end
+      )
+    ),
     Closer = expl_syntax_off,
   }
   lpeg.match(analysis_grammar, content)
