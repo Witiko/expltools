@@ -34,7 +34,7 @@ function Issues:add(identifier, message, range_start, range_end)
   if range_start == nil then
     range = nil
   else
-    range = {range_start, range_end + 1}
+    range = {range_start, range_end}
   end
   table.insert(issue_table, {identifier, message, range})
 end

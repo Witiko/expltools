@@ -89,7 +89,7 @@ local function preprocessing(issues, content, max_line_length)
     table.insert(line_starting_byte_numbers, line_start)
   end
   local function line_too_long(range_start, range_end)
-    issues:add('s103', 'line too long', range_start, range_end)
+    issues:add('s103', 'line too long', range_start, range_end + 1)
   end
   local line_numbers_grammar = (
     Cp() / record_line
@@ -113,7 +113,7 @@ local function preprocessing(issues, content, max_line_length)
   local function unexpected_pattern(pattern, code, message, test)
     return Cp() * pattern * Cp() / function(range_start, range_end)
       if test == nil or test() then
-        issues:add(code, message, range_start, range_end)
+        issues:add(code, message, range_start, range_end + 1)
       end
     end
   end
