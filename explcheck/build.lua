@@ -5,7 +5,6 @@ maindir = ".."
 supportdir = "support"
 docfiledir = "doc"
 sourcefiledir = "src"
-tdsroot = "generic"
 
 typesetfiles = {
   "*.tex",
@@ -19,6 +18,8 @@ bibfiles = {
 }
 textfiles = {
   "**/*.cls",
+  "**/*.ist",
+  "**/latexmkrc",
   "**/*.sty",
 }
 typesetsuppfiles = {
@@ -42,11 +43,38 @@ local function file_exists(filename)
   return lfs.attributes(filename, "mode") == "file"
 end
 
+local function bundlectan()
+  local errorlevel = install_files(tdsdir, true)
+  if errorlevel ~= 0 then return errorlevel end
+  copyctan()
+  -- After installing CTAN files, add one extra level of directories.
+  local pkgdir = ctandir .. "/" .. ctanpkg
+  mkdir(pkgdir .. "/scripts")
+  for _, scriptfile in ipairs(scriptfiles) do
+    cp(scriptfile, pkgdir, pkgdir .. "/scripts")
+    rm(pkgdir, scriptfile)
+  end
+  mkdir(pkgdir .. "/luatex")
+  for _, sourcefile in ipairs(sourcefiles) do
+    cp(sourcefile, pkgdir, pkgdir .. "/luatex")
+    rm(pkgdir, sourcefile)
+  end
+  mkdir(pkgdir .. "/doc")
+  for _, docfile in ipairs(filelist(pkgdir)) do
+    if file_exists(pkgdir .. "/" .. docfile) then
+      cp(docfile, pkgdir, pkgdir .. "/doc")
+      rm(pkgdir, docfile)
+    end
+  end
+  return 0
+end
+
 -- A custom main function
 function main(target, names)
   local return_value
   if ({check=true, bundlecheck=true, ctan=true, bundlectan=true, doc=true})[target] ~= nil then
-    return_value = target_list[target].func(names)
+    local func = target == "bundlectan" and bundlectan or target_list[target].func
+    return_value = func(names)
     if ({ctan=true, bundlectan=true, doc=true})[target] ~= nil then
       local lfs = require("lfs")
       -- After typesetting the documentation, remove .pdf files from supportdir, so that they are excluded from artefacts.
