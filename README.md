@@ -34,7 +34,7 @@ The file `explcheck.lua` should be installed in the TDS directory `scripts/explt
 
 ## Authors
 
-- Vít Starý Novotný (<mailto:witiko@mail.muni.cz>)
+- Vít Starý Novotný (<witiko@mail.muni.cz>)
 
 ## License
 
