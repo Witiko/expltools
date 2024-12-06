@@ -1,5 +1,21 @@
 # Changes
 
-## 2024-12-04
+## expltools 2024-12-04
 
-- The first release of the project that implements the preprocessing step.
+### explcheck v0.1
+
+#### Development
+- Implement preprocessing. (#5)
+
+#### Documentation
+- Add `README.md`. (#1, #2, suggested by @Skillmon)
+- Update to Markdown 3. (#3)
+- Use the expl3 prefix `expltools`. (#3)
+- Add project proposal. (#4)
+
+#### Continuous integration
+- Use small Docker image. (#3)
+
+#### Distribution
+- Make changes to the CTAN archive following a discussion with TeX Live and CTAN maintainers.
+  (#6, many thanks to Petra Rübe-Pugliese, Reinhard Kotucha, and Zdeněk Wagner)
