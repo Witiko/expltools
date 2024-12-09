@@ -24,7 +24,7 @@ In the future, this repository may also contain the code of other useful develop
 
 ## Usage
 
-You can use the tool from command-line as follows:
+You can use the tool from the command line as follows:
 
 ```
 $ explcheck [options] [.tex, .cls, and .sty files]
@@ -60,6 +60,11 @@ print(
 ```
 
 ## Notes to distributors
+
+You can prepare the expltools bundle for distribution with the following two commands:
+
+- `l3build tag`: Add the current version numbers to the file `explcheck-lua.cli`.
+- `l3build ctan`: Run tests, build the documentation, and create a CTAN archive `expltools-ctan.zip`.
 
 The file `explcheck.lua` should be installed in the TDS directory `scripts/expltools/explcheck`. Furthermore, it should be made executable and either symlinked to system directories as `explcheck` on Unix or have a wrapper `explcheck.exe` installed on Windows.
 
