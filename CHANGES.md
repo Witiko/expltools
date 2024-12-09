@@ -26,6 +26,8 @@
 - Hint in the file `README.md` that .dtx are not well supported.
   (reported by @josephwright in #8, added in #13)
 
+- Show in the file `README.md` how explcheck can be used from Lua code. (#13)
+
 ## expltools 2024-12-04
 
 ### explcheck v0.1
