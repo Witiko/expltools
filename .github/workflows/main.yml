@@ -36,7 +36,7 @@ jobs:
       - name: Run explcheck
         run: |
           set -e
-          export LUA_PATH=explcheck/src/?.lua
+          export LUAINPUTS=explcheck/src
           find */support -type f '(' -name '*.tex' -o -name '*.sty' ')' -exec \
             texlua explcheck/src/explcheck.lua --warnings-are-errors {} +
   tests:
