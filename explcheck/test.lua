@@ -7,6 +7,11 @@ local function get_basename(filename)
   return filename:gsub(".+/", "")
 end
 
+-- Convert a pathname of a file to the stem of a file.
+local function get_stem(filename)
+  return get_basename(filename):gsub("%..*", "")
+end
+
 -- Convert a pathname of a file to the suffix of a file.
 local function get_suffix(filename)
   return filename:gsub(".*%.", ".")
@@ -50,7 +55,7 @@ local function run_tests(test_directory, support_files, test_files)
   end
   table.sort(lua_test_files, function(a, b)
     local a_number, b_number = tonumber(get_basename(a):sub(2, 4)), tonumber(get_basename(b):sub(2, 4))
-    return a_number < b_number or (a_number == b_number and a < b)
+    return a_number < b_number or (a_number == b_number and get_stem(a) < get_stem(b))
   end)
 
   -- Run the tests.

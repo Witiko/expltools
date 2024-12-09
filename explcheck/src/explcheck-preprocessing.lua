@@ -26,7 +26,7 @@ local newline = (
 local linechar = any - newline
 local spacechar = S("\t ")
 local optional_spaces = spacechar^0
-local optional_spaces_and_newline_after_cs = (
+local optional_spaces_and_newline = (
   optional_spaces
   * (
     newline
@@ -65,13 +65,16 @@ local provides = (
       + P("Class")
       + P("File")
     )
-  * optional_spaces_and_newline_after_cs
+  * optional_spaces_and_newline
   * comment^0
   * argument
+  * optional_spaces_and_newline
   * comment^0
   * argument
+  * optional_spaces_and_newline
   * comment^0
   * argument
+  * optional_spaces_and_newline
   * comment^0
   * argument
 )
