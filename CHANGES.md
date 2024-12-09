@@ -1,5 +1,9 @@
 # Changes
 
+## expltools 2024-MM-DD
+
+### explcheck v0.2.0
+
 ## expltools 2024-12-09
 
 ### explcheck v0.1.1
@@ -23,7 +27,7 @@
 - Include explcheck version in the command-line interface.
   (reported in #10, fixed in #13)
 
-- Hint in the file `README.md` that .dtx are not well supported.
+- Hint in the file `README.md` that .dtx files are not well-supported.
   (reported by @josephwright in #8, added in #13)
 
 - Show in the file `README.md` how explcheck can be used from Lua code. (#13)
