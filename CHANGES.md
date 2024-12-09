@@ -31,6 +31,11 @@
 - Include instructions about using l3build in the file `README.md`.
   (reported in #11, added in #13)
 
+#### Continuous integration
+
+- Add `Dockerfile`, create Docker image, and mention it in the file `README.md`.
+  (discussed in #12, added in #13)
+
 ## expltools 2024-12-04
 
 ### explcheck v0.1
