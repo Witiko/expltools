@@ -27,7 +27,7 @@ In the future, this repository may also contain the code of other useful develop
 You can use the tool from command-line as follows:
 
 ```
-$ explcheck [options] [filenames]
+$ explcheck [options] [.tex, .cls, and .sty files]
 ```
 
 ## Notes to distributors
