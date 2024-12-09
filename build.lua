@@ -37,7 +37,7 @@ end
 -- A custom main function
 function main(target, names)
   local return_value
-  if ({check=true, bundlecheck=true, doc=true})[target] ~= nil then
+  if ({check=true, bundlecheck=true, doc=true, tag=true})[target] ~= nil then
     return_value = call(modules, target)
   elseif ({ctan=true, bundlectan=true})[target] ~= nil then
     return_value = target_list[target].bundle_func(names)

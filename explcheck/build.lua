@@ -32,6 +32,9 @@ typesetsuppfiles = {
 scriptfiles = {
   "explcheck.lua",
 }
+tagfiles = {
+  "explcheck-cli.lua",
+}
 
 -- Convert a pathname of a file to the base name of a file.
 local function get_suffix(filename)
@@ -69,10 +72,27 @@ local function bundlectan()
   return 0
 end
 
+-- Determine the latest version of the tool from the file `CHANGES.md`.
+local function get_latest_explcheck_version()
+  local pattern = "^%s*#%s*#%s*#%s*explcheck%s*"
+  for line in io.lines(maindir .. "/CHANGES.md") do
+    if line:find(pattern) then
+      return line:gsub(pattern, "")
+    end
+  end
+  assert(false)
+end
+
+function update_tag(file, content, tagname, tagdate)
+  tagname = tagname or get_latest_explcheck_version()
+  return content:gsub("${VERSION}", tagname)
+                :gsub("${DATE}", tagdate)
+end
+
 -- A custom main function
 function main(target, names)
   local return_value
-  if ({check=true, bundlecheck=true, ctan=true, bundlectan=true, doc=true})[target] ~= nil then
+  if ({check=true, bundlecheck=true, ctan=true, bundlectan=true, doc=true, tag=true})[target] ~= nil then
     local func = target == "bundlectan" and bundlectan or target_list[target].func
     return_value = func(names)
     if ({ctan=true, bundlectan=true, doc=true})[target] ~= nil then

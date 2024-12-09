@@ -76,6 +76,12 @@ local function print_usage()
   print("\t--warnings-are-errors\tProduce a non-zero exit code if any warnings are produced by the analysis.")
 end
 
+local function print_version()
+  print("explcheck (expltools ${DATE}) ${VERSION}")
+  print("Copyright (c) 2024 Vít Starý Novotný")
+  print("Licenses: LPPL 1.3 or later, GNU GPL v2 or later")
+end
+
 if #arg == 0 then
   print_usage()
   os.exit(1)
@@ -90,8 +96,11 @@ else
       table.insert(pathnames, argument)
     elseif argument == "--" then
       only_pathnames_from_now_on = true
-    elseif argument == "--help" then
+    elseif argument == "--help" or argument == "-h" then
       print_usage()
+      os.exit(0)
+    elseif argument == "--version" or argument == "-v" then
+      print_version()
       os.exit(0)
     elseif argument == "--warnings-are-errors" then
       warnings_are_errors = true

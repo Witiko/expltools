@@ -77,6 +77,7 @@ jobs:
             **/DEPENDS.txt
       - name: Build a CTAN archive
         run: |
+          l3build tag
           l3build ctan
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
