@@ -1,5 +1,13 @@
 # Changes
 
+## expltools 2024-12-09
+
+### explcheck v0.1.1
+
+### Fixes
+- In LuaTeX, initialize Kpathsea Lua module searchers first.
+  (#9, #13, contributed by @gucci-on-fleek)
+
 ## expltools 2024-12-04
 
 ### explcheck v0.1
