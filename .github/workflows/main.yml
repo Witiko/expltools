@@ -71,7 +71,7 @@ jobs:
         run: |
           set -e
           l3build tag
-          docker build -f explcheck/Dockerfile -t ghcr.io/${{ github.repository }}/explcheck
+          docker build -f explcheck/Dockerfile -t ghcr.io/${{ github.repository }}/explcheck .
       - name: Login to GitHub Packages
         if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
