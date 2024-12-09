@@ -18,8 +18,13 @@
  [tex-live-02]: https://tug.org/pipermail/tex-live/2024-December/050958.html
  [tex-live-03]: https://tug.org/pipermail/tex-live/2024-December/050968.html
 
+#### Documentation
+
 - Include explcheck version in the command-line interface.
   (reported in #10, fixed in #13)
+
+- Hint in the file `README.md` that .dtx are not well supported.
+  (reported by @josephwright in #8, added in #13)
 
 ## expltools 2024-12-04
 
