@@ -28,6 +28,9 @@
 
 - Show in the file `README.md` how explcheck can be used from Lua code. (#13)
 
+- Include instructions about using l3build in the file `README.md`.
+  (reported in #11, added in #13)
+
 ## expltools 2024-12-04
 
 ### explcheck v0.1
