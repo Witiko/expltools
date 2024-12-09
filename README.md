@@ -30,6 +30,35 @@ You can use the tool from command-line as follows:
 $ explcheck [options] [.tex, .cls, and .sty files]
 ```
 
+You can also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`:
+
+``` lua
+local new_issues = require("explcheck-issues")
+local preprocessing = require("explcheck-preprocessing")
+
+-- LuaTeX users must initialize Kpathsea Lua module searchers first.
+local using_luatex, kpse = pcall(require, "kpse")
+if using_luatex then
+  kpse.set_program_name("texlua", "explcheck")
+end
+
+-- Apply the preprocessing step to a file "code.tex".
+local filename = "code.tex"
+local issues = new_issues()
+
+local file = assert(io.open(filename, "r"))
+local content = assert(file:read("*a"))
+assert(file:close())
+
+local line_starting_byte_numbers = preprocessing(issues, content)
+
+print(
+  "There were " .. #issues.warnings .. " warnings "
+  .. "and " .. #issues.errors .. " errors "
+  .. "in the file " .. filename .. "."
+)
+```
+
 ## Notes to distributors
 
 The file `explcheck.lua` should be installed in the TDS directory `scripts/expltools/explcheck`. Furthermore, it should be made executable and either symlinked to system directories as `explcheck` on Unix or have a wrapper `explcheck.exe` installed on Windows.
