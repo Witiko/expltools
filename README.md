@@ -30,7 +30,8 @@ You can use the tool from the command line as follows:
 $ explcheck [options] [.tex, .cls, and .sty files]
 ```
 
-You can also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`:
+You can also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`.
+For example, here is Lua code that applies the preprocessing step to the code from a file named `code.tex`:
 
 ``` lua
 local new_issues = require("explcheck-issues")
@@ -57,6 +58,23 @@ print(
   .. "and " .. #issues.errors .. " errors "
   .. "in the file " .. filename .. "."
 )
+```
+
+You can also use the tool from continuous integration workflows using the Docker image `ghcr.io/witiko/expltools/explcheck`.
+For example, here is a GitHub Actions workflow file that applies the tool to all .tex file in a Git repository:
+
+``` yaml
+name: Check expl3 code
+on:
+  push:
+jobs:
+  typeset:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/witiko/expltools/explcheck
+    steps:
+      - uses: actions/checkout@v4
+      - run: explcheck *.tex
 ```
 
 ## Notes to distributors

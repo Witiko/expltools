@@ -53,8 +53,37 @@ jobs:
       - name: Run tests
         run: |
           l3build check
+  docker-image:
+    name: Build the Docker image
+    needs: [luacheck, explcheck, tests]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            l3build
+      - name: Build the Docker image
+        run: |
+          set -e
+          l3build tag
+          docker build -f explcheck/Dockerfile -t ghcr.io/${{ github.repository }}/explcheck
+      - name: Login to GitHub Packages
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the Docker image
+        if: github.ref == 'refs/heads/main'
+        run: docker push ghcr.io/${{ github.repository }}/explcheck
   ctan:
-    name: Build a CTAN archive
+    name: Build the CTAN archive
     needs: [luacheck, explcheck, tests]
     runs-on: ubuntu-latest
     permissions:
@@ -75,8 +104,9 @@ jobs:
             l3build
           package-file: |
             **/DEPENDS.txt
-      - name: Build a CTAN archive
+      - name: Build the CTAN archive
         run: |
+          set -e
           l3build tag
           l3build ctan
       - name: Upload artifacts
