@@ -95,7 +95,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         ), 1, 31
       )
     )
-    table.insert(all_issues, issues.errors)
+    table.insert(all_issues, {issues.errors, "error: "})
     if(#issues.warnings > 0) then
       status = (
         status
@@ -108,7 +108,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           ), 1, 33
         )
       )
-      table.insert(all_issues, issues.warnings)
+      table.insert(all_issues, {issues.warnings, "warning: "})
     end
   elseif(#issues.warnings > 0) then
     status = colorize(
@@ -118,7 +118,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         .. pluralize("warning", #issues.warnings)
       ), 1, 33
     )
-    table.insert(all_issues, issues.warnings)
+    table.insert(all_issues, {issues.warnings, "warning: "})
   else
     status = colorize("OK", 1, 32)
   end
@@ -157,7 +157,8 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
 
   -- Display the errors, followed by warnings.
   if #all_issues > 0 then
-    for _, warnings_or_errors in ipairs(all_issues) do
+    for _, warnings_or_errors_and_porcelain_prefix in ipairs(all_issues) do
+      local warnings_or_errors, porcelain_prefix = table.unpack(warnings_or_errors_and_porcelain_prefix)
       if not porcelain then
         print()
       end
@@ -209,7 +210,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           )
           io.write("\n" .. line)
         else
-          print(pathname .. position .. " " .. suffix)
+          print(pathname .. position .. " " .. porcelain_prefix .. suffix)
         end
       end
     end
