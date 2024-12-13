@@ -2,7 +2,22 @@
 
 ## expltools 2024-MM-DD
 
-### explcheck v0.2.0
+### explcheck v0.1.2
+
+#### Fixes
+
+- In the command-line interface, forbid the checking of .ins and .dtx files.
+  Display messages that direct users to check the generated files instead.
+  (reported by @josephwright and @FrankMittelbach in #8, fixed in #14)
+
+- Expect both backslashes and forward slashes when shortening pathnames. (#14)
+
+- Correctly pluralize "1 file" on the first line of command-line output. (#14)
+
+#### Documentation
+
+- Normalize the behavior and documentation of functions `get_*()` across files
+  `explcheck/build.lua`, `explcheck/test.lua`, and `explcheck-cli.lua`. (#14)
 
 ## expltools 2024-12-09
 
@@ -11,7 +26,6 @@
 #### Fixes
 
 - In LuaTeX, initialize Kpathsea Lua module searchers first.
-
   (reported by @josephwright, Lars Madsen, and Philip Taylor on
   [tex-live@tug.org][tex-live-02] and by @muzimuzhi in #9,
   fixed on [tex-live@tug.org][tex-live-03] by @gucci-on-fleek)
