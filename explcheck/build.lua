@@ -36,9 +36,9 @@ tagfiles = {
   "explcheck-cli.lua",
 }
 
--- Convert a pathname of a file to the base name of a file.
-local function get_suffix(filename)
-  return filename:gsub(".+%.", "."):lower()
+-- Convert a pathname of a file to the suffix of the file.
+local function get_suffix(pathname)
+  return pathname:gsub(".*%.", "."):lower()
 end
 
 -- Determine whether a filename refers to an existing file.

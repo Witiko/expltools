@@ -24,12 +24,69 @@ local function deduplicate_pathnames(pathnames)
   return deduplicated_pathnames
 end
 
+-- Convert a pathname of a file to the suffix of the file.
+local function get_suffix(pathname)
+  return pathname:gsub(".*%.", "."):lower()
+end
+
+-- Convert a pathname of a file to the base name of the file.
+local function get_basename(pathname)
+  return pathname:gsub(".*[\\/]", "")
+end
+
+-- Convert a pathname of a file to the pathname of its parent directory.
+local function get_parent(pathname)
+  if pathname:find("[\\/]") then
+    return pathname:gsub("(.*)[\\/].*", "%1")
+  else
+    return "."
+  end
+end
+
+-- Check that the pathname specifies a file that we can process.
+local function check_pathname(pathname)
+  local suffix = get_suffix(pathname)
+  if suffix == ".ins" then
+    local basename = get_basename(pathname)
+    if basename:find(" ") then
+      basename = "'" .. basename .. "'"
+    end
+    return
+      false,
+      "explcheck can't currently process .ins files directly\n"
+      .. 'Use a command such as "luatex ' .. basename .. '" '
+      .. "to generate .tex, .cls, and .sty files and process these files instead."
+  elseif suffix == ".dtx" then
+    local parent = get_parent(pathname)
+    local basename = "*.ins"
+    local has_lfs, lfs = pcall(require, "lfs")
+    if has_lfs then
+      for candidate_basename in lfs.dir(parent) do
+        local candidate_suffix = get_suffix(candidate_basename)
+        if candidate_suffix == ".ins" then
+          basename = candidate_basename
+          if basename:find(" ") then
+            basename = "'" .. candidate_basename .. "'"
+          end
+          break
+        end
+      end
+    end
+    return
+      false,
+      "explcheck can't currently process .dtx files directly\n"
+      .. 'Use a command such as "luatex ' .. basename .. '" '
+      .. "to generate .tex, .cls, and .sty files and process these files instead."
+  end
+  return true
+end
+
 -- Process all input files.
 local function main(pathnames, warnings_are_errors, max_line_length)
   local num_warnings = 0
   local num_errors = 0
 
-  print("Checking " .. #pathnames .. " files")
+  print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
 
   for pathname_number, pathname in ipairs(pathnames) do
 
@@ -114,7 +171,16 @@ else
       table.insert(pathnames, argument)
     end
   end
+
+  -- Deduplicate and check that pathnames specify files that we can process.
   pathnames = deduplicate_pathnames(pathnames)
+  for _, pathname in ipairs(pathnames) do
+    local is_ok, error_message = check_pathname(pathname)
+    if not is_ok then
+      print('Failed to process "' .. pathname .. '": ' .. error_message)
+      os.exit(1)
+    end
+  end
 
   -- Run the analysis.
   local exit_code = main(pathnames, warnings_are_errors, max_line_length)

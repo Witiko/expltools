@@ -16,9 +16,9 @@ local function format_pathname(pathname, max_length)
   while #pathname > max_length do
     local pattern
     if first_iteration then
-      pattern = "([^/]*)/[^/]*/(.*)"
+      pattern = "([^\\/]*)[\\/][^\\/]*[\\/](.*)"
     else
-      pattern = "([^/]*)/%.%.%./[^/]*/(.*)"
+      pattern = "([^\\/]*)/%.%.%.[\\/][^\\/]*[\\/](.*)"
     end
     local prefix_start, _, prefix, suffix = pathname:find(pattern)
     if prefix_start == nil or prefix_start > 1 then
@@ -31,9 +31,9 @@ local function format_pathname(pathname, max_length)
   if #pathname > max_length then
     local pattern
     if first_iteration then
-      pattern = "([^/]*/?)(.*)"
+      pattern = "([^\\/]*[\\/]?)(.*)"
     else
-      pattern = "([^/]*/%.%.%./)(.*)"
+      pattern = "([^\\/]*[\\/]%.%.%.[\\/])(.*)"
     end
     local prefix_start, _, _, suffix = pathname:find(pattern)
     if prefix_start == 1 then
@@ -228,6 +228,7 @@ end
 
 return {
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
+  pluralize = pluralize,
   print_results = print_results,
   print_summary = print_summary,
 }
