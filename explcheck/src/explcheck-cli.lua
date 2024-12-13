@@ -49,7 +49,7 @@ local function check_pathname(pathname)
   if suffix == ".ins" then
     local basename = get_basename(pathname)
     if basename:find(" ") then
-      basename = "'" .. candidate_basename .. "'"
+      basename = "'" .. basename .. "'"
     end
     return
       false,
