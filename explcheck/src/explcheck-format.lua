@@ -189,7 +189,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
               ), 1
             )
           )
-          line = (
+          local line = (
             label_indent
             .. formatted_pathname
             .. position
