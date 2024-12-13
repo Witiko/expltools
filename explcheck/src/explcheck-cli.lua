@@ -86,7 +86,7 @@ local function main(pathnames, warnings_are_errors, max_line_length)
   local num_warnings = 0
   local num_errors = 0
 
-  print("Checking " .. #pathnames .. " files")
+  print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
 
   for pathname_number, pathname in ipairs(pathnames) do
 

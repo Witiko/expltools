@@ -228,6 +228,7 @@ end
 
 return {
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
+  pluralize = pluralize,
   print_results = print_results,
   print_summary = print_summary,
 }
