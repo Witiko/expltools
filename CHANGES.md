@@ -7,7 +7,7 @@
 #### Development
 
 - Add a command-line option `--porcelain` for machine-readable output.
-  (suggested by @FrankMittelbach in #8, added in #14)
+  (suggested by @FrankMittelbach in #8, added in #15)
 
   See <https://github.com/Witiko/expltools/pull/15#issuecomment-2542418484>
   and below for a demonstration of how you might set up your text editor, so
