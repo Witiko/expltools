@@ -2,7 +2,12 @@
 
 ## expltools 2024-MM-DD
 
-### explcheck v0.1.2
+### explcheck v0.2.0
+
+#### Development
+
+- Add a command-line option `--porcelain` for machine-readable output.
+  (suggested by @FrankMittelbach in #8, added in #14)
 
 #### Fixes
 
