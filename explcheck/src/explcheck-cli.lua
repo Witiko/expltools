@@ -82,11 +82,13 @@ local function check_pathname(pathname)
 end
 
 -- Process all input files.
-local function main(pathnames, warnings_are_errors, max_line_length)
+local function main(pathnames, warnings_are_errors, max_line_length, porcelain)
   local num_warnings = 0
   local num_errors = 0
 
-  print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
+  if not porcelain then
+    print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
+  end
 
   for pathname_number, pathname in ipairs(pathnames) do
 
@@ -110,11 +112,13 @@ local function main(pathnames, warnings_are_errors, max_line_length)
     ::continue::
     num_warnings = num_warnings + #issues.warnings
     num_errors = num_errors + #issues.errors
-    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames)
+    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, porcelain)
   end
 
   -- Print a summary.
-  format.print_summary(#pathnames, num_warnings, num_errors)
+  if not porcelain then
+    format.print_summary(#pathnames, num_warnings, num_errors, porcelain)
+  end
 
   if(num_errors > 0) then
     return 1
@@ -129,8 +133,9 @@ local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
   print("Options:")
-  print("\t--max-line-length=N\tThe maximum line length before the warning S103 (Line too long) is produced.")
-  print("\t--warnings-are-errors\tProduce a non-zero exit code if any warnings are produced by the analysis.")
+  print("\t--max-line-length=N    The maximum line length before the warning S103 (Line too long) is produced.")
+  print("\t--porcelain            Produce machine-readable output.")
+  print("\t--warnings-are-errors  Produce a non-zero exit code if any warnings are produced by the analysis.")
 end
 
 local function print_version()
@@ -148,6 +153,7 @@ else
   local warnings_are_errors = false
   local only_pathnames_from_now_on = false
   local max_line_length = nil
+  local porcelain = false
   for _, argument in ipairs(arg) do
     if only_pathnames_from_now_on then
       table.insert(pathnames, argument)
@@ -161,6 +167,8 @@ else
       os.exit(0)
     elseif argument == "--warnings-are-errors" then
       warnings_are_errors = true
+    elseif argument == "--porcelain" then
+      porcelain = true
     elseif argument:sub(1, 18) == "--max-line-length=" then
       max_line_length = tonumber(argument:sub(19))
     elseif argument:sub(1, 2) == "--" then
@@ -183,6 +191,6 @@ else
   end
 
   -- Run the analysis.
-  local exit_code = main(pathnames, warnings_are_errors, max_line_length)
+  local exit_code = main(pathnames, warnings_are_errors, max_line_length, porcelain)
   os.exit(exit_code)
 end
