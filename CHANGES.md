@@ -1,6 +1,6 @@
 # Changes
 
-## expltools 2024-MM-DD
+## expltools 2024-12-13
 
 ### explcheck v0.2.0
 
@@ -8,6 +8,10 @@
 
 - Add a command-line option `--porcelain` for machine-readable output.
   (suggested by @FrankMittelbach in #8, added in #14)
+
+  See <https://github.com/Witiko/expltools/pull/15#issuecomment-2542418484>
+  and below for a demonstration of how you might set up your text editor, so
+  that it automatically navigates you to lines with warnings and errors.
 
 #### Fixes
 
