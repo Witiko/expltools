@@ -14,6 +14,9 @@
 
 - Correctly pluralize "1 file" on the first line of command-line output. (#14)
 
+- Use a less naïve parser of TeX comments to improve the detection of issues
+  W100 and E102. (reported by @FrankMittelbach in #8, fixed in #16)
+
 #### Documentation
 
 - Normalize the behavior and documentation of functions `get_*()` across files
