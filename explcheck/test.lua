@@ -2,19 +2,19 @@
 
 local lfs = require("lfs")
 
--- Convert a pathname of a file to the base name of a file.
-local function get_basename(filename)
-  return filename:gsub(".+/", "")
+-- Convert a pathname of a file to the base name of the file.
+local function get_basename(pathname)
+  return pathname:gsub(".*[\\/]", "")
 end
 
--- Convert a pathname of a file to the stem of a file.
-local function get_stem(filename)
-  return get_basename(filename):gsub("%..*", "")
+-- Convert a pathname of a file to the stem of the file.
+local function get_stem(pathname)
+  return get_basename(pathname):gsub("%..*", "")
 end
 
--- Convert a pathname of a file to the suffix of a file.
-local function get_suffix(filename)
-  return filename:gsub(".*%.", ".")
+-- Convert a pathname of a file to the suffix of the file.
+local function get_suffix(pathname)
+  return pathname:gsub(".*%.", "."):lower()
 end
 
 -- Transform a singular into plural if the count is zero or greater than two.
