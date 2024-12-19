@@ -1,0 +1,7 @@
+\ProvidesExplFile{example.tex}{2024-12-13}{1.0.0}{An example file}
+\ExplSyntaxOff
+foo \tl_show:n { bar }  % error on this line
+foo % \tl_show:n { bar }
+foo \% \tl_show:n { bar }  % error on this line
+foo \\% \tl_show:n { bar }
+foo \\\% \tl_show:n { bar }  % error on this line
