@@ -1,5 +1,7 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
+local defaults = require("explcheck-defaults")
+
 local lpeg = require("lpeg")
 local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
 
@@ -83,7 +85,7 @@ local expl_syntax_off = P([[\ExplSyntaxOff]])
 
 local function preprocessing(issues, content, max_line_length)
   if max_line_length == nil then
-    max_line_length = 80
+    max_line_length = defaults.max_line_length
   end
 
   -- Determine the bytes where lines begin.

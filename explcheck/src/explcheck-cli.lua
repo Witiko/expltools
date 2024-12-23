@@ -1,5 +1,6 @@
 -- A command-line interface for the static analyzer explcheck.
 
+local defaults = require("explcheck-defaults")
 local new_issues = require("explcheck-issues")
 local format = require("explcheck-format")
 
@@ -132,11 +133,14 @@ end
 local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
-  print("Options:")
-  print("\t--max-line-length=N    The maximum line length before the warning S103 (Line too long) is produced.")
-  print("\t--porcelain            Produce machine-readable output.")
-  print("\t--warnings-are-errors  Produce a non-zero exit code if any warnings are produced by the analysis.")
-  print("\nThe options are provisional and may be changed or removed before version 1.0.0.")
+  print(
+    "Options:\n"
+    .. "\t--max-line-length=N    The maximum line length before the warning S103 (Line too long) is produced. "
+    .. "(Default: " .. tostring(defaults.max_line_length) .. ")\n"
+    .. "\t--porcelain            Produce machine-readable output.\n"
+    .. "\t--warnings-are-errors  Produce a non-zero exit code if any warnings are produced by the analysis.\n"
+  )
+  print("The options are provisional and may be changed or removed before version 1.0.0.")
 end
 
 local function print_version()
@@ -153,7 +157,7 @@ else
   local pathnames = {}
   local only_pathnames_from_now_on = false
   local options = {
-    max_line_length = nil,
+    max_line_length = defaults.max_line_length,
     porcelain = false,
     warnings_are_errors = false,
   }
