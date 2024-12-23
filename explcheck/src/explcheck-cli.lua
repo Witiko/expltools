@@ -101,6 +101,7 @@ local function main(pathnames, options)
 
     -- Run all processing steps.
     local line_starting_byte_numbers, _ = preprocessing(issues, content, {
+      expect_expl3_everywhere = options.expect_expl3_everywhere,
       max_line_length = options.max_line_length,
     })
     if #issues.errors > 0 then
@@ -135,11 +136,14 @@ end
 local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
+  max_line_length = tostring(defaults.max_line_length)
   print(
-    "Options:\n"
-    .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced. "
-    .. "(Default: " .. tostring(defaults.max_line_length) .. ")\n"
-    .. "\t--porcelain                Produce machine-readable output.\n"
+    "Options:\n\n"
+    .. "\t--expect-expl3-everywhere  Expect that the whole files are in expl3, ignoring \\ExplSyntaxOn and Off.\n"
+    .. "\t                           This prevents the error E102 (expl3 control sequences in non-expl3 parts).\n\n"
+    .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
+    .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
+    .. "\t--porcelain                Produce machine-readable output.\n\n"
     .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
   )
   print("The options are provisional and may be changed or removed before version 1.0.0.")
@@ -159,6 +163,7 @@ else
   local pathnames = {}
   local only_pathnames_from_now_on = false
   local options = {
+    expect_expl3_everywhere = false,
     max_line_length = defaults.max_line_length,
     porcelain = false,
     warnings_are_errors = false,
@@ -174,6 +179,8 @@ else
     elseif argument == "--version" or argument == "-v" then
       print_version()
       os.exit(0)
+    elseif argument == "--expect-expl3-everywhere" then
+      options.expect_expl3_everywhere = true
     elseif argument:sub(1, 18) == "--max-line-length=" then
       options.max_line_length = tonumber(argument:sub(19))
     elseif argument == "--porcelain" then

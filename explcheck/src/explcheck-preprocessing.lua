@@ -9,6 +9,7 @@ local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
 ---- Generic
 local any = P(1)
 local eof = -any
+local fail = P(false)
 
 ---- Tokens
 local lbrace = P("{")
@@ -93,22 +94,24 @@ end
 
 -- Preprocess the content and register any issues.
 local function preprocessing(issues, content, options)
-  local max_line_length = get_option(options, 'max_line_length')
 
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
+
   local function record_line(line_start)
     table.insert(line_starting_byte_numbers, line_start)
   end
+
   local function line_too_long(range_start, range_end)
     issues:add('s103', 'line too long', range_start, range_end + 1)
   end
+
   local line_numbers_grammar = (
     Cp() / record_line
     * (
       (
         (
-          Cp() * linechar^(max_line_length + 1) * Cp() / line_too_long
+          Cp() * linechar^(get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
           + linechar^0
         )
         * newline
@@ -117,11 +120,14 @@ local function preprocessing(issues, content, options)
     )^0
   )
   lpeg.match(line_numbers_grammar, content)
+
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}
+
   local function capture_range(range_start, range_end)
     table.insert(expl_ranges, {range_start, range_end + 1})
   end
+
   local function unexpected_pattern(pattern, code, message, test)
     return Cp() * pattern * Cp() / function(range_start, range_end)
       if test == nil or test() then
@@ -129,7 +135,29 @@ local function preprocessing(issues, content, options)
       end
     end
   end
+
   local num_provides = 0
+  local Opener = unexpected_pattern(
+    provides,
+    "e104",
+    [[multiple delimiters `\ProvidesExpl*` in a single file]],
+    function()
+      num_provides = num_provides + 1
+      return num_provides > 1
+    end
+  )
+  local Closer = fail
+  if not get_option(options, 'expect_expl3_everywhere') then
+    Opener = (
+      expl_syntax_on
+      + Opener
+    )
+    Closer = (
+      expl_syntax_off
+      + Closer
+    )
+  end
+
   local analysis_grammar = P{
     "Root";
     Root = (
@@ -168,26 +196,18 @@ local function preprocessing(issues, content, options)
       * Cp()
       * (V"Closer" + eof)
     ),
-    Opener = (
-      expl_syntax_on
-      + unexpected_pattern(
-        provides,
-        "e104",
-        [[multiple delimiters `\ProvidesExpl*` in a single file]],
-        function()
-          num_provides = num_provides + 1
-          return num_provides > 1
-        end
-      )
-    ),
-    Closer = expl_syntax_off,
+    Opener = Opener,
+    Closer = Closer,
   }
   lpeg.match(analysis_grammar, content)
+
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
     table.insert(expl_ranges, {0, #content})
-    issues:add('w100', 'no standard delimiters')
-    issues:ignore('e102')
+    if not get_option(options, 'expect_expl3_everywhere') then
+      issues:add('w100', 'no standard delimiters')
+      issues:ignore('e102')
+    end
   end
   return line_starting_byte_numbers, expl_ranges
 end
