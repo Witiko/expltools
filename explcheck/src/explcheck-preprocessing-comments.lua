@@ -20,7 +20,6 @@ local newline = (
   + P("\r")
 )
 local linechar = any - newline
-local line = linechar^0 * newline
 local blank_line = optional_spaces * newline
 
 -- Define intermediate parsers.

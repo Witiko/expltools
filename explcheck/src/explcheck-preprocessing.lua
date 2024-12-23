@@ -15,7 +15,6 @@ local fail = P(false)
 ---- Tokens
 local lbrace = P("{")
 local rbrace = P("}")
-local percent_sign = P("%")
 local backslash = P([[\]])
 local letter = R("AZ","az")
 local underscore = P("_")
