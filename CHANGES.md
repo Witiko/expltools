@@ -1,8 +1,59 @@
 # Changes
 
-## expltools 2024-MM-DD
+## expltools 2024-12-23
 
-### explcheck v0.1.2
+### explcheck v0.3.0
+
+#### Development
+
+- Add option `--expect-expl3-everywhere` to ignore \ExplSyntaxOn and Off.
+  (discussed with @muzimuzhi in #17, added in #19)
+
+- Add short-hand command-line option `-p` for `--porcelain`.
+  (suggested by @FrankMittelbach in #8, added in #19)
+
+- Add file `explcheck-config.lua` with the default configuration of explcheck. (#19)
+
+  You may place a file named `explcheck-config.lua` with your own configuration
+  in your repository to control the behavior of explcheck.
+
+  Note that the configuration options are provisional and may be changed or
+  removed before version 1.0.0. Furthermore, support for configuration YAML
+  files that will allow you to specify different configuration for different
+  .tex files is envisioned for a future release and will be the recommended way
+  to configure explcheck.
+
+#### Fixes
+
+- Make the detection of error E102 (expl3 material in non-expl3 parts) more precise.
+  (discussed with @cfr42 in #18, fixed in #19)
+
+- Use a less naïve parser of TeX comments to improve the detection of issues
+  W100 and E102. (reported by @FrankMittelbach in #8, fixed in #16)
+
+#### Documentation
+
+- State in the output of `explcheck --help` that command-line options are
+  provisional and subject to change. (discussed with @FrankMittelbach and
+  @muzimuzhi in #8 and #17, added in #19)
+
+- Display the default maximum line length in the output of `explcheck --help`. (#19)
+
+- Rename E102 to "expl3 material in non-expl3 parts".
+  (discussed with @cfr42 in #18, added in #19)
+
+## expltools 2024-12-13
+
+### explcheck v0.2.0
+
+#### Development
+
+- Add a command-line option `--porcelain` for machine-readable output.
+  (suggested by @FrankMittelbach in #8, added in #15)
+
+  See <https://github.com/Witiko/expltools/pull/15#issuecomment-2542418484>
+  and below for a demonstration of how you might set up your text editor, so
+  that it automatically navigates you to lines with warnings and errors.
 
 #### Fixes
 
@@ -13,9 +64,6 @@
 - Expect both backslashes and forward slashes when shortening pathnames. (#14)
 
 - Correctly pluralize "1 file" on the first line of command-line output. (#14)
-
-- Use a less naïve parser of TeX comments to improve the detection of issues
-  W100 and E102. (reported by @FrankMittelbach in #8, fixed in #16)
 
 #### Documentation
 

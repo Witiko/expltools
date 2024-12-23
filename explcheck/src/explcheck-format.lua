@@ -81,7 +81,7 @@ local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_
 end
 
 -- Print the results of analyzing a file.
-local function print_results(pathname, issues, line_starting_byte_numbers, is_last_file)
+local function print_results(pathname, issues, line_starting_byte_numbers, is_last_file, porcelain)
   -- Display an overview.
   local all_issues = {}
   local status
@@ -95,7 +95,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         ), 1, 31
       )
     )
-    table.insert(all_issues, issues.errors)
+    table.insert(all_issues, {issues.errors, "error: "})
     if(#issues.warnings > 0) then
       status = (
         status
@@ -108,7 +108,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           ), 1, 33
         )
       )
-      table.insert(all_issues, issues.warnings)
+      table.insert(all_issues, {issues.warnings, "warning: "})
     end
   elseif(#issues.warnings > 0) then
     status = colorize(
@@ -118,45 +118,50 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         .. pluralize("warning", #issues.warnings)
       ), 1, 33
     )
-    table.insert(all_issues, issues.warnings)
+    table.insert(all_issues, {issues.warnings, "warning: "})
   else
     status = colorize("OK", 1, 32)
   end
 
-  local max_overview_length = 72
-  local prefix = "Checking "
-  local formatted_pathname = format_pathname(
-    pathname,
-    math.max(
-      (
-        max_overview_length
-        - #prefix
-        - #(" ")
-        - #decolorize(status)
-      ), 1
-    )
-  )
-  local overview = (
-    prefix
-    .. formatted_pathname
-    .. (" "):rep(
+  if not porcelain then
+    local max_overview_length = 72
+    local prefix = "Checking "
+    local formatted_pathname = format_pathname(
+      pathname,
       math.max(
         (
           max_overview_length
           - #prefix
+          - #(" ")
           - #decolorize(status)
-          - #formatted_pathname
         ), 1
       )
     )
-    .. status
-  )
-  io.write("\n" .. overview)
+    local overview = (
+      prefix
+      .. formatted_pathname
+      .. (" "):rep(
+        math.max(
+          (
+            max_overview_length
+            - #prefix
+            - #decolorize(status)
+            - #formatted_pathname
+          ), 1
+        )
+      )
+      .. status
+    )
+    io.write("\n" .. overview)
+  end
 
   -- Display the errors, followed by warnings.
   if #all_issues > 0 then
-    for _, warnings_or_errors in ipairs(all_issues) do
-      print()
+    for _, warnings_or_errors_and_porcelain_prefix in ipairs(all_issues) do
+      local warnings_or_errors, porcelain_prefix = table.unpack(warnings_or_errors_and_porcelain_prefix)
+      if not porcelain then
+        print()
+      end
       -- Display the warnings/errors.
       for _, issue in ipairs(issues.sort(warnings_or_errors)) do
         local code = issue[1]
@@ -172,40 +177,44 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         local reserved_suffix_length = 30
         local label_indent = (" "):rep(4)
         local suffix = code:upper() .. " " .. message
-        formatted_pathname = format_pathname(
-          pathname,
-          math.max(
-            (
-              max_line_length
-              - #label_indent
-              - reserved_position_length
-              - #(" ")
-              - math.max(#suffix, reserved_suffix_length)
-            ), 1
-          )
-        )
-        local line = (
-          label_indent
-          .. formatted_pathname
-          .. position
-          .. (" "):rep(
+        if not porcelain then
+          local formatted_pathname = format_pathname(
+            pathname,
             math.max(
               (
                 max_line_length
                 - #label_indent
-                - #formatted_pathname
-                - #decolorize(position)
+                - reserved_position_length
+                - #(" ")
                 - math.max(#suffix, reserved_suffix_length)
               ), 1
             )
           )
-          .. suffix
-          .. (" "):rep(math.max(reserved_suffix_length - #suffix, 0))
-        )
-        io.write("\n" .. line)
+          local line = (
+            label_indent
+            .. formatted_pathname
+            .. position
+            .. (" "):rep(
+              math.max(
+                (
+                  max_line_length
+                  - #label_indent
+                  - #formatted_pathname
+                  - #decolorize(position)
+                  - math.max(#suffix, reserved_suffix_length)
+                ), 1
+              )
+            )
+            .. suffix
+            .. (" "):rep(math.max(reserved_suffix_length - #suffix, 0))
+          )
+          io.write("\n" .. line)
+        else
+          print(pathname .. position .. " " .. porcelain_prefix .. suffix)
+        end
       end
     end
-    if(not is_last_file) then
+    if not is_last_file and not porcelain then
       print()
     end
   end

@@ -1,5 +1,6 @@
 -- A command-line interface for the static analyzer explcheck.
 
+local config = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local format = require("explcheck-format")
 
@@ -82,11 +83,13 @@ local function check_pathname(pathname)
 end
 
 -- Process all input files.
-local function main(pathnames, warnings_are_errors, max_line_length)
+local function main(pathnames, options)
   local num_warnings = 0
   local num_errors = 0
 
-  print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
+  if not options.porcelain then
+    print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
+  end
 
   for pathname_number, pathname in ipairs(pathnames) do
 
@@ -97,7 +100,10 @@ local function main(pathnames, warnings_are_errors, max_line_length)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local line_starting_byte_numbers, _ = preprocessing(issues, content, max_line_length)
+    local line_starting_byte_numbers, _ = preprocessing(issues, content, {
+      expect_expl3_everywhere = options.expect_expl3_everywhere,
+      max_line_length = options.max_line_length,
+    })
     if #issues.errors > 0 then
       goto continue
     end
@@ -110,15 +116,17 @@ local function main(pathnames, warnings_are_errors, max_line_length)
     ::continue::
     num_warnings = num_warnings + #issues.warnings
     num_errors = num_errors + #issues.errors
-    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames)
+    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options.porcelain)
   end
 
   -- Print a summary.
-  format.print_summary(#pathnames, num_warnings, num_errors)
+  if not options.porcelain then
+    format.print_summary(#pathnames, num_warnings, num_errors, options.porcelain)
+  end
 
   if(num_errors > 0) then
     return 1
-  elseif(warnings_are_errors and num_warnings > 0) then
+  elseif(options.warnings_are_errors and num_warnings > 0) then
     return 2
   else
     return 0
@@ -128,9 +136,17 @@ end
 local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
-  print("Options:")
-  print("\t--max-line-length=N\tThe maximum line length before the warning S103 (Line too long) is produced.")
-  print("\t--warnings-are-errors\tProduce a non-zero exit code if any warnings are produced by the analysis.")
+  local max_line_length = tostring(config.max_line_length)
+  print(
+    "Options:\n\n"
+    .. "\t--expect-expl3-everywhere  Expect that the whole files are in expl3, ignoring \\ExplSyntaxOn and Off.\n"
+    .. "\t                           This prevents the error E102 (expl3 material in non-expl3 parts).\n\n"
+    .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
+    .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
+    .. "\t--porcelain, -p            Produce machine-readable output.\n\n"
+    .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
+  )
+  print("The options are provisional and may be changed or removed before version 1.0.0.")
 end
 
 local function print_version()
@@ -145,9 +161,8 @@ if #arg == 0 then
 else
   -- Collect arguments.
   local pathnames = {}
-  local warnings_are_errors = false
   local only_pathnames_from_now_on = false
-  local max_line_length = nil
+  local options = {}
   for _, argument in ipairs(arg) do
     if only_pathnames_from_now_on then
       table.insert(pathnames, argument)
@@ -159,10 +174,14 @@ else
     elseif argument == "--version" or argument == "-v" then
       print_version()
       os.exit(0)
-    elseif argument == "--warnings-are-errors" then
-      warnings_are_errors = true
+    elseif argument == "--expect-expl3-everywhere" then
+      options.expect_expl3_everywhere = true
     elseif argument:sub(1, 18) == "--max-line-length=" then
-      max_line_length = tonumber(argument:sub(19))
+      options.max_line_length = tonumber(argument:sub(19))
+    elseif argument == "--porcelain" or argument == "-p" then
+      options.porcelain = true
+    elseif argument == "--warnings-are-errors" then
+      options.warnings_are_errors = true
     elseif argument:sub(1, 2) == "--" then
       -- An unknown argument
       print_usage()
@@ -183,6 +202,6 @@ else
   end
 
   -- Run the analysis.
-  local exit_code = main(pathnames, warnings_are_errors, max_line_length)
+  local exit_code = main(pathnames, options)
   os.exit(exit_code)
 end
