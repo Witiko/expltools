@@ -1,6 +1,6 @@
 -- A command-line interface for the static analyzer explcheck.
 
-local defaults = require("explcheck-defaults")
+local config = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local format = require("explcheck-format")
 
@@ -136,7 +136,7 @@ end
 local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
-  local max_line_length = tostring(defaults.max_line_length)
+  local max_line_length = tostring(config.max_line_length)
   print(
     "Options:\n\n"
     .. "\t--expect-expl3-everywhere  Expect that the whole files are in expl3, ignoring \\ExplSyntaxOn and Off.\n"
@@ -162,12 +162,7 @@ else
   -- Collect arguments.
   local pathnames = {}
   local only_pathnames_from_now_on = false
-  local options = {
-    expect_expl3_everywhere = false,
-    max_line_length = defaults.max_line_length,
-    porcelain = false,
-    warnings_are_errors = false,
-  }
+  local options = {}
   for _, argument in ipairs(arg) do
     if only_pathnames_from_now_on then
       table.insert(pathnames, argument)

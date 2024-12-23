@@ -1,6 +1,6 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
-local defaults = require("explcheck-defaults")
+local config = require("explcheck-config")
 
 local lpeg = require("lpeg")
 local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
@@ -87,7 +87,7 @@ local expl_syntax_off = P([[\ExplSyntaxOff]])
 -- Get the value of an option or the default value if unspecified.
 local function get_option(options, key)
   if options == nil or options[key] == nil then
-    return defaults[key]
+    return config[key]
   end
   return options[key]
 end
