@@ -136,7 +136,7 @@ end
 local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
-  max_line_length = tostring(defaults.max_line_length)
+  local max_line_length = tostring(defaults.max_line_length)
   print(
     "Options:\n\n"
     .. "\t--expect-expl3-everywhere  Expect that the whole files are in expl3, ignoring \\ExplSyntaxOn and Off.\n"
