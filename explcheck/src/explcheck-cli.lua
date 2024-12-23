@@ -140,7 +140,7 @@ local function print_usage()
   print(
     "Options:\n\n"
     .. "\t--expect-expl3-everywhere  Expect that the whole files are in expl3, ignoring \\ExplSyntaxOn and Off.\n"
-    .. "\t                           This prevents the error E102 (expl3 control sequences in non-expl3 parts).\n\n"
+    .. "\t                           This prevents the error E102 (expl3 material in non-expl3 parts).\n\n"
     .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output.\n\n"

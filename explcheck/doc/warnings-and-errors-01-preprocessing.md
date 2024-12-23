@@ -11,8 +11,8 @@ An input file contains extraneous `\ExplSyntaxOn` delimiters [@latexteam2024inte
 
  /w101.tex
 
-## Expl3 control sequences in non-expl3 parts {.e label=e102}
-An input file contains what looks like expl3 control sequences [@latexteam2024interfaces, Section 1.1] in non-expl3 parts.
+## Expl3 material in non-expl3 parts {.e label=e102}
+An input file contains what looks like expl3 material [@latexteam2024interfaces, Section 1.1] in non-expl3 parts.
 
  /e102.tex
 

@@ -177,7 +177,7 @@ local function preprocessing(issues, content, options)
         + unexpected_pattern(
             expl3like_control_sequence,
             "e102",
-            "expl3 control sequences in non-expl3 parts"
+            "expl3 material in non-expl3 parts"
           )
         + (any - V"Opener")
       )^0
