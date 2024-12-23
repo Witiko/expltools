@@ -1,6 +1,7 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
 local config = require("explcheck-config")
+local strip_comments = require("explcheck-preprocessing-comments")
 
 local lpeg = require("lpeg")
 local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
@@ -14,7 +15,6 @@ local fail = P(false)
 ---- Tokens
 local lbrace = P("{")
 local rbrace = P("}")
-local percent_sign = P("%")
 local backslash = P([[\]])
 local letter = R("AZ","az")
 local underscore = P("_")
@@ -39,18 +39,9 @@ local optional_spaces_and_newline = (
 
 -- Define intermediate parsers.
 ---- Parts of TeX syntax
-local comment = (
-  percent_sign
-  * linechar^0
-  * newline
-  * optional_spaces
-)
 local argument = (
   lbrace
-  * (
-    comment
-    + (any - rbrace)
-  )^0
+  * (any - rbrace)^0
   * rbrace
 )
 
@@ -91,16 +82,12 @@ local provides = (
       + P("File")
     )
   * optional_spaces_and_newline
-  * comment^0
   * argument
   * optional_spaces_and_newline
-  * comment^0
   * argument
   * optional_spaces_and_newline
-  * comment^0
   * argument
   * optional_spaces_and_newline
-  * comment^0
   * argument
 )
 local expl_syntax_on = P([[\ExplSyntaxOn]])
@@ -143,15 +130,20 @@ local function preprocessing(issues, content, options)
   )
   lpeg.match(line_numbers_grammar, content)
 
+  -- Strip TeX comments before further analysis.
+  local transformed_content, map_back = strip_comments(content)
+
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}
 
   local function capture_range(range_start, range_end)
+    range_start, range_end = map_back(range_start), map_back(range_end)
     table.insert(expl_ranges, {range_start, range_end + 1})
   end
 
   local function unexpected_pattern(pattern, code, message, test)
     return Cp() * pattern * Cp() / function(range_start, range_end)
+      range_start, range_end = map_back(range_start), map_back(range_end)
       if test == nil or test() then
         issues:add(code, message, range_start, range_end + 1)
       end
@@ -221,7 +213,7 @@ local function preprocessing(issues, content, options)
     Opener = Opener,
     Closer = Closer,
   }
-  lpeg.match(analysis_grammar, content)
+  lpeg.match(analysis_grammar, transformed_content)
 
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then

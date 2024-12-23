@@ -28,6 +28,9 @@
 - Make the detection of error E102 (expl3 material in non-expl3 parts) more precise.
   (discussed with @cfr42 in #18, fixed in #19)
 
+- Use a less naïve parser of TeX comments to improve the detection of issues
+  W100 and E102. (reported by @FrankMittelbach in #8, fixed in #16)
+
 #### Documentation
 
 - State in the output of `explcheck --help` that command-line options are
