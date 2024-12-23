@@ -100,7 +100,9 @@ local function main(pathnames, options)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local line_starting_byte_numbers, _ = preprocessing(issues, content, options.max_line_length)
+    local line_starting_byte_numbers, _ = preprocessing(issues, content, {
+      max_line_length = options.max_line_length,
+    })
     if #issues.errors > 0 then
       goto continue
     end
@@ -135,10 +137,10 @@ local function print_usage()
   print("Run static analysis on expl3 files.\n")
   print(
     "Options:\n"
-    .. "\t--max-line-length=N    The maximum line length before the warning S103 (Line too long) is produced. "
+    .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced. "
     .. "(Default: " .. tostring(defaults.max_line_length) .. ")\n"
-    .. "\t--porcelain            Produce machine-readable output.\n"
-    .. "\t--warnings-are-errors  Produce a non-zero exit code if any warnings are produced by the analysis.\n"
+    .. "\t--porcelain                Produce machine-readable output.\n"
+    .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
   )
   print("The options are provisional and may be changed or removed before version 1.0.0.")
 end
@@ -172,12 +174,12 @@ else
     elseif argument == "--version" or argument == "-v" then
       print_version()
       os.exit(0)
-    elseif argument == "--warnings-are-errors" then
-      options.warnings_are_errors = true
-    elseif argument == "--porcelain" then
-      options.porcelain = true
     elseif argument:sub(1, 18) == "--max-line-length=" then
       options.max_line_length = tonumber(argument:sub(19))
+    elseif argument == "--porcelain" then
+      options.porcelain = true
+    elseif argument == "--warnings-are-errors" then
+      options.warnings_are_errors = true
     elseif argument:sub(1, 2) == "--" then
       -- An unknown argument
       print_usage()

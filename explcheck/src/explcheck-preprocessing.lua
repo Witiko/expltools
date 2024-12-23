@@ -83,10 +83,17 @@ local provides = (
 local expl_syntax_on = P([[\ExplSyntaxOn]])
 local expl_syntax_off = P([[\ExplSyntaxOff]])
 
-local function preprocessing(issues, content, max_line_length)
-  if max_line_length == nil then
-    max_line_length = defaults.max_line_length
+-- Get the value of an option or the default value if unspecified.
+local function get_option(options, key)
+  if options == nil or options[key] == nil then
+    return defaults[key]
   end
+  return options[key]
+end
+
+-- Preprocess the content and register any issues.
+local function preprocessing(issues, content, options)
+  local max_line_length = get_option(options, 'max_line_length')
 
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
