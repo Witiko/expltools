@@ -53,11 +53,33 @@ local argument = (
   )^0
   * rbrace
 )
-local expl3like_control_sequence = (
+
+local expl3_function = (
   backslash
-  * (letter - underscore - colon)^1
-  * (underscore + colon)
-  * letter^1
+  * (underscore * underscore)^-1 * letter^1  -- module
+  * underscore
+  * letter^1  -- description
+  * colon
+  * S("NncVvoxefTFpwD")^1  -- argspec
+  * (eof + -letter)
+)
+local expl3_variable_or_constant = (
+  backslash
+  * S("cgl")  -- scope
+  * underscore
+  * (
+    letter^1  -- just description
+    + underscore^-1 * letter^1  -- module
+    * underscore
+    * letter^1  -- description
+  )
+  * underscore
+  * letter^1  -- type
+  * (eof + -letter)
+)
+local expl3like_material = (
+  expl3_function
+  + expl3_variable_or_constant
 )
 
 ---- Standard delimiters
@@ -175,7 +197,7 @@ local function preprocessing(issues, content, options)
           "unexpected delimiters"
         )
         + unexpected_pattern(
-            expl3like_control_sequence,
+            expl3like_material,
             "e102",
             "expl3 material in non-expl3 parts"
           )
