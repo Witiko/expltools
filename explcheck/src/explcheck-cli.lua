@@ -136,6 +136,7 @@ local function print_usage()
   print("\t--max-line-length=N    The maximum line length before the warning S103 (Line too long) is produced.")
   print("\t--porcelain            Produce machine-readable output.")
   print("\t--warnings-are-errors  Produce a non-zero exit code if any warnings are produced by the analysis.")
+  print("\nThe options are provisional and may be changed or removed before version 1.0.0.")
 end
 
 local function print_version()
