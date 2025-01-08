@@ -1,6 +1,6 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
-local config = require("explcheck-config")
+local utils = require("explcheck-utils")
 local strip_comments = require("explcheck-preprocessing-comments")
 
 local lpeg = require("lpeg")
@@ -93,14 +93,6 @@ local provides = (
 local expl_syntax_on = P([[\ExplSyntaxOn]])
 local expl_syntax_off = P([[\ExplSyntaxOff]])
 
--- Get the value of an option or the default value if unspecified.
-local function get_option(options, key)
-  if options == nil or options[key] == nil then
-    return config[key]
-  end
-  return options[key]
-end
-
 -- Preprocess the content and register any issues.
 local function preprocessing(issues, content, options)
 
@@ -120,7 +112,7 @@ local function preprocessing(issues, content, options)
     * (
       (
         (
-          Cp() * linechar^(get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
+          Cp() * linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
           + linechar^0
         )
         * newline
@@ -161,7 +153,7 @@ local function preprocessing(issues, content, options)
     end
   )
   local Closer = fail
-  if not get_option(options, 'expect_expl3_everywhere') then
+  if not utils.get_option(options, 'expect_expl3_everywhere') then
     Opener = (
       expl_syntax_on
       + Opener
@@ -218,7 +210,7 @@ local function preprocessing(issues, content, options)
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
     table.insert(expl_ranges, {0, #content})
-    if not get_option(options, 'expect_expl3_everywhere') then
+    if not utils.get_option(options, 'expect_expl3_everywhere') then
       issues:add('w100', 'no standard delimiters')
       issues:ignore('e102')
     end

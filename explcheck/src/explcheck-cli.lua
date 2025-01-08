@@ -5,7 +5,7 @@ local new_issues = require("explcheck-issues")
 local format = require("explcheck-format")
 
 local preprocessing = require("explcheck-preprocessing")
--- local lexical_analysis = require("explcheck-lexical-analysis")
+local lexical_analysis = require("explcheck-lexical-analysis")
 -- local syntactic_analysis = require("explcheck-syntactic-analysis")
 -- local semantic_analysis = require("explcheck-semantic-analysis")
 -- local pseudo_flow_analysis = require("explcheck-pseudo-flow-analysis")
@@ -100,14 +100,14 @@ local function main(pathnames, options)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local line_starting_byte_numbers, _ = preprocessing(issues, content, {
-      expect_expl3_everywhere = options.expect_expl3_everywhere,
-      max_line_length = options.max_line_length,
-    })
+    local line_starting_byte_numbers, expl_ranges = preprocessing(issues, content, options)
+
     if #issues.errors > 0 then
       goto continue
     end
-    -- lexical_analysis(issues)
+
+    lexical_analysis(issues, content, expl_ranges, options)
+
     -- syntactic_analysis(issues)
     -- semantic_analysis(issues)
     -- pseudo_flow_analysis(issues)
