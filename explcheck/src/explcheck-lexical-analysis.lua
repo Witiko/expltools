@@ -35,10 +35,13 @@ local function lexical_analysis(issues, content, expl_ranges, options)  -- luach
   --
   -- See also:
   -- - Section 31 on page 16 of Knuth (1986) [1]
-  -- - Section 1.2 on page 12 of Olsak (2001) [2]
+  -- - Section 7 on page 36 and Section 8 on page 42 of Knuth (1986) [2]
+  -- - Section 1.2 on page 12 of Olsak (2001) [3]
   --
-  --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley Longman Publishing Co., Inc., USA.
-  --  [2]: Petr Olsak. 2001. TeXbook naruby. Konvoj, Brno.
+  --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
+  --  [2]: Donald Ervin Knuth. 1986. The TeXbook. Addison-Wesley, USA.
+  --  [3]: Petr Olsak. 2001. TeXbook naruby. Konvoj, Brno.
+  --       https://petr.olsak.net/ftp/olsak/tbn/tbn.pdf
   --
   local function get_lines(content, range)  -- luacheck: ignore content range
     local lines = {}
@@ -49,9 +52,12 @@ local function lexical_analysis(issues, content, expl_ranges, options)  -- luach
   -- Tokenize a processed line, similarly to TeX's token processor.
   --
   -- See also:
-  -- - Section 1.3 on page 19 of Olsak (2001) [2]
+  -- - Section 7 on page 36 and Section 8 on page 42 of Knuth (1986) [2]
+  -- - Section 1.3 on page 19 of Olsak (2001) [3]
   --
-  --  [2]: Petr Olsak. 2001. TeXbook naruby. Konvoj, Brno.
+  --  [2]: Donald Ervin Knuth. 1986. The TeXbook. Addison-Wesley, USA.
+  --  [3]: Petr Olsak. 2001. TeXbook naruby. Konvoj, Brno.
+  --       https://petr.olsak.net/ftp/olsak/tbn/tbn.pdf
   --
   local function get_tokens(lines)  -- luacheck: ignore lines
     local tokens = {}
