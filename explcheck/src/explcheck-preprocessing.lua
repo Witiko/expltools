@@ -1,97 +1,11 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
-local utils = require("explcheck-utils")
+local parsers = require("explcheck-parsers")
 local strip_comments = require("explcheck-preprocessing-comments")
+local utils = require("explcheck-utils")
 
 local lpeg = require("lpeg")
-local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
-
--- Define base parsers.
----- Generic
-local any = P(1)
-local eof = -any
-local fail = P(false)
-
----- Tokens
-local lbrace = P("{")
-local rbrace = P("}")
-local backslash = P([[\]])
-local letter = R("AZ","az")
-local underscore = P("_")
-local colon = P(":")
-
----- Spacing
-local newline = (
-  P("\n")
-  + P("\r\n")
-  + P("\r")
-)
-local linechar = any - newline
-local spacechar = S("\t ")
-local optional_spaces = spacechar^0
-local optional_spaces_and_newline = (
-  optional_spaces
-  * (
-    newline
-    * optional_spaces
-  )^-1
-)
-
--- Define intermediate parsers.
----- Parts of TeX syntax
-local argument = (
-  lbrace
-  * (any - rbrace)^0
-  * rbrace
-)
-
-local expl3_function = (
-  backslash
-  * (underscore * underscore)^-1 * letter^1  -- module
-  * underscore
-  * letter^1  -- description
-  * colon
-  * S("NncVvoxefTFpwD")^1  -- argspec
-  * (eof + -letter)
-)
-local expl3_variable_or_constant = (
-  backslash
-  * S("cgl")  -- scope
-  * underscore
-  * (
-    letter^1  -- just description
-    + underscore^-1 * letter^1  -- module
-    * underscore
-    * letter^1  -- description
-  )
-  * underscore
-  * letter^1  -- type
-  * (eof + -letter)
-)
-local expl3like_material = (
-  expl3_function
-  + expl3_variable_or_constant
-)
-
----- Standard delimiters
-local provides = (
-  P([[\ProvidesExpl]])
-  * (
-      P("Package")
-      + P("Class")
-      + P("File")
-    )
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-)
-local expl_syntax_on = P([[\ExplSyntaxOn]])
-local expl_syntax_off = P([[\ExplSyntaxOff]])
+local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
 local function preprocessing(issues, content, options)
@@ -112,10 +26,10 @@ local function preprocessing(issues, content, options)
     * (
       (
         (
-          Cp() * linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
-          + linechar^0
+          Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
+          + parsers.linechar^0
         )
-        * newline
+        * parsers.newline
         * Cp()
       ) / record_line
     )^0
@@ -144,7 +58,7 @@ local function preprocessing(issues, content, options)
 
   local num_provides = 0
   local Opener = unexpected_pattern(
-    provides,
+    parsers.provides,
     "e104",
     [[multiple delimiters `\ProvidesExpl*` in a single file]],
     function()
@@ -152,14 +66,14 @@ local function preprocessing(issues, content, options)
       return num_provides > 1
     end
   )
-  local Closer = fail
+  local Closer = parsers.fail
   if not utils.get_option(options, 'expect_expl3_everywhere') then
     Opener = (
-      expl_syntax_on
+      parsers.expl_syntax_on
       + Opener
     )
     Closer = (
-      expl_syntax_off
+      parsers.expl_syntax_off
       + Closer
     )
   end
@@ -181,11 +95,11 @@ local function preprocessing(issues, content, options)
           "unexpected delimiters"
         )
         + unexpected_pattern(
-            expl3like_material,
+            parsers.expl3like_material,
             "e102",
             "expl3 material in non-expl3 parts"
           )
-        + (any - V"Opener")
+        + (parsers.any - V"Opener")
       )^0
     ),
     ExplPart = (
@@ -197,10 +111,10 @@ local function preprocessing(issues, content, options)
             "w101",
             "unexpected delimiters"
           )
-          + (any - V"Closer")
+          + (parsers.any - V"Closer")
         )^0
       * Cp()
-      * (V"Closer" + eof)
+      * (V"Closer" + parsers.eof)
     ),
     Opener = Opener,
     Closer = Closer,
