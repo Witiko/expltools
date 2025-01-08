@@ -29,14 +29,43 @@ for catcode, parser in pairs(expl3_catcodes) do
 end
 
 -- Tokenize the content and register any issues.
-local function lexical_analysis(issues, content, expl_ranges, options)  -- luacheck: ignore issues content expl_ranges options
+local function lexical_analysis(issues, content, expl_ranges, options)  -- luacheck: ignore issues options
 
-  local tokens = {}
+  -- Process bytes within a given range similarly to TeX's input processor and produce processed lines.
+  --
+  -- See also:
+  -- - Section 31 on page 16 of Knuth (1986) [1]
+  -- - Section 1.2 on page 12 of Olsak (2001) [2]
+  --
+  --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley Longman Publishing Co., Inc., USA.
+  --  [2]: Petr Olsak. 2001. TeXbook naruby. Konvoj, Brno.
+  --
+  local function get_lines(content, range)  -- luacheck: ignore content range
+    local lines = {}
+    -- TODO
+    return lines
+  end
 
-  -- TODO
+  -- Tokenize a processed line, similarly to TeX's token processor.
+  --
+  -- See also:
+  -- - Section 1.3 on page 19 of Olsak (2001) [2]
+  --
+  --  [2]: Petr Olsak. 2001. TeXbook naruby. Konvoj, Brno.
+  --
+  local function get_tokens(lines)  -- luacheck: ignore lines
+    local tokens = {}
+    -- TODO
+    return tokens
+  end
 
-  return tokens
-
+  local all_tokens = {}
+  for _, expl_range in ipairs(expl_ranges) do
+    local lines = get_lines(content, expl_range)
+    local tokens = get_tokens(lines)
+    table.insert(all_tokens, tokens)
+  end
+  return all_tokens
 end
 
 return lexical_analysis
