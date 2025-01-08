@@ -10,13 +10,22 @@ local eof = -any
 local fail = P(false)
 
 ---- Tokens
-local lbrace = P("{")
-local rbrace = P("}")
+local ampersand = P("&")
 local backslash = P([[\]])
-local letter = R("AZ","az")
-local underscore = P("_")
+local circumflex = P("^")
 local colon = P(":")
+local control_character = R("\x00\x1F") + P("\x7F")
+local digit = R("09")
+local dollar_sign = P("$")
+local form_feed = P("\x0C")
+local hash_sign = P("#")
+local lbrace = P("{")
+local letter = R("AZ", "az")
 local percent_sign = P("%")
+local punctuation = R("!/", ":@", "[`", "{~")
+local rbrace = P("}")
+local tilde = P("~")
+local underscore = P("_")
 
 ---- Spacing
 local newline = (
@@ -141,14 +150,30 @@ local expl_syntax_on = P([[\ExplSyntaxOn]])
 local expl_syntax_off = P([[\ExplSyntaxOff]])
 
 return {
+  ampersand = ampersand,
   any = any,
+  backslash = backslash,
+  circumflex = circumflex,
+  colon = colon,
   commented_line = commented_line,
+  control_character = control_character,
+  digit = digit,
+  dollar_sign = dollar_sign,
   eof = eof,
   expl3like_material = expl3like_material,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   fail = fail,
+  form_feed = form_feed,
+  hash_sign = hash_sign,
+  lbrace = lbrace,
+  letter = letter,
   linechar = linechar,
   newline = newline,
+  percent_sign = percent_sign,
   provides = provides,
+  punctuation = punctuation,
+  rbrace = rbrace,
+  spacechar = spacechar,
+  tilde = tilde,
 }
