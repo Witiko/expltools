@@ -56,7 +56,7 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 
-local line_starting_byte_numbers = preprocessing(issues, content)
+preprocessing(issues, content)
 
 print(
   "There were " .. #issues.warnings .. " warnings "
