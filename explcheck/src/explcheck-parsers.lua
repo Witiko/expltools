@@ -34,8 +34,12 @@ local newline = (
   + P("\r")
 )
 local linechar = any - newline
-local spacechar = S("\t ")
-local optional_spaces = spacechar^0
+local space = S(" ")
+local tab = S("\t")
+
+-- Intermediate parsers
+---- Parts of TeX syntax
+local optional_spaces = space^0
 local optional_spaces_and_newline = (
   optional_spaces
   * (
@@ -43,10 +47,38 @@ local optional_spaces_and_newline = (
     * optional_spaces
   )^-1
 )
-local blank_line = optional_spaces * newline
+local blank_line = (
+  optional_spaces
+  * newline
+)
+local blank_or_empty_last_line = (
+  optional_spaces
+  * (
+    newline
+    + eof
+  )
+)
+local tex_line = (
+  (
+    (
+      linechar
+      - (space * #blank_or_empty_last_line)
+    )^1
+    * (
+      blank_or_empty_last_line / ""
+    )
+  )
+  + (
+    (
+      linechar
+      - (space * #blank_line)
+    )^0
+    * (
+      blank_line / ""
+    )
+  )
+)
 
--- Intermediate parsers
----- Parts of TeX syntax
 local argument = (
   lbrace
   * (any - rbrace)^0
@@ -174,6 +206,8 @@ return {
   provides = provides,
   punctuation = punctuation,
   rbrace = rbrace,
-  spacechar = spacechar,
+  space = space,
+  tab = tab,
+  tex_line = tex_line,
   tilde = tilde,
 }

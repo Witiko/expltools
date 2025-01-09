@@ -35,6 +35,8 @@ local function strip_comments(text)
         break
       end
     end
+    assert(index > 0)
+    assert(index <= #text + 1)
     return index
   end
   return transformed_text, map_back
@@ -77,7 +79,7 @@ local function preprocessing(issues, content, options)
 
   local function capture_range(range_start, range_end)
     range_start, range_end = map_back(range_start), map_back(range_end)
-    table.insert(expl_ranges, {range_start, range_end + 1})
+    table.insert(expl_ranges, {range_start, range_end})
   end
 
   local function unexpected_pattern(pattern, code, message, test)
@@ -156,10 +158,10 @@ local function preprocessing(issues, content, options)
 
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
-    table.insert(expl_ranges, {0, #content})
+    table.insert(expl_ranges, {1, #content})
+    issues:ignore('e102')
     if not utils.get_option(options, 'expect_expl3_everywhere') then
       issues:add('w100', 'no standard delimiters')
-      issues:ignore('e102')
     end
   end
   return line_starting_byte_numbers, expl_ranges
