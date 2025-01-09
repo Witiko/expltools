@@ -72,6 +72,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           assert(index > 0)
           assert(index <= #line_text + #expl3_endlinechar)
           if index > 0 and index <= #line_text then
+            -- TODO: check correct character
             return range_start + line_start + index - 2  -- a line character
           elseif index > #line_text and index <= #line_text + #expl3_endlinechar then
             return range_start + line_end - 2  -- an \endlinechar
