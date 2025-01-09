@@ -37,6 +37,7 @@ local function strip_comments(text)
     end
     assert(index > 0)
     assert(index <= #text + 1)
+    -- TODO: check correct character
     return index
   end
   return transformed_text, map_back
