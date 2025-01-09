@@ -15,14 +15,12 @@ local backslash = P([[\]])
 local circumflex = P("^")
 local colon = P(":")
 local control_character = R("\x00\x1F") + P("\x7F")
-local digit = R("09")
 local dollar_sign = P("$")
 local form_feed = P("\x0C")
 local hash_sign = P("#")
 local lbrace = P("{")
 local letter = R("AZ", "az")
 local percent_sign = P("%")
-local punctuation = R("!/", ":@", "[`", "{~")
 local rbrace = P("}")
 local tilde = P("~")
 local underscore = P("_")
@@ -189,7 +187,6 @@ return {
   colon = colon,
   commented_line = commented_line,
   control_character = control_character,
-  digit = digit,
   dollar_sign = dollar_sign,
   eof = eof,
   expl3like_material = expl3like_material,
@@ -204,10 +201,10 @@ return {
   newline = newline,
   percent_sign = percent_sign,
   provides = provides,
-  punctuation = punctuation,
   rbrace = rbrace,
   space = space,
   tab = tab,
   tex_line = tex_line,
   tilde = tilde,
+  underscore = underscore,
 }
