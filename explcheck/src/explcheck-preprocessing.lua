@@ -27,18 +27,21 @@ local function strip_comments(text)
   table.insert(transformed_text_table, text:sub(transformed_index + 1, -1))
   local transformed_text = table.concat(transformed_text_table, "")
   local function map_back(index)
+    local mapped_index = index
     for _, where_and_number_of_bytes_removed in ipairs(numbers_of_bytes_removed) do
       local where, number_of_bytes_removed = table.unpack(where_and_number_of_bytes_removed)
-      if index > where then
-        index = index + number_of_bytes_removed
+      if mapped_index > where then
+        mapped_index = mapped_index + number_of_bytes_removed
       else
         break
       end
     end
-    assert(index > 0)
-    assert(index <= #text + 1)
-    -- TODO: check correct character
-    return index
+    assert(mapped_index > 0)
+    assert(mapped_index <= #text + 1)
+    if mapped_index <= #text then
+      assert(transformed_text[index] == text[mapped_index])
+    end
+    return mapped_index
   end
   return transformed_text, map_back
 end
