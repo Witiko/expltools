@@ -1,7 +1,7 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
 local lpeg = require("lpeg")
-local Cp, P, R, S = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S
+local C, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
 
 -- Base parsers
 ---- Generic
@@ -24,6 +24,9 @@ local percent_sign = P("%")
 local rbrace = P("}")
 local tilde = P("~")
 local underscore = P("_")
+local lowercase_hexadecimal_digit = R("09", "af")
+local lower_half_ascii_character = R("\x00\x3F")
+local upper_half_ascii_character = R("\x40\x7F")
 
 ---- Spacing
 local newline = (
@@ -36,6 +39,40 @@ local space = S(" ")
 local tab = S("\t")
 
 -- Intermediate parsers
+---- Default expl3 category code table, corresponds to `\c_code_cctab` in expl3
+local expl3_endlinechar = ' '  -- luacheck: ignore expl3_endlinechar
+local expl3_catcodes = {
+  [0] = backslash,  -- escape character
+  [1] = lbrace,  -- begin grouping
+  [2] = rbrace,  -- end grouping
+  [3] = dollar_sign,  -- math shift
+  [4] = ampersand,  -- alignment tab
+  [5] = newline,  -- end of line
+  [6] = hash_sign,  -- parameter
+  [7] = circumflex,  -- superscript
+  [8] = fail,  -- subscript
+  [9] = space + tab,  -- ignored character
+  [10] = tilde,  -- space
+  [11] = letter + colon + underscore,  -- letter
+  [13] = form_feed,  -- active character
+  [14] = percent_sign,  -- comment character
+  [15] = control_character,  -- invalid character
+}
+expl3_catcodes[12] = any  -- other
+for catcode, parser in pairs(expl3_catcodes) do
+  if catcode ~= 12 then
+    expl3_catcodes[12] = expl3_catcodes[12] - parser
+  end
+end
+
+local determine_expl3_catcode = fail
+for catcode, parser in pairs(expl3_catcodes) do
+  determine_expl3_catcode = (
+    determine_expl3_catcode
+    + parser / function() return catcode end
+  )
+end
+
 ---- Parts of TeX syntax
 local optional_spaces = space^0
 local optional_spaces_and_newline = (
@@ -76,15 +113,49 @@ local tex_line = (
     )
   )
 )
+local tex_lines = Ct(
+  Ct(
+    Cp()
+    * Cs(tex_line)
+    * Cp()
+  )^0
+)
+
+local double_superscript_convention = (
+  Cmt(
+    C(expl3_catcodes[7]),
+    function(input, position, capture)
+      if input:sub(position, position) == capture then
+        return position + 1
+      else
+        return nil
+      end
+    end
+  )
+  * (
+    C(lowercase_hexadecimal_digit * lowercase_hexadecimal_digit)
+    / function(hexadecimal_digits)
+      return string.char(tonumber(hexadecimal_digits, 16)), 4
+    end
+    + C(lower_half_ascii_character)
+    / function(character)
+      return string.char(string.byte(character) + 64), 3
+    end
+    + C(upper_half_ascii_character)
+    / function(character)
+      return string.char(string.byte(character) - 64), 3
+    end
+  )
+)
 
 local argument = (
-  lbrace
-  * (any - rbrace)^0
-  * rbrace
+  expl3_catcodes[1]
+  * (any - expl3_catcodes[2])^0
+  * expl3_catcodes[2]
 )
 
 local expl3_function = (
-  backslash
+  expl3_catcodes[0]
   * (underscore * underscore)^-1 * letter^1  -- module
   * underscore
   * letter^1  -- description
@@ -93,7 +164,7 @@ local expl3_function = (
   * (eof + -letter)
 )
 local expl3_variable_or_constant = (
-  backslash
+  expl3_catcodes[0]
   * S("cgl")  -- scope
   * underscore
   * (
@@ -114,8 +185,8 @@ local expl3like_material = (
 local commented_line_letter = (
   linechar
   + newline
-  - backslash
-  - percent_sign
+  - expl3_catcodes[0]
+  - expl3_catcodes[14]
 )
 local commented_line = (
   (
@@ -124,32 +195,32 @@ local commented_line = (
       - newline
     )^1  -- initial state
     + (
-      backslash  -- even backslash
+      expl3_catcodes[0]  -- even backslash
       * (
-        backslash
+        expl3_catcodes[0]
         + #newline
       )
     )^1
     + (
-      backslash
+      expl3_catcodes[0]
       * (
-        percent_sign
+        expl3_catcodes[14]
         + commented_line_letter
       )
     )
   )^0
   * (
-    #percent_sign
+    #expl3_catcodes[14]
     * Cp()
     * (
       (
-        percent_sign  -- comment
+        expl3_catcodes[14]  -- comment
         * linechar^0
         * Cp()
         * newline
         * #blank_line  -- blank line
       )
-      + percent_sign  -- comment
+      + expl3_catcodes[14]  -- comment
       * linechar^0
       * Cp()
       * newline
@@ -161,7 +232,8 @@ local commented_line = (
 
 ---- Standard delimiters
 local provides = (
-  P([[\ProvidesExpl]])
+  expl3_catcodes[0]
+  * P([[ProvidesExpl]])
   * (
       P("Package")
       + P("Class")
@@ -176,35 +248,22 @@ local provides = (
   * optional_spaces_and_newline
   * argument
 )
-local expl_syntax_on = P([[\ExplSyntaxOn]])
-local expl_syntax_off = P([[\ExplSyntaxOff]])
+local expl_syntax_on = expl3_catcodes[0] * P([[ExplSyntaxOn]])
+local expl_syntax_off = expl3_catcodes[0] * P([[ExplSyntaxOff]])
 
 return {
-  ampersand = ampersand,
   any = any,
-  backslash = backslash,
-  circumflex = circumflex,
-  colon = colon,
   commented_line = commented_line,
-  control_character = control_character,
-  dollar_sign = dollar_sign,
+  determine_expl3_catcode = determine_expl3_catcode,
+  double_superscript_convention = double_superscript_convention,
   eof = eof,
+  fail = fail,
   expl3like_material = expl3like_material,
+  expl3_endlinechar = expl3_endlinechar,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
-  fail = fail,
-  form_feed = form_feed,
-  hash_sign = hash_sign,
-  lbrace = lbrace,
-  letter = letter,
   linechar = linechar,
   newline = newline,
-  percent_sign = percent_sign,
   provides = provides,
-  rbrace = rbrace,
-  space = space,
-  tab = tab,
-  tex_line = tex_line,
-  tilde = tilde,
-  underscore = underscore,
+  tex_lines = tex_lines,
 }
