@@ -23,17 +23,10 @@ Some control sequence tokens correspond to removed expl3 control sequences from 
 
  /e203.tex
 
-## Missing stylistic whitespaces {.s}
+## Missing stylistic whitespaces {.s label=s204}
 Some control sequences and curly braces are not surrounded by whitespaces [@latexteam2024programming, Section 6] [@latexteam2024style, Section 3].
 
-``` tex
-\cs_new:Npn \foo_bar:Nn #1#2
-{
-  \cs_if_exist:NTF#1  % warning on this line
-    { \__foo_bar:n {#2} }
-    { \__foo_bar:nn{#2}{literal} }  % warning on this line
-}
-```
+ /s204.tex
 
 ## Malformed function name {.s}
 Some function have names that are not in the format `\texttt{\textbackslash\meta{module}\_\meta{description}:\meta{arg-spec}}`{=tex} [@latexteam2024programming, Section 3.2].

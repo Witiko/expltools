@@ -24,7 +24,8 @@ local percent_sign = P("%")
 local rbrace = P("}")
 local tilde = P("~")
 local underscore = P("_")
-local lowercase_hexadecimal_digit = R("09", "af")
+local decimal_digit = R("09")
+local lowercase_hexadecimal_digit = decimal_digit + R("af")
 local lower_half_ascii_character = R("\x00\x3F")
 local upper_half_ascii_character = R("\x40\x7F")
 
@@ -266,6 +267,7 @@ return {
   any = any,
   argument_specifiers = argument_specifiers,
   commented_line = commented_line,
+  decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
   double_superscript_convention = double_superscript_convention,
   eof = eof,

@@ -77,9 +77,17 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         end
       end
 
+      local previous_catcode = 9
+      print(line_text)
       while character_index <= #line_text do
         local character, catcode, character_index_increment = get_character_and_catcode(character_index)
         local range_start = map_back(character_index)
+        local range_end = range_start + 1
+        if previous_catcode == 0 or previous_catcode == 1 or previous_catcode == 2 then
+          if catcode ~= 0 and catcode ~= 1 and catcode ~= 2 and not (previous_catcode == 1 and catcode == 6) and catcode ~= 9 then
+            issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
+          end
+        end
         if catcode == 0 then  -- control sequence
           local csname_table = {}
           local csname_index = character_index + character_index_increment
@@ -108,20 +116,26 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
             end
           end
           local csname = table.concat(csname_table)
-          table.insert(tokens, {"control_sequence", csname, 0, range_start, map_back(previous_csname_index) + 1})
+          range_end = map_back(previous_csname_index) + 1
+          table.insert(tokens, {"control sequence", csname, 0, range_start, range_end})
+          if previous_catcode ~= 9 then
+            issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
+          end
+          previous_catcode = 0
           character_index = csname_index
         elseif catcode == 5 then  -- end of line
           if state == "N" then
-            table.insert(tokens, {"control_sequence", "par", range_start, range_start + 1})
+            table.insert(tokens, {"control sequence", "par", range_start, range_end})
           elseif state == "M" then
-            table.insert(tokens, {"character", " ", 10, range_start, range_start + 1})
+            table.insert(tokens, {"character", " ", 10, range_start, range_end})
           end
           character_index = character_index + character_index_increment
         elseif catcode == 9 then  -- ignored character
+          previous_catcode = 9
           character_index = character_index + character_index_increment
         elseif catcode == 10 then  -- space
           if state == "M" then
-            table.insert(tokens, {"character", " ", 10, range_start, range_start + 1})
+            table.insert(tokens, {"character", " ", 10, range_start, range_end})
           end
           character_index = character_index + character_index_increment
         elseif catcode == 14 then  -- comment character
@@ -129,8 +143,18 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         elseif catcode == 15 then  -- invalid character
           -- TODO: register an error
           character_index = character_index + character_index_increment
-        else  -- regular character
-          table.insert(tokens, {"character", character, catcode, range_start, range_start + 1})
+        else
+          if catcode == 1 or catcode == 2 then  -- begin/end grouping
+            if previous_catcode ~= 9 and not (previous_catcode == 6 and catcode == 2) then
+              issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
+            end
+            previous_catcode = catcode
+          elseif previous_catcode == 6 and catcode == 12 and lpeg.match(parsers.decimal_digit, character) ~= 1 then  -- maybe a parameter?
+            previous_catcode = 6
+          else  -- regular character
+            previous_catcode = catcode
+          end
+          table.insert(tokens, {"character", character, catcode, range_start, range_end})
           state = "M"
           character_index = character_index + character_index_increment
         end
@@ -159,7 +183,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
   for _, tokens in ipairs(all_tokens) do
     for _, token in ipairs(tokens) do
       local token_type, payload, catcode, range_start, range_end = table.unpack(token)
-      if token_type == "control_sequence" then
+      if token_type == "control sequence" then
         local csname = payload
         local _, _, argument_specifiers = csname:find(":(.*)")
         if argument_specifiers ~= nil then

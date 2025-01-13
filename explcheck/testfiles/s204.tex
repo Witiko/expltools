@@ -1,0 +1,6 @@
+\cs_new:Npn \foo_bar:Nn #1#2
+{
+  \cs_if_exist:NTF#1  % warning on this line
+    { \__foo_bar:n {#2} }
+    { \__foo_bar:nn{#2}{literal} }  % warning on this line
+}
