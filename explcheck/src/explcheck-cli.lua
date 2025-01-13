@@ -100,13 +100,15 @@ local function main(pathnames, options)
     local issues = new_issues()
 
     -- Run all processing steps.
-    local line_starting_byte_numbers, expl_ranges = preprocessing(issues, content, options)
+    local line_starting_byte_numbers, expl_ranges, tokens  -- luacheck: ignore tokens
+
+    line_starting_byte_numbers, expl_ranges = preprocessing(issues, content, options)
 
     if #issues.errors > 0 then
       goto continue
     end
 
-    local tokens = lexical_analysis(issues, content, expl_ranges, options)  -- luacheck: ignore tokens
+    tokens = lexical_analysis(issues, content, expl_ranges, options)
 
     -- syntactic_analysis(issues)
     -- semantic_analysis(issues)
