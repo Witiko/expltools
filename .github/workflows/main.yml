@@ -41,7 +41,12 @@ jobs:
         uses: teatimeguest/setup-texlive-action@v3
         with:
           packages: |
+            l3build
             luatex
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
+      - name: Generate file "explcheck-obsolete.lua"
+        run: l3build tag
       - name: Run explcheck
         run: |
           set -e
