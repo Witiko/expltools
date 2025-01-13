@@ -112,16 +112,10 @@ Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s
   \s_foo_bar
 ```
 
-## Too many closing braces {.e}
+## Too many closing braces {.e label=e208}
 An expl3 part of the input file contains too many closing braces.
 
-``` tex
-\tl_new:N
-  \g_example_tl
-\tl_gset:Nn
-  \g_example_tl
-  { Hello,~ } }  % error on this line
-```
+ /e208.tex
 
 ## Invalid characters {.e label=e209}
 An expl3 part of the input file contains invalid characters.

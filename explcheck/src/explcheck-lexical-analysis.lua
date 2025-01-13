@@ -59,6 +59,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
   local function get_tokens(lines)
     local tokens = {}
     local state
+    local num_open_groups_upper_estimate = 0
     for line_text, map_back in lines do
       state = "N"
       local character_index = 1
@@ -153,6 +154,15 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           character_index = character_index + character_index_increment
         else
           if catcode == 1 or catcode == 2 then  -- begin/end grouping
+            if catcode == 1 then
+              num_open_groups_upper_estimate = num_open_groups_upper_estimate + 1
+            elseif catcode == 2 then
+              if num_open_groups_upper_estimate > 0 then
+                num_open_groups_upper_estimate = num_open_groups_upper_estimate - 1
+              else
+                issues:add('e208', 'too many closing braces', range_start, range_end)
+              end
+            end
             if previous_catcode ~= 9 and not (previous_catcode == 6 and catcode == 2) then
               issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
             end
