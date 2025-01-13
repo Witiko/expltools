@@ -106,7 +106,7 @@ local function main(pathnames, options)
       goto continue
     end
 
-    lexical_analysis(issues, content, expl_ranges, options)
+    local tokens = lexical_analysis(issues, content, expl_ranges, options)  -- luacheck: ignore tokens
 
     -- syntactic_analysis(issues)
     -- semantic_analysis(issues)
