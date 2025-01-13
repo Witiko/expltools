@@ -162,7 +162,7 @@ local function preprocessing(issues, content, options)
 
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
-    table.insert(expl_ranges, {1, #content})
+    table.insert(expl_ranges, {1, #content + 1})
     issues:ignore('e102')
     if not utils.get_option(options, 'expect_expl3_everywhere') then
       issues:add('w100', 'no standard delimiters')
