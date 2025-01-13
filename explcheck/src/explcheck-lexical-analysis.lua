@@ -161,8 +161,10 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
       if token_type == "control_sequence" and payload:sub(-2) == ":w" or payload:sub(-2) == ":D" then
         issues:add('w200', '"weird" and "do not use" argument specifiers', range_start, range_end)
       end
+      -- TODO: Remove the following `print()` statement.
       print(
-        '<token type="' .. token_type .. '" catcode="' .. catcode .. '" start="' .. range_start .. '" end="' .. range_end .. '">'
+        '<token type="' .. token_type .. '" catcode="' .. catcode .. '" start="' .. range_start
+        .. '" end="' .. range_end .. '">'
         .. payload
         .. '</token>'
       )
