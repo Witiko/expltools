@@ -50,6 +50,8 @@ jobs:
         with:
           packages: |
             l3build
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
       - name: Run tests
         run: |
           l3build check
@@ -67,6 +69,8 @@ jobs:
         with:
           packages: |
             l3build
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
       - name: Build the Docker image
         run: |
           set -e
@@ -104,6 +108,8 @@ jobs:
             l3build
           package-file: |
             **/DEPENDS.txt
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
       - name: Build the CTAN archive
         run: |
           set -e
