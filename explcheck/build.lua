@@ -11,7 +11,7 @@ typesetfiles = {
   "*.md",
 }
 sourcefiles = {
-  "*.lua",
+  "explcheck*.lua",
 }
 bibfiles = {
   "**/*.bib",
