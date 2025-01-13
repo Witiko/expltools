@@ -4,16 +4,7 @@ In the lexical analysis step, the expl3 analysis tool converts the expl3 parts o
 ## “Weird” and “Do not use” argument specifiers {.w}
 Some control sequence tokens correspond to functions with `w` (weird) or `D` (do not use) argument specifiers.
 
-``` tex
-\cs_new:Npn
-  \show_until_if:w  % warning on this line
-  #1 \if:w  % warning on this line
-  { \tl_show:n {#1} }
-\show_until_if:w  % warning on this line
-  \tex_if:D  % warning on this line
-  \if_charcode:w  % warning on this line
-  \if:w  % warning on this line
-```
+ /w200.tex
 
 The above example has been taken from @latexteam2024interfaces [Chapter 24].
 
