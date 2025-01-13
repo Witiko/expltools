@@ -28,32 +28,13 @@ Some control sequences and curly braces are not surrounded by whitespaces [@late
 
  /s204.tex
 
-## Malformed function name {.s}
+## Malformed function name {.s label=s205}
 Some function have names that are not in the format `\texttt{\textbackslash\meta{module}\_\meta{description}:\meta{arg-spec}}`{=tex} [@latexteam2024programming, Section 3.2].
 
-``` tex
-\cs_new:Nn
-  \description:  % warning on this line
-  { foo }
-```
-
-``` tex
-\cs_new:Nn
-  \module__description:  % warning on this line
-  { foo }
-```
-
-``` tex
-\cs_new:Nn
-  \_module_description:  % warning on this line
-  { foo }
-```
-
-``` tex
-\cs_new:Nn
-  \__module_description:
-  { foo }
-```
+ /s203-01.tex
+ /s203-02.tex
+ /s203-03.tex
+ /s203-04.tex
 
 ## Malformed variable or constant name {.s}
 Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.

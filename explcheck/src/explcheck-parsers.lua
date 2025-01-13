@@ -74,7 +74,7 @@ for catcode, parser in pairs(expl3_catcodes) do
   )
 end
 
----- Parts of TeX syntax
+---- Syntax recognized by TeX's input and token processors
 local optional_spaces = space^0
 local optional_spaces_and_newline = (
   optional_spaces
@@ -149,6 +149,7 @@ local double_superscript_convention = (
   )
 )
 
+---- Arguments and argument specifiers
 local argument = (
   expl3_catcodes[1]
   * (any - expl3_catcodes[2])^0
@@ -166,34 +167,41 @@ local weird_argument_specifiers = (
   * weird_argument_specifier
 )
 
-local expl3_function = (
-  expl3_catcodes[0]
-  * (underscore * underscore)^-1 * letter^1  -- module
+---- Function, variable, and constant names
+local expl3_function_csname = (
+  (underscore * underscore)^-1 * letter^1  -- module
   * underscore
-  * letter^1  -- description
+  * letter * (letter + underscore)^0  -- description
   * colon
-  * argument_specifier^1  -- argspec
+  * argument_specifier^0  -- argspec
   * (eof + -letter)
 )
-local expl3_variable_or_constant = (
+local expl3_function = expl3_catcodes[0] * expl3_function_csname
+
+local any_type = (
+  underscore
+  * letter^1  -- type
+  * (eof + -letter)
+)
+local any_expl3_variable_or_constant = (
   expl3_catcodes[0]
   * S("cgl")  -- scope
   * underscore
   * (
-    letter^1  -- just description
+    letter * (letter + underscore - #any_type)^0  -- just description
     + underscore^-1 * letter^1  -- module
     * underscore
-    * letter^1  -- description
+    * letter * (letter + underscore - #any_type)^0  -- description
   )
-  * underscore
-  * letter^1  -- type
-  * (eof + -letter)
-)
-local expl3like_material = (
-  expl3_function
-  + expl3_variable_or_constant
+  * any_type
 )
 
+local expl3like_material = (
+  expl3_function
+  + any_expl3_variable_or_constant
+)
+
+---- Comments
 local commented_line_letter = (
   linechar
   + newline
@@ -263,6 +271,27 @@ local provides = (
 local expl_syntax_on = expl3_catcodes[0] * P([[ExplSyntaxOn]])
 local expl_syntax_off = expl3_catcodes[0] * P([[ExplSyntaxOff]])
 
+---- Assigning functions
+local function_assignment_csname = (
+  P("cs_")
+  * (
+    (
+      P("new")
+      + P("g")^-1
+      * P("set")
+    )
+    * (
+      P("_eq")
+      + P("_protected")^-1
+      * P("_nopar")^-1
+    )
+    * P(":N")
+    + P("generate_from_arg_count:N")
+  )
+)
+
+---- Assigning variables/constants
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
@@ -274,8 +303,10 @@ return {
   fail = fail,
   expl3like_material = expl3like_material,
   expl3_endlinechar = expl3_endlinechar,
+  expl3_function_csname = expl3_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
+  function_assignment_csname = function_assignment_csname,
   linechar = linechar,
   newline = newline,
   provides = provides,

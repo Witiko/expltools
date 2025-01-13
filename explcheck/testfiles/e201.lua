@@ -9,6 +9,7 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 local issues = new_issues()
+issues:ignore('s205')
 local options = {expect_expl3_everywhere = true}
 
 local line_starting_byte_numbers, expl_ranges = preprocessing(issues, content, options)

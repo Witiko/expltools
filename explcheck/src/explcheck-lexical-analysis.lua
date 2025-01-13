@@ -204,7 +204,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
 
   -- TODO: Register any issues.
   for _, tokens in ipairs(all_tokens) do
-    for _, token in ipairs(tokens) do
+    for token_index, token in ipairs(tokens) do
       local token_type, payload, catcode, range_start, range_end = table.unpack(token)  -- luacheck: ignore catcode
       if token_type == "control sequence" then
         local csname = payload
@@ -217,11 +217,22 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
             issues:add('e201', 'unknown argument specifiers', range_start, range_end)
           end
         end
-        if lpeg.match(obsolete.deprecated, csname) ~= nil then
+        if lpeg.match(obsolete.deprecated_csname, csname) ~= nil then
           issues:add('w202', 'deprecated control sequences', range_start, range_end)
         end
-        if lpeg.match(obsolete.removed, csname) ~= nil then
+        if lpeg.match(obsolete.removed_csname, csname) ~= nil then
           issues:add('e203', 'removed control sequences', range_start, range_end)
+        end
+        if lpeg.match(parsers.function_assignment_csname, csname) ~= nil then
+          if token_index + 1 <= #tokens then
+            local next_token = tokens[token_index + 1]
+            local next_token_type, next_csname, _, next_range_start, next_range_end = table.unpack(next_token)
+            if next_token_type == "control sequence" then
+              if lpeg.match(parsers.expl3_function_csname, next_csname) == nil then
+                issues:add('s205', 'malformed function name', next_range_start, next_range_end)
+              end
+            end
+          end
         end
       end
       -- TODO: Remove the following `print()` statement.
