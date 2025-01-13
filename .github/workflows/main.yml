@@ -19,6 +19,15 @@ jobs:
           set -e
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends lua-check
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            l3build
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
+      - name: Generate file "explcheck-obsolete.lua"
+        run: l3build tag
       - name: Run luacheck
         run: |
           find -type f -follow -name '*.lua' -not -name 'build.lua' -exec luacheck {} +
