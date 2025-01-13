@@ -78,13 +78,21 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
       end
 
       local previous_catcode = 9
-      print(line_text)
       while character_index <= #line_text do
         local character, catcode, character_index_increment = get_character_and_catcode(character_index)
         local range_start = map_back(character_index)
         local range_end = range_start + 1
-        if previous_catcode == 0 or previous_catcode == 1 or previous_catcode == 2 then
-          if catcode ~= 0 and catcode ~= 1 and catcode ~= 2 and not (previous_catcode == 1 and catcode == 6) and catcode ~= 9 then
+        if (  -- a potential missing stylistic whitespace
+            previous_catcode == 0  -- right after a control sequence
+            or previous_catcode == 1 or previous_catcode == 2  -- or a begin/end grouping
+          )
+          then
+          if (
+                catcode ~= 0 and catcode ~= 1  -- for a control sequence of being grouping, we will handle the lack of whitespace elsewhere
+                and not (previous_catcode == 2 and character == ",")  -- allow a comma after end grouping without a whitespace in between
+                and not (previous_catcode == 1 and catcode == 6)  -- allow a parameter after begin grouping  without a whitespace in between
+                and catcode ~= 9
+              ) then
             issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
           end
         end
@@ -149,9 +157,13 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
               issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
             end
             previous_catcode = catcode
-          elseif previous_catcode == 6 and catcode == 12 and lpeg.match(parsers.decimal_digit, character) ~= 1 then  -- maybe a parameter?
+          elseif (  -- maybe a parameter?
+                previous_catcode == 6 and catcode == 12
+                and lpeg.match(parsers.decimal_digit, character) ~= nil
+              )
+              then
             previous_catcode = 6
-          else  -- regular character
+          else  -- some other character
             previous_catcode = catcode
           end
           table.insert(tokens, {"character", character, catcode, range_start, range_end})
@@ -202,12 +214,12 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         end
       end
       -- TODO: Remove the following `print()` statement.
-      print(
-        '<token type="' .. token_type .. '" catcode="' .. catcode .. '" start="' .. range_start
-        .. '" end="' .. range_end .. '">'
-        .. payload
-        .. '</token>'
-      )
+      --print(
+      --  '<token type="' .. token_type .. '" catcode="' .. catcode .. '" start="' .. range_start
+      --  .. '" end="' .. range_end .. '">'
+      --  .. payload
+      --  .. '</token>'
+      --)
     end
   end
 
