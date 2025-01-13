@@ -149,7 +149,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         elseif catcode == 14 then  -- comment character
           character_index = #line_text + 1
         elseif catcode == 15 then  -- invalid character
-          -- TODO: register an error
+          issues:add('e209', 'invalid characters', range_start, range_end)
           character_index = character_index + character_index_increment
         else
           if catcode == 1 or catcode == 2 then  -- begin/end grouping

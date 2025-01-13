@@ -122,3 +122,8 @@ An expl3 part of the input file contains too many closing braces.
   \g_example_tl
   { Hello,~ } }  % error on this line
 ```
+
+## Invalid characters {.e label=e209}
+An expl3 part of the input file contains invalid characters.
+
+ /e209.tex
