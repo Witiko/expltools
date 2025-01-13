@@ -1,6 +1,7 @@
 -- The lexical analysis step of static analysis converts expl3 parts of the input files into TeX tokens.
 
 local parsers = require("explcheck-parsers")
+local obsolete = require("explcheck-obsolete")
 
 local lpeg = require("lpeg")
 
@@ -165,9 +166,15 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           if lpeg.match(parsers.weird_argument_specifiers, argument_specifiers) then
             issues:add('w200', '"weird" and "do not use" argument specifiers', range_start, range_end)
           end
-          if lpeg.match(parsers.argument_specifiers, argument_specifiers) <= #argument_specifiers then
+          if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
             issues:add('e201', 'unknown argument specifiers', range_start, range_end)
           end
+        end
+        if lpeg.match(obsolete.deprecated, csname) ~= nil then
+          issues:add('w202', 'deprecated control sequences', range_start, range_end)
+        end
+        if lpeg.match(obsolete.removed, csname) ~= nil then
+          issues:add('e203', 'removed control sequences', range_start, range_end)
         end
       end
       -- TODO: Remove the following `print()` statement.

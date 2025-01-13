@@ -156,7 +156,7 @@ local argument = (
 
 local weird_argument_specifier = S("wD")
 local argument_specifier = S("NncVvoxefTFp") + weird_argument_specifier
-local argument_specifiers = argument_specifier^0
+local argument_specifiers = argument_specifier^0 * eof
 local weird_argument_specifiers = (
   (
     argument_specifier

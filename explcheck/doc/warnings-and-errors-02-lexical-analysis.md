@@ -1,38 +1,27 @@
 # Lexical analysis
 In the lexical analysis step, the expl3 analysis tool converts the expl3 parts of the input files into a list of `\TeX`{=tex} tokens.
 
-## “Weird” and “Do not use” argument specifiers {.w}
+## “Weird” and “Do not use” argument specifiers {.w label=w200}
 Some control sequence tokens correspond to functions with `w` (weird) or `D` (do not use) argument specifiers.
 
  /w200.tex
 
 The above example has been taken from @latexteam2024interfaces [Chapter 24].
 
-## Unknown argument specifiers {.e}
+## Unknown argument specifiers {.e label=e201}
 Some control sequence tokens correspond to functions with unknown argument specifiers. [@latexteam2024interfaces, Section 1.1]
 
  /e201.tex
 
-## Deprecated control sequences {.w}
+## Deprecated control sequences {.w label=w202}
 Some control sequence tokens correspond to deprecated expl3 control sequences from `l3obsolete.txt` [@josephwright2024obsolete].
-<!-- vi "$(texdoc -Il l3obsolete.txt | sed -r 's/\s*[0-9]+\s*//')" -->
 
-``` tex
-\str_lower_case:n  % warning on this line
-  { FOO BAR }
-```
+ /w202.tex
 
-## Removed control sequences {.e}
+## Removed control sequences {.e label=e203}
 Some control sequence tokens correspond to removed expl3 control sequences from `l3obsolete.txt` [@josephwright2024obsolete].
-<!-- vi "$(texdoc -Il l3obsolete.txt | sed -r 's/\s*[0-9]+\s*//')" -->
 
-``` tex
-\msg_log:n  % error on this line
-  {
-    Foo~bar~
-    \c_one_thousand  % error on this line
-  }
-```
+ /e203.tex
 
 ## Missing stylistic whitespaces {.s}
 Some control sequences and curly braces are not surrounded by whitespaces [@latexteam2024programming, Section 6] [@latexteam2024style, Section 3].

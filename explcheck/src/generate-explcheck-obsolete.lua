@@ -40,6 +40,7 @@ output_file:write(
 ---- Generate the LPEG parsers.
 output_file:write('local lpeg = require("lpeg")\n')
 output_file:write('local P = lpeg.P\n\n')
+output_file:write('local eof = P(-1)\n')
 output_file:write('local regular_character = P(1)\n')
 output_file:write('local wildcard = regular_character^0\n\n')
 
@@ -166,7 +167,7 @@ for csname_type, prefix_tree in pairs(prefix_trees) do
         subparsers[parent_path] = suffix
       end
     else  -- root node
-      output_file:write('obsolete.' .. csname_type .. ' = ' .. subparsers[path] .. '\n')
+      output_file:write('obsolete.' .. csname_type .. ' = ' .. subparsers[path] .. ' * eof\n')
     end
   end)
 end
