@@ -194,7 +194,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
   -- TODO: Register any issues.
   for _, tokens in ipairs(all_tokens) do
     for _, token in ipairs(tokens) do
-      local token_type, payload, catcode, range_start, range_end = table.unpack(token)
+      local token_type, payload, catcode, range_start, range_end = table.unpack(token)  -- luacheck: ignore catcode
       if token_type == "control sequence" then
         local csname = payload
         local _, _, argument_specifiers = csname:find(":(.*)")
