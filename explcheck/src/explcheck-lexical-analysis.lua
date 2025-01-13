@@ -78,10 +78,11 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
 
       while character_index <= #line_text do
         local character, catcode, character_index_increment = get_character_and_catcode(character_index)
-        local actual_character_index = map_back(character_index)
+        local mapped_character_index = map_back(character_index)
         if catcode == 0 then  -- control sequence
           local csname_table = {}
           local csname_index = character_index + character_index_increment
+          local previous_csname_index = csname_index
           if csname_index <= #line_text then
             local csname_index_increment
             character, catcode, csname_index_increment = get_character_and_catcode(csname_index)
@@ -93,6 +94,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
                 character, catcode, csname_index_increment = get_character_and_catcode(csname_index)
                 if catcode == 11 then
                   table.insert(csname_table, character)
+                  previous_csname_index = csname_index
                   csname_index = csname_index + csname_index_increment
                 else
                   break
@@ -105,20 +107,20 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
             end
           end
           local csname = table.concat(csname_table)
-          table.insert(tokens, {"control_sequence", csname, 0, actual_character_index})
+          table.insert(tokens, {"control_sequence", csname, 0, mapped_character_index, map_back(previous_csname_index) + 1})
           character_index = csname_index
         elseif catcode == 5 then  -- end of line
           if state == "N" then
-            table.insert(tokens, {"control_sequence", "par", actual_character_index})
+            table.insert(tokens, {"control_sequence", "par", mapped_character_index, mapped_character_index + 1})
           elseif state == "M" then
-            table.insert(tokens, {"character", " ", 10, actual_character_index})
+            table.insert(tokens, {"character", " ", 10, mapped_character_index, mapped_character_index + 1})
           end
           character_index = character_index + character_index_increment
         elseif catcode == 9 then  -- ignored character
           character_index = character_index + character_index_increment
         elseif catcode == 10 then  -- space
           if state == "M" then
-            table.insert(tokens, {"character", " ", 10, actual_character_index})
+            table.insert(tokens, {"character", " ", 10, mapped_character_index, mapped_character_index + 1})
           end
           character_index = character_index + character_index_increment
         elseif catcode == 14 then  -- comment character
@@ -127,7 +129,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           -- TODO: register an error
           character_index = character_index + character_index_increment
         else  -- regular character
-          table.insert(tokens, {"character", character, catcode, actual_character_index})
+          table.insert(tokens, {"character", character, catcode, mapped_character_index, mapped_character_index + 1})
           state = "M"
           character_index = character_index + character_index_increment
         end
@@ -155,9 +157,9 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
   -- TODO: Register any issues.
   for _, tokens in ipairs(all_tokens) do
     for _, token in ipairs(tokens) do
-      local token_type, payload, catcode, index = table.unpack(token)
+      local token_type, payload, catcode, range_start, range_end = table.unpack(token)
       print(
-        '<token type="' .. token_type .. '" catcode="' .. catcode .. '" index="' .. index .. '">'
+        '<token type="' .. token_type .. '" catcode="' .. catcode .. '" start="' .. range_start .. '" end="' .. range_end .. '">'
         .. payload
         .. '</token>'
       )
