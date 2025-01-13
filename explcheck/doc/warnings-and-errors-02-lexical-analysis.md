@@ -11,13 +11,7 @@ The above example has been taken from @latexteam2024interfaces [Chapter 24].
 ## Unknown argument specifiers {.e}
 Some control sequence tokens correspond to functions with unknown argument specifiers. [@latexteam2024interfaces, Section 1.1]
 
-``` tex
-\cs_new:Nn
-  \example:bar  % error on this line
-  { foo }
-  { bar }
-  { baz }
-```
+ /e201.tex
 
 ## Deprecated control sequences {.w}
 Some control sequence tokens correspond to deprecated expl3 control sequences from `l3obsolete.txt` [@josephwright2024obsolete].

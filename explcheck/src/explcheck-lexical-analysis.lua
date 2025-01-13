@@ -158,8 +158,17 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
   for _, tokens in ipairs(all_tokens) do
     for _, token in ipairs(tokens) do
       local token_type, payload, catcode, range_start, range_end = table.unpack(token)
-      if token_type == "control_sequence" and payload:sub(-2) == ":w" or payload:sub(-2) == ":D" then
-        issues:add('w200', '"weird" and "do not use" argument specifiers', range_start, range_end)
+      if token_type == "control_sequence" then
+        local csname = payload
+        local _, _, argument_specifiers = csname:find(":(.*)")
+        if argument_specifiers ~= nil then
+          if lpeg.match(parsers.weird_argument_specifiers, argument_specifiers) then
+            issues:add('w200', '"weird" and "do not use" argument specifiers', range_start, range_end)
+          end
+          if lpeg.match(parsers.argument_specifiers, argument_specifiers) <= #argument_specifiers then
+            issues:add('e201', 'unknown argument specifiers', range_start, range_end)
+          end
+        end
       end
       -- TODO: Remove the following `print()` statement.
       print(

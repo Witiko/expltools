@@ -154,13 +154,24 @@ local argument = (
   * expl3_catcodes[2]
 )
 
+local weird_argument_specifier = S("wD")
+local argument_specifier = S("NncVvoxefTFp") + weird_argument_specifier
+local argument_specifiers = argument_specifier^0
+local weird_argument_specifiers = (
+  (
+    argument_specifier
+    - weird_argument_specifier
+  )^0
+  * weird_argument_specifier
+)
+
 local expl3_function = (
   expl3_catcodes[0]
   * (underscore * underscore)^-1 * letter^1  -- module
   * underscore
   * letter^1  -- description
   * colon
-  * S("NncVvoxefTFpwD")^1  -- argspec
+  * argument_specifier^1  -- argspec
   * (eof + -letter)
 )
 local expl3_variable_or_constant = (
@@ -253,6 +264,7 @@ local expl_syntax_off = expl3_catcodes[0] * P([[ExplSyntaxOff]])
 
 return {
   any = any,
+  argument_specifiers = argument_specifiers,
   commented_line = commented_line,
   determine_expl3_catcode = determine_expl3_catcode,
   double_superscript_convention = double_superscript_convention,
@@ -266,4 +278,5 @@ return {
   newline = newline,
   provides = provides,
   tex_lines = tex_lines,
+  weird_argument_specifiers = weird_argument_specifiers,
 }
