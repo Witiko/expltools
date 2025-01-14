@@ -38,6 +38,9 @@
 - Do not produce warning S204 (Missing stylistic whitespaces) for a parameter
   before begin grouping (`#1{`). (#23)
 
+- Do not produce S204 (Missing stylistic whitespaces) for a comma immediately
+  after a control sequence. (505608f9)
+
 - Do not produce warnings S205 (Malformed function name) and S206 (Malformed
   variable or constant name) for non-expl3 functions, variables, and constants.
   (#23)
