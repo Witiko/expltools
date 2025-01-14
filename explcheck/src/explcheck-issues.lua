@@ -78,7 +78,7 @@ function Issues:ignore(identifier, range_start, range_end)
   elseif range_start == nil then
     -- Prevent any issues with the given identifier.
     assert(identifier ~= nil)
-    issue_tables = self:_get_issue_table(identifier)
+    issue_tables = {self:_get_issue_table(identifier)}
     ignore_issue = function(issue)
       local issue_identifier = issue[1]
       return match_issue_identifier(issue_identifier)
@@ -86,7 +86,7 @@ function Issues:ignore(identifier, range_start, range_end)
   else
     -- Prevent any issues with the given identifier that are also either within the given range or file-wide.
     assert(range_start ~= nil and range_end ~= nil and identifier ~= nil)
-    issue_tables = self:_get_issue_table(identifier)
+    issue_tables = {self:_get_issue_table(identifier)}
     ignore_issue = function(issue)
       local issue_identifier = issue[1]
       local issue_range = issue[3]
