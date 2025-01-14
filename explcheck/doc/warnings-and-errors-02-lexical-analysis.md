@@ -46,28 +46,13 @@ An exception is made for scratch variables [@latexteam2024interfaces, Section 1.
 
  /s206-03.tex
 
-## Malformed quark or scan mark name {.s}
+## Malformed quark or scan mark name {.s label=s207}
 Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
 
-``` tex
-\quark_new:N
-  \foo_bar  % error on this line
-```
-
-``` tex
-\quark_new:N
-  \q_foo_bar
-```
-
-``` tex
-\scan_new:N
-  \foo_bar  % error on this line
-```
-
-``` tex
-\scan_new:N
-  \s_foo_bar
-```
+ /s207-01.tex
+ /s207-02.tex
+ /s207-03.tex
+ /s207-04.tex
 
 ## Too many closing braces {.e label=e208}
 An expl3 part of the input file contains too many closing braces.

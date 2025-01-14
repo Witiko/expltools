@@ -272,7 +272,7 @@ local expl_syntax_on = expl3_catcodes[0] * P([[ExplSyntaxOn]])
 local expl_syntax_off = expl3_catcodes[0] * P([[ExplSyntaxOff]])
 
 ---- Assigning functions
-local function_assignment_csname = (
+local expl3_function_assignment_csname = (
   P("cs_")
   * (
     (
@@ -285,13 +285,13 @@ local function_assignment_csname = (
       + P("_protected")^-1
       * P("_nopar")^-1
     )
-    * P(":N")
-    + P("generate_from_arg_count:N")
+    + P("generate_from_arg_count")
   )
+  * P(":N")
 )
 
----- Assigning variables/constants
-local variable_or_constant_type = (
+---- Using variables/constants
+local expl3_variable_or_constant_type = (
   P("bitset")
   + S("hv")^-1 * P("box")
   + P("bool")
@@ -313,8 +313,8 @@ local variable_or_constant_type = (
   + P("tl")
 )
 
-local variable_or_constant_use_csname = (
-  variable_or_constant_type
+local expl3_variable_or_constant_use_csname = (
+  expl3_variable_or_constant_type
   * P("_")
   * (
     P("const")
@@ -333,18 +333,31 @@ local expl3_variable_or_constant_csname = (
   * (
     underscore^-1 * letter^1  -- module
     * underscore
-    * letter * (letter + underscore * -#variable_or_constant_type)^0  -- description
+    * letter * (letter + underscore * -#expl3_variable_or_constant_type)^0  -- description
   )
   * underscore
-  * variable_or_constant_type
+  * expl3_variable_or_constant_type
+  * eof
 )
-local expl3_scratch_variable = (
+local expl3_scratch_variable_csname = (
   P("l")
   * underscore
   * P("tmp") * S("ab")
   * underscore
-  * variable_or_constant_type
+  * expl3_variable_or_constant_type
+  * eof
 )
+
+---- Defining quarks and scan marks
+local expl3_quark_or_scan_mark_definition_csname = (
+  (
+    P("quark")
+    + P("scan")
+  )
+  * P("_new:N")
+  * eof
+)
+local expl3_quark_or_scan_mark_csname = S("qs") * P("_")
 
 return {
   any = any,
@@ -357,16 +370,18 @@ return {
   fail = fail,
   expl3like_material = expl3like_material,
   expl3_endlinechar = expl3_endlinechar,
+  expl3_function_assignment_csname = expl3_function_assignment_csname,
   expl3_function_csname = expl3_function_csname,
-  expl3_scratch_variable = expl3_scratch_variable,
+  expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
+  expl3_variable_or_constant_use_csname = expl3_variable_or_constant_use_csname,
+  expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
+  expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
-  function_assignment_csname = function_assignment_csname,
   linechar = linechar,
   newline = newline,
   provides = provides,
   tex_lines = tex_lines,
-  variable_or_constant_use_csname = variable_or_constant_use_csname,
   weird_argument_specifiers = weird_argument_specifiers,
 }

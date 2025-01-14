@@ -200,7 +200,6 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
     table.insert(all_tokens, tokens)
   end
 
-  -- TODO: Register any issues.
   for _, tokens in ipairs(all_tokens) do
     for token_index, token in ipairs(tokens) do
       local token_type, payload, catcode, range_start, range_end = table.unpack(token)  -- luacheck: ignore catcode
@@ -226,28 +225,27 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           local next_token_type, next_csname, _, next_range_start, next_range_end = table.unpack(next_token)
           if next_token_type == "control sequence" then
             if (
-                  lpeg.match(parsers.function_assignment_csname, csname) ~= nil
+                  lpeg.match(parsers.expl3_function_assignment_csname, csname) ~= nil
                   and lpeg.match(parsers.expl3_function_csname, next_csname) == nil
                 ) then
               issues:add('s205', 'malformed function name', next_range_start, next_range_end)
             end
             if (
-                  lpeg.match(parsers.variable_or_constant_use_csname, csname) ~= nil
+                  lpeg.match(parsers.expl3_variable_or_constant_use_csname, csname) ~= nil
                   and lpeg.match(parsers.expl3_variable_or_constant_csname, next_csname) == nil
-                  and lpeg.match(parsers.expl3_scratch_variable, next_csname) == nil
+                  and lpeg.match(parsers.expl3_scratch_variable_csname, next_csname) == nil
                 ) then
               issues:add('s206', 'malformed variable or constant name', next_range_start, next_range_end)
+            end
+            if (
+                  lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, csname) ~= nil
+                  and lpeg.match(parsers.expl3_quark_or_scan_mark_csname, next_csname) == nil
+                ) then
+              issues:add('s207', 'malformed quark or scan mark name', next_range_start, next_range_end)
             end
           end
         end
       end
-      -- TODO: Remove the following `print()` statement.
-      --print(
-      --  '<token type="' .. token_type .. '" catcode="' .. catcode .. '" start="' .. range_start
-      --  .. '" end="' .. range_end .. '">'
-      --  .. payload
-      --  .. '</token>'
-      --)
     end
   end
 
