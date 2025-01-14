@@ -36,39 +36,15 @@ Some function have names that are not in the format `\texttt{\textbackslash\meta
  /s205-03.tex
  /s205-04.tex
 
-## Malformed variable or constant name {.s}
+## Malformed variable or constant name {.s label=s206}
 Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
 
-``` tex
-\tl_new:Nn
-  \g_description_box  % warning on this line
-\tl_new:Nn
-  \l__description_box  % warning on this line
-\tl_const:Nn
-  \c_description  % warning on this line
-  { foo }
-```
-
-``` tex
-\tl_new:Nn
-  \g_module_description_box
-\tl_new:Nn
-  \l_module_description_box
-\tl_const:Nn
-  \c__module_description_box
-  { foo }
-```
+ /s206-01.tex
+ /s206-02.tex
 
 An exception is made for scratch variables [@latexteam2024interfaces, Section 1.1.1]:
 
-``` tex
-\tl_use:N
-  \l_tmpa_tl
-\int_use:N
-  \l_tmpb_int
-\str_use:N
-  \l_tmpa_str
-```
+ /s206-03.tex
 
 ## Malformed quark or scan mark name {.s}
 Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].

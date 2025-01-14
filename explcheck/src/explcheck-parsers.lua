@@ -179,8 +179,7 @@ local expl3_function_csname = (
 local expl3_function = expl3_catcodes[0] * expl3_function_csname
 
 local any_type = (
-  underscore
-  * letter^1  -- type
+  letter^1  -- type
   * (eof + -letter)
 )
 local any_expl3_variable_or_constant = (
@@ -188,11 +187,12 @@ local any_expl3_variable_or_constant = (
   * S("cgl")  -- scope
   * underscore
   * (
-    letter * (letter + underscore - #any_type)^0  -- just description
+    letter * (letter + underscore * -#any_type)^0  -- just description
     + underscore^-1 * letter^1  -- module
     * underscore
-    * letter * (letter + underscore - #any_type)^0  -- description
+    * letter * (letter + underscore * -#any_type)^0  -- description
   )
+  * underscore
   * any_type
 )
 
@@ -291,6 +291,60 @@ local function_assignment_csname = (
 )
 
 ---- Assigning variables/constants
+local variable_or_constant_type = (
+  P("bitset")
+  + S("hv")^-1 * P("box")
+  + P("bool")
+  + P("cctab")
+  + P("clist")
+  + P("coffin")
+  + P("dim")
+  + P("flag")
+  + P("fp") * P("array")^-1
+  + P("int") * P("array")^-1
+  + P("ior")
+  + P("iow")
+  + P("muskip")
+  + P("prop")
+  + P("regex")
+  + P("seq")
+  + P("skip")
+  + P("str")
+  + P("tl")
+)
+
+local variable_or_constant_use_csname = (
+  variable_or_constant_type
+  * P("_")
+  * (
+    P("const")
+    + P("new")
+    + P("g")^-1
+    * P("set")
+    * P("_eq")^-1
+    + P("use")
+  )
+  * P(":N")
+)
+
+local expl3_variable_or_constant_csname = (
+  S("cgl")  -- scope
+  * underscore
+  * (
+    underscore^-1 * letter^1  -- module
+    * underscore
+    * letter * (letter + underscore * -#variable_or_constant_type)^0  -- description
+  )
+  * underscore
+  * variable_or_constant_type
+)
+local expl3_scratch_variable = (
+  P("l")
+  * underscore
+  * P("tmp") * S("ab")
+  * underscore
+  * variable_or_constant_type
+)
 
 return {
   any = any,
@@ -304,6 +358,8 @@ return {
   expl3like_material = expl3like_material,
   expl3_endlinechar = expl3_endlinechar,
   expl3_function_csname = expl3_function_csname,
+  expl3_scratch_variable = expl3_scratch_variable,
+  expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   function_assignment_csname = function_assignment_csname,
@@ -311,5 +367,6 @@ return {
   newline = newline,
   provides = provides,
   tex_lines = tex_lines,
+  variable_or_constant_use_csname = variable_or_constant_use_csname,
   weird_argument_specifiers = weird_argument_specifiers,
 }

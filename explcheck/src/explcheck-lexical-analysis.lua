@@ -84,10 +84,9 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         local range_start = map_back(character_index)
         local range_end = range_start + 1
         if (  -- a potential missing stylistic whitespace
-            previous_catcode == 0  -- right after a control sequence
-            or previous_catcode == 1 or previous_catcode == 2  -- or a begin/end grouping
-          )
-          then
+              previous_catcode == 0  -- right after a control sequence
+              or previous_catcode == 1 or previous_catcode == 2  -- or a begin/end grouping
+            ) then
           if (
                 catcode ~= 0 and catcode ~= 1  -- for a control sequence of being grouping, we will handle the lack of whitespace elsewhere
                 and not (previous_catcode == 2 and character == ",")  -- allow a comma after end grouping without a whitespace in between
@@ -171,8 +170,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           elseif (  -- maybe a parameter?
                 previous_catcode == 6 and catcode == 12
                 and lpeg.match(parsers.decimal_digit, character) ~= nil
-              )
-              then
+              ) then
             previous_catcode = 6
           else  -- some other character
             previous_catcode = catcode
@@ -223,14 +221,22 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         if lpeg.match(obsolete.removed_csname, csname) ~= nil then
           issues:add('e203', 'removed control sequences', range_start, range_end)
         end
-        if lpeg.match(parsers.function_assignment_csname, csname) ~= nil then
-          if token_index + 1 <= #tokens then
-            local next_token = tokens[token_index + 1]
-            local next_token_type, next_csname, _, next_range_start, next_range_end = table.unpack(next_token)
-            if next_token_type == "control sequence" then
-              if lpeg.match(parsers.expl3_function_csname, next_csname) == nil then
-                issues:add('s205', 'malformed function name', next_range_start, next_range_end)
-              end
+        if token_index + 1 <= #tokens then
+          local next_token = tokens[token_index + 1]
+          local next_token_type, next_csname, _, next_range_start, next_range_end = table.unpack(next_token)
+          if next_token_type == "control sequence" then
+            if (
+                  lpeg.match(parsers.function_assignment_csname, csname) ~= nil
+                  and lpeg.match(parsers.expl3_function_csname, next_csname) == nil
+                ) then
+              issues:add('s205', 'malformed function name', next_range_start, next_range_end)
+            end
+            if (
+                  lpeg.match(parsers.variable_or_constant_use_csname, csname) ~= nil
+                  and lpeg.match(parsers.expl3_variable_or_constant_csname, next_csname) == nil
+                  and lpeg.match(parsers.expl3_scratch_variable, next_csname) == nil
+                ) then
+              issues:add('s206', 'malformed variable or constant name', next_range_start, next_range_end)
             end
           end
         end
