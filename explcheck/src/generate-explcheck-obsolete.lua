@@ -87,7 +87,7 @@ local function depth_first_search(node, path, visit, leave)
       depth_first_search(child, path .. label, visit, leave)
     end
   end
-  for label, child in pairs(node) do  -- leaf node
+  for _, child in pairs(node) do  -- leaf node
     if type(child) ~= "table" then
       visit(child, path)
     end
