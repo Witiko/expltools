@@ -82,10 +82,13 @@ end
 ------ Finally, we will generate LPEG parsers out of the prefix trees.
 local function depth_first_search(node, path, visit, leave)
   visit(node, path)
-  for label, child in pairs(node) do
+  for label, child in pairs(node) do  -- intermediate node
     if type(child) == "table" then
       depth_first_search(child, path .. label, visit, leave)
-    else
+    end
+  end
+  for label, child in pairs(node) do  -- leaf node
+    if type(child) ~= "table" then
       visit(child, path)
     end
   end
