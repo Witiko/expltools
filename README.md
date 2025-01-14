@@ -12,7 +12,7 @@ The full text of the project proposal, which summarizes devlog posts 1–4 is av
 
 These devlog posts chronicle the latest updates and progress in the ongoing development of the tool:
 
-5. [Frank Mittelbach in Brno, the first public release of explcheck, and expl3 usage statistics][8] from December 5, 2024
+5. [Frank Mittelbach in Brno, first public release of explcheck, and expl3 usage statistics][8] from Dec 5, 2024
 6. [A flurry of releases, CSTUG talk, and what's next][9] from December 19, 2024
 
 In the future, this repository may also contain the code of other useful development tools for expl3 programmers, such as a command-line utility similar to `grep` that will ignore whitespaces and newlines as well as other tools.
