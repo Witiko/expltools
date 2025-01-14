@@ -88,7 +88,7 @@ jobs:
 
 You can prepare the expltools bundle for distribution with the following two commands:
 
-1. `l3build tag`: Add the current version numbers to the file `explcheck-lua.cli`.
+1. `l3build tag`: Add version numbers to file `explcheck-cli.lua` and create `explcheck-obsolete.lua`.
 2. `l3build ctan`: Run tests, build the documentation, and create a CTAN archive `expltools-ctan.zip`.
 
 The file `explcheck.lua` should be installed in the TDS directory `scripts/expltools/explcheck`. Furthermore, it should be made executable and either symlinked to system directories as `explcheck` on Unix or have a wrapper `explcheck.exe` installed on Windows.
