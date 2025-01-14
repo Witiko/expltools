@@ -1,8 +1,50 @@
 # Changes
 
-## expltools 2025-MM-DD
+## expltools 2025-01-15
 
-### explcheck v0.5.0-dev
+### explcheck v0.5.0
+
+#### Development
+
+- Add support for ignoring file-wide issues and issues on a single line using
+  TeX comments. (#23)
+
+  For example, a comment `% noqa` will ignore any issues on the current line,
+  whereas a comment `% noqa: W100, S206` will ignore the file-wide warning W100
+  (No standard delimiters) and the warning S206 (Malformed variable or constant
+  name) on the current line.
+
+- Add command-line option `--ignored-issues` and Lua option `ignored_issues`
+  for ignoring issues. (#23)
+
+  For example, `--ignored-issues=w100,s206` will ignore the file-wide warning
+  W100 (No standard delimiters) and all warnings S206 (Malformed variable or
+  constant name).
+
+#### Fixes
+
+- Correctly shorten long names of files from the current working directory in
+  the command-line output. (#23)
+
+- Correctly parenthesize and order LPEG parsers in the file
+  `explcheck-obsolete.lua`. (#23)
+
+- Do not produce warning S204 (Missing stylistic whitespaces) for non-expl3,
+  empty, or one-character names of control sequences. (#23)
+
+- Do not produce warning S204 (Missing stylistic whitespaces) for an empty
+  grouping (`{}`). (#23)
+
+- Do not produce warning S204 (Missing stylistic whitespaces) for a parameter
+  before begin grouping (`#1{`). (#23)
+
+- Do not produce warnings S205 (Malformed function name) and S206 (Malformed
+  variable or constant name) for non-expl3 functions, variables, and constants.
+  (#23)
+
+- Do not produce warnings S206 (Malformed variable or constant name) for
+  variable and constant names that contain names of built-in types such as
+  `\c_module_constant_clist_tl` containing `clist`. (#23)
 
 ## expltools 2025-01-14
 
