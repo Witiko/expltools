@@ -333,7 +333,7 @@ local expl3_variable_or_constant_csname = (
   * (
     underscore^-1 * letter^1  -- module
     * underscore
-    * letter * (letter + underscore * -#expl3_variable_or_constant_type)^0  -- description
+    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
   )
   * underscore
   * expl3_variable_or_constant_type
