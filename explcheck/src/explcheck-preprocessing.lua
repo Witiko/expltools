@@ -1,104 +1,49 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
-local config = require("explcheck-config")
-local strip_comments = require("explcheck-preprocessing-comments")
+local parsers = require("explcheck-parsers")
+local utils = require("explcheck-utils")
 
 local lpeg = require("lpeg")
-local Cp, P, R, S, V = lpeg.Cp, lpeg.P, lpeg.R, lpeg.S, lpeg.V
+local Cp, Ct, P, V = lpeg.Cp, lpeg.Ct, lpeg.P, lpeg.V
 
--- Define base parsers.
----- Generic
-local any = P(1)
-local eof = -any
-local fail = P(false)
-
----- Tokens
-local lbrace = P("{")
-local rbrace = P("}")
-local backslash = P([[\]])
-local letter = R("AZ","az")
-local underscore = P("_")
-local colon = P(":")
-
----- Spacing
-local newline = (
-  P("\n")
-  + P("\r\n")
-  + P("\r")
-)
-local linechar = any - newline
-local spacechar = S("\t ")
-local optional_spaces = spacechar^0
-local optional_spaces_and_newline = (
-  optional_spaces
-  * (
-    newline
-    * optional_spaces
-  )^-1
-)
-
--- Define intermediate parsers.
----- Parts of TeX syntax
-local argument = (
-  lbrace
-  * (any - rbrace)^0
-  * rbrace
-)
-
-local expl3_function = (
-  backslash
-  * (underscore * underscore)^-1 * letter^1  -- module
-  * underscore
-  * letter^1  -- description
-  * colon
-  * S("NncVvoxefTFpwD")^1  -- argspec
-  * (eof + -letter)
-)
-local expl3_variable_or_constant = (
-  backslash
-  * S("cgl")  -- scope
-  * underscore
-  * (
-    letter^1  -- just description
-    + underscore^-1 * letter^1  -- module
-    * underscore
-    * letter^1  -- description
-  )
-  * underscore
-  * letter^1  -- type
-  * (eof + -letter)
-)
-local expl3like_material = (
-  expl3_function
-  + expl3_variable_or_constant
-)
-
----- Standard delimiters
-local provides = (
-  P([[\ProvidesExpl]])
-  * (
-      P("Package")
-      + P("Class")
-      + P("File")
-    )
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-)
-local expl_syntax_on = P([[\ExplSyntaxOn]])
-local expl_syntax_off = P([[\ExplSyntaxOff]])
-
--- Get the value of an option or the default value if unspecified.
-local function get_option(options, key)
-  if options == nil or options[key] == nil then
-    return config[key]
+-- Strip TeX comments from a text. Besides the transformed text, also return
+-- a function that maps positions in the transformed text back to the original
+-- text.
+local function strip_comments(text)
+  local transformed_index = 0
+  local numbers_of_bytes_removed = {}
+  local transformed_text_table = {}
+  for index, text_position in ipairs(lpeg.match(Ct(parsers.commented_line^1), text)) do
+    local span_size = text_position - transformed_index - 1
+    if span_size > 0 then
+      if index % 2 == 1 then  -- chunk of text
+        table.insert(transformed_text_table, text:sub(transformed_index + 1, text_position - 1))
+      else  -- comment
+        table.insert(numbers_of_bytes_removed, {transformed_index, span_size})
+      end
+      transformed_index = transformed_index + span_size
+    end
   end
-  return options[key]
+  table.insert(transformed_text_table, text:sub(transformed_index + 1, -1))
+  local transformed_text = table.concat(transformed_text_table, "")
+  local function map_back(index)
+    local mapped_index = index
+    for _, where_and_number_of_bytes_removed in ipairs(numbers_of_bytes_removed) do
+      local where, number_of_bytes_removed = table.unpack(where_and_number_of_bytes_removed)
+      if mapped_index > where then
+        mapped_index = mapped_index + number_of_bytes_removed
+      else
+        break
+      end
+    end
+    assert(mapped_index > 0)
+    assert(mapped_index <= #text + 1)
+    if mapped_index <= #text then
+      assert(transformed_text[index] == text[mapped_index])
+    end
+    return mapped_index
+  end
+  return transformed_text, map_back
 end
 
 -- Preprocess the content and register any issues.
@@ -120,10 +65,10 @@ local function preprocessing(issues, content, options)
     * (
       (
         (
-          Cp() * linechar^(get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
-          + linechar^0
+          Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
+          + parsers.linechar^0
         )
-        * newline
+        * parsers.newline
         * Cp()
       ) / record_line
     )^0
@@ -138,7 +83,7 @@ local function preprocessing(issues, content, options)
 
   local function capture_range(range_start, range_end)
     range_start, range_end = map_back(range_start), map_back(range_end)
-    table.insert(expl_ranges, {range_start, range_end + 1})
+    table.insert(expl_ranges, {range_start, range_end})
   end
 
   local function unexpected_pattern(pattern, code, message, test)
@@ -152,7 +97,7 @@ local function preprocessing(issues, content, options)
 
   local num_provides = 0
   local Opener = unexpected_pattern(
-    provides,
+    parsers.provides,
     "e104",
     [[multiple delimiters `\ProvidesExpl*` in a single file]],
     function()
@@ -160,14 +105,14 @@ local function preprocessing(issues, content, options)
       return num_provides > 1
     end
   )
-  local Closer = fail
-  if not get_option(options, 'expect_expl3_everywhere') then
+  local Closer = parsers.fail
+  if not utils.get_option(options, 'expect_expl3_everywhere') then
     Opener = (
-      expl_syntax_on
+      parsers.expl_syntax_on
       + Opener
     )
     Closer = (
-      expl_syntax_off
+      parsers.expl_syntax_off
       + Closer
     )
   end
@@ -189,11 +134,11 @@ local function preprocessing(issues, content, options)
           "unexpected delimiters"
         )
         + unexpected_pattern(
-            expl3like_material,
+            parsers.expl3like_material,
             "e102",
             "expl3 material in non-expl3 parts"
           )
-        + (any - V"Opener")
+        + (parsers.any - V"Opener")
       )^0
     ),
     ExplPart = (
@@ -205,10 +150,10 @@ local function preprocessing(issues, content, options)
             "w101",
             "unexpected delimiters"
           )
-          + (any - V"Closer")
+          + (parsers.any - V"Closer")
         )^0
       * Cp()
-      * (V"Closer" + eof)
+      * (V"Closer" + parsers.eof)
     ),
     Opener = Opener,
     Closer = Closer,
@@ -217,10 +162,10 @@ local function preprocessing(issues, content, options)
 
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
-    table.insert(expl_ranges, {0, #content})
-    if not get_option(options, 'expect_expl3_everywhere') then
+    table.insert(expl_ranges, {1, #content + 1})
+    issues:ignore('e102')
+    if not utils.get_option(options, 'expect_expl3_everywhere') then
       issues:add('w100', 'no standard delimiters')
-      issues:ignore('e102')
     end
   end
   return line_starting_byte_numbers, expl_ranges

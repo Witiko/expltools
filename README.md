@@ -41,6 +41,7 @@ For example, here is Lua code that applies the preprocessing step to the code fr
 ``` lua
 local new_issues = require("explcheck-issues")
 local preprocessing = require("explcheck-preprocessing")
+local lexical_analysis = require("explcheck-lexical-analysis")
 
 -- LuaTeX users must initialize Kpathsea Lua module searchers first.
 local using_luatex, kpse = pcall(require, "kpse")
@@ -56,10 +57,12 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 
-local line_starting_byte_numbers = preprocessing(issues, content)
+local line_starting_byte_numbers, expl_ranges = preprocessing(issues, content)
+local tokens = lexical_analysis(issues, content, expl_ranges)
 
 print(
-  "There were " .. #issues.warnings .. " warnings "
+  "There were " .. #tokens .. " tokens, "
+  .. #issues.warnings .. " warnings, "
   .. "and " .. #issues.errors .. " errors "
   .. "in the file " .. filename .. "."
 )

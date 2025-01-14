@@ -1,5 +1,18 @@
 # Changes
 
+## expltools 2025-01-14
+
+### explcheck v0.4.0
+
+#### Development
+
+- Add lexical analysis. (#5)
+
+#### Fixes
+
+- Do not detect error E102 (expl3 material in non-expl3 parts) when the
+  command-line option `--expect-expl3-everywhere` has been specified. (#21)
+
 ## expltools 2024-12-23
 
 ### explcheck v0.3.0
