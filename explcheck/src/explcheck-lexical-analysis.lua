@@ -96,9 +96,9 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           if (
                 catcode ~= 0 and catcode ~= 1 and catcode ~= 2  -- for a control sequence or begin/end grouping, we handle this elsewhere
                 -- do not require whitespace after non-expl3 control sequences or control sequences with empty or one-character names
-                and not (previous_catcode == 0 and (#previous_csname <= 1 or lpeg.match(parsers.non_expl3_csname, previous_csname) ~= nil))
-                and not (previous_catcode == 1 and catcode == 6)  -- allow a parameter after begin grouping without whitespace in between
-                and not (previous_catcode == 2 and character == ",")  -- allow a comma after end grouping without whitespace in between
+                and (previous_catcode ~= 0 or #previous_csname > 1 and lpeg.match(parsers.non_expl3_csname, previous_csname) == nil)
+                and (previous_catcode ~= 1 or catcode ~= 6)  -- allow a parameter after begin grouping without whitespace in between
+                and (previous_catcode ~= 2 or character ~= ",")  -- allow a comma after end grouping without whitespace in between
               ) then
             issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
           end
@@ -136,7 +136,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
                 -- do not require whitespace before non-expl3 control sequences or control sequences with empty or one-character names
-                and not (#csname <= 1 or lpeg.match(parsers.non_expl3_csname, csname) ~= nil)
+                and #csname > 1 and lpeg.match(parsers.non_expl3_csname, csname) == nil
               ) then
             issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
           end
@@ -176,8 +176,10 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
             end
             if (
                     previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
-                    and not (previous_catcode == 1 and catcode == 2)  -- allow an end grouping immediately after begin grouping
-                    and not (previous_catcode == 6 and catcode == 2)  -- allow a parameter before end grouping without whitespace in between
+                    -- do not require whitespace after non-expl3 control sequences or control sequences with empty or one-character names
+                    and (previous_catcode ~= 0 or #previous_csname > 1 and lpeg.match(parsers.non_expl3_csname, previous_csname) == nil)
+                    and (previous_catcode ~= 1 or catcode ~= 2)  -- allow an end grouping immediately after begin grouping
+                    and (previous_catcode ~= 6 or catcode ~= 1 and catcode ~= 2)  -- allow a parameter immediately before grouping
                 ) then
               issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
             end
