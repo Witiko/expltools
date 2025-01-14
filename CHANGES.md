@@ -1,8 +1,12 @@
 # Changes
 
-## expltools 2025-01-22
+## expltools 2025-01-14
 
 ### explcheck v0.4.0
+
+#### Development
+
+- Add lexical analysis. (#5)
 
 #### Fixes
 
