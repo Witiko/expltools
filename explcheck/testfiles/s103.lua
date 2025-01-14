@@ -1,5 +1,5 @@
 local new_issues = require("explcheck-issues")
-local format = require("explcheck-format")
+local utils = require("explcheck-utils")
 local preprocessing = require("explcheck-preprocessing")
 
 local filename = "s103.tex"
@@ -23,11 +23,11 @@ assert(warnings[1][3] == nil)  -- file-wide warning
 assert(warnings[2][1] == "s103")
 assert(warnings[2][2] == "line too long")
 local range_start_byte_number, range_end_byte_number = table.unpack(warnings[2][3])
-local range_start_line_number = format.convert_byte_to_line_and_column(
+local range_start_line_number = utils.convert_byte_to_line_and_column(
   line_starting_byte_numbers,
   range_start_byte_number
 )
-local range_end_line_number = format.convert_byte_to_line_and_column(
+local range_end_line_number = utils.convert_byte_to_line_and_column(
   line_starting_byte_numbers,
   range_end_byte_number - 1
 )

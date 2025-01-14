@@ -1,5 +1,7 @@
 -- Formatting for the command-line interface of the static analyzer explcheck.
 
+local utils = require("explcheck-utils")
+
 -- Transform a singular into plural if the count is zero or greater than two.
 local function pluralize(singular, count)
   if count == 1 then
@@ -64,22 +66,6 @@ end
 -- Remove ASCII color codes from a string.
 local function decolorize(text)
   return text:gsub("\27%[[0-9]+m", "")
-end
-
--- Convert a byte number in a file to a line and column number in a file.
-local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_number)
-  local line_number = 0
-  for _, line_starting_byte_number in ipairs(line_starting_byte_numbers) do
-    if line_starting_byte_number > byte_number then
-      break
-    end
-    line_number = line_number + 1
-  end
-  assert(line_number > 0)
-  local line_starting_byte_number = line_starting_byte_numbers[line_number]
-  assert(line_starting_byte_number <= byte_number)
-  local column_number = byte_number - line_starting_byte_number + 1
-  return line_number, column_number
 end
 
 -- Print the results of analyzing a file.
@@ -171,7 +157,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         local range = issue[3]
         local position = ":"
         if range ~= nil then
-          local line_number, column_number = convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
+          local line_number, column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
           position = position .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
         end
         local max_line_length = 88
@@ -238,7 +224,6 @@ local function print_summary(num_pathnames, num_warnings, num_errors)
 end
 
 return {
-  convert_byte_to_line_and_column = convert_byte_to_line_and_column,
   pluralize = pluralize,
   print_results = print_results,
   print_summary = print_summary,

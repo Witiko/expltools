@@ -1,5 +1,5 @@
 local new_issues = require("explcheck-issues")
-local format = require("explcheck-format")
+local utils = require("explcheck-utils")
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
 
@@ -22,11 +22,11 @@ for index, warning in ipairs(issues.sort(issues.warnings)) do
   assert(warning[1] == "w202")
   assert(warning[2] == "deprecated control sequences")
   local range_start_byte_number, range_end_byte_number = table.unpack(warning[3])
-  local range_start_line_number = format.convert_byte_to_line_and_column(
+  local range_start_line_number = utils.convert_byte_to_line_and_column(
     line_starting_byte_numbers,
     range_start_byte_number
   )
-  local range_end_line_number = format.convert_byte_to_line_and_column(
+  local range_end_line_number = utils.convert_byte_to_line_and_column(
     line_starting_byte_numbers,
     range_end_byte_number - 1
   )
