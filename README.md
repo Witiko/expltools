@@ -57,12 +57,11 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 
-local line_starting_byte_numbers, expl_ranges = preprocessing(issues, content)
-local tokens = lexical_analysis(issues, content, expl_ranges)
+local _, expl_ranges = preprocessing(issues, content)
+lexical_analysis(issues, content, expl_ranges)
 
 print(
-  "There were " .. #tokens .. " tokens, "
-  .. #issues.warnings .. " warnings, "
+  "There were " .. #issues.warnings .. " warnings, "
   .. "and " .. #issues.errors .. " errors "
   .. "in the file " .. filename .. "."
 )
