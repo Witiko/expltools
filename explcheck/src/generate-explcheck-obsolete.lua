@@ -167,7 +167,7 @@ for csname_type, prefix_tree in pairs(prefix_trees) do
         subparsers[parent_path] = suffix
       end
     else  -- root node
-      output_file:write('obsolete.' .. csname_type .. '_csname = ' .. subparsers[path] .. ' * eof\n')
+      output_file:write('obsolete.' .. csname_type .. '_csname = (' .. subparsers[path] .. ') * eof\n')
     end
   end)
 end
