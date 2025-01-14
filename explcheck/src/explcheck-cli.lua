@@ -3,6 +3,7 @@
 local config = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local format = require("explcheck-format")
+local utils = require("explcheck-utils")
 
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
@@ -93,11 +94,16 @@ local function main(pathnames, options)
 
   for pathname_number, pathname in ipairs(pathnames) do
 
+    -- Set up the issue registry.
+    local issues = new_issues()
+    for _, issue_identifier in ipairs(utils.get_option(options, "ignored_issues")) do
+      issues:ignore(issue_identifier)
+    end
+
     -- Load an input file.
     local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
     local content = assert(file:read("*a"))
     assert(file:close())
-    local issues = new_issues()
 
     -- Run all processing steps.
     local line_starting_byte_numbers, expl_ranges, tokens  -- luacheck: ignore tokens
@@ -143,6 +149,7 @@ local function print_usage()
     "Options:\n\n"
     .. "\t--expect-expl3-everywhere  Expect that the whole files are in expl3, ignoring \\ExplSyntaxOn and Off.\n"
     .. "\t                           This prevents the error E102 (expl3 material in non-expl3 parts).\n\n"
+    .. "\t--ignored-issues=ISSUES    A comma-list of warning and error identifiers that should not be reported.\n\n"
     .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output.\n\n"
@@ -178,6 +185,11 @@ else
       os.exit(0)
     elseif argument == "--expect-expl3-everywhere" then
       options.expect_expl3_everywhere = true
+    elseif argument:sub(1, 17) == "--ignored-issues=" then
+      options.ignored_issues = {}
+      for issue_identifier in argument:sub(18):gmatch('[^,]+') do
+        table.insert(options.ignored_issues, issue_identifier)
+      end
     elseif argument:sub(1, 18) == "--max-line-length=" then
       options.max_line_length = tonumber(argument:sub(19))
     elseif argument == "--porcelain" or argument == "-p" then

@@ -21,7 +21,7 @@ Some lines in expl3 parts are longer than 80 characters [@latexteam2024style, Se
 
  /s103.tex
 
-The maximum line length can be configured using the command-line option `--max-line-length` or with the parameter `max_line_length` of the function returned by the Lua module `explcheck-preprocessing`.
+The maximum line length can be configured using the command-line option `--max-line-length` or with the Lua option `max_line_length`.
 
 ## Multiple delimiters `\ProvidesExpl*` in a single file {.e label=e104}
 An input file contains multiple delimiters `\ProvidesExplPackage`, `\ProvidesExplClass`, and `\ProvidesExplFile`.
