@@ -226,14 +226,16 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           if next_token_type == "control sequence" then
             if (
                   lpeg.match(parsers.expl3_function_assignment_csname, csname) ~= nil
+                  and lpeg.match(parsers.non_expl3_csname, next_csname) == nil
                   and lpeg.match(parsers.expl3_function_csname, next_csname) == nil
                 ) then
               issues:add('s205', 'malformed function name', next_range_start, next_range_end)
             end
             if (
                   lpeg.match(parsers.expl3_variable_or_constant_use_csname, csname) ~= nil
-                  and lpeg.match(parsers.expl3_variable_or_constant_csname, next_csname) == nil
+                  and lpeg.match(parsers.non_expl3_csname, next_csname) == nil
                   and lpeg.match(parsers.expl3_scratch_variable_csname, next_csname) == nil
+                  and lpeg.match(parsers.expl3_variable_or_constant_csname, next_csname) == nil
                 ) then
               issues:add('s206', 'malformed variable or constant name', next_range_start, next_range_end)
             end

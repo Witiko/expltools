@@ -201,6 +201,54 @@ local expl3like_material = (
   + any_expl3_variable_or_constant
 )
 
+local expl3_variable_or_constant_type = (
+  P("bitset")
+  + S("hv")^-1 * P("box")
+  + P("bool")
+  + P("cctab")
+  + P("clist")
+  + P("coffin")
+  + P("dim")
+  + P("flag")
+  + P("fp") * P("array")^-1
+  + P("int") * P("array")^-1
+  + P("ior")
+  + P("iow")
+  + P("muskip")
+  + P("prop")
+  + P("regex")
+  + P("seq")
+  + P("skip")
+  + P("str")
+  + P("tl")
+)
+
+local expl3_variable_or_constant_csname = (
+  S("cgl")  -- scope
+  * underscore
+  * (
+    underscore^-1 * letter^1  -- module
+    * underscore
+    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
+  )
+  * underscore
+  * expl3_variable_or_constant_type
+  * eof
+)
+local expl3_scratch_variable_csname = (
+  P("l")
+  * underscore
+  * P("tmp") * S("ab")
+  * underscore
+  * expl3_variable_or_constant_type
+  * eof
+)
+
+local non_expl3_csname = (
+  letter^1
+  * eof
+)
+
 ---- Comments
 local commented_line_letter = (
   linechar
@@ -291,28 +339,6 @@ local expl3_function_assignment_csname = (
 )
 
 ---- Using variables/constants
-local expl3_variable_or_constant_type = (
-  P("bitset")
-  + S("hv")^-1 * P("box")
-  + P("bool")
-  + P("cctab")
-  + P("clist")
-  + P("coffin")
-  + P("dim")
-  + P("flag")
-  + P("fp") * P("array")^-1
-  + P("int") * P("array")^-1
-  + P("ior")
-  + P("iow")
-  + P("muskip")
-  + P("prop")
-  + P("regex")
-  + P("seq")
-  + P("skip")
-  + P("str")
-  + P("tl")
-)
-
 local expl3_variable_or_constant_use_csname = (
   expl3_variable_or_constant_type
   * P("_")
@@ -325,27 +351,6 @@ local expl3_variable_or_constant_use_csname = (
     + P("use")
   )
   * P(":N")
-)
-
-local expl3_variable_or_constant_csname = (
-  S("cgl")  -- scope
-  * underscore
-  * (
-    underscore^-1 * letter^1  -- module
-    * underscore
-    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
-  )
-  * underscore
-  * expl3_variable_or_constant_type
-  * eof
-)
-local expl3_scratch_variable_csname = (
-  P("l")
-  * underscore
-  * P("tmp") * S("ab")
-  * underscore
-  * expl3_variable_or_constant_type
-  * eof
 )
 
 ---- Defining quarks and scan marks
@@ -381,6 +386,7 @@ return {
   expl_syntax_on = expl_syntax_on,
   linechar = linechar,
   newline = newline,
+  non_expl3_csname = non_expl3_csname,
   provides = provides,
   tex_lines = tex_lines,
   weird_argument_specifiers = weird_argument_specifiers,
