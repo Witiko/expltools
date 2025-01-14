@@ -6,7 +6,7 @@
 
 #### Development
 
-- Add lexical analysis. (#5)
+- Add lexical analysis. (#21)
 
 #### Fixes
 
