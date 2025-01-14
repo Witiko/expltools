@@ -62,10 +62,11 @@ function Issues:ignore(identifier, range_start, range_end)
     return issue_identifier == identifier
   end
 
-  local ignore_issue
+  local ignore_issue, issue_tables
   if identifier == nil then
     -- Prevent any issues within the given range.
     assert(range_start ~= nil and range_end ~= nil)
+    issue_tables = {self.warnings, self.errors}
     ignore_issue = function(issue)
       local issue_range = issue[3]
       if issue_range == nil then  -- file-wide issue
@@ -77,6 +78,7 @@ function Issues:ignore(identifier, range_start, range_end)
   elseif range_start == nil then
     -- Prevent any issues with the given identifier.
     assert(identifier ~= nil)
+    issue_tables = self:_get_issue_table(identifier)
     ignore_issue = function(issue)
       local issue_identifier = issue[1]
       return match_issue_identifier(issue_identifier)
@@ -84,6 +86,7 @@ function Issues:ignore(identifier, range_start, range_end)
   else
     -- Prevent any issues with the given identifier that are also either within the given range or file-wide.
     assert(range_start ~= nil and range_end ~= nil and identifier ~= nil)
+    issue_tables = self:_get_issue_table(identifier)
     ignore_issue = function(issue)
       local issue_identifier = issue[1]
       local issue_range = issue[3]
@@ -96,18 +99,19 @@ function Issues:ignore(identifier, range_start, range_end)
   end
 
   -- Remove the issue if it has already been added.
-  local issue_table = self:_get_issue_table(identifier)
-  local filtered_issues = {}
-  for _, issue in ipairs(issue_table) do
-    if not ignore_issue(issue) then
-      table.insert(filtered_issues, issue)
+  for _, issue_table in ipairs(issue_tables) do
+    local filtered_issues = {}
+    for _, issue in ipairs(issue_table) do
+      if not ignore_issue(issue) then
+        table.insert(filtered_issues, issue)
+      end
     end
-  end
-  for issue_index, issue in ipairs(filtered_issues) do
-    issue_table[issue_index] = issue
-  end
-  for issue_index = #filtered_issues + 1, #issue_table, 1 do
-    issue_table[issue_index] = nil
+    for issue_index, issue in ipairs(filtered_issues) do
+      issue_table[issue_index] = issue
+    end
+    for issue_index = #filtered_issues + 1, #issue_table, 1 do
+      issue_table[issue_index] = nil
+    end
   end
 
   -- Prevent the issue from being added later.
