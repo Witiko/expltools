@@ -75,7 +75,7 @@ name: Check expl3 code
 on:
   push:
 jobs:
-  typeset:
+  check-code:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/witiko/expltools/explcheck
