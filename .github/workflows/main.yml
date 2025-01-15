@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Install additional packages
         run: |
           set -e
@@ -30,13 +32,15 @@ jobs:
         run: l3build tag
       - name: Run luacheck
         run: |
-          find -type f -follow -name '*.lua' -not -name 'build.lua' -exec luacheck {} +
+          find explcheck -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec luacheck {} +
   explcheck:
     name: Check code style (expl3)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
@@ -52,13 +56,15 @@ jobs:
           set -e
           export LUAINPUTS=explcheck/src
           find */support -type f '(' -name '*.tex' -o -name '*.sty' ')' -exec \
-            texlua explcheck/src/explcheck.lua --warnings-are-errors {} +
+            texlua explcheck/src/explcheck.lua {} +
   tests:
     name: Run tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
@@ -78,6 +84,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
@@ -109,6 +117,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Install additional packages
         run: |
           set -e

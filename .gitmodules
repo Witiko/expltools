@@ -1,0 +1,3 @@
+[submodule "third-party/lua-toml"]
+	path = third-party/lua-toml
+	url = https://github.com/jonstoler/lua-toml.git

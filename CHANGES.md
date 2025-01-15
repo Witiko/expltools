@@ -4,6 +4,24 @@
 
 ### explcheck v0.6.0-dev
 
+#### Development
+
+- Add support for TOML configuration files. (#24)
+
+  You may configure the tool by placing a configuration file named
+  `.explcheckrc` in the current working directory.
+
+  For example, the following configuration file would increase the maximum line
+  length before the warning S103 (Line too long) is produced from 80 to 120
+  characters and also disable the warnings W100 (No standard delimiters) and
+  S206 (Missing stylistic whitespaces):
+
+  ``` toml
+  [options]
+  max_line_length = 120
+  ignored_issues = ["w100", "s206"]
+  ```
+
 #### Fixes
 
 - Do not require lower-case identifiers in the command-line option
