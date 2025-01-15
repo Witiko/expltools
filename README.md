@@ -36,7 +36,6 @@ $ explcheck [options] [.tex, .cls, and .sty files]
 ```
 
 You may also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`.
-
 For example, here is Lua code that applies the preprocessing step to the code from a file named `code.tex`:
 
 ``` lua
@@ -69,7 +68,6 @@ print(
 ```
 
 You may also use the tool from continuous integration workflows using the Docker image `ghcr.io/witiko/expltools/explcheck`.
-
 For example, here is a GitHub Actions workflow file that applies the tool to all .tex files in a Git repository:
 
 ``` yaml
