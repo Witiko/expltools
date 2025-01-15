@@ -188,7 +188,7 @@ else
     elseif argument:sub(1, 17) == "--ignored-issues=" then
       options.ignored_issues = {}
       for issue_identifier in argument:sub(18):gmatch('[^,]+') do
-        table.insert(options.ignored_issues, issue_identifier)
+        table.insert(options.ignored_issues, issue_identifier:lower())
       end
     elseif argument:sub(1, 18) == "--max-line-length=" then
       options.max_line_length = tonumber(argument:sub(19))
