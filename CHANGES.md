@@ -6,7 +6,7 @@
 
 #### Development
 
-- Add support for TOML configuration files. (573bdda6)
+- Add support for TOML configuration files. (#24)
 
   You may configure the tool by placing a configuration file named
   `.explcheckrc` in the current working directory.
