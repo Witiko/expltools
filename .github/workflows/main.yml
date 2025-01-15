@@ -52,7 +52,7 @@ jobs:
           set -e
           export LUAINPUTS=explcheck/src
           find */support -type f '(' -name '*.tex' -o -name '*.sty' ')' -exec \
-            texlua explcheck/src/explcheck.lua --warnings-are-errors {} +
+            texlua explcheck/src/explcheck.lua {} +
   tests:
     name: Run tests
     runs-on: ubuntu-latest

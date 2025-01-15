@@ -29,13 +29,14 @@ In the future, this repository may also contain the code of other useful develop
 
 ## Usage
 
-You can use the tool from the command line as follows:
+You may use the tool from the command line as follows:
 
 ```
 $ explcheck [options] [.tex, .cls, and .sty files]
 ```
 
-You can also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`.
+You may also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`.
+
 For example, here is Lua code that applies the preprocessing step to the code from a file named `code.tex`:
 
 ``` lua
@@ -67,8 +68,9 @@ print(
 )
 ```
 
-You can also use the tool from continuous integration workflows using the Docker image `ghcr.io/witiko/expltools/explcheck`.
-For example, here is a GitHub Actions workflow file that applies the tool to all .tex file in a Git repository:
+You may also use the tool from continuous integration workflows using the Docker image `ghcr.io/witiko/expltools/explcheck`.
+
+For example, here is a GitHub Actions workflow file that applies the tool to all .tex files in a Git repository:
 
 ``` yaml
 name: Check expl3 code
@@ -82,6 +84,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: explcheck *.tex
+```
+
+## Configuration
+
+You may configure the tool using command-line options.
+
+For example, the following command-line options would increase the maximum line
+length before the warning S103 (Line too long) is produced from 80 to 120
+characters and also disable the warnings W100 (No standard delimiters) and S206
+(Missing stylistic whitespaces).
+
+``` sh
+$ explcheck --max-line-length=120 --ignored-issues=w100,s206 *.tex
+```
+
+Use the command `explcheck --help` to list the available options.
+
+You may also configure the tool by placing a configuration file named `.explcheckrc` in the current working directory.
+For example, here is a configuration file that applies the same configuration as the above command-line options:
+
+``` toml
+[options]
+max_line_length = 120
+ignored_issues = ["w100", "s206"]
+```
+
+You may also configure the tool from within your Lua code.
+For example, here is how you would apply the same configuration in the Lua example from the previous section:
+
+``` lua
+local options = {
+  max_line_length = 120,
+  ignored_issues = {"w100", "s206"},
+}
+
+local _, expl_ranges = preprocessing(issues, content, options)
+lexical_analysis(issues, content, expl_ranges, options)
 ```
 
 ## Notes to distributors
