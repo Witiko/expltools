@@ -1,5 +1,5 @@
 FROM alpine:latest
-RUN apk add --no-cache lua5.3 lua5.3-lpeg
+RUN apk add --no-cache lua5.3 lua5.3-lpeg lua5.3-filesystem
 RUN mkdir -p /opt/expltools/explcheck
 COPY explcheck/src/explcheck*.lua /opt/expltools/explcheck/
 COPY <<'EOF' /usr/local/bin/explcheck
