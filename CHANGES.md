@@ -4,6 +4,11 @@
 
 ### explcheck v0.6.0-dev
 
+#### Fixes
+
+- Do not require lower-case identifiers in the command-line option
+  `--ignored-issues`. (6583f51)
+
 #### Distribution
 
 - Add Lua library `lfs` to Docker image `ghcr.io/witiko/expltools/explcheck`.
