@@ -4,6 +4,14 @@
 
 ### explcheck v0.6.0-dev
 
+#### Distribution
+
+- Add Lua library `lfs` to Docker image `ghcr.io/witiko/expltools/explcheck`.
+  (4f9f26f)
+
+  This enables additional functionality, such as suggesting which `.ins` file
+  the user should process with TeX to extract expl3 code from a `.dtx` archive.
+
 ## expltools 2025-01-15
 
 ### explcheck v0.5.0
