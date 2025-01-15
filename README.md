@@ -88,10 +88,7 @@ jobs:
 
 You may configure the tool using command-line options.
 
-For example, the following command-line options would increase the maximum line
-length before the warning S103 (Line too long) is produced from 80 to 120
-characters and also disable the warnings W100 (No standard delimiters) and S206
-(Missing stylistic whitespaces).
+For example, the following command-line options would increase the maximum line length before the warning S103 (Line too long) is produced from 80 to 120 characters and also disable the warnings W100 (No standard delimiters) and S206 (Missing stylistic whitespaces).
 
 ``` sh
 $ explcheck --max-line-length=120 --ignored-issues=w100,s206 *.tex
@@ -112,14 +109,20 @@ You may also configure the tool from within your Lua code.
 For example, here is how you would apply the same configuration in the Lua example from the previous section:
 
 ``` lua
-local options = {
-  max_line_length = 120,
-  ignored_issues = {"w100", "s206"},
-}
+local options = { max_line_length = 120 }
+
+issues:ignore("w100")
+issues:ignore("s206")
 
 local _, expl_ranges = preprocessing(issues, content, options)
 lexical_analysis(issues, content, expl_ranges, options)
 ```
+
+Command-line options, configuration files, and Lua code allow you to ignore certain warnings and errors everywhere.
+To ignore them in just some of your expl3 code, you may use TeX comments.
+
+For example, a comment `% noqa` will ignore any issues on the current line.
+As another example, a comment `% noqa: w100, s206` will ignore the file-wide warning W100 and also the warning S206 on the current line.
 
 ## Notes to distributors
 
