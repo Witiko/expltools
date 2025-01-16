@@ -25,7 +25,7 @@
 #### Fixes
 
 - Do not require lower-case identifiers in the command-line option
-  `--ignored-issues`. (6583f51)
+  `--ignored-issues`. (f394d38c)
 
 #### Distribution
 
