@@ -134,7 +134,7 @@ local function main(pathnames, options)
 
   if(num_errors > 0) then
     return 1
-  elseif(options.warnings_are_errors and num_warnings > 0) then
+  elseif(utils.get_option(options, "warnings_are_errors") and num_warnings > 0) then
     return 2
   else
     return 0
