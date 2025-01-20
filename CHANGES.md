@@ -1,8 +1,13 @@
 # Changes
 
-## expltools 2025-MM-DD
+## expltools 2025-01-20
 
-### explcheck v0.7.0-dev
+### explcheck v0.6.1
+
+#### Fixes
+
+- Correctly read option `warnings_are_errors` from file `.explcheckrc`.
+  (e351fdd)
 
 ## expltools 2025-01-16
 
