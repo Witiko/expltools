@@ -9,7 +9,8 @@
 - Add command-line option `--error-format` and Lua option `error_format` for
   specifying Vim's quickfix errorformat used for the machine-readable output
   when the command-line option `--porcelain` is enabled.
-  (discussed with @koppor in koppor/errorformat-to-html#2, added in #40)
+  (discussed with @koppor in koppor/errorformat-to-html#2, added in #40 and
+  5034639)
 
 #### Fixes
 
