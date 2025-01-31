@@ -69,10 +69,11 @@ local function decolorize(text)
 end
 
 -- Print the results of analyzing a file.
-local function print_results(pathname, issues, line_starting_byte_numbers, is_last_file, porcelain)
+local function print_results(pathname, issues, line_starting_byte_numbers, is_last_file, options)
   -- Display an overview.
   local all_issues = {}
   local status
+  local porcelain = utils.get_option(options, 'porcelain')
   if(#issues.errors > 0) then
     status = (
       colorize(
@@ -83,7 +84,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         ), 1, 31
       )
     )
-    table.insert(all_issues, {issues.errors, "error: "})
+    table.insert(all_issues, issues.errors)
     if(#issues.warnings > 0) then
       status = (
         status
@@ -96,7 +97,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           ), 1, 33
         )
       )
-      table.insert(all_issues, {issues.warnings, "warning: "})
+      table.insert(all_issues, issues.warnings)
     end
   elseif(#issues.warnings > 0) then
     status = colorize(
@@ -106,7 +107,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         .. pluralize("warning", #issues.warnings)
       ), 1, 33
     )
-    table.insert(all_issues, {issues.warnings, "warning: "})
+    table.insert(all_issues, issues.warnings)
   else
     status = colorize("OK", 1, 32)
   end
@@ -145,8 +146,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
 
   -- Display the errors, followed by warnings.
   if #all_issues > 0 then
-    for _, warnings_or_errors_and_porcelain_prefix in ipairs(all_issues) do
-      local warnings_or_errors, porcelain_prefix = table.unpack(warnings_or_errors_and_porcelain_prefix)
+    for _, warnings_or_errors in ipairs(all_issues) do
       if not porcelain then
         print()
       end
@@ -155,11 +155,14 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         local code = issue[1]
         local message = issue[2]
         local range = issue[3]
-        local position = ":"
+        local start_line_number, start_column_number = 1, 1
+        local end_line_number, end_column_number = 1, 1
         if range ~= nil then
-          local line_number, column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
-          position = position .. tostring(line_number) .. ":" .. tostring(column_number) .. ":"
+          start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
+          end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range[2])
+          end_column_number = end_column_number - 1
         end
+        local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
         local max_line_length = 88
         local reserved_position_length = 10
         local reserved_suffix_length = 30
@@ -198,7 +201,30 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           )
           io.write("\n" .. line)
         else
-          print(pathname .. position .. " " .. porcelain_prefix .. suffix)
+          local line = utils.get_option(options, 'error_format')
+
+          local function replace_item(item)
+            if item == '%c' then
+              return tostring(start_column_number)
+            elseif item == '%e' then
+              return tostring(end_line_number)
+            elseif item == '%f' then
+              return pathname
+            elseif item == '%k' then
+              return tostring(end_column_number)
+            elseif item == '%l' then
+              return tostring(start_line_number)
+            elseif item == '%m' then
+              return message
+            elseif item == '%n' then
+              return code:sub(2)
+            elseif item == '%t' then
+              return code:sub(1, 1):lower()
+            end
+          end
+
+          line = line:gsub("%%[cefklmnt]", replace_item)
+          print(line)
         end
       end
     end

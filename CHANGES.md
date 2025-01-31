@@ -4,6 +4,18 @@
 
 ### explcheck v0.7.0-dev
 
+#### Development
+
+- Add command-line option `--error-format` and Lua option `error_format` for
+  specifying Vim's quickfix errorformat used for the machine-readable output
+  when the command-line option `--porcelain` is enabled.
+  (discussed with @koppor in koppor/errorformat-to-html#2, added in #40)
+
+#### Fixes
+
+- In machine-readable output, report the line and column number 1 for file-wide
+  issues. (reported by @koppor in #39, fixed in #40)
+
 ## expltools 2025-01-20
 
 ### explcheck v0.6.1
