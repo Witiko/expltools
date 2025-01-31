@@ -204,7 +204,9 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           local line = utils.get_option(options, 'error_format')
 
           local function replace_item(item)
-            if item == '%c' then
+            if item == '%%' then
+              return '%'
+            elseif item == '%c' then
               return tostring(start_column_number)
             elseif item == '%e' then
               return tostring(end_line_number)
@@ -223,7 +225,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
             end
           end
 
-          line = line:gsub("%%[cefklmnt]", replace_item)
+          line = line:gsub("%%[%%cefklmnt]", replace_item)
           print(line)
         end
       end
