@@ -4,11 +4,12 @@ local toml = require("explcheck-toml")
 
 -- The default options
 local default_options = {
+  error_format = '%f:%l:%c: %t%n %m',
   expect_expl3_everywhere = false,
+  ignored_issues = {},
   max_line_length = 80,
   porcelain = false,
   warnings_are_errors = false,
-  ignored_issues = {},
 }
 
 -- Read a TOML file with a user-defined configuration.

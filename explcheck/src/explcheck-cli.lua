@@ -124,7 +124,7 @@ local function main(pathnames, options)
     ::continue::
     num_warnings = num_warnings + #issues.warnings
     num_errors = num_errors + #issues.errors
-    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options.porcelain)
+    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options)
   end
 
   -- Print a summary.
@@ -147,6 +147,8 @@ local function print_usage()
   local max_line_length = tostring(config.max_line_length)
   print(
     "Options:\n\n"
+    .. "\t--error-format=FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
+    .. "\t                           The default format is FORMAT=\"" .. config.error_format .. "\".\n\n"
     .. "\t--expect-expl3-everywhere  Expect that the whole files are in expl3, ignoring \\ExplSyntaxOn and Off.\n"
     .. "\t                           This prevents the error E102 (expl3 material in non-expl3 parts).\n\n"
     .. "\t--ignored-issues=ISSUES    A comma-list of warning and error identifiers that should not be reported.\n\n"
@@ -183,6 +185,8 @@ else
     elseif argument == "--version" or argument == "-v" then
       print_version()
       os.exit(0)
+    elseif argument:sub(1, 15) == "--error-format=" then
+      options.error_format = argument:sub(16)
     elseif argument == "--expect-expl3-everywhere" then
       options.expect_expl3_everywhere = true
     elseif argument:sub(1, 17) == "--ignored-issues=" then
