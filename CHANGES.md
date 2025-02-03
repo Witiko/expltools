@@ -17,6 +17,11 @@
 - In machine-readable output, report the line and column number 1 for file-wide
   issues. (reported by @koppor in #39, fixed in #40)
 
+#### Artwork
+
+- Add artwork by https://fiverr.com/quickcartoon to directory `artwork/`.
+  (566769b)
+
 ## expltools 2025-01-20
 
 ### explcheck v0.6.1
