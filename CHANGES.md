@@ -45,12 +45,12 @@
   For example, the following configuration file would increase the maximum line
   length before the warning S103 (Line too long) is produced from 80 to 120
   characters and also disable the warnings W100 (No standard delimiters) and
-  S206 (Missing stylistic whitespaces):
+  S204 (Missing stylistic whitespaces):
 
   ``` toml
   [options]
   max_line_length = 120
-  ignored_issues = ["w100", "s206"]
+  ignored_issues = ["w100", "s204"]
   ```
 
 #### Fixes
@@ -76,16 +76,16 @@
   TeX comments. (#23)
 
   For example, a comment `% noqa` will ignore any issues on the current line,
-  whereas a comment `% noqa: W100, S206` will ignore the file-wide warning W100
-  (No standard delimiters) and the warning S206 (Malformed variable or constant
-  name) on the current line.
+  whereas a comment `% noqa: W100, S204` will ignore the file-wide warning W100
+  (No standard delimiters) and the warning S204 (Missing stylistic whitespaces)
+  on the current line.
 
 - Add command-line option `--ignored-issues` and Lua option `ignored_issues`
   for ignoring issues. (#23)
 
-  For example, `--ignored-issues=w100,s206` will ignore the file-wide warning
-  W100 (No standard delimiters) and all warnings S206 (Malformed variable or
-  constant name).
+  For example, `--ignored-issues=w100,s204` will ignore the file-wide warning
+  W100 (No standard delimiters) and all warnings S204 (Missing stylistic
+  whitespaces).
 
 #### Fixes
 
