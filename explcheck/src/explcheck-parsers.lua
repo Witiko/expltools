@@ -76,7 +76,7 @@ for catcode, parser in pairs(expl3_catcodes) do
 end
 
 ---- Syntax recognized by TeX's input and token processors
-local optional_spaces = space^0
+local optional_spaces = expl3_catcodes[9]^0
 local optional_spaces_and_newline = (
   optional_spaces
   * (
@@ -99,7 +99,7 @@ local tex_line = (
   (
     (
       linechar
-      - (space * #blank_or_empty_last_line)
+      - (expl3_catcodes[9] * #blank_or_empty_last_line)
     )^1
     * (
       blank_or_empty_last_line / ""
@@ -108,7 +108,7 @@ local tex_line = (
   + (
     (
       linechar
-      - (space * #blank_line)
+      - (expl3_catcodes[9] * #blank_line)
     )^0
     * (
       blank_line / ""
@@ -256,6 +256,7 @@ local commented_line_letter = (
   + newline
   - expl3_catcodes[0]
   - expl3_catcodes[14]
+  - expl3_catcodes[9]
 )
 local commented_line = (
   (
@@ -277,19 +278,31 @@ local commented_line = (
         + commented_line_letter
       )
     )
+    + (
+      #(
+        optional_spaces
+        * -expl3_catcodes[14]
+      )
+      * expl3_catcodes[9]
+    )
   )^0
   * (
-    #expl3_catcodes[14]
+    #(
+      optional_spaces
+      * expl3_catcodes[14]
+    )
     * Cp()
     * (
       (
-        expl3_catcodes[14]  -- comment
+        optional_spaces
+        * expl3_catcodes[14]  -- comment
         * linechar^0
         * Cp()
         * newline
         * #blank_line  -- blank line
       )
-      + expl3_catcodes[14]  -- comment
+      + optional_spaces
+      * expl3_catcodes[14]  -- comment
       * linechar^0
       * Cp()
       * newline
