@@ -95,14 +95,14 @@ local function preprocessing(issues, content, options)
     issues:add('s103', 'line too long', range_start, range_end + 1)
   end
 
-  local line_numbers_grammar = (
+  local overline_lines_grammar = (
     (
       Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
       + parsers.linechar^0
     )
     * parsers.newline
   )^0
-  lpeg.match(line_numbers_grammar, transformed_content)
+  lpeg.match(overline_lines_grammar, transformed_content)
 
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}
