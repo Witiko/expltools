@@ -30,6 +30,9 @@
   This includes Lua options and configuration files, in addition to
   command-line options and inline TeX comments.
 
+- Exclude "weird" argument specifiers (`:w`) from warning W200. (reported by
+  @muzimuzhi in #25, fixed in #45)
+
 #### Artwork
 
 - Add artwork by https://fiverr.com/quickcartoon to directory `artwork/`.

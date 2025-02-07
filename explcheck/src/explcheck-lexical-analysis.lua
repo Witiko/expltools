@@ -225,8 +225,8 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         local csname = payload
         local _, _, argument_specifiers = csname:find(":(.*)")
         if argument_specifiers ~= nil then
-          if lpeg.match(parsers.weird_argument_specifiers, argument_specifiers) then
-            issues:add('w200', '"weird" and "do not use" argument specifiers', range_start, range_end)
+          if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
+            issues:add('w200', '"do not use" argument specifiers', range_start, range_end)
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
             issues:add('e201', 'unknown argument specifiers', range_start, range_end)
