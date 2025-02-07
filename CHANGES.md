@@ -17,6 +17,11 @@
 - In machine-readable output, report the line and column number 1 for file-wide
   issues. (reported by @koppor in #39, fixed in #40)
 
+- Exclude comments from maximum line length checks. (reported by @muzimuzhi in
+  #27, fixed in #43)
+
+  This includes spaces before the comments.
+
 #### Artwork
 
 - Add artwork by https://fiverr.com/quickcartoon to directory `artwork/`.
