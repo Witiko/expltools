@@ -12,8 +12,14 @@ function Issues.new(cls)
   return new_object
 end
 
+-- Normalize an issue identifier.
+function Issues:_normalize_identifier(identifier)
+  return identifier:lower()
+end
+
 -- Convert an issue identifier to either a table of warnings or a table of errors.
 function Issues:_get_issue_table(identifier)
+  identifier = self:_normalize_identifier(identifier)
   local prefix = identifier:sub(1, 1)
   if prefix == "s" or prefix == "w" then
     return self.warnings
@@ -26,6 +32,8 @@ end
 
 -- Add an issue to the table of issues.
 function Issues:add(identifier, message, range_start, range_end)
+  identifier = self:_normalize_identifier(identifier)
+
   -- Construct the issue.
   local range
   if range_start == nil then
@@ -49,6 +57,8 @@ end
 
 -- Prevent issues from being present in the table of issues.
 function Issues:ignore(identifier, range_start, range_end)
+  identifier = self:_normalize_identifier(identifier)
+
   -- Determine which issues should be ignored.
   local function match_issue_range(issue_range)
     local issue_range_start, issue_range_end = table.unpack(issue_range)

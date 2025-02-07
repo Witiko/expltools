@@ -302,9 +302,6 @@ local commented_line = (
 -- Explcheck issues
 local issue_code = (
   S("EeSsTtWw")
-  / function(prefix)
-    return prefix:lower()
-  end
   * decimal_digit
   * decimal_digit
   * decimal_digit
