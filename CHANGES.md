@@ -17,6 +17,12 @@
 - In machine-readable output, report the line and column number 1 for file-wide
   issues. (reported by @koppor in #39, fixed in #40)
 
+- Always accept both lower- and upper-case issue identifiers. (reported by
+  @muzimuzhi in #26, fixed in #44)
+
+  This includes Lua options and configuration files, in addition to
+  command-line options and inline TeX comments.
+
 #### Artwork
 
 - Add artwork by https://fiverr.com/quickcartoon to directory `artwork/`.
