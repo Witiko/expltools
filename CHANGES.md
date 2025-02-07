@@ -6,16 +6,23 @@
 
 #### Development
 
-- Add command-line option `--error-format` and Lua option `error_format` for
-  specifying Vim's quickfix errorformat used for the machine-readable output
-  when the command-line option `--porcelain` is enabled.
-  (discussed with @koppor in koppor/errorformat-to-html#2, added in #40 and
-  5034639)
+- Add command-line option `--error-format` and Lua option `error_format`.
+  (discussed with @koppor in koppor/errorformat-to-html#2, added in #40,
+  5034639, and #43)
+
+  This allows users to specify Vim's quickfix errorformat used for the
+  machine-readable output when the command-line option `--porcelain` or the Lua
+  option `porcelain` is enabled.
 
 #### Fixes
 
 - In machine-readable output, report the line and column number 1 for file-wide
   issues. (reported by @koppor in #39, fixed in #40)
+
+- Exclude comments from maximum line length checks. (reported by @muzimuzhi in
+  #27, fixed in #43)
+
+  This includes spaces before the comments.
 
 #### Artwork
 
