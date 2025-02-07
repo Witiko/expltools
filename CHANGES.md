@@ -17,6 +17,9 @@
 - In machine-readable output, report the line and column number 1 for file-wide
   issues. (reported by @koppor in #39, fixed in #40)
 
+- Exclude "weird" argument specifiers (`:w`) from warning W200. (reported by
+  @muzimuzhi in #25, fixed in #45)
+
 #### Artwork
 
 - Add artwork by https://fiverr.com/quickcartoon to directory `artwork/`.
