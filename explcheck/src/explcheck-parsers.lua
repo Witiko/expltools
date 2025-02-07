@@ -76,7 +76,7 @@ for catcode, parser in pairs(expl3_catcodes) do
 end
 
 ---- Syntax recognized by TeX's input and token processors
-local optional_spaces = space^0
+local optional_spaces = expl3_catcodes[9]^0
 local optional_spaces_and_newline = (
   optional_spaces
   * (
@@ -99,7 +99,7 @@ local tex_line = (
   (
     (
       linechar
-      - (space * #blank_or_empty_last_line)
+      - (expl3_catcodes[9] * #blank_or_empty_last_line)
     )^1
     * (
       blank_or_empty_last_line / ""
@@ -108,7 +108,7 @@ local tex_line = (
   + (
     (
       linechar
-      - (space * #blank_line)
+      - (expl3_catcodes[9] * #blank_line)
     )^0
     * (
       blank_line / ""
@@ -157,15 +157,20 @@ local argument = (
   * expl3_catcodes[2]
 )
 
-local weird_argument_specifier = S("wD")
-local argument_specifier = S("NncVvoxefTFp") + weird_argument_specifier
+local weird_argument_specifier = S("w")
+local do_not_use_argument_specifier = S("D")
+local argument_specifier = (
+  S("NncVvoxefTFp")
+  + weird_argument_specifier
+  + do_not_use_argument_specifier
+)
 local argument_specifiers = argument_specifier^0 * eof
-local weird_argument_specifiers = (
+local do_not_use_argument_specifiers = (
   (
     argument_specifier
-    - weird_argument_specifier
+    - do_not_use_argument_specifier
   )^0
-  * weird_argument_specifier
+  * do_not_use_argument_specifier
 )
 
 ---- Function, variable, and constant names
@@ -256,6 +261,7 @@ local commented_line_letter = (
   + newline
   - expl3_catcodes[0]
   - expl3_catcodes[14]
+  - expl3_catcodes[9]
 )
 local commented_line = (
   (
@@ -277,19 +283,31 @@ local commented_line = (
         + commented_line_letter
       )
     )
+    + (
+      #(
+        optional_spaces
+        * -expl3_catcodes[14]
+      )
+      * expl3_catcodes[9]
+    )
   )^0
   * (
-    #expl3_catcodes[14]
+    #(
+      optional_spaces
+      * expl3_catcodes[14]
+    )
     * Cp()
     * (
       (
-        expl3_catcodes[14]  -- comment
+        optional_spaces
+        * expl3_catcodes[14]  -- comment
         * linechar^0
         * Cp()
         * newline
         * #blank_line  -- blank line
       )
-      + expl3_catcodes[14]  -- comment
+      + optional_spaces
+      * expl3_catcodes[14]  -- comment
       * linechar^0
       * Cp()
       * newline
@@ -302,9 +320,6 @@ local commented_line = (
 -- Explcheck issues
 local issue_code = (
   S("EeSsTtWw")
-  / function(prefix)
-    return prefix:lower()
-  end
   * decimal_digit
   * decimal_digit
   * decimal_digit
@@ -400,6 +415,7 @@ return {
   commented_line = commented_line,
   decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
+  do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
   eof = eof,
   fail = fail,
@@ -420,5 +436,4 @@ return {
   non_expl3_csname = non_expl3_csname,
   provides = provides,
   tex_lines = tex_lines,
-  weird_argument_specifiers = weird_argument_specifiers,
 }

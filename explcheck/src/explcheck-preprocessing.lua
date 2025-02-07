@@ -16,18 +16,11 @@ local function preprocessing(issues, content, options)
     table.insert(line_starting_byte_numbers, line_start)
   end
 
-  local function line_too_long(range_start, range_end)
-    issues:add('s103', 'line too long', range_start, range_end + 1)
-  end
-
   local line_numbers_grammar = (
     Cp() / record_line
     * (
       (
-        (
-          Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
-          + parsers.linechar^0
-        )
+        parsers.linechar^0
         * parsers.newline
         * Cp()
       ) / record_line
@@ -95,6 +88,21 @@ local function preprocessing(issues, content, options)
   end
 
   local transformed_content, map_back = strip_comments()
+
+  -- Check for overlong lines.
+  local function line_too_long(range_start, range_end)
+    range_start, range_end = map_back(range_start), map_back(range_end - 1)
+    issues:add('s103', 'line too long', range_start, range_end + 1)
+  end
+
+  local overline_lines_grammar = (
+    (
+      Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
+      + parsers.linechar^0
+    )
+    * parsers.newline
+  )^0
+  lpeg.match(overline_lines_grammar, transformed_content)
 
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}

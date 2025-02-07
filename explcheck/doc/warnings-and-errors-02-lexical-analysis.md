@@ -1,8 +1,8 @@
 # Lexical analysis
 In the lexical analysis step, the expl3 analysis tool converts the expl3 parts of the input files into a list of `\TeX`{=tex} tokens.
 
-## “Weird” and “Do not use” argument specifiers {.w label=w200}
-Some control sequence tokens correspond to functions with `w` (weird) or `D` (do not use) argument specifiers.
+## “Do not use” argument specifiers {.w label=w200}
+Some control sequence tokens correspond to functions with `D` (do not use) argument specifiers.
 
  /w200.tex
 
