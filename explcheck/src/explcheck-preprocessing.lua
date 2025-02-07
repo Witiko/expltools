@@ -9,6 +9,25 @@ local Cp, Ct, P, V = lpeg.Cp, lpeg.Ct, lpeg.P, lpeg.V
 -- Preprocess the content and register any issues.
 local function preprocessing(issues, content, options)
 
+  -- Determine the bytes where lines begin.
+  local line_starting_byte_numbers = {}
+
+  local function record_line(line_start)
+    table.insert(line_starting_byte_numbers, line_start)
+  end
+
+  local line_numbers_grammar = (
+    Cp() / record_line
+    * (
+      (
+        parsers.linechar^0
+        * parsers.newline
+        * Cp()
+      ) / record_line
+    )^0
+  )
+  lpeg.match(line_numbers_grammar, content)
+
   -- Strip TeX comments before further analysis.
   local function strip_comments()
     local transformed_index = 0
@@ -70,32 +89,19 @@ local function preprocessing(issues, content, options)
 
   local transformed_content, map_back = strip_comments()
 
-  -- Determine the bytes where lines begin.
-  local line_starting_byte_numbers = {}
-
-  local function record_line(line_start)
-    line_start = map_back(line_start)
-    table.insert(line_starting_byte_numbers, line_start)
-  end
-
+  -- Check for overlong lines.
   local function line_too_long(range_start, range_end)
-    range_start, range_end = map_back(range_start), map_back(range_end)
+    range_start, range_end = map_back(range_start), map_back(range_end - 1)
     issues:add('s103', 'line too long', range_start, range_end + 1)
   end
 
   local line_numbers_grammar = (
-    Cp() / record_line
-    * (
-      (
-        (
-          Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
-          + parsers.linechar^0
-        )
-        * parsers.newline
-        * Cp()
-      ) / record_line
-    )^0
-  )
+    (
+      Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
+      + parsers.linechar^0
+    )
+    * parsers.newline
+  )^0
   lpeg.match(line_numbers_grammar, transformed_content)
 
   -- Determine which parts of the input files contain expl3 code.
