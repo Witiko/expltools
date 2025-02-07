@@ -24,6 +24,12 @@
 
   This includes spaces before the comments.
 
+- Always accept both lower- and upper-case issue identifiers. (reported by
+  @muzimuzhi in #26, fixed in #44)
+
+  This includes Lua options and configuration files, in addition to
+  command-line options and inline TeX comments.
+
 #### Artwork
 
 - Add artwork by https://fiverr.com/quickcartoon to directory `artwork/`.
