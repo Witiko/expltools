@@ -157,15 +157,20 @@ local argument = (
   * expl3_catcodes[2]
 )
 
-local weird_argument_specifier = S("wD")
-local argument_specifier = S("NncVvoxefTFp") + weird_argument_specifier
+local weird_argument_specifier = S("w")
+local do_not_use_argument_specifier = S("D")
+local argument_specifier = (
+  S("NncVvoxefTFp")
+  + weird_argument_specifier
+  + do_not_use_argument_specifier
+)
 local argument_specifiers = argument_specifier^0 * eof
-local weird_argument_specifiers = (
+local do_not_use_argument_specifiers = (
   (
     argument_specifier
-    - weird_argument_specifier
+    - do_not_use_argument_specifier
   )^0
-  * weird_argument_specifier
+  * do_not_use_argument_specifier
 )
 
 ---- Function, variable, and constant names
@@ -400,6 +405,7 @@ return {
   commented_line = commented_line,
   decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
+  do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
   eof = eof,
   fail = fail,
@@ -420,5 +426,4 @@ return {
   non_expl3_csname = non_expl3_csname,
   provides = provides,
   tex_lines = tex_lines,
-  weird_argument_specifiers = weird_argument_specifiers,
 }
