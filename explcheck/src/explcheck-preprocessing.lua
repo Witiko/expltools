@@ -117,9 +117,9 @@ local function preprocessing(issues, content, options)
 
   local function unexpected_pattern(pattern, code, message, test)
     return Cp() * pattern * Cp() / function(range_start, range_end)
-      range_start, range_end = map_back(range_start), map_back(range_end)
+      local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
       if test == nil or test() then
-        issues:add(code, message, range_start, range_end + 1)
+        issues:add(code, message, range)
       end
     end
   end
