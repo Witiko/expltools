@@ -135,7 +135,8 @@ local function preprocessing(issues, content, options)
     end
   )
   local Closer = parsers.fail
-  if not utils.get_option(options, 'expect_expl3_everywhere') then
+  local expl3_detection_strategy = utils.get_option(options, 'expl3_detection_strategy')
+  if expl3_detection_strategy ~= 'always' then
     Opener = (
       parsers.expl_syntax_on
       + Opener
@@ -146,6 +147,7 @@ local function preprocessing(issues, content, options)
     )
   end
 
+  local has_expl3like_material = false
   local analysis_grammar = P{
     "Root";
     Root = (
@@ -165,7 +167,11 @@ local function preprocessing(issues, content, options)
         + unexpected_pattern(
             parsers.expl3like_material,
             "e102",
-            "expl3 material in non-expl3 parts"
+            "expl3 material in non-expl3 parts",
+            function()
+              has_expl3like_material = true
+              return true
+            end
           )
         + (parsers.any - V"Opener")
       )^0
@@ -189,13 +195,29 @@ local function preprocessing(issues, content, options)
   }
   lpeg.match(analysis_grammar, transformed_content)
 
-  -- If no parts were detected, assume that the whole input file is in expl3.
+  -- If no expl3 parts were detected, we must decide whether no part or the
+  -- whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
-    local range = new_range(1, #content, "inclusive", #content)
-    table.insert(expl_ranges, range)
     issues:ignore('e102')
-    if not utils.get_option(options, 'expect_expl3_everywhere') then
-      issues:add('w100', 'no standard delimiters')
+    if expl3_detection_strategy == "precision" then
+      -- Assume that no part of the input file is in expl3.
+    elseif expl3_detection_strategy == "recall" or expl3_detection_strategy == "always" then
+      -- Assume that the whole input file is in expl3.
+      if expl3_detection_strategy == "recall" then
+        issues:add('w100', 'no standard delimiters')
+      end
+      local range = new_range(1, #content, "inclusive", #content)
+      table.insert(expl_ranges, range)
+    elseif expl3_detection_strategy == "auto" then
+      -- Use context clues to determine whether no part or the whole
+      -- input file is in expl3.
+      if has_expl3like_material then
+        issues:add('w100', 'no standard delimiters')
+        local range = new_range(1, #content, "inclusive", #content)
+        table.insert(expl_ranges, range)
+      end
+    else
+      assert(false, 'Unknown strategy "' .. expl3_detection_strategy .. '"')
     end
   end
   return line_starting_byte_numbers, expl_ranges
