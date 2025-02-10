@@ -158,8 +158,8 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         local start_line_number, start_column_number = 1, 1
         local end_line_number, end_column_number = 1, 1
         if range ~= nil then
-          start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range[1])
-          end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range[2] - 1)
+          start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())
+          end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:end_inclusive())
           end_column_number = end_column_number
         end
         local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
