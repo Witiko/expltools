@@ -21,6 +21,6 @@ assert(err[1] == "e104")
 assert(err[2] == [[multiple delimiters `\ProvidesExpl*` in a single file]])
 local byte_range = err[3]
 local start_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:start())
-local end_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:end_inclusive())
+local end_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:stop())
 assert(start_line_number == 4)
 assert(end_line_number == 5)

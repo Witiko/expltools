@@ -22,7 +22,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
   --       https://petr.olsak.net/ftp/olsak/tbn/tbn.pdf
   --
   local function get_lines(range)
-    local content = all_content:sub(range:start(), range:end_inclusive())
+    local content = all_content:sub(range:start(), range:stop())
     for _, line in ipairs(lpeg.match(parsers.tex_lines, content)) do
       local line_start, line_text, line_end = table.unpack(line)
       local line_range = new_range(line_start, line_end, "exclusive", #all_content)

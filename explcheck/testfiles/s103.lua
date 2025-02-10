@@ -24,6 +24,6 @@ assert(warnings[2][1] == "s103")
 assert(warnings[2][2] == "line too long")
 local byte_range = warnings[2][3]
 local start_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:start())
-local end_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:end_inclusive())
+local end_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:stop())
 assert(start_line_number == 2)
 assert(end_line_number == 2)

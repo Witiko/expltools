@@ -63,13 +63,8 @@ function Range:start()
 end
 
 -- Get the inclusive end of the range, optionally mapped back to the original array.
-function Range:end_inclusive()
+function Range:stop()
   return self.range_end
-end
-
--- Get the exclusive end of the range, optionally mapped back to the original array.
-function Range:end_exclusive()
-  return self.range_end + 1
 end
 
 return function(...)

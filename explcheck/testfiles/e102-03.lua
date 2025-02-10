@@ -20,7 +20,7 @@ for index, err in ipairs(issues.sort(issues.errors)) do
   assert(err[2] == "expl3 material in non-expl3 parts")
   local byte_range = err[3]
   local start_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:start())
-  local end_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:end_inclusive())
+  local end_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index])
   assert(end_line_number == expected_line_numbers[index])
 end

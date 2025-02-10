@@ -58,9 +58,9 @@ function Issues:ignore(identifier, range)
   -- Determine which issues should be ignored.
   local function match_issue_range(issue_range)
     return (
-      issue_range:start() >= range:start() and issue_range:start() <= range:end_inclusive()  -- issue starts within range
-      or issue_range:start() <= range:start() and issue_range:end_inclusive() >= range:end_inclusive()  -- issue is in middle of range
-      or issue_range:end_inclusive() >= range:start() and issue_range:end_inclusive() <= range:end_inclusive()  -- issue ends within range
+      issue_range:start() >= range:start() and issue_range:start() <= range:stop()  -- issue starts within range
+      or issue_range:start() <= range:start() and issue_range:stop() >= range:stop()  -- issue is in middle of range
+      or issue_range:stop() >= range:start() and issue_range:stop() <= range:stop()  -- issue ends within range
     )
   end
   local function match_issue_identifier(issue_identifier)
