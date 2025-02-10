@@ -33,16 +33,10 @@ function Issues:_get_issue_table(identifier)
 end
 
 -- Add an issue to the table of issues.
-function Issues:add(identifier, message, range_start, range_end)
+function Issues:add(identifier, message, range)
   identifier = self._normalize_identifier(identifier)
 
   -- Construct the issue.
-  local range
-  if range_start == nil then
-    range = nil
-  else
-    range = {range_start, range_end}
-  end
   local issue = {identifier, message, range}
 
   -- Determine if the issue should be ignored.
@@ -54,20 +48,19 @@ function Issues:add(identifier, message, range_start, range_end)
 
   -- Add the issue to the table of issues.
   local issue_table = self:_get_issue_table(identifier)
-  table.insert(issue_table, {identifier, message, range})
+  table.insert(issue_table, issue)
 end
 
 -- Prevent issues from being present in the table of issues.
-function Issues:ignore(identifier, range_start, range_end)
+function Issues:ignore(identifier, range)
   identifier = self._normalize_identifier(identifier)
 
   -- Determine which issues should be ignored.
   local function match_issue_range(issue_range)
-    local issue_range_start, issue_range_end = table.unpack(issue_range)
     return (
-      issue_range_start >= range_start and issue_range_start <= range_end  -- issue starts within the range
-      or issue_range_start <= range_start and issue_range_end >= range_end  -- issue is in the middle of the range
-      or issue_range_end >= range_start and issue_range_end <= range_end  -- issue ends within the range
+      issue_range:start() >= range:start() and issue_range:start() <= range:end_inclusive()  -- issue starts within the range
+      or issue_range:start() <= range:start() and issue_range:end_inclusive() >= range:end_inclusive()  -- issue is in the middle of the range
+      or issue_range:end_inclusive() >= range:start() and issue_range:end_inclusive() <= range:end_inclusive()  -- issue ends within the range
     )
   end
   local function match_issue_identifier(issue_identifier)
@@ -77,7 +70,7 @@ function Issues:ignore(identifier, range_start, range_end)
   local ignore_issue, issue_tables
   if identifier == nil then
     -- Prevent any issues within the given range.
-    assert(range_start ~= nil and range_end ~= nil)
+    assert(range ~= nil)
     issue_tables = {self.warnings, self.errors}
     ignore_issue = function(issue)
       local issue_range = issue[3]
@@ -87,7 +80,7 @@ function Issues:ignore(identifier, range_start, range_end)
         return match_issue_range(issue_range)
       end
     end
-  elseif range_start == nil then
+  elseif range == nil then
     -- Prevent any issues with the given identifier.
     assert(identifier ~= nil)
     issue_tables = {self:_get_issue_table(identifier)}
@@ -97,7 +90,7 @@ function Issues:ignore(identifier, range_start, range_end)
     end
   else
     -- Prevent any issues with the given identifier that are also either within the given range or file-wide.
-    assert(range_start ~= nil and range_end ~= nil and identifier ~= nil)
+    assert(range ~= nil and identifier ~= nil)
     issue_tables = {self:_get_issue_table(identifier)}
     ignore_issue = function(issue)
       local issue_identifier = issue[1]
@@ -141,7 +134,7 @@ function Issues.sort(warnings_and_errors)
   end
   table.sort(sorted_warnings_and_errors, function(a, b)
     local a_identifier, b_identifier = a[1], b[1]
-    local a_range, b_range = (a[3] and a[3][1]) or 0, (b[3] and b[3][1]) or 0
+    local a_range, b_range = (a[3] and a[3]:start()) or 0, (b[3] and b[3]:start()) or 0
     return a_range < b_range or (a_range == b_range and a_identifier < b_identifier)
   end)
   return sorted_warnings_and_errors
