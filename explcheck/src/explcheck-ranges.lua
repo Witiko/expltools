@@ -6,6 +6,11 @@ local Range = {}
 -- (inclusive/exclusive), the size of the array that contains the range, and an
 -- optional nondecreasing map-back function from indices in the array to
 -- indices in an original array and the size of the original array.
+--
+-- Since empty ranges are usually a mistake, they are not allowed.
+-- For example, `Range:new(index, index, "exclusive", #array)` will cause an
+-- assertion error. The exception to this rule are empty arrays, which permit
+-- the empty range `Range:new(0, 0, "inclusive", 0)`.
 function Range.new(cls, range_start, range_end, end_type, transformed_array_size, map_back, original_array_size)
   -- Instantiate the class.
   local new_object = {}
