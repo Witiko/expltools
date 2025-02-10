@@ -26,7 +26,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
     for _, line in ipairs(lpeg.match(parsers.tex_lines, content)) do
       local line_start, line_text, line_end = table.unpack(line)
       local line_range = new_range(line_start, line_end, "exclusive", #all_content)
-      local map_back = (function(line_text, line_range)
+      local map_back = (function(line_text, line_range)  -- luacheck: ignore line_text line_range
         return function (index)
           assert(index > 0)
           assert(index <= #line_text + #parsers.expl3_endlinechar)
