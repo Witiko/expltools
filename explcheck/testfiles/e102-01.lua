@@ -8,7 +8,7 @@ local content = assert(file:read("*a"))
 assert(file:close())
 local issues = new_issues()
 
-local options = {expect_expl3_everywhere = true}
+local options = {expl3_detection_strategy = "always"}
 preprocessing(issues, content, options)
 
 assert(#issues.errors == 0)

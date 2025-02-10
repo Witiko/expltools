@@ -55,7 +55,7 @@ jobs:
         run: |
           set -e
           export LUAINPUTS=explcheck/src
-          find */support -type f '(' -name '*.tex' -o -name '*.sty' ')' -exec \
+          find */support -type f '(' -name '*.tex' -o -name '*.sty' -o -name '*.cls' ')' -exec \
             texlua explcheck/src/explcheck.lua {} +
   tests:
     name: Run tests

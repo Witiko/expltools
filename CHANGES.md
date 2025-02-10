@@ -14,7 +14,13 @@
   machine-readable output when the command-line option `--porcelain` or the Lua
   option `porcelain` is enabled.
 
+- Add command-line options `--expl3-detection-strategy` and Lua option
+  `expl3_detection_strategy`. (drafted and discussed with @koppor in #38,
+  added in #49)
+
 #### Fixes
+
+- Only report warning S103 (Line too long) in expl3 parts. (#38, #49)
 
 - In machine-readable output, report the line and column number 1 for file-wide
   issues. (reported by @koppor in #39, fixed in #40)
@@ -32,6 +38,14 @@
 
 - Exclude "weird" argument specifiers (`:w`) from warning W200. (reported by
   @muzimuzhi in #25, fixed in #45)
+
+#### Deprecation
+
+- Deprecate the command-line option `--expect-expl3-everywhere` and the Lua
+  option `expect_expl3_everywhere`. (#49)
+
+  Use the command-line option `--expl3-detection-strategy=always` or the
+  corresponding Lua option instead.
 
 #### Housekeeping
 

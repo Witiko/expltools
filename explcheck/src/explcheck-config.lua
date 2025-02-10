@@ -4,8 +4,8 @@ local toml = require("explcheck-toml")
 
 -- The default options
 local default_options = {
+  expl3_detection_strategy = 'auto',
   error_format = '%f:%l:%c: %t%n %m',
-  expect_expl3_everywhere = false,
   ignored_issues = {},
   max_line_length = 80,
   porcelain = false,
