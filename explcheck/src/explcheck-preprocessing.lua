@@ -2,6 +2,7 @@
 
 local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")
+local new_range = require("explcheck-ranges")
 
 local lpeg = require("lpeg")
 local Cp, Ct, P, V = lpeg.Cp, lpeg.Ct, lpeg.P, lpeg.V
@@ -46,17 +47,19 @@ local function preprocessing(issues, content, options)
             local comment_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, transformed_index + 1)
             assert(comment_line_number <= #line_starting_byte_numbers)
             local comment_range_start = line_starting_byte_numbers[comment_line_number]
-            local comment_range_end
+            local comment_range_end, comment_range
             if(comment_line_number + 1 <= #line_starting_byte_numbers) then
-              comment_range_end = line_starting_byte_numbers[comment_line_number + 1] - 1
+              comment_range_end = line_starting_byte_numbers[comment_line_number + 1]
+              comment_range = new_range(comment_range_start, comment_range_end, "exclusive", #content)
             else
               comment_range_end = #content
+              comment_range = new_range(comment_range_start, comment_range_end, "inclusive", #content)
             end
             if #ignored_issues == 0 then  -- ignore all issues on this line
-              issues:ignore(nil, comment_range_start, comment_range_end)
+              issues:ignore(nil, comment_range)
             else  -- ignore specific issues on this line or everywhere (for file-wide issues)
               for _, identifier in ipairs(ignored_issues) do
-                issues:ignore(identifier, comment_range_start, comment_range_end)
+                issues:ignore(identifier, comment_range)
               end
             end
           end
@@ -91,8 +94,8 @@ local function preprocessing(issues, content, options)
 
   -- Check for overlong lines.
   local function line_too_long(range_start, range_end)
-    range_start, range_end = map_back(range_start), map_back(range_end - 1)
-    issues:add('s103', 'line too long', range_start, range_end + 1)
+    local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
+    issues:add('s103', 'line too long', range)
   end
 
   local overline_lines_grammar = (
@@ -108,15 +111,15 @@ local function preprocessing(issues, content, options)
   local expl_ranges = {}
 
   local function capture_range(range_start, range_end)
-    range_start, range_end = map_back(range_start), map_back(range_end)
-    table.insert(expl_ranges, {range_start, range_end})
+    local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
+    table.insert(expl_ranges, range)
   end
 
   local function unexpected_pattern(pattern, code, message, test)
     return Cp() * pattern * Cp() / function(range_start, range_end)
-      range_start, range_end = map_back(range_start), map_back(range_end)
+      local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
       if test == nil or test() then
-        issues:add(code, message, range_start, range_end + 1)
+        issues:add(code, message, range)
       end
     end
   end
@@ -188,7 +191,8 @@ local function preprocessing(issues, content, options)
 
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
-    table.insert(expl_ranges, {1, #content + 1})
+    local range = new_range(1, #content, "inclusive", #content)
+    table.insert(expl_ranges, range)
     issues:ignore('e102')
     if not utils.get_option(options, 'expect_expl3_everywhere') then
       issues:add('w100', 'no standard delimiters')

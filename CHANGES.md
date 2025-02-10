@@ -33,6 +33,10 @@
 - Exclude "weird" argument specifiers (`:w`) from warning W200. (reported by
   @muzimuzhi in #25, fixed in #45)
 
+#### Housekeeping
+
+- Make off-by-one errors less likely when working with byte ranges. (#47, #48)
+
 #### Artwork
 
 - Add artwork by https://www.quickcartoons.com/ to directory `artwork/`.
