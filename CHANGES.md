@@ -36,7 +36,7 @@
 #### Housekeeping
 
 - Make off-by-one errors less likely when working with byte ranges.
-  (#47, #48, 13ebfc6e)
+  (#47, #48, 13ebfc6e, a0923d06)
 
 #### Artwork
 
