@@ -92,21 +92,6 @@ local function preprocessing(issues, content, options)
 
   local transformed_content, map_back = strip_comments()
 
-  -- Check for overlong lines.
-  local function line_too_long(range_start, range_end)
-    local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
-    issues:add('s103', 'line too long', range)
-  end
-
-  local overline_lines_grammar = (
-    (
-      Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
-      + parsers.linechar^0
-    )
-    * parsers.newline
-  )^0
-  lpeg.match(overline_lines_grammar, transformed_content)
-
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}
 
@@ -220,6 +205,27 @@ local function preprocessing(issues, content, options)
       assert(false, 'Unknown strategy "' .. expl3_detection_strategy .. '"')
     end
   end
+
+  -- Check for overlong lines within the expl3 parts.
+  for _, expl_range in ipairs(expl_ranges) do
+    local offset = expl_range:start() - 1
+
+    local function line_too_long(range_start, range_end)
+      local range = new_range(offset + range_start, offset + range_end, "exclusive", #transformed_content, map_back, #content)
+      issues:add('s103', 'line too long', range)
+    end
+
+    local overline_lines_grammar = (
+      (
+        Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
+        + parsers.linechar^0
+      )
+      * parsers.newline
+    )^0
+
+    lpeg.match(overline_lines_grammar, transformed_content:sub(expl_range:start(), expl_range:stop()))
+  end
+
   return line_starting_byte_numbers, expl_ranges
 end
 
