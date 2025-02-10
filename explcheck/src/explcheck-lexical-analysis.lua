@@ -2,6 +2,7 @@
 
 local parsers = require("explcheck-parsers")
 local obsolete = require("explcheck-obsolete")
+local new_range = require("explcheck-ranges")
 
 local lpeg = require("lpeg")
 
@@ -21,25 +22,25 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
   --       https://petr.olsak.net/ftp/olsak/tbn/tbn.pdf
   --
   local function get_lines(range)
-    local range_start, range_end = table.unpack(range)
-    local content = all_content:sub(range_start, range_end - 1)
+    local content = all_content:sub(range:start(), range:end_inclusive())
     for _, line in ipairs(lpeg.match(parsers.tex_lines, content)) do
       local line_start, line_text, line_end = table.unpack(line)
-      local map_back = (function(line_start, line_text, line_end)  -- luacheck: ignore line_start line_text line_end
+      local line_range = new_range(line_start, line_end, "exclusive", #all_content)
+      local map_back = (function(line_text, line_range)
         return function (index)
           assert(index > 0)
           assert(index <= #line_text + #parsers.expl3_endlinechar)
-          if index > 0 and index <= #line_text then
-            local mapped_index = range_start + line_start + index - 2  -- a line character
+          if index <= #line_text then
+            local mapped_index = range:start() + line_range:start() + index - 2  -- a line character
             assert(line_text[index] == content[mapped_index])
             return mapped_index
           elseif index > #line_text and index <= #line_text + #parsers.expl3_endlinechar then
-            return range_start + line_end - 2  -- an \endlinechar
+            return range:start() + line_range:start() + #line_text - 2  -- an \endlinechar
           else
             assert(false)
           end
         end
-      end)(line_start, line_text, line_end)
+      end)(line_text, line_range)
       coroutine.yield(line_text .. parsers.expl3_endlinechar, map_back)
     end
   end
@@ -204,10 +205,10 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
 
   -- Tokenize the content.
   local all_tokens = {}
-  for _, expl_range in ipairs(expl_ranges) do
+  for _, range in ipairs(expl_ranges) do
     local lines = (function()
       local co = coroutine.create(function()
-        get_lines(expl_range)
+        get_lines(range)
       end)
       return function()
         local _, line_text, map_back = coroutine.resume(co)
