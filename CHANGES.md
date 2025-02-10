@@ -35,7 +35,8 @@
 
 #### Housekeeping
 
-- Make off-by-one errors less likely when working with byte ranges. (#47, #48)
+- Make off-by-one errors less likely when working with byte ranges.
+  (#47, #48, 13ebfc6e)
 
 #### Artwork
 
