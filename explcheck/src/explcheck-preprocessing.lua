@@ -94,8 +94,8 @@ local function preprocessing(issues, content, options)
 
   -- Check for overlong lines.
   local function line_too_long(range_start, range_end)
-    range_start, range_end = map_back(range_start), map_back(range_end - 1)
-    issues:add('s103', 'line too long', range_start, range_end + 1)
+    local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
+    issues:add('s103', 'line too long', range)
   end
 
   local overline_lines_grammar = (
