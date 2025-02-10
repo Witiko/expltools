@@ -111,8 +111,8 @@ local function preprocessing(issues, content, options)
   local expl_ranges = {}
 
   local function capture_range(range_start, range_end)
-    range_start, range_end = map_back(range_start), map_back(range_end)
-    table.insert(expl_ranges, {range_start, range_end})
+    local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
+    table.insert(expl_ranges, range)
   end
 
   local function unexpected_pattern(pattern, code, message, test)
@@ -191,7 +191,8 @@ local function preprocessing(issues, content, options)
 
   -- If no parts were detected, assume that the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
-    table.insert(expl_ranges, {1, #content + 1})
+    local range = new_range(1, #content, "inclusive", #content)
+    table.insert(expl_ranges, range)
     issues:ignore('e102')
     if not utils.get_option(options, 'expect_expl3_everywhere') then
       issues:add('w100', 'no standard delimiters')
