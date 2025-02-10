@@ -82,8 +82,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
       local previous_catcode, previous_csname = 9, nil
       while character_index <= #line_text do
         local character, catcode, character_index_increment = get_character_and_catcode(character_index)
-        local range_start = map_back(character_index)
-        local range_end = range_start + 1
+        local range = new_range(character_index, character_index, "inclusive", #line_text, map_back, #all_content)
         if (
               catcode ~= 9 and catcode ~= 10  -- a potential missing stylistic whitespace
               and (
@@ -102,7 +101,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
                 and (previous_catcode ~= 1 or catcode ~= 6)  -- allow a parameter after begin grouping without whitespace in between
                 and (previous_catcode ~= 2 or character ~= ",")  -- allow a comma after end grouping without whitespace in between
               ) then
-            issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
+            issues:add('s204', 'missing stylistic whitespaces', range)
           end
         end
         if catcode == 0 then  -- control sequence
@@ -133,22 +132,22 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
             end
           end
           local csname = table.concat(csname_table)
-          range_end = map_back(previous_csname_index) + 1
-          table.insert(tokens, {"control sequence", csname, 0, range_start, range_end})
+          range = new_range(character_index, previous_csname_index, "inclusive", #line_text, map_back, #all_content)
+          table.insert(tokens, {"control sequence", csname, 0, range})
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
                 -- do not require whitespace before non-expl3 control sequences or control sequences with empty or one-character names
                 and #csname > 1 and lpeg.match(parsers.non_expl3_csname, csname) == nil
               ) then
-            issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
+            issues:add('s204', 'missing stylistic whitespaces', range)
           end
           previous_catcode, previous_csname = 0, csname
           character_index = csname_index
         elseif catcode == 5 then  -- end of line
           if state == "N" then
-            table.insert(tokens, {"control sequence", "par", range_start, range_end})
+            table.insert(tokens, {"control sequence", "par", range})
           elseif state == "M" then
-            table.insert(tokens, {"character", " ", 10, range_start, range_end})
+            table.insert(tokens, {"character", " ", 10, range})
           end
           character_index = character_index + character_index_increment
         elseif catcode == 9 then  -- ignored character
@@ -156,14 +155,14 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           character_index = character_index + character_index_increment
         elseif catcode == 10 then  -- space
           if state == "M" then
-            table.insert(tokens, {"character", " ", 10, range_start, range_end})
+            table.insert(tokens, {"character", " ", 10, range})
           end
           previous_catcode = catcode
           character_index = character_index + character_index_increment
         elseif catcode == 14 then  -- comment character
           character_index = #line_text + 1
         elseif catcode == 15 then  -- invalid character
-          issues:add('e209', 'invalid characters', range_start, range_end)
+          issues:add('e209', 'invalid characters', range)
           character_index = character_index + character_index_increment
         else
           if catcode == 1 or catcode == 2 then  -- begin/end grouping
@@ -173,7 +172,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
               if num_open_groups_upper_estimate > 0 then
                 num_open_groups_upper_estimate = num_open_groups_upper_estimate - 1
               else
-                issues:add('e208', 'too many closing braces', range_start, range_end)
+                issues:add('e208', 'too many closing braces', range)
               end
             end
             if (
@@ -183,7 +182,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
                     and (previous_catcode ~= 1 or catcode ~= 2)  -- allow an end grouping immediately after begin grouping
                     and (previous_catcode ~= 6 or catcode ~= 1 and catcode ~= 2)  -- allow a parameter immediately before grouping
                 ) then
-              issues:add('s204', 'missing stylistic whitespaces', range_start, range_end)
+              issues:add('s204', 'missing stylistic whitespaces', range)
             end
             previous_catcode = catcode
           elseif (  -- maybe a parameter?
@@ -194,7 +193,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
           else  -- some other character
             previous_catcode = catcode
           end
-          table.insert(tokens, {"character", character, catcode, range_start, range_end})
+          table.insert(tokens, {"character", character, catcode, range})
           state = "M"
           character_index = character_index + character_index_increment
         end
