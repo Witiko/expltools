@@ -35,7 +35,7 @@
 
 #### Artwork
 
-- Add artwork by https://fiverr.com/quickcartoon to directory `artwork/`.
+- Add artwork by https://www.quickcartoons.com/ to directory `artwork/`.
   (566769b)
 
 ## expltools 2025-01-20

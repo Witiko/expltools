@@ -1,8 +1,8 @@
 # Platy in a Sea of Code (Seabed)
 
- ![artwork](platypus-detective-seabed.jpg "Platy in a Sea of Code (Seabed) by <https://fiverr.com/quickcartoon>")
+ ![artwork](platypus-detective-seabed.jpg "Platy in a Sea of Code (Seabed) by <https://www.quickcartoons.com/>")
 
-This artwork was created by <https://fiverr.com/quickcartoon> in November 2024.
+This artwork was created by <https://www.quickcartoons.com/> in November 2024.
 
 It first appeared in the [presentations slides][slides] for the talk [_Explcheck: a static analyzer of expl3 code_][talk], given in December 2024.
 
@@ -14,7 +14,7 @@ If you wish to use this artwork in your materials, you must provide attribution 
 
 A suggested attribution is:
 
-> Illustration by <https://fiverr.com/quickcartoon>.
+> Illustration by <https://www.quickcartoons.com/>.
 
  [slides]: https://www.cstug.cz/informace/zpravy/2024-11-18-valna-hromada-2024/files/starynovotny-expltools-slides.pdf
  [talk]: https://www.youtube.com/watch?v=lIQ38mo_EVA
