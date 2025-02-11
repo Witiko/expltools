@@ -124,7 +124,7 @@ To ignore them in just some of your expl3 code, you may use TeX comments.
 For example, a comment `% noqa` will ignore any issues on the current line.
 As another example, a comment `% noqa: w100, S204` will ignore the file-wide warning W100 and also the warning S204 on the current line.
 
-A full list of error is available at [warnings-and-errors.pdf](https://github.com/Witiko/expltools/releases/download/latest/warnings-and-errors.pdf) as well as [explcheck/doc/warnings-and-errors-02-lexical-analysis.md](explcheck/doc/warnings-and-errors-02-lexical-analysis.md).
+A full list of error is available at [warnings-and-errors.pdf](https://github.com/Witiko/expltools/releases/download/latest/warnings-and-errors.pdf).
 
 ## Notes to distributors
 
