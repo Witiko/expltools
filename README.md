@@ -26,6 +26,7 @@ In the future, this repository may also contain the code of other useful develop
  [7]: https://tug.org/tc/devfund/documents/2024-09-expltools.pdf
  [8]: https://witiko.github.io/Expl3-Linter-5/
  [9]: https://witiko.github.io/Expl3-Linter-6/
+ [10]: https://github.com/witiko/expltools/releases/download/latest/warnings-and-errors.pdf
 
 ## Usage
 
@@ -124,7 +125,7 @@ To ignore them in just some of your expl3 code, you may use TeX comments.
 For example, a comment `% noqa` will ignore any issues on the current line.
 As another example, a comment `% noqa: w100, S204` will ignore the file-wide warning W100 and also the warning S204 on the current line.
 
-A full list of error is available at [warnings-and-errors.pdf](https://github.com/Witiko/expltools/releases/download/latest/warnings-and-errors.pdf).
+A list of all currently supported issues is available [here][10].
 
 ## Notes to distributors
 
