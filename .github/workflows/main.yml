@@ -78,7 +78,6 @@ jobs:
           l3build check
   regression-tests:
     name: Run regression tests
-    needs: artifacts
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
