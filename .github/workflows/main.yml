@@ -127,11 +127,13 @@ jobs:
           then
             exit 1
           fi
-      - name: Display the generated file  # TODO: remove this step
-        run: |
-          ls -lh errors.txt
-          wc -l errors.txt
-      # TODO: add remaining steps
+      # TODO: add comparison step
+      - name: Upload errors
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.release }} errors
+          path: |
+            errors.txt
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, unit-tests, regression-tests]
