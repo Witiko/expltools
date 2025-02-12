@@ -150,7 +150,7 @@ jobs:
           set -e
           export LUAINPUTS=expltools/luatex
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
-            texlua expltools/scripts/explcheck.lua --porcelain -- {} + > errors.txt 1>&2
+            texlua expltools/scripts/explcheck.lua --porcelain -- {} + > errors.txt
       - name: Display the generated file  # TODO: remove this step
         run: |
           ls -lh errors.txt
