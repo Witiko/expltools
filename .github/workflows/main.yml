@@ -118,7 +118,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image:
+        release:
           - TL2013
           - TL2014
           - TL2015
@@ -131,7 +131,7 @@ jobs:
           - TL2022
           - TL2023
     container:
-      image: texlive/texlive:${{ matrix.year }}-historic
+      image: texlive/texlive:${{ matrix.release }}-historic
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
