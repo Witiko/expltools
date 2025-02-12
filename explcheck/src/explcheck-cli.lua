@@ -93,7 +93,7 @@ local function main(pathnames, options)
   end
 
   for pathname_number, pathname in ipairs(pathnames) do
-    local pcall_succeeded, pcall_error = pcall(function()
+    local ok, err = xpcall(function()
 
       -- Set up the issue registry.
       local issues = new_issues()
@@ -126,9 +126,9 @@ local function main(pathnames, options)
       num_warnings = num_warnings + #issues.warnings
       num_errors = num_errors + #issues.errors
       format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options)
-    end)
-    if not pcall_succeeded then
-      error("Failed to process " .. pathname .. ": " .. tostring(pcall_error), 0)
+    end, debug.traceback)
+    if not ok then
+      error("Failed to process " .. pathname .. ": " .. tostring(err), 0)
     end
   end
 
