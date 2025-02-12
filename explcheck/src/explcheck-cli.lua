@@ -128,7 +128,7 @@ local function main(pathnames, options)
       format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options)
     end)
     if not pcall_succeeded then
-      error("Failed to process " .. pathname .. ": " .. tostring(pcall_error))
+      error("Failed to process " .. pathname .. ": " .. tostring(pcall_error), 0)
     end
   end
 
