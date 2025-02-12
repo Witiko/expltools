@@ -119,19 +119,19 @@ jobs:
       fail-fast: true
       matrix:
         image:
-          - 2013
-          - 2014
-          - 2015
-          - 2016
-          - 2017
-          - 2018
-          - 2019
-          - 2020
-          - 2021
-          - 2022
-          - 2023
+          - TL2013
+          - TL2014
+          - TL2015
+          - TL2016
+          - TL2017
+          - TL2018
+          - TL2019
+          - TL2020
+          - TL2021
+          - TL2022
+          - TL2023
     container:
-      image: texlive/texlive:TL${{ matrix.year }}-historic
+      image: texlive/texlive:${{ matrix.year }}-historic
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
