@@ -44,11 +44,11 @@
 
 #### Deprecation
 
-- Deprecate the command-line option `--expect-expl3-everywhere` and the Lua
-  option `expect_expl3_everywhere`. (#49)
+- Deprecate the command-line option `--expect-expl3-everywhere` and remove the
+  Lua option `expect_expl3_everywhere`. (#49)
 
   Use the command-line option `--expl3-detection-strategy=always` or the
-  corresponding Lua option instead.
+  corresponding Lua option `expl3_detection_stragegy = "always"` instead.
 
 #### Documentation
 
