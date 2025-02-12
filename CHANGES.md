@@ -39,6 +39,9 @@
 - Exclude "weird" argument specifiers (`:w`) from warning W200. (reported by
   @muzimuzhi in #25, fixed in #45)
 
+- Fix two instances of explcheck crashing while processing input files.
+  (reported by @koppor in #31, fixed in #52)
+
 #### Deprecation
 
 - Deprecate the command-line option `--expect-expl3-everywhere` and the Lua
@@ -53,6 +56,11 @@
 
 - Link a list of all currently supported issues from `README.md`.
   (added by @koppor in #51)
+
+#### Continuous integration
+
+- Continuously run explcheck on all packages in historical TeX Live Docker
+  images. (suggested in #31, added in #52)
 
 #### Housekeeping
 

@@ -32,7 +32,8 @@ jobs:
         run: l3build tag
       - name: Run luacheck
         run: |
-          find explcheck -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec luacheck {} +
+          find explcheck -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec \
+            luacheck {} +
   explcheck:
     name: Check code style (expl3)
     runs-on: ubuntu-latest
@@ -57,8 +58,8 @@ jobs:
           export LUAINPUTS=explcheck/src
           find */support -type f '(' -name '*.tex' -o -name '*.sty' -o -name '*.cls' ')' -exec \
             texlua explcheck/src/explcheck.lua {} +
-  tests:
-    name: Run tests
+  unit-tests:
+    name: Run unit tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -72,15 +73,29 @@ jobs:
             l3build
       - name: Install file "l3obsolete.txt"
         run: tlmgr install --reinstall --with-doc l3kernel
-      - name: Run tests
+      - name: Run unit tests
         run: |
           l3build check
-  docker-image:
-    name: Build the Docker image
-    needs: [luacheck, explcheck, tests]
+  regression-tests:
+    name: Run regression tests
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        release:
+          - TL2013
+          - TL2014
+          - TL2015
+          - TL2016
+          - TL2017
+          - TL2018
+          - TL2019
+          - TL2020
+          - TL2021
+          - TL2022
+          - TL2023
+    container:
+      image: texlive/texlive:${{ matrix.release }}-historic
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,29 +106,39 @@ jobs:
         with:
           packages: |
             l3build
+            luatex
       - name: Install file "l3obsolete.txt"
         run: tlmgr install --reinstall --with-doc l3kernel
-      - name: Build the Docker image
+      - name: Generate file "explcheck-obsolete.lua"
+        run: l3build tag
+      - name: Run explcheck
         run: |
           set -e
-          l3build tag
-          docker build -f explcheck/Dockerfile -t ghcr.io/witiko/expltools/explcheck .
-      - name: Login to GitHub Packages
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+          export LUAINPUTS=explcheck/src
+          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
+            sh -c '
+              texlua explcheck/src/explcheck.lua --porcelain -- "$@" || true
+            ' sh {} + > errors.txt
+          # Display any potential exceptions.
+          if grep -v '^/' errors.txt
+          then
+            exit 1
+          fi
+      - name: Upload errors
+        uses: actions/upload-artifact@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish the Docker image
-        if: github.ref == 'refs/heads/main'
-        run: docker push ghcr.io/witiko/expltools/explcheck
-  ctan:
-    name: Build the CTAN archive
-    needs: [luacheck, explcheck, tests]
+          name: ${{ matrix.release }} errors
+          path: |
+            errors.txt
+      - name: Compare errors
+        run: |
+          set -e
+          gzip -d explcheck/testfiles/${{ matrix.release }}-errors.txt.gz
+          diff explcheck/testfiles/${{ matrix.release }}-errors.txt errors.txt
+  artifacts:
+    name: Build and publish artifacts
+    needs: [luacheck, explcheck, unit-tests, regression-tests]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -134,19 +159,69 @@ jobs:
             **/DEPENDS.txt
       - name: Install file "l3obsolete.txt"
         run: tlmgr install --reinstall --with-doc l3kernel
-      - name: Build the CTAN archive
+      - name: Build CTAN archive and documentation
         run: |
           set -e
           l3build tag
           l3build ctan
-      - name: Upload artifacts
+      - name: Upload CTAN archive
         uses: actions/upload-artifact@v4
         with:
           name: CTAN archive
           path: |
             build/distrib/ctan/expltools-ctan.zip
-      - name: Create a prerelease
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: Documentation
+          path: |
+            build/doc/*.pdf
+  docker-image:
+    name: Build and publish Docker image
+    needs: artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            l3build
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
+      - name: Build and publish Docker image
+        run: |
+          set -e
+          l3build tag
+          docker build -f explcheck/Dockerfile -t ghcr.io/witiko/expltools/explcheck .
+      - name: Login to GitHub Packages
         if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Docker image
+        if: github.ref == 'refs/heads/main'
+        run: docker push ghcr.io/witiko/expltools/explcheck
+  prerelease:
+    name: Publish prerelease
+    if: github.ref == 'refs/heads/main'
+    needs: artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download CTAN archive and documentation
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Publish prerelease
         uses: marvinpinto/action-automatic-releases@latest
         with:
           title: The latest version
@@ -154,5 +229,5 @@ jobs:
           prerelease: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            build/doc/*.pdf
-            build/distrib/ctan/expltools-ctan.zip
+            expltools-ctan.zip
+            *.pdf

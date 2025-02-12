@@ -1,2 +1,3 @@
 [options]
+error_format = "%f:%l:%c:%e:%k: %t%n %m"
 warnings_are_errors = true
