@@ -115,9 +115,17 @@ jobs:
         run: |
           set -e
           export LUAINPUTS=explcheck/src
+          printf 'Processing all packages in /usr/local/texlive/: '
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
-            sh -c 'texlua explcheck/src/explcheck.lua --porcelain -- "$@" || true' sh {} + > errors.txt
-          if grep -v '^/' errors.txt then exit 1; fi  # display any potential exceptions
+            sh -c '
+              printf #
+              texlua explcheck/src/explcheck.lua --porcelain -- "$@" || true
+            ' sh {} + > errors.txt
+          # Display any potential exceptions.
+          if grep -v '^/' errors.txt
+          then
+            exit 1
+          fi
       - name: Display the generated file  # TODO: remove this step
         run: |
           ls -lh errors.txt
