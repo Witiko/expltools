@@ -100,17 +100,23 @@ jobs:
             **/DEPENDS.txt
       - name: Install file "l3obsolete.txt"
         run: tlmgr install --reinstall --with-doc l3kernel
-      - name: Build the CTAN archive
+      - name: Build the CTAN archive and the documentation
         run: |
           set -e
           l3build tag
           l3build ctan
-      - name: Upload artifacts
+      - name: Upload the CTAN archive
         uses: actions/upload-artifact@v4
         with:
           name: CTAN archive
           path: |
             build/distrib/ctan/expltools-ctan.zip
+      - name: Upload the documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: Documentation
+          path: |
+            build/doc/*.pdf
   regression-tests:
     name: Run regression tests
     needs: artifacts
