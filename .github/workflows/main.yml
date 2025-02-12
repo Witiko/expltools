@@ -118,7 +118,7 @@ jobs:
           printf 'Processing all packages in /usr/local/texlive/: '
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
             sh -c '
-              printf #
+              printf "#"
               texlua explcheck/src/explcheck.lua --porcelain -- "$@" || true
             ' sh {} + > errors.txt
           # Display any potential exceptions.
