@@ -139,10 +139,22 @@ jobs:
     container:
       image: texlive/texlive:${{ matrix.release }}-historic
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Download CTAN archive
+        uses: actions/download-artifact@v4
         with:
-          submodules: true
+          name: CTAN archive
+      - name: Unzip CTAN archive
+        run: unzip expltools-ctan.zip
+      - name: Run explcheck
+        run: |
+          set -e
+          export LUAINPUTS=expltools/luatex
+          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
+            texlua expltools/scripts/explcheck.lua --porcelain -- {} + &> errors.txt
+      - name: Display the generated file  # TODO: remove this step
+        run: |
+          ls -lh errors.txt
+          wc -l errors.txt
       # TODO: add remaining steps
   docker-image:
     name: Build the Docker image
