@@ -76,9 +76,89 @@ jobs:
       - name: Run unit tests
         run: |
           l3build check
+  regression-tests:
+    name: Run regression tests
+    needs: artifacts
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        release:
+          - TL2013
+          - TL2014
+          - TL2015
+          - TL2016
+          - TL2017
+          - TL2018
+          - TL2019
+          - TL2020
+          - TL2021
+          - TL2022
+          - TL2023
+    container:
+      image: texlive/texlive:${{ matrix.release }}-historic
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            l3build
+            luatex
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
+      - name: Generate file "explcheck-obsolete.lua"
+        run: l3build tag
+      - name: Run explcheck
+        run: |
+          set -e
+          export LUAINPUTS=explcheck/src
+          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
+            texlua explcheck/src/explcheck.lua --porcelain -- {} + > errors.txt
+      - name: Display the generated file  # TODO: remove this step
+        run: |
+          ls -lh errors.txt
+          wc -l errors.txt
+      # TODO: add remaining steps
+  docker-image:
+    name: Build the Docker image
+    needs: [luacheck, explcheck, unit-tests, regression-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            l3build
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
+      - name: Build the Docker image
+        run: |
+          set -e
+          l3build tag
+          docker build -f explcheck/Dockerfile -t ghcr.io/witiko/expltools/explcheck .
+      - name: Login to GitHub Packages
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the Docker image
+        if: github.ref == 'refs/heads/main'
+        run: docker push ghcr.io/witiko/expltools/explcheck
   artifacts:
     name: Build artifacts
-    needs: [luacheck, explcheck, unit-tests]
+    needs: [luacheck, explcheck, unit-tests, regression-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -117,82 +197,10 @@ jobs:
           name: Documentation
           path: |
             build/doc/*.pdf
-  regression-tests:
-    name: Run regression tests
-    needs: artifacts
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        release:
-          - TL2013
-          - TL2014
-          - TL2015
-          - TL2016
-          - TL2017
-          - TL2018
-          - TL2019
-          - TL2020
-          - TL2021
-          - TL2022
-          - TL2023
-    container:
-      image: texlive/texlive:${{ matrix.release }}-historic
-    steps:
-      - name: Download CTAN archive
-        uses: actions/download-artifact@v4
-        with:
-          name: CTAN archive
-      - name: Unzip CTAN archive
-        run: unzip expltools-ctan.zip
-      - name: Run explcheck
-        run: |
-          set -e
-          export LUAINPUTS=expltools/luatex
-          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
-            texlua expltools/scripts/explcheck.lua --porcelain -- {} + > errors.txt
-      - name: Display the generated file  # TODO: remove this step
-        run: |
-          ls -lh errors.txt
-          wc -l errors.txt
-      # TODO: add remaining steps
-  docker-image:
-    name: Build the Docker image
-    needs: regression-tests
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install TeX Live
-        uses: teatimeguest/setup-texlive-action@v3
-        with:
-          packages: |
-            l3build
-      - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
-      - name: Build the Docker image
-        run: |
-          set -e
-          l3build tag
-          docker build -f explcheck/Dockerfile -t ghcr.io/witiko/expltools/explcheck .
-      - name: Login to GitHub Packages
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish the Docker image
-        if: github.ref == 'refs/heads/main'
-        run: docker push ghcr.io/witiko/expltools/explcheck
   prerelease:
     name: Publish a prerelease
     if: github.ref == 'refs/heads/main'
-    needs: [artifacts, regression-tests]
+    needs: artifacts
     runs-on: ubuntu-latest
     permissions:
       contents: write
