@@ -115,10 +115,10 @@ jobs:
         run: |
           set -e
           export LUAINPUTS=explcheck/src
-          printf 'Processing all packages in /usr/local/texlive/: '
+          printf 'Processing all packages in /usr/local/texlive/: ' 1>&2
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
             sh -c '
-              printf "#"
+              printf "#" 1>&2
               texlua explcheck/src/explcheck.lua --porcelain -- "$@" || true
             ' sh {} + > errors.txt
           # Display any potential exceptions.
