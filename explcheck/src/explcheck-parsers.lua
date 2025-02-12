@@ -326,6 +326,8 @@ local issue_code = (
 )
 local ignored_issues = Ct(
   optional_spaces
+  * expl3_catcodes[14]
+  * optional_spaces
   * P("noqa")
   * (
     P(":")
