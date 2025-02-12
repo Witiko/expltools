@@ -32,7 +32,8 @@ jobs:
         run: l3build tag
       - name: Run luacheck
         run: |
-          find explcheck -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec luacheck {} +
+          find explcheck -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec \
+            luacheck {} +
   explcheck:
     name: Check code style (expl3)
     runs-on: ubuntu-latest
