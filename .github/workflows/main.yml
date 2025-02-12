@@ -191,6 +191,7 @@ jobs:
         run: docker push ghcr.io/witiko/expltools/explcheck
   prerelease:
     name: Publish a prerelease
+    if: github.ref == 'refs/heads/main'
     needs: [artifacts, regression-tests]
     runs-on: ubuntu-latest
     permissions:
@@ -200,10 +201,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - name: Display structure of downloaded files  # TODO: remove this step
-        run: ls -R
       - name: Create a prerelease
-        if: github.ref == 'refs/heads/main'  # TODO: move this onto the job itself
         uses: marvinpinto/action-automatic-releases@latest
         with:
           title: The latest version
