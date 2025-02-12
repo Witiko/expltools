@@ -122,41 +122,8 @@ jobs:
           ls -lh errors.txt
           wc -l errors.txt
       # TODO: add remaining steps
-  docker-image:
-    name: Build the Docker image
-    needs: [luacheck, explcheck, unit-tests, regression-tests]
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install TeX Live
-        uses: teatimeguest/setup-texlive-action@v3
-        with:
-          packages: |
-            l3build
-      - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
-      - name: Build the Docker image
-        run: |
-          set -e
-          l3build tag
-          docker build -f explcheck/Dockerfile -t ghcr.io/witiko/expltools/explcheck .
-      - name: Login to GitHub Packages
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish the Docker image
-        if: github.ref == 'refs/heads/main'
-        run: docker push ghcr.io/witiko/expltools/explcheck
   artifacts:
-    name: Build artifacts
+    name: Build and publish artifacts
     needs: [luacheck, explcheck, unit-tests, regression-tests]
     runs-on: ubuntu-latest
     steps:
@@ -196,8 +163,41 @@ jobs:
           name: Documentation
           path: |
             build/doc/*.pdf
+  docker-image:
+    name: Build and publish Docker image
+    needs: artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install TeX Live
+        uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: |
+            l3build
+      - name: Install file "l3obsolete.txt"
+        run: tlmgr install --reinstall --with-doc l3kernel
+      - name: Build and publish Docker image
+        run: |
+          set -e
+          l3build tag
+          docker build -f explcheck/Dockerfile -t ghcr.io/witiko/expltools/explcheck .
+      - name: Login to GitHub Packages
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Docker image
+        if: github.ref == 'refs/heads/main'
+        run: docker push ghcr.io/witiko/expltools/explcheck
   prerelease:
-    name: Publish a prerelease
+    name: Publish prerelease
     if: github.ref == 'refs/heads/main'
     needs: artifacts
     runs-on: ubuntu-latest
@@ -208,7 +208,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - name: Create a prerelease
+      - name: Publish prerelease
         uses: marvinpinto/action-automatic-releases@latest
         with:
           title: The latest version
