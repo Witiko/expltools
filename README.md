@@ -143,3 +143,7 @@ The file `explcheck.lua` should be installed in the TDS directory `scripts/explt
 ## License
 
 This material is dual-licensed under GNU GPL 2.0 or later and LPPL 1.3c or later.
+
+``` yaml
+SPDX-License-Identifier: GPL-2.0-or-later OR LPPL-1.3c
+```
