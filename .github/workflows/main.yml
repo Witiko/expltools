@@ -124,13 +124,17 @@ jobs:
           then
             exit 1
           fi
-      # TODO: add comparison step
       - name: Upload errors
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.release }} errors
           path: |
             errors.txt
+      - name: Compare errors
+        run: |
+          set -e
+          gzip -d explcheck/testfiles/${{ matrix.release }}-errors.txt.gz
+          diff explcheck/testfiles/${{ matrix.release }}-errors.txt errors.txt
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, unit-tests, regression-tests]
