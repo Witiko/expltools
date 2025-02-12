@@ -49,7 +49,10 @@
 
 #### Documentation
 
-- Add SPDX license identifier to `README.md`. (fixed by @koppor in #50)
+- Add SPDX license identifier to `README.md`. (added by @koppor in #50)
+
+- Link a list of all currently supported issues from `README.md`.
+  (added by @koppor in #51)
 
 #### Housekeeping
 
