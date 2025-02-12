@@ -47,6 +47,10 @@
   Use the command-line option `--expl3-detection-strategy=always` or the
   corresponding Lua option instead.
 
+#### Documentation
+
+- Add SPDX license identifier to `README.md`. (fixed by @koppor in #50)
+
 #### Housekeeping
 
 - Make off-by-one errors less likely when working with byte ranges.
