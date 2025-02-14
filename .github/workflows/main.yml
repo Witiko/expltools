@@ -118,7 +118,7 @@ jobs:
           export LUAINPUTS=explcheck/src
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
             sh -c '
-              texlua explcheck/src/explcheck.lua --porcelain -- "$@" || true
+              texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" || true
             ' sh {} + > errors-full.txt
           # Display any potential exceptions.
           if grep -v '^/' errors-full.txt
