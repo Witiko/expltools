@@ -159,7 +159,9 @@
                     \markdownSetup
                       {
                         renderers = {
-                          heading(Two|Tree) = {},
+                          heading(Two|Tree) = {
+                            \__expltools_explcheck_increment_counters:
+                          },
                           headerAttributeContextEnd += {
                             \cs_set:Npn
                               \next
