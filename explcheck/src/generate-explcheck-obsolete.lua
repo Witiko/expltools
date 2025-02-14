@@ -17,7 +17,7 @@ while line ~= nil do
     input_state = "deprecated"
   elseif input_state == "deprecated" and line == "Removed functions and variables" then
     input_state = "removed"
-  elseif line:sub(1, 1) == [[\]] then
+  elseif input_state == "deprecated" and line:sub(1, 1) == [[\]] then
     local _, _, csname = line:find([[\(%S*)]])
     if csnames[input_state] == nil then
       csnames[input_state] = {}
@@ -42,7 +42,7 @@ output_file:write('local lpeg = require("lpeg")\n')
 output_file:write('local P = lpeg.P\n\n')
 output_file:write('local eof = P(-1)\n')
 output_file:write('local regular_character = P(1)\n')
-output_file:write('local wildcard = regular_character^0\n\n')
+output_file:write('local wildcard = regular_character^0  -- luacheck: ignore wildcard\n\n')
 
 ------ In order to minimize the size and speed of the parsers, we will first
 ------ construct prefix trees of the obsolete functions/variables.

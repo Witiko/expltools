@@ -39,6 +39,8 @@
 - Exclude "weird" argument specifiers (`:w`) from warning W200. (reported by
   @muzimuzhi in #25, fixed in #45)
 
+- Remove error E203. (reported by @koppor in #53, fixed in #54)
+
 - Fix two instances of explcheck crashing while processing input files.
   (reported by @koppor in #31, fixed in #52)
 
