@@ -17,7 +17,7 @@ while line ~= nil do
     input_state = "deprecated"
   elseif input_state == "deprecated" and line == "Removed functions and variables" then
     input_state = "removed"
-  elseif line:sub(1, 1) == [[\]] then
+  elseif input_state == "deprecated" and line:sub(1, 1) == [[\]] then
     local _, _, csname = line:find([[\(%S*)]])
     if csnames[input_state] == nil then
       csnames[input_state] = {}

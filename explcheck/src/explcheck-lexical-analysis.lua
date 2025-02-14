@@ -235,9 +235,6 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         if lpeg.match(obsolete.deprecated_csname, csname) ~= nil then
           issues:add('w202', 'deprecated control sequences', range)
         end
-        if lpeg.match(obsolete.removed_csname, csname) ~= nil then
-          issues:add('e203', 'removed control sequences', range)
-        end
         if token_index + 1 <= #tokens then
           local next_token = tokens[token_index + 1]
           local next_token_type, next_csname, _, next_range = table.unpack(next_token)
