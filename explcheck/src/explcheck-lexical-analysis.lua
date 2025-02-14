@@ -35,7 +35,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
             assert(line_text[index] == content[mapped_index])
             return mapped_index
           elseif index > #line_text and index <= #line_text + #parsers.expl3_endlinechar then
-            return range:start() + line_range:start() + #line_text - 2  -- an \endlinechar
+            return math.max(1, range:start() + line_range:start() + #line_text - 2)  -- an \endlinechar
           else
             assert(false)
           end
@@ -234,9 +234,6 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
         end
         if lpeg.match(obsolete.deprecated_csname, csname) ~= nil then
           issues:add('w202', 'deprecated control sequences', range)
-        end
-        if lpeg.match(obsolete.removed_csname, csname) ~= nil then
-          issues:add('e203', 'removed control sequences', range)
         end
         if token_index + 1 <= #tokens then
           local next_token = tokens[token_index + 1]

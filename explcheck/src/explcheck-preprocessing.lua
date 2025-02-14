@@ -34,7 +34,7 @@ local function preprocessing(issues, content, options)
     local transformed_index = 0
     local numbers_of_bytes_removed = {}
     local transformed_text_table = {}
-    for index, text_position in ipairs(lpeg.match(Ct(parsers.commented_line^1), content)) do
+    for index, text_position in ipairs(lpeg.match(Ct(parsers.commented_line^1), content) or {}) do
       local span_size = text_position - transformed_index - 1
       if span_size > 0 then
         if index % 2 == 1 then  -- chunk of text

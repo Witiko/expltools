@@ -93,38 +93,43 @@ local function main(pathnames, options)
   end
 
   for pathname_number, pathname in ipairs(pathnames) do
+    local is_ok, error_message = xpcall(function()
 
-    -- Set up the issue registry.
-    local issues = new_issues()
-    for _, issue_identifier in ipairs(utils.get_option(options, "ignored_issues")) do
-      issues:ignore(issue_identifier)
+      -- Set up the issue registry.
+      local issues = new_issues()
+      for _, issue_identifier in ipairs(utils.get_option(options, "ignored_issues")) do
+        issues:ignore(issue_identifier)
+      end
+
+      -- Load an input file.
+      local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
+      local content = assert(file:read("*a"))
+      assert(file:close())
+
+      -- Run all processing steps.
+      local line_starting_byte_numbers, expl_ranges, tokens  -- luacheck: ignore tokens
+
+      line_starting_byte_numbers, expl_ranges = preprocessing(issues, content, options)
+
+      if #issues.errors > 0 then
+        goto continue
+      end
+
+      tokens = lexical_analysis(issues, content, expl_ranges, options)
+
+      -- syntactic_analysis(issues)
+      -- semantic_analysis(issues)
+      -- pseudo_flow_analysis(issues)
+
+      -- Print warnings and errors.
+      ::continue::
+      num_warnings = num_warnings + #issues.warnings
+      num_errors = num_errors + #issues.errors
+      format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options)
+    end, debug.traceback)
+    if not is_ok then
+      error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
     end
-
-    -- Load an input file.
-    local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
-    local content = assert(file:read("*a"))
-    assert(file:close())
-
-    -- Run all processing steps.
-    local line_starting_byte_numbers, expl_ranges, tokens  -- luacheck: ignore tokens
-
-    line_starting_byte_numbers, expl_ranges = preprocessing(issues, content, options)
-
-    if #issues.errors > 0 then
-      goto continue
-    end
-
-    tokens = lexical_analysis(issues, content, expl_ranges, options)
-
-    -- syntactic_analysis(issues)
-    -- semantic_analysis(issues)
-    -- pseudo_flow_analysis(issues)
-
-    -- Print warnings and errors.
-    ::continue::
-    num_warnings = num_warnings + #issues.warnings
-    num_errors = num_errors + #issues.errors
-    format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options)
   end
 
   -- Print a summary.
