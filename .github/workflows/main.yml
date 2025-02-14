@@ -127,16 +127,18 @@ jobs:
           fi
           # Compress the errors.
           sed 's#^.*/##' errors-full.txt | sort -u | awk '{
-            if (!($1 in seen)) {
-              order[++n] = $1
-              seen[$1] = 1
+            filename = $1
+            error = $2
+            if (!(filename in seen_filenames)) {
+              filenames[++n] = filename
+              seen_filenames[filename] = 1
             }
-            acc[$1] = ($1 in acc ? acc[$1] "," : "") $2
+            errors[filename] = (filename in errors ? errors[filename] "," : "") error
           }
           END {
             for (i = 1; i <= n; i++) {
-              k = order[i]
-              print k, acc[k]
+              filename = filenames[i]
+              print filename, errors[filename]
             }
           }' > errors.txt
       - name: Upload errors
