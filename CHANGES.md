@@ -62,7 +62,7 @@
 #### Continuous integration
 
 - Continuously run explcheck on all packages in historical TeX Live Docker
-  images. (suggested in #31, added in #52)
+  images. (suggested in #31, added in #52 and #56)
 
 #### Housekeeping
 
