@@ -132,8 +132,10 @@ jobs:
             if (!(filename in seen_filenames)) {
               filenames[++n] = filename
               seen_filenames[filename] = 1
+              errors[filename] = error
+            } else {
+              errors[filename] = errors[filename] "," error
             }
-            errors[filename] = (filename in errors ? errors[filename] "," : "") error
           }
           END {
             for (i = 1; i <= n; i++) {
