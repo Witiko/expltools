@@ -114,16 +114,31 @@ jobs:
       - name: Run explcheck
         run: |
           set -e
+          # Collect the full list of errors.
           export LUAINPUTS=explcheck/src
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
             sh -c '
               texlua explcheck/src/explcheck.lua --porcelain -- "$@" || true
-            ' sh {} + > errors.txt
+            ' sh {} + > errors-full.txt
           # Display any potential exceptions.
-          if grep -v '^/' errors.txt
+          if grep -v '^/' errors-full.txt
           then
             exit 1
           fi
+          # Compress the errors.
+          sed 's#^.*/##' errors-full.txt | sort -u | awk '{
+            if (!($1 in seen)) {
+              order[++n] = $1
+              seen[$1] = 1
+            }
+            acc[$1] = ($1 in acc ? acc[$1] "," : "") $2
+          }
+          END {
+            for (i = 1; i <= n; i++) {
+              k = order[i]
+              print k, acc[k]
+            }
+          }' > errors.txt
       - name: Upload errors
         uses: actions/upload-artifact@v4
         with:
@@ -131,10 +146,7 @@ jobs:
           path: |
             errors.txt
       - name: Compare errors
-        run: |
-          set -e
-          gzip -d explcheck/testfiles/${{ matrix.release }}-errors.txt.gz
-          diff explcheck/testfiles/${{ matrix.release }}-errors.txt errors.txt
+        run: diff explcheck/testfiles/${{ matrix.release }}-errors.txt errors.txt
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, unit-tests, regression-tests]
