@@ -18,7 +18,7 @@ Some control sequence tokens correspond to deprecated expl3 control sequences fr
 
  /w202.tex
 
-## Removed control sequences {.e label=e203}
+## Removed control sequences {.e label=e203 removed=2025-02-14}
 Some control sequence tokens correspond to removed expl3 control sequences from `l3obsolete.txt` [@josephwright2024obsolete].
 
  /e203.tex

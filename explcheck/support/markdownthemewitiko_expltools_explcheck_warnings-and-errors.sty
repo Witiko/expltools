@@ -1,8 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesExplPackage
   {markdownthemewitiko_expltools_explcheck_warnings-and-errors}%
-  {2024-11-29}%
-  {0.0.3}%
+  {2025-02-14}%
+  {0.0.4}%
   {Snippets for typesetting the documentation of the warnings and errors for %
    the expl3 analysis tool}
 \int_new:N
@@ -149,6 +149,26 @@
                           { unexpected-label }
                           \l_tmpa_tl
                           \l__expltools_explcheck_current_label_tl
+                      }
+                  }
+                \str_if_eq:nnT
+                  { ##1 }
+                  { removed }
+                  {
+                    % Remove the rest of this section from the output.
+                    \markdownSetup
+                      {
+                        renderers = {
+                          headerAttributeContextEnd += {
+                            \tl_set:Npn
+                              \next
+                              ########1 \markdownRendererSectionEnd
+                              {
+                                \markdownRendererSectionEnd
+                              }
+                            \next
+                          },
+                        },
                       }
                   }
               },
