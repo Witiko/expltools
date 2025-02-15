@@ -114,43 +114,43 @@ jobs:
       - name: Run explcheck
         run: |
           set -e
-          # Collect the full list of errors.
+          # Collect the full list of issues.
           export LUAINPUTS=explcheck/src
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
             sh -c '
               texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" || true
-            ' sh {} + > errors-full.txt
+            ' sh {} + > issues-full.txt
           # Display any potential exceptions.
-          if grep -v '^/' errors-full.txt
+          if grep -v '^/' issues-full.txt
           then
             exit 1
           fi
-          # Compress the errors.
-          sed 's#^.*/##' errors-full.txt | sort -u | awk '{
+          # Compress the issues.
+          sed 's#^.*/##' issues-full.txt | sort -u | awk '{
             filename = $1
-            error = $2
+            issue = $2
             if (!(filename in seen_filenames)) {
               filenames[++n] = filename
               seen_filenames[filename] = 1
-              errors[filename] = error
+              issues[filename] = issue
             } else {
-              errors[filename] = errors[filename] "," error
+              issues[filename] = issues[filename] "," issue
             }
           }
           END {
             for (i = 1; i <= n; i++) {
               filename = filenames[i]
-              print filename, errors[filename]
+              print filename, issues[filename]
             }
-          }' > errors.txt
-      - name: Upload errors
+          }' > issues.txt
+      - name: Upload issues
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.release }} errors
+          name: ${{ matrix.release }} issues
           path: |
-            errors.txt
-      - name: Compare errors
-        run: diff explcheck/testfiles/${{ matrix.release }}-errors.txt errors.txt
+            issues.txt
+      - name: Compare issues
+        run: diff explcheck/testfiles/${{ matrix.release }}-issues.txt issues.txt
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, unit-tests, regression-tests]
