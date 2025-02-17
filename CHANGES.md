@@ -26,7 +26,7 @@
   issues. (reported by @koppor in #39, fixed in #40)
 
 - Exclude comments from maximum line length checks. (reported by @muzimuzhi in
-  #27, fixed in #43)
+  #27, fixed in #43 and #58)
 
   This includes spaces before the comments.
 
