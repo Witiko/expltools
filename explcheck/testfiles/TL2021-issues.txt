@@ -20,7 +20,7 @@ animate.sty s204
 annee-scolaire.sty s204
 antanilipsum.sty s103,s204,w200,w202
 asmeconf.cls s204
-asmejour.cls s103,s204
+asmejour.cls s204
 association-matrix.sty s204
 atbegshi-ltx.sty w200
 atveryend-ltx.sty s204
@@ -93,8 +93,8 @@ cooking-units.sty s103,s204,s206,w200,w202
 copyedit.sty s204,s206,w200,w202
 create-theorem.sty s103,s204
 crefthe.sty s103,s204
-cryptocode-2018-11-11.sty s204
-cryptocode-2020-04-24.sty s204
+cryptocode-2018-11-11.sty s103,s204
+cryptocode-2020-04-24.sty s103,s204
 cryptocode.sty s103,s204
 csvsimple-l3.sty e102,s103,w101
 csvsimple-legacy.sty s103,s204,w200
@@ -154,13 +154,12 @@ expl3-generic.tex s204,w100,w101,w200
 expl3.sty e102,s103,w101
 exsheets-listings.sty s103,s204,w101
 exsheets.sty s103,s204,w101,w200,w202
-factura.cls s204,s206
+factura.cls s103,s204,s206
 fapapersize.sty s204
 fdudoc.cls s204,s205,s206,w200
 fdulogo.sty s204
 fduthesis-en.cls s103,s204,s205,s206,w200,w202
 fduthesis.cls s103,s204,s205,s206,w200,w202
-fifinddo.sty s103,s204,w100
 finstmsc.sty s204,w100
 fixocgx.sty s204
 flexisym.sty e209,s103,s204,s205,w200
@@ -277,7 +276,7 @@ lengthconvert.sty s103,s204,w200,w202
 letgut-banner.sty s204,s206
 letgut.cls e102
 letterswitharrows.sty e208,s103,s204,w200
-lie-hasse.sty s103,s204
+lie-hasse.sty s204
 limecv.cls s204
 linebreaker.sty s103,s204
 lipsum.sty s103,s204
@@ -294,7 +293,7 @@ lt3graph.sty s103,s204,s205
 ltugboat.cls s204
 ltugcomn.sty s204
 ltxmdf.cls s204,s205
-lua-widow-control.sty s103,s204,s206,w200
+lua-widow-control.sty s204,s206,w200
 lualatex-math.sty s204,s206
 luaprogtable.sty e102,s103
 luatexja-fontspec-27c.sty s103,s204,s205,s206,w202
@@ -392,7 +391,7 @@ paresse-utf8.sty s204,s205
 paresse.sty s204,s205,w101
 pascaltriangle.sty s103,s204,w202
 pbalance.sty s103,s204,w101
-pdfbase.sty e102,e104,s103,w101
+pdfbase.sty e104,s103,w101
 pdflscape-ltx.sty s204
 pdfmanagement-firstaid.sty s204,s205
 pdfmanagement-testphase.sty s204
@@ -531,7 +530,7 @@ tagpdf-mc-code-generic.sty s103,s204,w200
 tagpdf-mc-code-lua.sty s103,s204
 tagpdf.sty s103,s204,s206,w202
 tagpdfdocu-patches.sty s103,s204,w101
-tap.tex s103,s204,w100
+tap.tex s204,w100
 tasks.sty s103,s204,s206,w101
 tcbdocumentation.code.tex s103,s204
 tcbminted.code.tex s103,s204
@@ -603,7 +602,7 @@ xepersian-hm-kashida.tex s103,s204,s205,w200
 xepersian-hm.sty s103,s204,w200,w202
 xepersian-mathdigitspec.sty s103,s204,s205,w200
 xepersian.sty s103,s204
-xetexko.sty s103,s204,s205
+xetexko.sty s204,s205
 xfntinst.sty e209,s204,w100
 xfrac.sty s103,w200
 xgalley.sty s204,s205,s206,w200

@@ -140,8 +140,8 @@ cprotectinside.sty s103,s204,s206
 create-theorem.sty s103,s204
 crefthe.sty s103,s204,w200
 crumbs.sty s103,s204
-cryptocode-2018-11-11.sty s204
-cryptocode-2020-04-24.sty s204
+cryptocode-2018-11-11.sty s103,s204
+cryptocode-2020-04-24.sty s103,s204
 cryptocode.sty s103,s204
 csvsimple-l3.sty e102,s103,w101
 csvsimple-legacy.sty s103,s204,w200
@@ -215,14 +215,13 @@ expl3-generic.tex s204,w100,w101,w200
 expl3.sty e102,s103,w101
 exsheets-listings.sty s103,s204,w101
 exsheets.sty s103,s204,w101,w200,w202
-factura.cls s204,s206
+factura.cls s103,s204,s206
 fapapersize.sty s204
 fdudoc.cls s204,s205,s206,w200
 fdulogo.sty s204
 fduthesis-en.cls s204,s205,s206,w200,w202
 fduthesis.cls e209,s204,s205,s206,w200,w202
-fifinddo.sty s103,s204,w100
-figput.sty s103,s204,s206,w101
+figput.sty s103,s204,s206
 finstmsc.sty s204,w100
 fistrum.sty s103,s204
 fixocgx.sty s204
@@ -304,7 +303,7 @@ hvextern.sty s204
 hvfloat.sty s204,s206
 hvlogos.sty s204
 hwexam.sty e102,w101
-hyperref.sty s103,s204,s206
+hyperref.sty s204,s206
 iexec.sty s204
 incgraph.sty s103,s204,s206
 inconsolata-nerd-font.sty s103,s204
@@ -343,7 +342,7 @@ l3sys-shell.sty e102
 lambdax.sty s103,s204,s205,w101
 langsci-affiliations.sty s103,s204
 langsci-avm.sty s204,s206
-langscibook.cls s103,s204,s206
+langscibook.cls s204,s206
 latex-lab-kernel-changes.sty s204,s206
 latex-lab-testphase-bib.sty s204
 latex-lab-testphase-block.sty s103,s204,s205,s206,w200
@@ -375,7 +374,7 @@ lengthconvert.sty s103,s204,w200,w202
 letgut-banner.sty s204,s206
 letgut.cls e209,s103,s204,s206,w202
 letterswitharrows.sty e208,s103,s204,w200
-lie-hasse.sty s103,s204
+lie-hasse.sty s204
 limecv.cls s204
 linebreaker.sty s204
 lipsum.sty s103,s204
@@ -524,7 +523,7 @@ paresse.sty s204,s205,w101
 pascaltriangle.sty s103,s204,w202
 pbalance.sty s103,s204,w101
 pdfannotations.sty s204,s206
-pdfbase.sty e102,e104,s103,w101
+pdfbase.sty e104,s103,w101
 pdflscape.sty s204
 pdfmanagement-firstaid.sty e201,s103,s204,s205
 pdfmanagement-testphase.sty s204
@@ -594,7 +593,7 @@ rescansync.sty s103,s204,s205,s206
 responsive.sty s103,s204,s205,s206
 returntogrid.sty s103,s204
 rmathbr.sty s204
-robust-externalize.sty e102,s103
+robust-externalize.sty s103,s204,s205,s206,w202
 rule-D.sty s204,s205,w200
 rustex.sty s103,s204
 sanitize-umlaut.sty s103,s204
@@ -697,7 +696,7 @@ tagpdf-mc-code-generic.sty s103,s204,w200
 tagpdf-mc-code-lua.sty s103,s204,s206
 tagpdf.sty s103,s204,s205,s206
 tagpdfdocu-patches.sty s103,s204,w101
-tap.tex s103,s204,w100
+tap.tex s204,w100
 tasks.sty s103,s204,s206,w101
 tcbdocumentation.code.tex s103,s204
 tcbexternal.code.tex s103,s204
