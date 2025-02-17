@@ -260,8 +260,8 @@ local commented_line_letter = (
   linechar
   + newline
   - expl3_catcodes[0]
-  - expl3_catcodes[14]
   - expl3_catcodes[9]
+  - expl3_catcodes[14]
 )
 local commented_line = (
   (
@@ -277,41 +277,39 @@ local commented_line = (
       )
     )^1
     + (
-      expl3_catcodes[0]
+      expl3_catcodes[0]  -- odd backslash
       * (
-        expl3_catcodes[14]
+        expl3_catcodes[9]
+        + expl3_catcodes[14]
         + commented_line_letter
       )
     )
     + (
       #(
-        optional_spaces
+        expl3_catcodes[9]^1
         * -expl3_catcodes[14]
       )
-      * expl3_catcodes[9]
+      * expl3_catcodes[9]^1  -- spaces
     )
   )^0
   * (
     #(
-      optional_spaces
+      expl3_catcodes[9]^0
       * expl3_catcodes[14]
     )
     * Cp()
     * (
       (
-        optional_spaces
+        expl3_catcodes[9]^0
         * expl3_catcodes[14]  -- comment
         * linechar^0
         * Cp()
         * newline
-        * #blank_line  -- blank line
+        * (
+          #blank_line  -- blank line
+          + expl3_catcodes[9]^0  -- leading spaces
+        )
       )
-      + optional_spaces
-      * expl3_catcodes[14]  -- comment
-      * linechar^0
-      * Cp()
-      * newline
-      * optional_spaces  -- leading spaces
     )
     + newline
   )

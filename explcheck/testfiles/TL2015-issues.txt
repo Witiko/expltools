@@ -52,7 +52,7 @@ cntformats_en.tex s204,w100
 comicneue.sty s204,s206
 conteq.sty s103,s204
 copyedit.sty s204,s206,w200,w202
-cryptocode.sty s103,s204
+cryptocode.sty s204
 ctex.sty e102
 ctexart.cls e102,w101
 ctexbook.cls e102,w101
@@ -76,7 +76,6 @@ expl3.sty e102,w101
 exsheets-listings.sty s103,s204,w101,w200
 exsheets.sty s103,s204,w101,w200,w202
 exsheets_en.tex e102
-fifinddo.sty s103,s204,w100
 finstmsc.sty s204,w100
 fixocgx.sty s204
 flexisym.sty e209,s103,s204,s205,w200
@@ -185,16 +184,16 @@ skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
 skrapport.cls e102,s103,w101
-skrapport.tex e102,e104,w101
+skrapport.tex e102,e104,s103,w101
 source3body.tex e102
 spath3.sty s103,s204,s206,w202
 substances.sty s204,s205,w101,w200
 substances_en.tex s204
-tap.tex s103,s204,w100
+tap.tex s204,w100
 tasks.sty s103,s204,s205,s206,w200
 termmenu.tex s204,s206,w100
 tex-overview-aux.tex s103,s204,s205,s206,w100
-tex-overview.tex s204,s206
+tex-overview.tex s103,s204,s206
 tex4ht.sty e201,s103,s204,w100,w200
 texapi-doc.tex s103,s204
 texapi.tex s103,s204
