@@ -50,7 +50,7 @@ if using_luatex then
   kpse.set_program_name("texlua", "explcheck")
 end
 
--- Apply the preprocessing step to a file "code.tex".
+-- Process file "code.tex" and print warnings and errors.
 local filename = "code.tex"
 local issues = new_issues()
 
