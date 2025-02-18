@@ -5,7 +5,7 @@ local utils = require("explcheck-utils")
 local new_range = require("explcheck-ranges")
 
 local lpeg = require("lpeg")
-local Cp, Ct, P, V = lpeg.Cp, lpeg.Ct, lpeg.P, lpeg.V
+local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
 local function preprocessing(issues, content, options)
