@@ -314,6 +314,10 @@ local commented_line = (
     + newline
   )
 )
+local commented_lines = Ct(
+  commented_line^0
+  * eof
+)
 
 -- Explcheck issues
 local issue_code = (
@@ -412,7 +416,7 @@ local expl3_quark_or_scan_mark_csname = S("qs") * P("_")
 return {
   any = any,
   argument_specifiers = argument_specifiers,
-  commented_line = commented_line,
+  commented_lines = commented_lines,
   decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
