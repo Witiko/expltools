@@ -263,17 +263,17 @@ local commented_line_letter = (
   - expl3_catcodes[9]
   - expl3_catcodes[14]
 )
-local commented_line = (
-  (
+local function commented_line(closer)
+  return (
     (
       commented_line_letter
-      - newline
+      - closer
     )^1  -- initial state
     + (
       expl3_catcodes[0]  -- even backslash
       * (
         expl3_catcodes[0]
-        + #newline
+        + #closer
       )
     )^1
     + (
@@ -304,19 +304,22 @@ local commented_line = (
         * expl3_catcodes[14]  -- comment
         * linechar^0
         * Cp()
-        * newline
+        * closer
         * (
           #blank_line  -- blank line
           + expl3_catcodes[9]^0  -- leading spaces
         )
       )
     )
-    + newline
+    + closer
   )
-)
+end
+
 local commented_lines = Ct(
-  commented_line^0
+  commented_line(newline)^0
+  * commented_line(eof)
   * eof
+  + eof
 )
 
 -- Explcheck issues
