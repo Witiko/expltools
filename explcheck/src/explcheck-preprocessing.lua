@@ -5,7 +5,7 @@ local utils = require("explcheck-utils")
 local new_range = require("explcheck-ranges")
 
 local lpeg = require("lpeg")
-local Cp, Ct, P, V = lpeg.Cp, lpeg.Ct, lpeg.P, lpeg.V
+local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
 local function preprocessing(issues, content, options)
@@ -34,7 +34,7 @@ local function preprocessing(issues, content, options)
     local transformed_index = 0
     local numbers_of_bytes_removed = {}
     local transformed_text_table = {}
-    for index, text_position in ipairs(lpeg.match(Ct(parsers.commented_line^1), content) or {}) do
+    for index, text_position in ipairs(lpeg.match(parsers.commented_lines, content)) do
       local span_size = text_position - transformed_index - 1
       if span_size > 0 then
         if index % 2 == 1 then  -- chunk of text

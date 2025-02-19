@@ -263,17 +263,17 @@ local commented_line_letter = (
   - expl3_catcodes[9]
   - expl3_catcodes[14]
 )
-local commented_line = (
-  (
+local function commented_line(closer)
+  return (
     (
       commented_line_letter
-      - newline
+      - closer
     )^1  -- initial state
     + (
       expl3_catcodes[0]  -- even backslash
       * (
         expl3_catcodes[0]
-        + #newline
+        + #closer
       )
     )^1
     + (
@@ -304,15 +304,22 @@ local commented_line = (
         * expl3_catcodes[14]  -- comment
         * linechar^0
         * Cp()
-        * newline
+        * closer
         * (
           #blank_line  -- blank line
           + expl3_catcodes[9]^0  -- leading spaces
         )
       )
     )
-    + newline
+    + closer
   )
+end
+
+local commented_lines = Ct(
+  commented_line(newline)^0
+  * commented_line(eof)
+  * eof
+  + eof
 )
 
 -- Explcheck issues
@@ -412,7 +419,7 @@ local expl3_quark_or_scan_mark_csname = S("qs") * P("_")
 return {
   any = any,
   argument_specifiers = argument_specifiers,
-  commented_line = commented_line,
+  commented_lines = commented_lines,
   decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
