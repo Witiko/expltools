@@ -7,7 +7,7 @@ URpagestyles.sty s103,s204
 URrules.sty s103,s204,s206,w101
 URspecialopts.sty s103,s204,s205,s206
 acro.definitions.tex s204
-acro.sty s103,s204,s205,s206,w101,w200,w202
+acro.sty s103,s204,s206,w101,w200,w202
 algobox.sty s103,s204,s205
 aligned-overset.sty s103,s204
 animate.sty s204
@@ -115,14 +115,14 @@ expl3-generic.tex s204,w100,w101,w200
 expl3.sty e102,w101
 exsheets-listings.sty s103,s204,w101
 exsheets.sty s103,s204,w101,w200,w202
-factura.cls s204,s206
-fdudoc.cls s204,s205,s206,w200
+factura.cls s204
+fdudoc.cls s204,s206,w200
 fdulogo.sty s204
-fduthesis-en.cls s103,s204,s205,s206,w200,w202
-fduthesis.cls s103,s204,s205,s206,w200,w202
+fduthesis-en.cls s103,s204,s206,w200,w202
+fduthesis.cls s103,s204,s206,w200,w202
 finstmsc.sty s204,w100
 fixocgx.sty s204
-flexisym.sty e209,s103,s204,s205,w200
+flexisym.sty e209,s103,s204,w200
 fnpct.sty s103,s204,w101,w200
 fontawesome5-generic-helper.sty s204
 fontawesome5-utex-helper.sty s103,s204,s205,w101,w200,w202
@@ -156,7 +156,7 @@ l3doc.cls e209,s103,s204,s205,s206,w200
 l3draw.sty s103,s204,s206,w200,w202
 l3galley.sty s103,s205,s206,w200
 l3graphics.sty s103,w200,w202
-l3keys2e.sty s103,s205
+l3keys2e.sty s103
 l3pdf.sty s204,w202
 l3str-format.sty s103,s204
 l3sys-shell.sty e102
@@ -176,7 +176,7 @@ letterswitharrows.sty e208,s103,s204,w200
 lie-hasse.sty s204
 limecv.cls s204
 lipsum.sty s204,w200
-lisp-mod-l3regex.sty s103,s204,s205,s206
+lisp-mod-l3regex.sty s103,s204,s206
 lltjp-fontspec.sty s103,s204
 lltjp-siunitx.sty s204,w200
 lltjp-unicode-math.sty e102,s103,w101
@@ -218,7 +218,7 @@ mucproc.cls s103,s204,s206
 multicolrule.sty e208,s103,s204,w200,w202
 nicematrix.sty e102,s103,w101
 niceverb.sty s204,w100
-notes2bib.sty s103,s204,s206,w200
+notes2bib.sty s103,s204,w200
 novel-Footnotes.sty s204
 novel-TextMacros.sty s204
 numberpt.sty s103,s204,s206
@@ -249,7 +249,6 @@ plsiunitx.sty s204,w200
 pmhanguljamo-rrk.sty s204,s206,w100,w202
 pmhanguljamo.sty s204,s206,w202
 pml3array.sty s204,s206
-poetrytex.sty s205
 polyglossia.sty e102,s103,w101
 powerdot.cls s204
 primargs.sty s103,s204,w200
@@ -258,7 +257,7 @@ pst-calculate.sty s204
 pstool.sty s204
 randomwalk.sty s204,s205
 rcs.sty s204,w100
-realscripts.sty s204,s205
+realscripts.sty s204
 regexpatch.sty s103,s204,w200
 returntogrid.sty s103,s204
 rule-D.sty s204,s205,w200
@@ -306,7 +305,7 @@ sseqmacromakers.code.tex s103,s204,s205
 sseqmessages.code.tex s103,s204
 sseqparsers.code.tex s103,s204
 statistics.sty e102,s103,w101
-substances.sty s204,s205,w101,w200
+substances.sty s204,w101,w200
 tagpdf-attr-code.sty s204
 tagpdf-checks-code.sty s103,s204
 tagpdf-mc-code-generic.sty s103,s204
@@ -346,10 +345,10 @@ unicode-math-luatex.sty e201,e209,s103,s204,s205,s206,w200,w202
 unicode-math-xetex.sty e201,e209,s103,s204,s205,s206,w200,w202
 unicode-math.sty s204
 unravel.sty e102,s103,w101
-widows-and-orphans.sty s204,s206
+widows-and-orphans.sty s204
 withargs.sty s204,s205
 witharrows.sty s103,s204,s205,s206,w200,w202
-xCJK2uni.sty e209,s103,s205
+xCJK2uni.sty e209,s103
 xassoccnt.sty s103,s204,s205,s206,w202
 xcntperchap.sty s103,s204,s205,s206
 xcpdftips.sty s204,w200
@@ -400,5 +399,5 @@ xsimverb.sty s204,w101
 xtemplate.sty s103,s204,s206
 xunicode-addon.sty e102
 zhlipsum.sty s204,s206,w200,w202
-zhnumber.sty s103,s204,s205,w200,w202
+zhnumber.sty s103,s204,w200,w202
 zxjatype.sty e209,s103,s204,s205
