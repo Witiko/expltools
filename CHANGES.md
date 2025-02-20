@@ -47,6 +47,9 @@
 - Do not recognize `@` as a part of an expl3 control sequence.
   (reported by @zepinglee in #30, fixed in #60)
 
+  This prevents warnings S205 and S206 for LaTeX2e control sequence
+  (re)definitions.
+
 #### Deprecation
 
 - Deprecate the command-line option `--expect-expl3-everywhere` and remove the
