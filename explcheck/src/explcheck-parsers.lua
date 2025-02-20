@@ -11,6 +11,7 @@ local fail = P(false)
 
 ---- Tokens
 local ampersand = P("&")
+local at_sign = P("@")
 local backslash = P([[\]])
 local circumflex = P("^")
 local colon = P(":")
@@ -251,7 +252,7 @@ local expl3_scratch_variable_csname = (
 )
 
 local non_expl3_csname = (
-  letter^1
+  (letter + at_sign)^1
   * eof
 )
 
