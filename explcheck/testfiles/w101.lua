@@ -9,7 +9,7 @@ local content = assert(file:read("*a"))
 assert(file:close())
 local issues = new_issues()
 
-local line_starting_byte_numbers = preprocessing(issues, content)
+local line_starting_byte_numbers = preprocessing(issues, filename, content)
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 2)

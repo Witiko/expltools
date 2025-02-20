@@ -116,7 +116,7 @@ jobs:
           set -e
           # Collect the full list of issues.
           export LUAINPUTS=explcheck/src
-          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|sty\|cls\|opt\)$' -exec \
+          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -exec \
             sh -c '
               texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" || true
             ' sh {} + > issues-full.txt

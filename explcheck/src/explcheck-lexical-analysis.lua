@@ -3,11 +3,12 @@
 local parsers = require("explcheck-parsers")
 local obsolete = require("explcheck-obsolete")
 local new_range = require("explcheck-ranges")
+local utils = require("explcheck-utils")
 
 local lpeg = require("lpeg")
 
 -- Tokenize the content and register any issues.
-local function lexical_analysis(issues, all_content, expl_ranges, options)  -- luacheck: ignore issues options
+local function lexical_analysis(issues, all_content, expl_ranges, seems_like_latex_style_file, options)
 
   -- Process bytes within a given range similarly to TeX's input processor (TeX's "eyes" [1]) and produce lines.
   --
@@ -61,18 +62,39 @@ local function lexical_analysis(issues, all_content, expl_ranges, options)  -- l
     local tokens = {}
     local state
     local num_open_groups_upper_estimate = 0
+
+    -- Determine the category code of the at sign ("@").
+    local make_at_letter = utils.get_option(options, "make_at_letter")
+    if make_at_letter == "auto" then
+      make_at_letter = seems_like_latex_style_file
+    end
+
     for line_text, map_back in lines do
       state = "N"
       local character_index = 1
 
+      local function determine_expl3_catcode(character)
+        local catcode
+        if character == "@" then
+          if make_at_letter then
+            catcode = 11  -- letter
+          else
+            catcode = 12  -- other
+          end
+        else
+          catcode = lpeg.match(parsers.determine_expl3_catcode, character)
+        end
+        return catcode
+      end
+
       local function get_character_and_catcode(index)
         assert(index <= #line_text)
         local character = line_text:sub(index, index)
-        local catcode = lpeg.match(parsers.determine_expl3_catcode, character)
+        local catcode = determine_expl3_catcode(character)
         -- Process TeX' double circumflex convention (^^X and ^^XX).
         local actual_character, index_increment = lpeg.match(parsers.double_superscript_convention, line_text, index)
         if actual_character ~= nil then
-          local actual_catcode = lpeg.match(parsers.determine_expl3_catcode, actual_character)
+          local actual_catcode = determine_expl3_catcode(actual_character)
           return actual_character, actual_catcode, index_increment  -- double circumflex convention
         else
           return character, catcode, 1  -- single character

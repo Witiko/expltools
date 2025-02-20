@@ -8,7 +8,7 @@ local content = assert(file:read("*a"))
 assert(file:close())
 local issues = new_issues()
 
-preprocessing(issues, content)
+preprocessing(issues, filename, content)
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 0)
