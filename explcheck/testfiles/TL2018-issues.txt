@@ -182,7 +182,7 @@ mathspec.sty s204
 mathtools.sty e201,s103,s204,w100
 media9.sty s103,s204,s206,w200,w202
 memhangul-common.sty s204
-memhangul-ucs.sty s204,s206
+memhangul-ucs.sty s206
 metrix.sty s103,s204,s205
 mhchem.sty s103,s204,s205,s206
 mhsetup.sty e201,s204,w100
@@ -190,7 +190,7 @@ minibox.sty s204
 mkpatter.tex s103,s204,w100,w200
 modiagram.sty s103,s204,w200
 morewrites.sty s103,s204,s205,s206,w200
-mucproc.cls s103,s204,s206
+mucproc.cls s103,s204,s205,s206
 multicolrule.sty e208,s103,s204,w200,w202
 nicematrix.sty e102,s103,w101
 niceverb.sty s204,w100
@@ -201,7 +201,7 @@ nwejm.cls e208,s103,s204,s205,s206,w101,w202
 nwejmart.cls s103,s204,s205,s206,w101,w202
 ocgbase.sty s103,s204,w200
 ocgx2.sty s103,s204,s206,w202
-onedown.sty s204
+onedown.sty s204,s205
 pdfbase.sty s103,s204,s205,s206,w202
 pdfoverlay.sty s204
 phn-AT_Ortsnamen.tex s103,s204,w100
@@ -261,12 +261,12 @@ statistics.sty e102,s103,w101
 substances.sty s204,w101,w200
 tagpdf-attr-code.sty s204
 tagpdf-checks-code.sty s103,s204
-tagpdf-mc-code-generic.sty s103,s204
+tagpdf-mc-code-generic.sty s103,s204,s206
 tagpdf-mc-code-lua.sty s103,s204,w200
-tagpdf-mc-code-shared.sty s103,s204
+tagpdf-mc-code-shared.sty s103,s204,s206
 tagpdf-roles-code.sty s204
 tagpdf-space-code.sty s103,s204
-tagpdf-struct-code.sty s103,s204
+tagpdf-struct-code.sty s103,s204,s206
 tagpdf-tree-code.sty s103,s204
 tagpdf-user.sty s103,s204
 tagpdf.sty s103,s204,w200

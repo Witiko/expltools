@@ -140,7 +140,7 @@ mandi.sty s204
 mathtools.sty e201,s103,s204,w100
 media9.sty s103,s204,s206,w200,w202
 memhangul-common.sty s204
-memhangul-ucs.sty s204,s206
+memhangul-ucs.sty s206
 metrix.sty s103,s204,s205
 mhchem.sty s103,s204,s205,s206,w101
 mhchem.tex s103,s204,w100
