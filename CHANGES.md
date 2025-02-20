@@ -14,9 +14,16 @@
   machine-readable output when the command-line option `--porcelain` or the Lua
   option `porcelain` is enabled.
 
-- Add command-line options `--expl3-detection-strategy` and Lua option
+- Add command-line option `--expl3-detection-strategy` and Lua option
   `expl3_detection_strategy`. (drafted and discussed with @koppor in #38,
   added in #49)
+
+- Add command-line option `--make-at-letter` and Lua option `make_at_letter`.
+  (discussed with @zepinglee in #30 and #36, added in #61)
+
+  These options determine how the at sign (`@`) should be tokenized. The
+  default value `"auto"` automatically determines the category code based on
+  context cues.
 
 #### Fixes
 
@@ -45,7 +52,7 @@
   (reported by @koppor in #31, fixed in #52 and #59)
 
 - Do not recognize `@` as a part of an expl3 control sequence.
-  (reported by @zepinglee in #30, fixed in #60)
+  (reported by @zepinglee in #30 and #37, fixed in #60)
 
   This prevents warnings S205 and S206 for LaTeX2e control sequence
   (re)definitions.
@@ -69,6 +76,8 @@
 
 - Continuously run explcheck on all packages in historical TeX Live Docker
   images. (suggested in #31, added in #52 and #56)
+
+- Use ShellCheck to check code style of Bash scripts. (#61)
 
 #### Housekeeping
 

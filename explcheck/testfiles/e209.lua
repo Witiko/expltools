@@ -12,7 +12,7 @@ local issues = new_issues()
 issues:ignore('s204')
 local options = {expl3_detection_strategy = "always"}
 
-local line_starting_byte_numbers, expl_ranges = preprocessing(issues, content, options)
+local line_starting_byte_numbers, expl_ranges = preprocessing(issues, filename, content, options)
 lexical_analysis(issues, content, expl_ranges, options)
 
 assert(#issues.errors == 2)

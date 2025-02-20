@@ -9,7 +9,7 @@ assert(file:close())
 local issues = new_issues()
 
 local options = {expl3_detection_strategy = "always"}
-preprocessing(issues, content, options)
+preprocessing(issues, filename, content, options)
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 0)

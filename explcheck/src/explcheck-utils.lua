@@ -26,7 +26,29 @@ local function get_option(options, key)
   return options[key]
 end
 
+-- Convert a pathname of a file to the suffix of the file.
+local function get_suffix(pathname)
+  return pathname:gsub(".*%.", "."):lower()
+end
+
+-- Convert a pathname of a file to the base name of the file.
+local function get_basename(pathname)
+  return pathname:gsub(".*[\\/]", "")
+end
+
+-- Convert a pathname of a file to the pathname of its parent directory.
+local function get_parent(pathname)
+  if pathname:find("[\\/]") then
+    return pathname:gsub("(.*)[\\/].*", "%1")
+  else
+    return "."
+  end
+end
+
 return {
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
+  get_basename = get_basename,
   get_option = get_option,
+  get_parent = get_parent,
+  get_suffix = get_suffix,
 }

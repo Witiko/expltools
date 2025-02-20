@@ -10,7 +10,7 @@ assert(file:close())
 local issues = new_issues()
 local options = {expl3_detection_strategy = "recall"}
 
-local line_starting_byte_numbers = preprocessing(issues, content, options)
+local line_starting_byte_numbers = preprocessing(issues, filename, content, options)
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 2)

@@ -1,14 +1,14 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
 local parsers = require("explcheck-parsers")
-local utils = require("explcheck-utils")
 local new_range = require("explcheck-ranges")
+local utils = require("explcheck-utils")
 
 local lpeg = require("lpeg")
 local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
-local function preprocessing(issues, content, options)
+local function preprocessing(issues, pathname, content, options)
 
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
@@ -180,8 +180,16 @@ local function preprocessing(issues, content, options)
   }
   lpeg.match(analysis_grammar, transformed_content)
 
-  -- If no expl3 parts were detected, we must decide whether no part or the
-  -- whole input file is in expl3.
+  -- Determine whether the pathname/content looks like it originates from a LaTeX style file.
+  local seems_like_latex_style_file
+  local suffix = utils.get_suffix(pathname)
+  if suffix == ".cls" or suffix == ".opt" or suffix == ".sty" then
+    seems_like_latex_style_file = true
+  else
+    seems_like_latex_style_file = lpeg.match(parsers.latex_style_file_content, transformed_content)
+  end
+
+  -- If no expl3 parts were detected, decide whether no part or the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
     issues:ignore('e102')
     if expl3_detection_strategy == "precision" then
@@ -226,7 +234,7 @@ local function preprocessing(issues, content, options)
     lpeg.match(overline_lines_grammar, transformed_content:sub(expl_range:start(), expl_range:stop()))
   end
 
-  return line_starting_byte_numbers, expl_ranges
+  return line_starting_byte_numbers, expl_ranges, seems_like_latex_style_file
 end
 
 return preprocessing

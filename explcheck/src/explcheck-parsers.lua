@@ -372,6 +372,94 @@ local provides = (
 local expl_syntax_on = expl3_catcodes[0] * P([[ExplSyntaxOn]])
 local expl_syntax_off = expl3_catcodes[0] * P([[ExplSyntaxOff]])
 
+---- Commands from LaTeX style files
+local latex_style_file_csname =
+(
+  -- LaTeX2e package writer commands
+  -- See <https://www.latex-project.org/help/documentation/clsguide.pdf>.
+  P("AddToHook")
+  + P("AtBeginDocument")
+  + P("AtEndDocument")
+  + P("AtEndOfClass")
+  + P("AtEndOfPackage")
+  + P("BCPdata")
+  + P("CheckCommand")
+  + P("ClassError")
+  + P("ClassInfo")
+  + P("ClassWarning")
+  + P("ClassWarningNoLine")
+  + P("CurrentOption")
+  + P("DeclareInstance")
+  + P("DeclareKeys")
+  + P("DeclareOption")
+  + P("DeclareRobustCommand")
+  + P("DeclareTemplateCode")
+  + P("DeclareTemplateInterface")
+  + P("DeclareUnknownKeyHandler")
+  + P("ExecuteOptions")
+  + P("IfClassAtLeastTF")
+  + P("IfClassLoadedTF")
+  + P("IfClassLoadedWithOptionsTF")
+  + P("IfFileAtLeastTF")
+  + P("IfFileExists")
+  + P("IfFileLoadedTF")
+  + P("IfFormatAtLeastTF")
+  + P("IfPackageAtLeastTF")
+  + P("IfPackageLoadedTF")
+  + P("IfPackageLoadedWithOptionsTF")
+  + P("InputIfFileExists")
+  + P("LinkTargetOff")
+  + P("LinkTargetOn")
+  + P("LoadClass")
+  + P("LoadClassWithOptions")
+  + P("MakeLinkTarget")
+  + P("MakeLowercase")
+  + P("MakeTitlecase")
+  + P("MakeUppercase")
+  + P("MessageBreak")
+  + P("NeedsTeXFormat")
+  + P("NewDocumentCommand")
+  + P("NewDocumentEnvironment")
+  + P("NewProperty")
+  + P("NewTemplateType")
+  + P("NextLinkTarget")
+  + P("OptionNotUsed")
+  + P("PackageError")
+  + P("PackageInfo")
+  + P("PackageWarning")
+  + P("PackageWarningNoLine")
+  + P("PassOptionsToClass")
+  + P("PassOptionsToPackage")
+  + P("ProcessKeyOptions")
+  + P("ProcessOptions")
+  + P("ProvidesClass")
+  + P("ProvidesFile")
+  + P("ProvidesPackage")
+  + P("RecordProperties")
+  + P("RefProperty")
+  + P("RefUndefinedWarn")
+  + P("RequirePackage")
+  + P("RequirePackageWithOptions")
+  + P("SetKeys")
+  + P("SetProperty")
+  + P("UseInstance")
+  -- LaTeX3 package writer commands
+  + P("ProvidesExplClass")
+  + P("ProvidesExplPackage")
+)
+
+local latex_style_file_content = (
+  (
+    any
+    - #(
+      expl3_catcodes[0]
+      * latex_style_file_csname
+    )
+  )^0
+  * expl3_catcodes[0]
+  * latex_style_file_csname
+)
+
 ---- Assigning functions
 local expl3_function_assignment_csname = (
   P("cs_")
@@ -439,6 +527,7 @@ return {
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   ignored_issues = ignored_issues,
+  latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
   non_expl3_csname = non_expl3_csname,

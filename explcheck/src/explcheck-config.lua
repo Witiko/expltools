@@ -7,6 +7,7 @@ local default_options = {
   expl3_detection_strategy = 'auto',
   error_format = '%f:%l:%c: %t%n %m',
   ignored_issues = {},
+  make_at_letter = 'auto',
   max_line_length = 80,
   porcelain = false,
   warnings_are_errors = false,
