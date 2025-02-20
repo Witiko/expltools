@@ -42,7 +42,13 @@
 - Remove error E203. (reported by @koppor in #53, fixed in #54)
 
 - Fix two instances of explcheck crashing while processing input files.
-  (reported by @koppor in #31, fixed in #52)
+  (reported by @koppor in #31, fixed in #52 and #59)
+
+- Do not recognize `@` as a part of an expl3 control sequence.
+  (reported by @zepinglee in #30, fixed in #60)
+
+  This prevents warnings S205 and S206 for LaTeX2e control sequence
+  (re)definitions.
 
 #### Deprecation
 
