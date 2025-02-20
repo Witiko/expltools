@@ -376,6 +376,7 @@ local expl_syntax_off = expl3_catcodes[0] * P([[ExplSyntaxOff]])
 local latex_style_file_csname =
 (
   -- LaTeX2e package writer commands
+  -- See <https://www.latex-project.org/help/documentation/clsguide.pdf>.
   P("AddToHook")
   + P("AtBeginDocument")
   + P("AtEndDocument")
