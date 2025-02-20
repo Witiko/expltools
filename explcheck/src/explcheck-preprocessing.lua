@@ -181,7 +181,7 @@ local function preprocessing(issues, pathname, content, options)
   lpeg.match(analysis_grammar, transformed_content)
 
   -- Determine whether the pathname/content looks like it originates from a LaTeX style file.
-  local seems_like_latex_style_file = false
+  local seems_like_latex_style_file
   local suffix = utils.get_suffix(pathname)
   if suffix == ".cls" or suffix == ".opt" or suffix == ".sty" then
     seems_like_latex_style_file = true
