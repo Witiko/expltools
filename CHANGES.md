@@ -21,8 +21,8 @@
 - Add command-line option `--make-at-letter` and Lua option `make_at_letter`.
   (discussed with @zepinglee in #30 and #36, added in #61)
 
-  These options determine how the at sign ("@") should be tokenized. The
-  default value "auto" automatically determines the category code based on
+  These options determine how the at sign (`@`) should be tokenized. The
+  default value `"auto"` automatically determines the category code based on
   context cues.
 
 #### Fixes
@@ -76,6 +76,8 @@
 
 - Continuously run explcheck on all packages in historical TeX Live Docker
   images. (suggested in #31, added in #52 and #56)
+
+- Use ShellCheck to check code style of Bash scripts. (#61)
 
 #### Housekeeping
 
