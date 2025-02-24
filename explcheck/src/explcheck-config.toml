@@ -165,3 +165,9 @@ max_line_length = 130
 [filename."unicode-math-xetex.sty"]
 ignored_issues = ["e209"]
 max_line_length = 130
+
+[filename."fontspec-luatex.sty"]
+ignored_issues = ["e201"]
+
+[filename."fontspec-xetex.sty"]
+ignored_issues = ["e201"]
