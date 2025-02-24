@@ -6,3 +6,8 @@ make_at_letter = "auto"
 max_line_length = 80
 porcelain = false
 warnings_are_errors = false
+
+[filename."expl3-code.tex"]
+expl3_detection_strategy = "always"
+ignored_issues = ["w200", "w202", "e209"]
+max_line_length = 140
