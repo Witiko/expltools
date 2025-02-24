@@ -266,3 +266,18 @@ max_line_length = 100
 
 [filename."minimalist-stream.sty"]
 expl3_detection_strategy = "always"
+
+[filename."minimalist-classical.sty"]
+expl3_detection_strategy = "always"
+
+[filename."minimalist-default.sty"]
+expl3_detection_strategy = "always"
+
+[filename."minimalist-plain.sty"]
+expl3_detection_strategy = "always"
+
+[filename."minimalist-flow.sty"]
+expl3_detection_strategy = "always"
+
+[filename."minimalist-classicthesis.sty"]
+expl3_detection_strategy = "always"
