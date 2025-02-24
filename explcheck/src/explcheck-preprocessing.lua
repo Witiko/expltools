@@ -113,7 +113,7 @@ local function preprocessing(issues, pathname, content, options)
   local num_provides = 0
   local Opener, Closer = parsers.fail, parsers.fail
   local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
-  if expl3_detection_strategy ~= 'always' then
+  if expl3_detection_strategy ~= 'never' and expl3_detection_strategy ~= 'always' then
     Opener = (
       parsers.expl_syntax_on
       + unexpected_pattern(
@@ -189,7 +189,7 @@ local function preprocessing(issues, pathname, content, options)
   -- If no expl3 parts were detected, decide whether no part or the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
     issues:ignore('e102')
-    if expl3_detection_strategy == "precision" then
+    if expl3_detection_strategy == "precision" or expl3_detection_strategy == "never" then
       -- Assume that no part of the input file is in expl3.
     elseif expl3_detection_strategy == "recall" or expl3_detection_strategy == "always" then
       -- Assume that the whole input file is in expl3.
