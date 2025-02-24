@@ -1,8 +1,8 @@
 -- A command-line interface for the static analyzer explcheck.
 
-local config = require("explcheck-config")
-local new_issues = require("explcheck-issues")
 local format = require("explcheck-format")
+local get_option = require("explcheck-config")
+local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
 
 local preprocessing = require("explcheck-preprocessing")
@@ -78,7 +78,7 @@ local function main(pathnames, options)
 
       -- Set up the issue registry.
       local issues = new_issues()
-      for _, issue_identifier in ipairs(utils.get_option(options, "ignored_issues")) do
+      for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
         issues:ignore(issue_identifier)
       end
 
@@ -96,7 +96,7 @@ local function main(pathnames, options)
         goto continue
       end
 
-      tokens = lexical_analysis(issues, content, expl_ranges, seems_like_latex_style_file, options)
+      tokens = lexical_analysis(issues, pathname, content, expl_ranges, seems_like_latex_style_file, options)
 
       -- syntactic_analysis(issues)
       -- semantic_analysis(issues)
@@ -120,7 +120,7 @@ local function main(pathnames, options)
 
   if(num_errors > 0) then
     return 1
-  elseif(utils.get_option(options, "warnings_are_errors") and num_warnings > 0) then
+  elseif(get_option("warnings_are_errors", options) and num_warnings > 0) then
     return 2
   else
     return 0
@@ -130,13 +130,13 @@ end
 local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
-  local expl3_detection_strategy = config.expl3_detection_strategy
-  local make_at_letter = tostring(config.make_at_letter)
-  local max_line_length = tostring(config.max_line_length)
+  local expl3_detection_strategy = get_option("expl3_detection_strategy")
+  local make_at_letter = tostring(get_option("make_at_letter"))
+  local max_line_length = tostring(get_option("max_line_length"))
   print(
     "Options:\n\n"
     .. "\t--error-format=FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
-    .. "\t                           The default format is FORMAT=\"" .. config.error_format .. "\".\n\n"
+    .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
     .. "\t--expl3-detection-strategy={always|precision|recall|auto}\n\n"
     .. "\t                           The strategy for detecting expl3 parts of the input files:\n\n"
     .. '\t                           - "always": Assume that the whole input files are in expl3.\n'

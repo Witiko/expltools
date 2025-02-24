@@ -59,7 +59,7 @@ local content = assert(file:read("*a"))
 assert(file:close())
 
 local _, expl_ranges = preprocessing(issues, filename, content)
-lexical_analysis(issues, content, expl_ranges)
+lexical_analysis(issues, filename, content, expl_ranges)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "

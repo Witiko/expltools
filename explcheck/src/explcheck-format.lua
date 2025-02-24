@@ -1,5 +1,6 @@
 -- Formatting for the command-line interface of the static analyzer explcheck.
 
+local get_option = require("explcheck-config")
 local utils = require("explcheck-utils")
 
 -- Transform a singular into plural if the count is zero or greater than two.
@@ -73,7 +74,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
   -- Display an overview.
   local all_issues = {}
   local status
-  local porcelain = utils.get_option(options, 'porcelain')
+  local porcelain = get_option('porcelain', options, pathname)
   if(#issues.errors > 0) then
     status = (
       colorize(
@@ -201,7 +202,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           )
           io.write("\n" .. line)
         else
-          local line = utils.get_option(options, 'error_format')
+          local line = get_option('error_format', options, pathname)
 
           local function replace_item(item)
             if item == '%%' then
