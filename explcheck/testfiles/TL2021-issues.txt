@@ -357,7 +357,7 @@ modiagram.sty s103,s204
 morewrites.sty s103,s204,s205,s206,w200
 mucproc.cls s103,s204,s205,s206
 multicolrule.sty e208,s103,s204,w200,w202
-namedef.sty e102,w101
+namedef.sty s204,s206,w200
 newpax.sty s204
 nicematrix.sty s103,s204,s205,s206,w200,w202
 niceverb.sty s204,w100
@@ -425,7 +425,7 @@ powerdot.cls s204
 prelim2e.sty s204
 preview.sty s204,w100,w200
 primargs.sty s103,s204,w200
-problem.sty s103,s204,s205,s206
+problem.sty s204,s205,s206
 projlib-author.sty s103,s204
 projlib-datetime.sty s103,s204
 projlib-draft.sty s103,s204
@@ -496,7 +496,7 @@ skrapport-colortheme-skdoc.sty s204
 skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
-skrapport.cls e102,s103,w101
+skrapport.cls s204,s205,s206
 smart-eqn.sty s103,s204,w101
 soup.sty s103,s204,s206
 source2edoc.cls s103,s204,s206,w200
@@ -551,7 +551,7 @@ tikzlibraryceltic.code.tex s103,s204,s206,w202
 tikzlibraryknots.code.tex s103,s204,w202
 tikzlibrarypenrose.code.tex s103,s204,w101
 tikzlibraryspath3.code.tex s103,s204
-tikzlibrarytikzmark.code.tex e102,s103,w101
+tikzlibrarytikzmark.code.tex s103,s204,s206
 tikzlings-cats.sty s204
 tikzlings-marmots.sty s204
 tikzlings.sty s204
@@ -626,7 +626,7 @@ xsim.sty s103,s204,s206,w101,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
 xsimverb.sty s103,s204,w101
 xtemplate.sty s103,s204,s206
-xunicode-addon.sty e102
+xunicode-addon.sty s204,w200
 zhlipsum.sty s204,s205,s206,w202
 zhnumber.sty s103,s204,w200,w202
 zitie.sty s103,s204,w200,w202

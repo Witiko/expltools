@@ -252,6 +252,7 @@ pml3array.sty s204,s206
 polyglossia.sty e102,s103,w101
 powerdot.cls s204
 primargs.sty s103,s204,w200
+problem.sty s204
 pseudo.sty s204,s205,w200,w202
 pst-calculate.sty s204
 pstool.sty s204
@@ -294,7 +295,7 @@ skrapport-colortheme-skdoc.sty s204
 skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
-skrapport.cls e102,s103,w101
+skrapport.cls s204,s205,s206
 soup.sty s103,s204,s206
 spath3.sty s103,s204,s206,w202
 spreadtab.sty s103,s204
@@ -328,7 +329,7 @@ tikzlibrarycalligraphy.code.tex s103,s204,w202
 tikzlibraryceltic.code.tex s103,s204,s206,w202
 tikzlibraryknots.code.tex s103,s204,w202
 tikzlibrarypenrose.code.tex s204,w200
-tikzlibrarytikzmark.code.tex e102,s103,w101
+tikzlibrarytikzmark.code.tex s103,s204,s206
 tikzscale.sty s204
 tikzsymbols.sty s103,s204,s206,w202
 topiclongtable.sty s103,s204,s206
@@ -396,7 +397,7 @@ xsim.translations.code.tex s103,s204,w100
 xsim.verbwrite.code.tex s103,s204,w100
 xsimverb.sty s204,w101
 xtemplate.sty s103,s204,s206
-xunicode-addon.sty e102
+xunicode-addon.sty s204,w200
 zhlipsum.sty s204,s206,w200,w202
 zhnumber.sty s103,s204,w200,w202
 zxjatype.sty e209,s103,s204,s205

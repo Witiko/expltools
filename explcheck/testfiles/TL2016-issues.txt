@@ -201,6 +201,7 @@ placeat.sty s204
 pml3array.sty s204,s206
 polyglossia.sty s103,s204
 primargs.sty s205,w200
+problem.sty s204
 pstool.sty s204
 pstool.tex s204,s205,s206
 randomwalk.sty s204,s205
@@ -222,7 +223,7 @@ skrapport-colortheme-skdoc.sty s204
 skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
-skrapport.cls e102,s103,w101
+skrapport.cls s204,s205,s206
 skrapport.tex e102,e104,s103,w101
 soup.sty s204,s206
 source3body.tex e102
@@ -240,6 +241,7 @@ texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204,w202
 tikzlibraryceltic.code.tex s103,s204,s206,w202
 tikzlibraryknots.code.tex s103,s204,w202
+tikzlibrarytikzmark.code.tex s103,s204
 tikzscale.sty s204
 tikzsymbols.sty s103,s204,s206
 unicode-math-doc.tex e209,s103,s204,s206
@@ -274,7 +276,7 @@ xpiano.sty s103,s204,w200
 xpinyin.sty s103,s204,w200
 xsavebox.sty s204,s206,w200,w202
 xtemplate.sty s103,s204,s206
-xunicode-addon.sty e102
+xunicode-addon.sty s204,w200
 xunicode-symbols.tex e209,s103,s204,w200
 zhnumber.sty s103,s204,w200,w202
 zxjatype.sty e102,s103

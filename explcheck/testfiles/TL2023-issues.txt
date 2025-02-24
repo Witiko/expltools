@@ -483,7 +483,7 @@ multicolrule.sty e208,s103,s204,w200,w202
 multifootnote.sty s103,s204
 musicography.sty s204
 naive-ebnf.sty s204,s205,s206
-namedef.sty e102,w101
+namedef.sty s204,s206,w200
 nameref.sty s204
 newpax.sty s103,s204,w202
 nicematrix.sty s103,s204,s205,s206,w200,w202
@@ -556,7 +556,7 @@ prelim2e.sty s204
 prettytok.sty s103,s204,s205,s206
 preview.sty s103,s204,w100,w200
 primargs.sty s103,s204,w200
-problem.sty e102,w101
+problem.sty s103,s204,s206
 proflycee-tools-aleatoire.tex s204
 proflycee-tools-arithm.tex s204
 projlib-author.sty s103,s204
@@ -653,7 +653,7 @@ skrapport-colortheme-skdoc.sty s204
 skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
-skrapport.cls e102,s103,w101
+skrapport.cls s204,s205,s206
 smart-eqn.sty s103,s204,w101
 songproj.sty s204,s206
 soup.sty s103,s204,s206
@@ -730,7 +730,7 @@ tikzlibraryknots.code.tex s103,s204,w202
 tikzlibrarypenrose.code.tex s204
 tikzlibraryquantikz2.code.tex s103,s204
 tikzlibraryspath3.code.tex s103,s204
-tikzlibrarytikzmark.code.tex e102,w101
+tikzlibrarytikzmark.code.tex s204,s206
 tikzlibrarytilings.code.tex s103,s204,w101
 tikzlibrarytilings.penrose.code.tex s204
 tikzlibrarytilings.polykite.code.tex s103,s204
@@ -852,7 +852,7 @@ xsim.style.schule-tabelle-kurz.code.tex s204
 xsimverb.sty s103,s204,w101
 xtemplate-2023-10-10.sty s103,s204,s206
 xtemplate.sty e208,s204,w101
-xunicode-addon.sty e102
+xunicode-addon.sty s204,w200
 yathesis.cls s204
 zennote.sty s103,s204
 zhlipsum.sty s204,s205,s206,w202
