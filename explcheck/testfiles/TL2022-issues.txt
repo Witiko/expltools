@@ -727,7 +727,7 @@ xmuthesis.cls s103,s204
 xob-dotemph.sty e209
 xob-font.sty s103,s204,s206
 xparse-2018-04-12.sty e209,s103,s204,s205,s206,w200,w202
-xparse-generic.tex e102
+xparse-generic.tex s204,s205,s206,w202
 xparse.sty e102,w101
 xpatch.sty s103,s204,s206,w200
 xpeek.sty s206
