@@ -1,17 +1,7 @@
 -- The configuration for the static analyzer explcheck.
 
 local toml = require("explcheck-toml")
-
--- The default options
-local default_options = {
-  expl3_detection_strategy = 'auto',
-  error_format = '%f:%l:%c: %t%n %m',
-  ignored_issues = {},
-  make_at_letter = 'auto',
-  max_line_length = 80,
-  porcelain = false,
-  warnings_are_errors = false,
-}
+local utils = require("explcheck-utils")
 
 -- Read a TOML file with a user-defined configuration.
 local function read_config_file(pathname)
@@ -24,15 +14,36 @@ local function read_config_file(pathname)
   return toml.parse(content)
 end
 
--- The user-defined configuration
-local config_file = read_config_file(".explcheckrc")
+-- Load the default configuration from the pre-installed config file `explcheck-config.toml`.
+local default_config_pathname = string.sub(debug.getinfo(1).source, 2, (#".lua" + 1) * -1) .. ".toml"
+local default_config = read_config_file(default_config_pathname)
 
--- The user-defined options, falling back on the default options
-local options = {}
-for _, template_options in ipairs({default_options, config_file.options or {}}) do
-  for key, value in pairs(template_options) do
-    options[key] = value
+-- Load the user-defined configuration from the config file .explcheckrc (if it exists).
+local user_config = read_config_file(".explcheckrc")
+
+-- Get the value of an option.
+local function get_option(key, options, pathname)
+  -- If a table of options is provided and the option is specified there, use it.
+  if options ~= nil and options[key] ~= nil then
+    return options[key]
   end
+  -- Otherwise, try the user-defined configuration first, if it exists, and then the default configuration.
+  for _, config in ipairs({user_config, default_config}) do
+    if pathname ~= nil then
+      -- If a a pathname is provided and the current configuration specifies the option for the provided filename, use it.
+      local filename = utils.get_basename(pathname)
+      if config["filename"] and config["filename"][filename] ~= nil and config["filename"][filename][key] ~= nil then
+        return config["filename"][filename][key]
+      end
+    end
+    -- If the current configuration specifies the option in the defaults, use it.
+    for _, section in ipairs({"defaults", "options"}) do  -- TODO: Remove `[options]` in v1.0.0.
+      if config[section] ~= nil and config[section][key] ~= nil then
+        return config[section][key]
+      end
+    end
+  end
+  error('Failed to get a value for option "' .. key .. '"')
 end
 
-return options
+return get_option

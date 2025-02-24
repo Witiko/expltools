@@ -1,0 +1,116 @@
+[defaults]
+expl3_detection_strategy = "auto"
+error_format = "%f:%l:%c: %t%n %m"
+ignored_issues = []
+make_at_letter = "auto"
+max_line_length = 80
+porcelain = false
+warnings_are_errors = false
+
+[filename."expl3-code.tex"]
+expl3_detection_strategy = "always"
+ignored_issues = ["w200", "w202", "e209"]
+max_line_length = 140
+
+[filename."tex4ht.sty"]
+expl3_detection_strategy = "precision"
+
+[filename."nicematrix.sty"]
+expl3_detection_strategy = "always"
+
+[filename."xintexpr.sty"]
+expl3_detection_strategy = "precision"
+
+[filename."xinttools.sty"]
+expl3_detection_strategy = "precision"
+
+[filename."xCJK2uni.sty"]
+expl3_detection_strategy = "always"
+ignored_issues = ["e209"]
+
+[filename."stex.sty"]
+expl3_detection_strategy = "always"
+
+[filename."spath3.sty"]
+expl3_detection_strategy = "always"
+
+[filename."xparse-generic.tex"]
+expl3_detection_strategy = "always"
+ignored_issues = ["e209", "w200"]
+max_line_length = 90
+
+[filename."functional.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 90
+
+[filename."hobby.code.tex"]
+expl3_detection_strategy = "always"
+max_line_length = 90
+
+[filename."gtl.sty"]
+expl3_detection_strategy = "always"
+
+[filename."piton.sty"]
+expl3_detection_strategy = "always"
+ignored_issues = ["e208"]
+max_line_length = 90
+
+[filename."statistics.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."chemmacros.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."problem.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 90
+
+[filename."xunicode-addon.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."interlinear.sty"]
+expl3_detection_strategy = "precision"
+
+[filename."skrapport.cls"]
+expl3_detection_strategy = "always"
+max_line_length = 150
+
+[filename."namedef.sty"]
+expl3_detection_strategy = "always"
+
+[filename."tikzlibrarytikzmark.code.tex"]
+expl3_detection_strategy = "always"
+
+[filename."ctexart.cls"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."ctexrep.cls"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."ctexbook.cls"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."ctexpatch.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."ctexbeamer.cls"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."grading-scheme.sty"]
+ignored_issues = ["e201"]
+
+[filename."scontents.tex"]
+expl3_detection_strategy = "always"
+max_line_length = 90
+
+[filename."hwexam.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 110

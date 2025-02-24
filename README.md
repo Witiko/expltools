@@ -59,7 +59,7 @@ local content = assert(file:read("*a"))
 assert(file:close())
 
 local _, expl_ranges = preprocessing(issues, filename, content)
-lexical_analysis(issues, content, expl_ranges)
+lexical_analysis(issues, filename, content, expl_ranges)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "
@@ -101,7 +101,7 @@ You may also configure the tool by placing a configuration file named `.explchec
 For example, here is a configuration file that applies the same configuration as the above command-line options:
 
 ``` toml
-[options]
+[defaults]
 max_line_length = 120
 ignored_issues = ["w100", "S204"]
 ```

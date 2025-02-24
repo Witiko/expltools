@@ -11,7 +11,7 @@ local issues = new_issues()
 local options = {expl3_detection_strategy = "always"}
 
 local _, expl_ranges = preprocessing(issues, filename, content, options)
-lexical_analysis(issues, content, expl_ranges, options)
+lexical_analysis(issues, filename, content, expl_ranges, options)
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 0)

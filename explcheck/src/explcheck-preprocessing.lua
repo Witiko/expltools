@@ -1,7 +1,8 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
-local parsers = require("explcheck-parsers")
+local get_option = require("explcheck-config")
 local new_range = require("explcheck-ranges")
+local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")
 
 local lpeg = require("lpeg")
@@ -110,26 +111,22 @@ local function preprocessing(issues, pathname, content, options)
   end
 
   local num_provides = 0
-  local Opener = unexpected_pattern(
-    parsers.provides,
-    "e104",
-    [[multiple delimiters `\ProvidesExpl*` in a single file]],
-    function()
-      num_provides = num_provides + 1
-      return num_provides > 1
-    end
-  )
-  local Closer = parsers.fail
-  local expl3_detection_strategy = utils.get_option(options, 'expl3_detection_strategy')
+  local Opener, Closer = parsers.fail, parsers.fail
+  local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
   if expl3_detection_strategy ~= 'always' then
     Opener = (
       parsers.expl_syntax_on
-      + Opener
+      + unexpected_pattern(
+        parsers.provides,
+        "e104",
+        [[multiple delimiters `\ProvidesExpl*` in a single file]],
+        function()
+          num_provides = num_provides + 1
+          return num_provides > 1
+        end
+      )
     )
-    Closer = (
-      parsers.expl_syntax_off
-      + Closer
-    )
+    Closer = parsers.expl_syntax_off
   end
 
   local has_expl3like_material = false
@@ -225,7 +222,7 @@ local function preprocessing(issues, pathname, content, options)
 
     local overline_lines_grammar = (
       (
-        Cp() * parsers.linechar^(utils.get_option(options, 'max_line_length') + 1) * Cp() / line_too_long
+        Cp() * parsers.linechar^(get_option('max_line_length', options, pathname) + 1) * Cp() / line_too_long
         + parsers.linechar^0
       )
       * parsers.newline

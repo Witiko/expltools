@@ -1,14 +1,14 @@
 -- The lexical analysis step of static analysis converts expl3 parts of the input files into TeX tokens.
 
-local parsers = require("explcheck-parsers")
-local obsolete = require("explcheck-obsolete")
+local get_option = require("explcheck-config")
 local new_range = require("explcheck-ranges")
-local utils = require("explcheck-utils")
+local obsolete = require("explcheck-obsolete")
+local parsers = require("explcheck-parsers")
 
 local lpeg = require("lpeg")
 
 -- Tokenize the content and register any issues.
-local function lexical_analysis(issues, all_content, expl_ranges, seems_like_latex_style_file, options)
+local function lexical_analysis(issues, pathname, all_content, expl_ranges, seems_like_latex_style_file, options)
 
   -- Process bytes within a given range similarly to TeX's input processor (TeX's "eyes" [1]) and produce lines.
   --
@@ -64,7 +64,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, seems_like_lat
     local num_open_groups_upper_estimate = 0
 
     -- Determine the category code of the at sign ("@").
-    local make_at_letter = utils.get_option(options, "make_at_letter")
+    local make_at_letter = get_option("make_at_letter", options, pathname)
     if make_at_letter == "auto" then
       make_at_letter = seems_like_latex_style_file
     end
@@ -245,7 +245,7 @@ local function lexical_analysis(issues, all_content, expl_ranges, seems_like_lat
       local token_type, payload, catcode, range = table.unpack(token)  -- luacheck: ignore catcode
       if token_type == "control sequence" then
         local csname = payload
-        local _, _, argument_specifiers = csname:find(":(.*)")
+        local _, _, argument_specifiers = csname:find(":([^:]*)")
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
             issues:add('w200', '"do not use" argument specifiers', range)
