@@ -77,3 +77,6 @@ max_line_length = 150
 
 [filename."namedef.sty"]
 expl3_detection_strategy = "always"
+
+[filename."tikzlibrarytikzmark.code.tex"]
+expl3_detection_strategy = "always"
