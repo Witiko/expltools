@@ -86,7 +86,7 @@ chemformula.sty s103,s204,s205,s206,w101,w200,w202
 chemgreek.sty s103,s204,w101,w200
 chemmacros-2015-02-08.sty s103,s204,s205,s206,w200
 chemmacros-2020-03-07.sty s204,w101
-chemmacros.sty e102,s103,w101
+chemmacros.sty e102
 chemnum.sty s103,s204,w101,w200,w202
 chinesechess.sty s103,s204,s206,w200,w202
 circledtext.sty s103,s204,w200,w202
