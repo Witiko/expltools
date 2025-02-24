@@ -9,9 +9,10 @@ then
   exit 1
 fi
 
+cd "$(dirname "$(readlink -f "$0")")"
 gh run download "$1"
 for DIRECTORY in TL20*\ issues/
 do
-  mv "$DIRECTORY"/issues.txt testfiles/"${DIRECTORY% issues/}-issues.txt"
+  mv "$DIRECTORY"/issues.txt "${DIRECTORY% issues/}-issues.txt"
   rmdir "$DIRECTORY"
 done
