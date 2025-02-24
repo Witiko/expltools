@@ -27,3 +27,6 @@ ignored_issues = ["e209"]
 
 [filename."stex.sty"]
 expl3_detection_strategy = "always"
+
+[filename."spath3.sty"]
+expl3_detection_strategy = "always"
