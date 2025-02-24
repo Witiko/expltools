@@ -19,7 +19,8 @@
 - Add support for config file sections `[filename."…"]` for specifying
   file-specific configuration. (#32, #57, #62)
 
-  For example, here is how you might configure a file `expl3-code.tex`:
+  For example, here is how you might configure a file `expl3-code.tex` from
+  your configuration file `.explcheckrc`:
 
   ``` toml
   [filename."expl3-code.tex"]
