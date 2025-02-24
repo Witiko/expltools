@@ -379,7 +379,7 @@ skrapport-size-common.sty s204
 skrapport.cls e102,s103,w101
 soup.sty s103,s204,s206
 source2edoc.cls s103,s204
-spath3.sty e102,w101
+spath3.sty s103,s204,s206,w202
 spreadtab.sty s103,s204
 sseqcheckdefinitions.code.tex s103,s204
 sseqdrawing.code.tex s103,s204
@@ -388,6 +388,7 @@ sseqmacromakers.code.tex s103,s204,s205
 sseqmessages.code.tex s103,s204
 sseqparsers.code.tex s103,s204
 statistics.sty e102,s103,w101
+stex.sty s204
 stricttex.sty s103
 stripsemantex.sty s103,s204,w101
 structuredlog.sty s204

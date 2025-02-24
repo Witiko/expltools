@@ -658,7 +658,7 @@ smart-eqn.sty s103,s204,w101
 songproj.sty s204,s206
 soup.sty s103,s204,s206
 source2edoc.cls s103,s204,s206,w200
-spath3.sty e102,s103,w101
+spath3.sty s103,s204,s206,w202
 spbmark.sty s103,s204
 spreadtab.sty s103,s204
 srdp-mathematik.sty s204
@@ -672,7 +672,7 @@ starray.sty s103,s204,s206
 statistics.sty e102,s103,w101
 stex-highlighting.sty s204
 stex.cls s204
-stex.sty e102,s103,w101
+stex.sty s103,s204,s205,s206,s207,w202
 stexthm.sty s204,s205,w101
 stricttex.sty s103
 string-diagrams.sty s204,s206

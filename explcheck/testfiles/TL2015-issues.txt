@@ -186,6 +186,7 @@ skrapport.cls e102,s103,w101
 skrapport.tex e102,e104,s103,w101
 source3body.tex e102
 spath3.sty s103,s204,s206,w202
+stex.sty s204
 substances.sty s204,w101,w200
 substances_en.tex s204
 tap.tex s204,w100

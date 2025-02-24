@@ -222,6 +222,7 @@ sseqforeach.code.tex s103,s204
 sseqmacromakers.code.tex s103,s204,s205
 sseqmessages.code.tex s103,s204
 sseqparsers.code.tex s103,s204,w200
+stex.sty s204
 substances.sty s204,w101,w200
 tap.tex s204,w100
 tasks.sty s103,s204,s205,s206,w101,w200

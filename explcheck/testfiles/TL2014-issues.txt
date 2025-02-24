@@ -136,6 +136,7 @@ skrapport-size-common.sty s204
 skrapport.cls e102,s103,w101
 skrapport.tex e102,e104,s103,w101
 spath3.sty s103,s204,s206
+stex.sty s204
 substances.sty s204,w200
 substances_en.tex s204
 tap.tex s204,w100
