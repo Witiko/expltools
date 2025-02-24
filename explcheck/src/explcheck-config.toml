@@ -326,3 +326,7 @@ max_line_length = 100
 
 [filename."nwejm.cls"]
 expl3_detection_strategy = "always"
+
+[filename."hduthesis.cls"]
+expl3_detection_strategy = "always"
+max_line_length = 100
