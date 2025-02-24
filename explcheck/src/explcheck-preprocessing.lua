@@ -111,26 +111,22 @@ local function preprocessing(issues, pathname, content, options)
   end
 
   local num_provides = 0
-  local Opener = unexpected_pattern(
-    parsers.provides,
-    "e104",
-    [[multiple delimiters `\ProvidesExpl*` in a single file]],
-    function()
-      num_provides = num_provides + 1
-      return num_provides > 1
-    end
-  )
-  local Closer = parsers.fail
+  local Opener, Closer = parsers.fail, parsers.fail
   local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
   if expl3_detection_strategy ~= 'always' then
     Opener = (
       parsers.expl_syntax_on
-      + Opener
+      + unexpected_pattern(
+        parsers.provides,
+        "e104",
+        [[multiple delimiters `\ProvidesExpl*` in a single file]],
+        function()
+          num_provides = num_provides + 1
+          return num_provides > 1
+        end
+      )
     )
-    Closer = (
-      parsers.expl_syntax_off
-      + Closer
-    )
+    Closer = parsers.expl_syntax_off
   end
 
   local has_expl3like_material = false
