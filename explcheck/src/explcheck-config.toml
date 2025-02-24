@@ -303,3 +303,9 @@ expl3_detection_strategy = "precision"
 
 [filename."tudasciposter.cls"]
 expl3_detection_strategy = "always"
+
+[filename."tudapub.cls"]
+expl3_detection_strategy = "always"
+
+[filename."tudaletter.cls"]
+expl3_detection_strategy = "always"
