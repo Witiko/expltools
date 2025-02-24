@@ -6,6 +6,12 @@
 
 #### Development
 
+- Generate a static web site for the exploration of issues in all expl3 files
+  from TeX Live. (discussed with @norbusan and @koppor in #28 and #32,
+  implemented in <https://github.com/koppor/explcheck-issues> by @koppor)
+
+  The web side is available here: <https://koppor.github.io/explcheck-issues/>.
+
 - Add support for config file sections `[filename."…"]` for specifying
   file-specific configuration. (#32, #57, #62)
 
