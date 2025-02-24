@@ -192,3 +192,6 @@ ignored_issues = ["e209"]
 [filename."l3doc.cls"]
 ignored_issues = ["e209"]
 max_line_length = 100
+
+[filename."mhsetup.sty"]
+expl3_detection_strategy = "precision"
