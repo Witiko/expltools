@@ -509,7 +509,7 @@ sseqforeach.code.tex s103,s204
 sseqmacromakers.code.tex s103,s204,s205
 sseqmessages.code.tex s103,s204
 sseqparsers.code.tex s103,s204
-statistics.sty e102,s103,w101
+statistics.sty s204,s206
 stex-tikzinput.sty s204
 stex.cls s204
 stex.sty s103,s204,s205,s206,w202
