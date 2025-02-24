@@ -245,7 +245,7 @@ local function lexical_analysis(issues, pathname, all_content, expl_ranges, seem
       local token_type, payload, catcode, range = table.unpack(token)  -- luacheck: ignore catcode
       if token_type == "control sequence" then
         local csname = payload
-        local _, _, argument_specifiers = csname:find(":(.*)")
+        local _, _, argument_specifiers = csname:find(":([^:]*)")
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
             issues:add('w200', '"do not use" argument specifiers', range)
