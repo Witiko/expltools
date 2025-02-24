@@ -188,3 +188,7 @@ max_line_length = 90
 
 [filename."bangla.sty"]
 ignored_issues = ["e209"]
+
+[filename."l3doc.cls"]
+ignored_issues = ["e209"]
+max_line_length = 100
