@@ -9,7 +9,7 @@ warnings_are_errors = false
 
 [package.l3kernel]
 expl3_detection_strategy = "always"
-ignored_issues = ["e209"]
+ignored_issues = ["e208", "e209"]
 max_line_length = 140
 
 [filename."tex4ht.sty"]
@@ -230,6 +230,13 @@ max_line_length = 140
 [filename."nwejm.cls"]
 expl3_detection_strategy = "always"
 
-[package.hdu]
+[package.hduthesis]
 expl3_detection_strategy = "always"
 max_line_length = 120
+
+[filename."letterswitharrows.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 110
+
+[filename."ufrgscca.cls"]
+expl3_detection_strategy = "always"
