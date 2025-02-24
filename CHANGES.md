@@ -6,6 +6,21 @@
 
 #### Development
 
+- Add support for config file sections `[filename."…"]` for specifying
+  file-specific configuration. (#32, #57, #62)
+
+  For example, here is how you might configure a file `expl3-code.tex`:
+
+  ``` toml
+  [filename."expl3-code.tex"]
+  expl3_detection_strategy = "always"
+  ignored_issues = ["w200", "w202", "e209"]
+  max_line_length = 140
+  ```
+
+- Pre-configure well-known files from current TeX Live with more than 100 error
+  detections in <https://koppor.github.io/explcheck-issues/>. (#32, #57, #62)
+
 - Add command-line option `--error-format` and Lua option `error_format`.
   (discussed with @koppor in koppor/errorformat-to-html#2, added in #40,
   5034639, and #43)
@@ -26,6 +41,16 @@
   context cues.
 
 #### Fixes
+
+- Prevent false positive E102 (Unknown argument specifiers) detections for
+  control sequences with multiple colons (`::`). (#62)
+
+- Ensure that whole files are considered to be in expl3 when the Lua option
+  `expl3_detection_strategy` is set to `"always"`, even when the files contain
+  standard delimiters `\ProvidesExpl*`. (#62)
+
+  This also prevents false positive E102 (expl3 material in non-expl3 parts)
+  detections.
 
 - Only report warning S103 (Line too long) in expl3 parts. (#38, #49)
 
@@ -64,6 +89,10 @@
 
   Use the command-line option `--expl3-detection-strategy=always` or the
   corresponding Lua option `expl3_detection_stragegy = "always"` instead.
+
+- Deprecate the default config file section `[options]`. (#62)
+
+  Rename the section to `[defaults]` instead.
 
 #### Documentation
 
