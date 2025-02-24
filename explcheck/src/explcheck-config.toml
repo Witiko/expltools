@@ -7,7 +7,7 @@ max_line_length = 80
 porcelain = false
 warnings_are_errors = false
 
-[filename."expl3-code.tex"]
+[package.l3kernel]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
 max_line_length = 140
@@ -18,40 +18,20 @@ expl3_detection_strategy = "precision"
 [filename."nicematrix.sty"]
 expl3_detection_strategy = "always"
 
-[filename."xintexpr.sty"]
-expl3_detection_strategy = "precision"
-
-[filename."xinttools.sty"]
-expl3_detection_strategy = "precision"
-
-[filename."xintlog.sty"]
-expl3_detection_strategy = "precision"
-
-[filename."xintcore.sty"]
+[package.xint]
 expl3_detection_strategy = "precision"
 
 [filename."xCJK2uni.sty"]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
 
-[filename."stex.sty"]
-expl3_detection_strategy = "always"
-
 [filename."spath3.sty"]
 expl3_detection_strategy = "always"
 
-[filename."xparse-generic.tex"]
+[package.xparse]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
 max_line_length = 90
-
-[filename."xparse.sty"]
-expl3_detection_strategy = "always"
-ignored_issues = ["e209"]
-
-[filename."xparse-2018-04-12.sty"]
-expl3_detection_strategy = "always"
-ignored_issues = ["e209"]
 
 [filename."functional.sty"]
 expl3_detection_strategy = "always"
@@ -77,14 +57,6 @@ max_line_length = 100
 expl3_detection_strategy = "always"
 max_line_length = 100
 
-[filename."problem.sty"]
-expl3_detection_strategy = "always"
-max_line_length = 90
-
-[filename."xunicode-addon.sty"]
-expl3_detection_strategy = "always"
-max_line_length = 100
-
 [filename."interlinear.sty"]
 expl3_detection_strategy = "precision"
 
@@ -98,23 +70,7 @@ expl3_detection_strategy = "always"
 [filename."tikzlibrarytikzmark.code.tex"]
 expl3_detection_strategy = "always"
 
-[filename."ctexart.cls"]
-expl3_detection_strategy = "always"
-max_line_length = 100
-
-[filename."ctexrep.cls"]
-expl3_detection_strategy = "always"
-max_line_length = 100
-
-[filename."ctexbook.cls"]
-expl3_detection_strategy = "always"
-max_line_length = 100
-
-[filename."ctexpatch.sty"]
-expl3_detection_strategy = "always"
-max_line_length = 100
-
-[filename."ctexbeamer.cls"]
+[package.ctex]
 expl3_detection_strategy = "always"
 max_line_length = 100
 
@@ -128,7 +84,7 @@ ignored_issues = ["e201"]
 expl3_detection_strategy = "always"
 max_line_length = 90
 
-[filename."hwexam.sty"]
+[package.stex]
 expl3_detection_strategy = "always"
 max_line_length = 110
 
@@ -143,11 +99,7 @@ max_line_length = 160
 [filename."latexrelease.sty"]
 expl3_detection_strategy = "never"
 
-[filename."expl3.sty"]
-expl3_detection_strategy = "always"
-max_line_length = 90
-
-[filename."empheq.sty"]
+[package.mathtools]
 expl3_detection_strategy = "precision"
 
 [filename."lltjp-unicode-math.sty"]
@@ -162,9 +114,6 @@ ignored_issues = ["e209"]
 [filename."polexprcore.tex"]
 expl3_detection_strategy = "precision"
 
-[filename."hduthesis-hdu.l3doc-module.code.tex"]
-expl3_detection_strategy = "always"
-
 [filename."timechart.sty"]
 ignored_issues = ["e201"]
 
@@ -172,21 +121,11 @@ ignored_issues = ["e201"]
 expl3_detection_strategy = "always"
 max_line_length = 110
 
-[filename."whats-cover-module.code.tex"]
-expl3_detection_strategy = "always"
-
-[filename."unicode-math-luatex.sty"]
+[package.unicode-math]
 ignored_issues = ["e209"]
 max_line_length = 130
 
-[filename."unicode-math-xetex.sty"]
-ignored_issues = ["e209"]
-max_line_length = 130
-
-[filename."fontspec-luatex.sty"]
-ignored_issues = ["e201"]
-
-[filename."fontspec-xetex.sty"]
+[package.fontspec]
 ignored_issues = ["e201"]
 
 [filename."letgut.cls"]
@@ -198,13 +137,6 @@ max_line_length = 90
 
 [filename."bangla.sty"]
 ignored_issues = ["e209"]
-
-[filename."l3doc.cls"]
-ignored_issues = ["e209"]
-max_line_length = 100
-
-[filename."mhsetup.sty"]
-expl3_detection_strategy = "precision"
 
 [filename."simurgh-empheq.sty"]
 expl3_detection_strategy = "precision"
@@ -223,7 +155,7 @@ max_line_length = 90
 [filename."luamml-patches-mathtools.sty"]
 expl3_detection_strategy = "never"
 
-[filename."xeCJK.sty"]
+[package.xecjk]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
 max_line_length = 100
@@ -264,7 +196,7 @@ max_line_length = 140
 [filename."denisbdoc.sty"]
 expl3_detection_strategy = "always"
 
-[filename."whatsnote.cls"]
+[package.whatsnote]
 expl3_detection_strategy = "always"
 
 [filename."robust-externalize.sty"]
@@ -274,66 +206,30 @@ expl3_detection_strategy = "always"
 expl3_detection_strategy = "always"
 max_line_length = 100
 
-[filename."minimalist-stream.sty"]
-expl3_detection_strategy = "always"
-
-[filename."minimalist-classical.sty"]
-expl3_detection_strategy = "always"
-
-[filename."minimalist-default.sty"]
-expl3_detection_strategy = "always"
-
-[filename."minimalist-plain.sty"]
-expl3_detection_strategy = "always"
-
-[filename."minimalist-flow.sty"]
-expl3_detection_strategy = "always"
-
-[filename."minimalist-classicthesis.sty"]
+[package.minimalist]
 expl3_detection_strategy = "always"
 
 [filename."xtemplate.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 100
 
-[filename."ocgbase.sty"]
+[package.ocgx2]
 expl3_detection_strategy = "always"
 max_line_length = 100
 
-[filename."ocgx2.sty"]
-expl3_detection_strategy = "always"
-max_line_length = 100
-
-[filename."mathtools.sty"]
-expl3_detection_strategy = "precision"
-
-[filename."tudasciposter.cls"]
-expl3_detection_strategy = "always"
-
-[filename."tudapub.cls"]
-expl3_detection_strategy = "always"
-
-[filename."tudaletter.cls"]
+[package.tuda-ci]
 expl3_detection_strategy = "always"
 
 [filename."xob-dotemph.sty"]
 ignored_issues = ["e209"]
 
-[filename."pdfbase.sty"]
+[package.media9]
 expl3_detection_strategy = "always"
 max_line_length = 140
-
-[filename."media9.sty"]
-expl3_detection_strategy = "always"
-max_line_length = 100
 
 [filename."nwejm.cls"]
 expl3_detection_strategy = "always"
 
-[filename."hduthesis.cls"]
-expl3_detection_strategy = "always"
-max_line_length = 100
-
-[filename."beamerthemehdu.sty"]
+[package.hdu]
 expl3_detection_strategy = "always"
 max_line_length = 120
