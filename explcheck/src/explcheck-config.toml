@@ -256,3 +256,6 @@ expl3_detection_strategy = "always"
 
 [filename."whatsnote.cls"]
 expl3_detection_strategy = "always"
+
+[filename."robust-externalize.sty"]
+expl3_detection_strategy = "always"
