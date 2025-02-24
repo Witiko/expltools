@@ -73,7 +73,7 @@ dynamicnumber.sty s204
 embrac.sty s204,w200,w202
 endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200,w202
-expl3-code.tex e201,e208,s204,s205,s206,w200,w202
+expl3-code.tex e201,s204,s205,s206,w200,w202
 expl3-generic.tex s204,w200
 expl3.sty s204
 exsheets-listings.sty s103,s204,w101,w200

@@ -328,7 +328,7 @@ leftindex.sty s103,s204,s206
 lengthconvert.sty s103,s204,w200,w202
 letgut-banner.sty s204,s206
 letgut.cls s103,s204,s206,w202
-letterswitharrows.sty e208,s103,s204,w200
+letterswitharrows.sty s204,w200
 lie-hasse.sty s204
 limecv.cls s204
 linebreaker.sty s204
@@ -675,6 +675,7 @@ uantwerpenletter.cls s103,s204,s206
 uantwerpenphdthesis.cls s204,s206
 uantwerpenreport.cls s204
 udes-genie-these.cls s103,s204,s205,s206,w202
+ufrgscca.cls s103,s204
 unicode-math-luatex.sty s204,s205,s206,w200,w202
 unicode-math-xetex.sty s204,s205,s206,w200,w202
 unicode-math.sty s204
