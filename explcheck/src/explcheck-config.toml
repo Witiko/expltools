@@ -17,3 +17,6 @@ expl3_detection_strategy = "precision"
 
 [filename."nicematrix.sty"]
 expl3_detection_strategy = "always"
+
+[filename."xintexpr.sty"]
+expl3_detection_strategy = "precision"
