@@ -103,3 +103,6 @@ max_line_length = 100
 [filename."ctexbeamer.cls"]
 expl3_detection_strategy = "always"
 max_line_length = 100
+
+[filename."grading-scheme.sty"]
+ignored_issues = ["e201"]
