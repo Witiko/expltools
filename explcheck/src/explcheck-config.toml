@@ -43,3 +43,6 @@ max_line_length = 90
 [filename."hobby.code.tex"]
 expl3_detection_strategy = "always"
 max_line_length = 90
+
+[filename."gtl.sty"]
+expl3_detection_strategy = "always"
