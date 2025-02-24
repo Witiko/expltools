@@ -46,6 +46,10 @@ max_line_length = 90
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
 
+[filename."xparse-2018-04-12.sty"]
+expl3_detection_strategy = "always"
+ignored_issues = ["e209"]
+
 [filename."functional.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 90
