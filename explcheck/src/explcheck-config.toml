@@ -14,3 +14,6 @@ max_line_length = 140
 
 [filename."tex4ht.sty"]
 expl3_detection_strategy = "precision"
+
+[filename."nicematrix.sty"]
+expl3_detection_strategy = "always"
