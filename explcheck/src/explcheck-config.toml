@@ -136,3 +136,8 @@ expl3_detection_strategy = "precision"
 [filename."lltjp-unicode-math.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 90
+
+[filename."unravel.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+ignored_issues = ["e209"]
