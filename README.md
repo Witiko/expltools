@@ -27,16 +27,19 @@ In the future, this repository may also contain the code of other useful develop
  [8]: https://witiko.github.io/Expl3-Linter-5/
  [9]: https://witiko.github.io/Expl3-Linter-6/
  [10]: https://github.com/witiko/expltools/releases/download/latest/warnings-and-errors.pdf
+ [11]: https://koppor.github.io/explcheck-issues/
 
 ## Usage
 
-You may use the tool from the command line as follows:
+You may browse the results of the tool on all packages in current TeX Live [here][11].
+
+You may also use the tool from the command line as follows:
 
 ```
 $ explcheck [options] [.tex, .cls, and .sty files]
 ```
 
-You may also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`.
+Furthermore, you may also use the tool from your own Lua code by importing the corresponding files `explcheck-*.lua`.
 For example, here is Lua code that applies the preprocessing step to the code from a file named `code.tex`:
 
 ``` lua
@@ -68,7 +71,7 @@ print(
 )
 ```
 
-You may also use the tool from continuous integration workflows using the Docker image `ghcr.io/witiko/expltools/explcheck`.
+Next, you may also use the tool from continuous integration workflows using the Docker image `ghcr.io/witiko/expltools/explcheck`.
 For example, here is a GitHub Actions workflow file that applies the tool to all .tex files in a Git repository:
 
 ``` yaml
