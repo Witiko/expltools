@@ -122,3 +122,6 @@ max_line_length = 180
 [filename."cleveref-forward.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 160
+
+[filename."latexrelease.sty"]
+expl3_detection_strategy = "never"
