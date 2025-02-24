@@ -259,3 +259,7 @@ expl3_detection_strategy = "always"
 
 [filename."robust-externalize.sty"]
 expl3_detection_strategy = "always"
+
+[filename."multicolrule.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
