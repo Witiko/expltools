@@ -160,14 +160,14 @@ ftc-notebook.sty s204
 gatherenum.sty s204,s206
 genealogytree.sty s204
 ghsystem.sty s103,s204,w101,w200
-gtl.sty e102,w101
+gtl.sty s204,s205,s206
 gtrcore.drawing.code.tex s103,s204
 gtrcore.options.code.tex s103,s204
 gtrcore.symbols.code.tex s204
 gtrlib.fanchart.code.tex s103,s204,s206
 gzt.cls s103,s204,s205,s206,w101,w202
 gztarticle.cls s103,s204,s205,s206,w101,w202
-hobby.code.tex e102,w101
+hobby.code.tex s204,s206
 hobete.sty s103,s204,s205,s206
 hvarabic.sty s103,s204
 hvfloat.sty s204,s206

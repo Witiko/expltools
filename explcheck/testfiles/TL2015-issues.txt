@@ -86,11 +86,11 @@ fontspec-luatex.sty e201,s103,s204,s205,s206,w200,w202
 fontspec-xetex.sty e201,s103,s204,s205,s206,w200,w202
 fontspec.sty s103,s204
 ghsystem.sty s103,s204,s205,w200
-gtl.sty e102,w101
+gtl.sty s204,s205,s206
 gzt.cls s103,s204,s205,s206,w101
 gzt.tex s103,s204
 gztarticle.cls s103,s204,s205,s206,w101
-hobby.code.tex e102,w101
+hobby.code.tex s204,s206
 hobby_doc.tex s103,s204,w100
 hobete.sty s103,s204,s205,s206
 ifmtarg.tex s103,s204,w100

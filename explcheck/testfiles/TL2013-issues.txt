@@ -37,7 +37,7 @@ fontspec-xetex.sty e201,s103,s204,s205,s206,w200
 fontspec.sty s103,s204,s205,s206,w202
 ghsystem.sty s103,s204,s205,w200
 gtl.sty s206
-hobby.code.tex e102,w101
+hobby.code.tex s204,s206
 hobby_doc.tex s103,s204,w100
 hobete.sty s103,s204,s205,s206
 ifmtarg.tex s103,s204,w100

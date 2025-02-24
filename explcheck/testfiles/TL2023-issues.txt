@@ -242,7 +242,7 @@ fontspec.sty s204
 formal-grammar.sty s204
 froufrou.sty s204
 ftc-notebook.sty s204
-functional.sty e102,w101
+functional.sty s204,s207,w202
 gatherenum.sty s204,s206
 genealogy-profiles.sty s103,s204
 genealogytree.sty s204
@@ -254,7 +254,7 @@ glossaries.sty s204
 glossary-hypernav.sty s204
 gradient-text.sty s103,s204
 grading-scheme.sty e201,s103,s204,s205,s206
-gtl.sty e102,w101
+gtl.sty s204,s205,s206
 gtrcore.drawing.code.tex s103,s204
 gtrcore.node.code.tex s103
 gtrcore.options.code.tex s103,s204
@@ -269,7 +269,7 @@ hep-math.sty s204
 heria.cls s204
 hfutexam.cls s204,s205
 hobby-l3draw.sty s204
-hobby.code.tex e102,w101
+hobby.code.tex s103,s204,s206
 hobete.sty s103,s204,s205,s206
 homework.cls s103,s204
 hpstatement-bg.inc.sty s103,s204
