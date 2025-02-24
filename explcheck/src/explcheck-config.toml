@@ -246,3 +246,7 @@ ignored_issues = ["e209"]
 
 [filename."fontinst.sty"]
 ignored_issues = ["e209"]
+
+[filename."beamerouterthemeUR.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 140
