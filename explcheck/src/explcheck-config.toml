@@ -9,7 +9,7 @@ warnings_are_errors = false
 
 [filename."expl3-code.tex"]
 expl3_detection_strategy = "always"
-ignored_issues = ["w200", "w202", "e209"]
+ignored_issues = ["e209"]
 max_line_length = 140
 
 [filename."tex4ht.sty"]
@@ -39,7 +39,7 @@ expl3_detection_strategy = "always"
 
 [filename."xparse-generic.tex"]
 expl3_detection_strategy = "always"
-ignored_issues = ["e209", "w200"]
+ignored_issues = ["e209"]
 max_line_length = 90
 
 [filename."functional.sty"]
