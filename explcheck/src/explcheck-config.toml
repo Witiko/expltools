@@ -221,3 +221,28 @@ max_line_length = 100
 [filename."luaprogtable.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 110
+
+[filename."flexisym.sty"]
+ignored_issues = ["e209"]
+max_line_length = 110
+
+[filename."fduthesis.cls"]
+ignored_issues = ["e209"]
+max_line_length = 100
+
+[filename."nwafuthesis.cls"]
+ignored_issues = ["e209"]
+max_line_length = 130
+
+[filename."zxjatype.sty"]
+ignored_issues = ["e209"]
+max_line_length = 90
+
+[filename."cfntinst.sty"]
+ignored_issues = ["e209"]
+
+[filename."xfntinst.sty"]
+ignored_issues = ["e209"]
+
+[filename."fontinst.sty"]
+ignored_issues = ["e209"]
