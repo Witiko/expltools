@@ -300,3 +300,6 @@ max_line_length = 100
 
 [filename."mathtools.sty"]
 expl3_detection_strategy = "precision"
+
+[filename."tudasciposter.cls"]
+expl3_detection_strategy = "always"
