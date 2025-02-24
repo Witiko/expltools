@@ -806,7 +806,7 @@ witharrows.tex s103,s204,s205,s206,w202
 wordcloud.sty s103,s204,s206
 wordle.sty s103,s204,s205,s206,w202
 wrapstuff.sty s103,s206,w200,w202
-xCJK2uni.sty e209,s103,w101
+xCJK2uni.sty s103
 xassoccnt.sty s103,s204,s205,s206,w202
 xcntperchap.sty s103,s204,s205,s206
 xcolor-patches-tmp-ltx.sty s204

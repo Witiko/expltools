@@ -158,7 +158,7 @@ with.sty s204,s205
 withargs.sty s204,s205
 withargs.tex s204
 xCJK2uni-make.tex e209,s103,s204,w101,w200
-xCJK2uni.sty e209,s103,w200
+xCJK2uni.sty s103,w200
 xeCJK-listings.sty w200
 xeCJK.sty e209,s103,s204,s205,s206,w200,w202
 xeCJKfntef.sty s103,s205,s206,w200
