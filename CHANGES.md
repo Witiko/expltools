@@ -101,10 +101,13 @@
 - Link a list of all currently supported issues from `README.md`.
   (added by @koppor in #51)
 
+- Link <https://koppor.github.io/explcheck-issues/> from `README.md`.
+  (#28, #32, b774ba77)
+
 #### Continuous integration
 
 - Continuously run explcheck on all packages in historical TeX Live Docker
-  images. (suggested in #31, added in #52 and #56)
+  images. (suggested by @hansonchar in #28 and #31, added in #52 and #56)
 
 - Use ShellCheck to check code style of Bash scripts. (#61)
 
