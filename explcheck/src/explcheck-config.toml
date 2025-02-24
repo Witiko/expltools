@@ -323,3 +323,6 @@ max_line_length = 140
 [filename."media9.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 100
+
+[filename."nwejm.cls"]
+expl3_detection_strategy = "always"
