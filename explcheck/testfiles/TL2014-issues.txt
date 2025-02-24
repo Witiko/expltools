@@ -21,6 +21,9 @@ cnltx-base.sty s103,s204,w100
 cntformats_en.tex s204,w100
 conteq.sty s103,s204
 cryptocode.sty s204
+ctexart.cls s204
+ctexbook.cls s204
+ctexrep.cls s204
 download.sty s204
 download.tex s204
 embrac.sty s103,s204,w200,w202

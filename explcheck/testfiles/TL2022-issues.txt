@@ -121,13 +121,13 @@ csvsimple-legacy.sty s103,s204,w200
 csvsimple.sty s204,w200
 ctex-spa-macro.tex s103,s206,w200
 ctex.sty s103,s204,s205,s206,w200,w202
-ctexart.cls e102,s103,w101
+ctexart.cls s204,s206,w200,w202
 ctexbeamer.cls e102,s103
-ctexbook.cls e102,s103,w101
+ctexbook.cls s204,s206,w200,w202
 ctexheading.sty s205,w200
 ctexhook.sty w200
-ctexpatch.sty e102
-ctexrep.cls e102,s103,w101
+ctexpatch.sty s204,w200
+ctexrep.cls s204,s206,w200,w202
 ctexsize.sty s204,w200
 ctxdoc.cls s103,s204,s206,w101,w200
 currency.sty s204
