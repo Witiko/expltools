@@ -129,3 +129,6 @@ expl3_detection_strategy = "never"
 [filename."expl3.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 90
+
+[filename."empheq.sty"]
+expl3_detection_strategy = "precision"
