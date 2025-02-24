@@ -49,7 +49,7 @@ chemmacros.module.thermodynamics.code.tex s103,s204,w100
 chemmacros.module.tikz.code.tex s204,w200
 chemmacros.module.units.code.tex s204,w100,w200
 chemmacros.module.xfrac.code.tex s103,s204,w100
-chemmacros.sty e102
+chemmacros.sty s204,w200
 chemmacros4.sty s103,s204,s205,s206,w101,w200
 chemmacros5.sty s204,w101,w200
 chemnum.sty s103,s204,w200,w202
@@ -291,7 +291,7 @@ unravel.sty e102,s103,w101
 widows-and-orphans.sty s204
 withargs.sty s204,s205
 witharrows.sty s103,s204,s205,s206,w200,w202
-xCJK2uni.sty s103
+xCJK2uni.sty s103,s204
 xassoccnt.sty s103,s204,s205,s206,w202
 xcntperchap.sty s103,s204,s205,s206
 xeCJK-listings.sty s204,w200

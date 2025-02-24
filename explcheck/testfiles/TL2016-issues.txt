@@ -54,7 +54,7 @@ chemmacros.module.thermodynamics.code.tex s103,s204,w100
 chemmacros.module.tikz.code.tex s204,w200
 chemmacros.module.units.code.tex s204,w100,w200
 chemmacros.module.xfrac.code.tex s103,s204,w100
-chemmacros.sty e102
+chemmacros.sty s204,w200
 chemmacros4.sty s103,s204,s205,s206,w101,w200
 chemmacros5.sty s204,w101,w200
 chemmacros_en.tex e102
@@ -250,7 +250,7 @@ unravel.sty e102,s103,w101
 with.sty s204,s205
 withargs.sty s204,s205
 withargs.tex s204
-xCJK2uni.sty s103
+xCJK2uni.sty s103,s204
 xassoccnt.sty s103,s204,s205,s206
 xassoccnt_getparentcounter_example.tex s103,s204,w202
 xcntperchap.sty s103,s204,s206
