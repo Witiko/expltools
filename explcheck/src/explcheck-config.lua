@@ -37,8 +37,10 @@ local function get_option(key, options, pathname)
       end
     end
     -- If the current configuration specifies the option in the defaults, use it.
-    if config["defaults"] ~= nil and config["defaults"][key] ~= nil then
-      return config["defaults"][key]
+    for _, section in ipairs({"defaults", "options"}) do  -- TODO: Remove `[options]` in v1.0.0.
+      if config[section] ~= nil and config[section][key] ~= nil then
+        return config[section][key]
+      end
     end
   end
   error('Failed to get a value for option "' .. key .. '"')
