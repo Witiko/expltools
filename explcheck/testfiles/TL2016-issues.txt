@@ -71,7 +71,7 @@ copyedit.sty s204,s206,w200,w202
 cryptocode.sty s204
 ctex.sty e102,s103
 ctexart.cls s204,s205,s206,w200,w202
-ctexbeamer.cls e102,s103,w101
+ctexbeamer.cls s204,s205,s206,w200,w202
 ctexbook.cls s204,s205,s206,w200,w202
 ctexheading.sty e102
 ctexhook.sty w200
@@ -114,6 +114,7 @@ gztarticle.cls s103,s204,s205,s206,w101
 hobby.code.tex s204,s206
 hobby_doc.tex s103,s204,w100
 hobete.sty s103,s204,s205,s206
+hwexam.sty s204
 ifmtarg.tex s103,s204,w100
 int_set_to_EAN_control_digit.tex s204,s206
 interchar.sty e102,s103
@@ -265,7 +266,6 @@ xetexko-font.sty s204,s206
 xfntinst.sty e209,s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200
-xinttools.sty e201,s103,s204,w100
 xltxtra.sty s204
 xob-dotemph.sty e209
 xob-font.sty s103,s204,s206

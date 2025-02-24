@@ -77,7 +77,7 @@ copyedit.sty s204,s206,w200,w202
 cryptocode.sty s103,s204
 ctex.sty e102,s103
 ctexart.cls s204,s206,w200,w202
-ctexbeamer.cls e102,s103,w101
+ctexbeamer.cls s204,s206,w200,w202
 ctexbook.cls s204,s206,w200,w202
 ctexheading.sty e102
 ctexhook.sty w200
@@ -140,6 +140,7 @@ gztarticle.cls s103,s204,s205,s206,w101,w202
 hobby.code.tex s204,s206
 hobete.sty s103,s204,s205,s206
 hvfloat.sty s103,s204,s206
+hwexam.sty s204
 interchar.sty e102,s103
 intopdf.sty s204,s206,w200
 invoice2.sty s103,s204
@@ -274,7 +275,7 @@ schulma-praes.cls s103,s204
 schulma.sty s204
 scontents-code.tex s103,s204,s206,w100,w200,w202
 scontents.sty s204
-scontents.tex e102,s103
+scontents.tex s204,w200,w202
 sdapsarray.sty s103,s204,s205,s206,w200,w202
 sdapsbase.sty s103,s204,s205,w200,w202
 sdapsclassic.cls s103,s204,s205,s206,w200,w202
@@ -364,7 +365,6 @@ xfrac.sty s103,s204,w200
 xgalley.sty s204,s205,s206,w200
 xintcore.sty e201,s103,s204,w100
 xintkernel.sty s103,s204,w100
-xinttools.sty s103,s204,w100
 xltxtra.sty s204
 xob-dotemph.sty e209
 xob-font.sty s103,s204,s206
