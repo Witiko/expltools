@@ -51,3 +51,7 @@ expl3_detection_strategy = "always"
 expl3_detection_strategy = "always"
 ignored_issues = ["e208"]
 max_line_length = 90
+
+[filename."statistics.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
