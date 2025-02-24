@@ -67,3 +67,6 @@ max_line_length = 90
 [filename."xunicode-addon.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 100
+
+[filename."interlinear.sty"]
+expl3_detection_strategy = "precision"
