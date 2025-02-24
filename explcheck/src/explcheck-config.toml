@@ -63,3 +63,7 @@ max_line_length = 100
 [filename."problem.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 90
+
+[filename."xunicode-addon.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
