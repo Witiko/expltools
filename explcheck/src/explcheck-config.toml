@@ -171,3 +171,6 @@ ignored_issues = ["e201"]
 
 [filename."fontspec-xetex.sty"]
 ignored_issues = ["e201"]
+
+[filename."letgut.cls"]
+ignored_issues = ["e209"]
