@@ -147,3 +147,6 @@ expl3_detection_strategy = "precision"
 
 [filename."hduthesis-hdu.l3doc-module.code.tex"]
 expl3_detection_strategy = "always"
+
+[filename."timechart.sty"]
+ignored_issues = ["e201"]
