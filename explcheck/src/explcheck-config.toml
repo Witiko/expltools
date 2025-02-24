@@ -24,3 +24,6 @@ expl3_detection_strategy = "precision"
 [filename."xCJK2uni.sty"]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
+
+[filename."stex.sty"]
+expl3_detection_strategy = "always"
