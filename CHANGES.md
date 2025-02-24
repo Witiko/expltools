@@ -15,7 +15,7 @@
   ``` toml
   [package.l3kernel]
   expl3_detection_strategy = "always"
-  ignored_issues = ["w200", "w202", "e209"]
+  ignored_issues = ["w200", "w202", "e208", "e209"]
   max_line_length = 140
   ```
 
@@ -23,7 +23,8 @@
   and the Lua option `expl3_detection_strategy`. (#63)
 
 - Pre-configure all remaining expl3 files from current TeX Live with more than
-  1 error in <https://koppor.github.io/explcheck-issues/>. (#32, #57, #62, #63)
+  1 error in <https://koppor.github.io/explcheck-issues/>. (#32, #57, #62, #63,
+  4bf5597e, d074dbef)
 
 ## expltools 2025-02-24
 
@@ -46,7 +47,7 @@
   ``` toml
   [filename."expl3-code.tex"]
   expl3_detection_strategy = "always"
-  ignored_issues = ["w200", "w202", "e209"]
+  ignored_issues = ["w200", "w202", "e208", "e209"]
   max_line_length = 140
   ```
 
