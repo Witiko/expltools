@@ -144,3 +144,6 @@ ignored_issues = ["e209"]
 
 [filename."polexprcore.tex"]
 expl3_detection_strategy = "precision"
+
+[filename."hduthesis-hdu.l3doc-module.code.tex"]
+expl3_detection_strategy = "always"
