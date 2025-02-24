@@ -202,3 +202,6 @@ expl3_detection_strategy = "precision"
 [filename."exam-zh.cls"]
 ignored_issues = ["e209"]
 max_line_length = 150
+
+[filename."lwarp-statistics.sty"]
+expl3_detection_strategy = "always"
