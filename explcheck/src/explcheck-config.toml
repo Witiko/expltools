@@ -289,3 +289,11 @@ expl3_detection_strategy = "always"
 [filename."xtemplate.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 100
+
+[filename."ocgbase.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
+
+[filename."ocgx2.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 100
