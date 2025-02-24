@@ -209,3 +209,6 @@ expl3_detection_strategy = "always"
 [filename."platexrelease.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 90
+
+[filename."luamml-patches-mathtools.sty"]
+expl3_detection_strategy = "never"
