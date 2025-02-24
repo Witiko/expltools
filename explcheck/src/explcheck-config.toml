@@ -154,3 +154,6 @@ ignored_issues = ["e201"]
 [filename."csvsimple-l3.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 110
+
+[filename."whats-cover-module.code.tex"]
+expl3_detection_strategy = "always"
