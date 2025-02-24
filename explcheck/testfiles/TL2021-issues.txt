@@ -149,7 +149,7 @@ endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200
 erw-l3.sty s103,s204
 etl.sty s103,s204,w200
-expl3-code.tex e102,w101
+expl3-code.tex s204,s205,s206
 expl3-generic.tex s204,w100,w101,w200
 expl3.sty e102,s103,w101
 exsheets-listings.sty s103,s204,w101
@@ -359,7 +359,7 @@ mucproc.cls s103,s204,s205,s206
 multicolrule.sty e208,s103,s204,w200,w202
 namedef.sty e102,w101
 newpax.sty s204
-nicematrix.sty e102,s103,w101
+nicematrix.sty s103,s204,s205,s206,w200,w202
 niceverb.sty s204,w100
 ninecolors.sty s204
 njuthesis.cls s204,s205
@@ -508,7 +508,7 @@ sseqdrawing.code.tex s103,s204
 sseqforeach.code.tex s103,s204
 sseqmacromakers.code.tex s103,s204,s205
 sseqmessages.code.tex s103,s204
-sseqparsers.code.tex e201,s103,s204
+sseqparsers.code.tex s103,s204
 statistics.sty e102,s103,w101
 stex-tikzinput.sty s204
 stex.cls s204
@@ -536,7 +536,6 @@ tcbtheorems.code.tex s103,s204
 tcolorbox.sty s103,s204
 termmenu.tex s204,s206,w100
 termsim.sty s103,s204,w202
-tex4ht.sty e201,s103,s204,w100,w200
 texapi.tex s103,s204
 texnegar-common-kashida.tex s103,s204,w200
 texnegar-ini.tex s103,s204,s206,w200,w202
@@ -578,8 +577,8 @@ uantwerpenexam.cls s204,s206
 uantwerpenletter.cls s103,s204,s206
 uantwerpenphdthesis.cls s204,s206
 uantwerpenreport.cls s204
-unicode-math-luatex.sty e201,e209,s103,s204,s205,s206,w200,w202
-unicode-math-xetex.sty e201,e209,s103,s204,s205,s206,w200,w202
+unicode-math-luatex.sty e209,s103,s204,s205,s206,w200,w202
+unicode-math-xetex.sty e209,s103,s204,s205,s206,w200,w202
 unicode-math.sty s204
 unicodefonttable.sty s103,s204,w200
 unitconv.sty s103,s204
@@ -605,11 +604,10 @@ xfntinst.sty e209,s204,w100
 xfrac.sty s103,w200
 xgalley.sty s204,s205,s206,w200
 xintcore.sty e201,s103,s204,w100
-xintexpr.sty e201,e208,s103,s204,w100
 xintkernel.sty s103,s204,w100
 xintlog.sty e201,s103,s204,w100
 xintsession.tex s103,s204,w100
-xinttools.sty e201,s103,s204,w100
+xinttools.sty s103,s204,w100
 xistercian.sty s204
 xltxtra.sty s204
 xmuthesis.cls s103,s204

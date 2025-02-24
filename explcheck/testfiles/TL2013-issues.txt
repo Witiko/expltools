@@ -52,10 +52,10 @@ l3coffins.sty s103,s204,s206,w200
 l3color.sty w200
 l3doc.cls e209,s103,s204,s206,w200
 l3dt.sty s206
-l3expan.sty e201,s204,s205,w200
+l3expan.sty s204,s205,w200
 l3file.sty s204,s205,s206,w200,w202
 l3flag.sty s206,w200
-l3fp.sty e201,e209,s103,s204,s205,s206,w200
+l3fp.sty e209,s103,s204,s205,s206,w200
 l3galley.sty s103,s204,s205,s206,w200
 l3int.sty s204,s206,w200
 l3keys.sty s103,s206,w202
@@ -145,7 +145,6 @@ tarai.tex s204
 tasks.sty s204,s205,s206,w200
 tex-overview-aux.tex s103,s204,s205,s206,w100
 tex-overview.tex s103,s204,s206
-tex4ht.sty e201,s103,s204,w100,w200
 texapi-doc.tex s103,s204
 texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204
@@ -170,7 +169,6 @@ xfntinst.sty e209,s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200
 xint.sty e201,s204,w100,w200
-xintexpr.sty e201,s204,w100
 xintfrac.sty e201,s204,w100,w200
 xintgcd.sty e201,s204,w100
 xltxtra.sty s204

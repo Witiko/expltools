@@ -91,7 +91,7 @@ embrac.sty s204,w200,w202
 empheq.sty e201,s204,w100
 endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200,w202
-expl3-code.tex e102,w101
+expl3-code.tex e208,s204,s205,s206
 expl3-generic.tex s204,w100,w101,w200
 expl3.sty e102,w101
 exsheets-listings.sty s103,s204,w101,w200
@@ -234,7 +234,6 @@ tasks.sty s103,s204,s205,s206,w101,w200
 termmenu.tex s204,s206,w100
 tex-overview-aux.tex e102,s103,w101
 tex-overview.tex s204,s206,w101
-tex4ht.sty e201,s103,s204,w100,w200
 texapi-doc.tex s103,s204
 texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204,w202
@@ -245,7 +244,7 @@ tikzsymbols.sty s103,s204,s206
 unicode-math-doc.tex e209,s103,s204,s206
 unicode-math-luatex.sty e209,s103,s204,s205,s206,w202
 unicode-math-xetex.sty e209,s103,s204,s205,s206,w202
-unicode-math.sty e201,s103,s204,s206,w200
+unicode-math.sty s103,s204,s206,w200
 unravel.sty e102,s103,w101
 with.sty s204,s205
 withargs.sty s204,s205
@@ -263,7 +262,6 @@ xetexko-font.sty s204,s206
 xfntinst.sty e209,s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200
-xintexpr.sty e201,s103,s204,w100
 xinttools.sty e201,s103,s204,w100
 xltxtra.sty s204
 xob-dotemph.sty e209

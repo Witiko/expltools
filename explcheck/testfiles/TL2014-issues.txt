@@ -27,7 +27,7 @@ embrac.sty s103,s204,w200,w202
 empheq.sty e201,s204,w100
 endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200
-expl3-code.tex e102,w101
+expl3-code.tex s204,s205,s206
 expl3-generic.tex s204,w100,w101,w200
 expl3.sty e102,w101
 exsheets-listings.sty s103,s204,w200
@@ -143,7 +143,6 @@ tarai.tex s204
 tasks.sty s103,s204,s205,s206,w200
 tex-overview-aux.tex s103,s204,s205,s206,w100
 tex-overview.tex s103,s204,s206
-tex4ht.sty e201,s103,s204,w100,w200
 texapi-doc.tex s103,s204
 texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204
@@ -169,7 +168,6 @@ xetexko-font.sty s204,s206
 xfntinst.sty e209,s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200
-xintexpr.sty e201,s103,s204,w100
 xltxtra.sty s204
 xob-dotemph.sty e209
 xob-font.sty s103,s204,s206

@@ -93,7 +93,7 @@ empheq.sty e201,s204,w100
 endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200,w202
 erw-l3.sty s103,s204,s206,w101
-expl3-code.tex e102,w101
+expl3-code.tex e208,s204,s205,s206
 expl3-generic.tex s204,w100,w101,w200
 expl3.sty e102,w101
 exsheets-listings.sty s103,s204,w101,w200
@@ -192,7 +192,7 @@ modiagram.sty s103,s204,w200
 morewrites.sty s103,s204,s205,s206,w200
 mucproc.cls s103,s204,s205,s206
 multicolrule.sty e208,s103,s204,w200,w202
-nicematrix.sty e102,s103,w101
+nicematrix.sty s103,s204,s205,s206,w202
 niceverb.sty s204,w100
 notes2bib.sty s103,s204
 novel-Footnotes.sty s204
@@ -273,7 +273,6 @@ tagpdf.sty s103,s204,w200
 tap.tex s204,w100
 tasks.sty s103,s204,s205,s206,w101,w200
 termmenu.tex s204,s206,w100
-tex4ht.sty e201,s103,s204,w100,w200
 texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204,w202
 tikzlibraryceltic.code.tex s103,s204,s206,w202
@@ -284,8 +283,8 @@ tikzscale.sty s204
 tikzsymbols.sty s103,s204,s206,w202
 topiclongtable.sty s103,s204,s206
 typoaid.sty s103,s204,s206
-unicode-math-luatex.sty e201,e209,s103,s204,s205,s206,w200,w202
-unicode-math-xetex.sty e201,e209,s103,s204,s205,s206,w200,w202
+unicode-math-luatex.sty e209,s103,s204,s205,s206,w200,w202
+unicode-math-xetex.sty e209,s103,s204,s205,s206,w200,w202
 unicode-math.sty s204
 unravel.sty e102,s103,w101
 widows-and-orphans.sty s204
@@ -305,11 +304,10 @@ xfrac.sty s103,s204,w200
 xgalley.sty s204,s205,s206,w200
 xint.sty e201,s103,s204,w100
 xintcore.sty e201,s103,s204,w100
-xintexpr.sty e201,s103,s204,w100
 xintfrac.sty s103,s204,w100
 xintgcd.sty s103,s204,w100
 xintkernel.sty s204,w100
-xinttools.sty e201,s103,s204,w100
+xinttools.sty s103,s204,w100
 xltxtra.sty s204
 xob-dotemph.sty e209
 xob-font.sty s103,s204,s206
