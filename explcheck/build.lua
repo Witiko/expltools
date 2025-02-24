@@ -11,7 +11,7 @@ typesetfiles = {
   "*.md",
 }
 sourcefiles = {
-  "explcheck*.lua",
+  "explcheck*.*",
 }
 bibfiles = {
   "**/*.bib",
@@ -136,7 +136,7 @@ function checkinit_hook()
   local lfs = require("lfs")
   local support_files = {}
   for filename in lfs.dir("src") do
-    if get_suffix(filename) == ".lua" then
+    if filename:sub(1, 10) == "explcheck-" and get_suffix(filename) == ".lua" or get_suffix(filename) == ".toml" then
       table.insert(support_files, "src/" .. filename)
     end
   end

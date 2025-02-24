@@ -101,7 +101,7 @@ You may also configure the tool by placing a configuration file named `.explchec
 For example, here is a configuration file that applies the same configuration as the above command-line options:
 
 ``` toml
-[options]
+[defaults]
 max_line_length = 120
 ignored_issues = ["w100", "S204"]
 ```

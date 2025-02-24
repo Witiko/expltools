@@ -2,17 +2,6 @@
 
 local toml = require("explcheck-toml")
 
--- The default options
-local default_options = {
-  expl3_detection_strategy = 'auto',
-  error_format = '%f:%l:%c: %t%n %m',
-  ignored_issues = {},
-  make_at_letter = 'auto',
-  max_line_length = 80,
-  porcelain = false,
-  warnings_are_errors = false,
-}
-
 -- Read a TOML file with a user-defined configuration.
 local function read_config_file(pathname)
   local file = io.open(pathname, "r")
@@ -24,13 +13,17 @@ local function read_config_file(pathname)
   return toml.parse(content)
 end
 
--- The user-defined configuration
-local config_file = read_config_file(".explcheckrc")
+-- The default configuration from file explcheck-config.toml
+local default_config_pathname = string.sub(debug.getinfo(1).source, 2, (#".lua" + 1) * -1) .. ".toml"
+local default_config = read_config_file(default_config_pathname)
+
+-- The user-defined configuration from file ./.explcheckrc
+local user_config = read_config_file(".explcheckrc")
 
 -- The user-defined options, falling back on the default options
 local options = {}
-for _, template_options in ipairs({default_options, config_file.options or {}}) do
-  for key, value in pairs(template_options) do
+for _, defaults in ipairs({default_config.defaults, user_config.defaults}) do
+  for key, value in pairs(defaults) do
     options[key] = value
   end
 end
