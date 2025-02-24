@@ -157,3 +157,11 @@ max_line_length = 110
 
 [filename."whats-cover-module.code.tex"]
 expl3_detection_strategy = "always"
+
+[filename."unicode-math-luatex.sty"]
+ignored_issues = ["e209"]
+max_line_length = 130
+
+[filename."unicode-math-xetex.sty"]
+ignored_issues = ["e209"]
+max_line_length = 130
