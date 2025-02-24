@@ -74,3 +74,6 @@ expl3_detection_strategy = "precision"
 [filename."skrapport.cls"]
 expl3_detection_strategy = "always"
 max_line_length = 150
+
+[filename."namedef.sty"]
+expl3_detection_strategy = "always"
