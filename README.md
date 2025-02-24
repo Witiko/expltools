@@ -14,6 +14,7 @@ These devlog posts chronicle the latest updates and progress in the ongoing deve
 
 5. [Frank Mittelbach in Brno, first public release of explcheck, and expl3 usage statistics][8] from Dec 5, 2024
 6. [A flurry of releases, CSTUG talk, and what's next][9] from December 19, 2024
+7. [Lexical analysis and a public website listing issues in current TeX Live][12] from February 24, 2025
 
 In the future, this repository may also contain the code of other useful development tools for expl3 programmers, such as a command-line utility similar to `grep` that will ignore whitespaces and newlines as well as other tools.
 
@@ -28,6 +29,7 @@ In the future, this repository may also contain the code of other useful develop
  [9]: https://witiko.github.io/Expl3-Linter-6/
  [10]: https://github.com/witiko/expltools/releases/download/latest/warnings-and-errors.pdf
  [11]: https://koppor.github.io/explcheck-issues/
+ [12]: https://witiko.github.io/Expl3-Linter-7/
 
 ## Usage
 
