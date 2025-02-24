@@ -27,6 +27,9 @@ expl3_detection_strategy = "precision"
 [filename."xintlog.sty"]
 expl3_detection_strategy = "precision"
 
+[filename."xintcore.sty"]
+expl3_detection_strategy = "precision"
+
 [filename."xCJK2uni.sty"]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
