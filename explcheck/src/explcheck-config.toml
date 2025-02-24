@@ -263,3 +263,6 @@ expl3_detection_strategy = "always"
 [filename."multicolrule.sty"]
 expl3_detection_strategy = "always"
 max_line_length = 100
+
+[filename."minimalist-stream.sty"]
+expl3_detection_strategy = "always"
