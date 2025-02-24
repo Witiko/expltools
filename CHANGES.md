@@ -1,8 +1,29 @@
 # Changes
 
-## expltools 2025-03-DD
+## expltools 2025-02-24
 
-### explcheck v0.8.0-dev
+### explcheck v0.7.1-dev
+
+#### Development
+
+- Add support for config file sections `[package.…]` for specifying
+  package-specific configuration. (#32, #57, #62, #63)
+
+  For example, here is how you might configure the file `expl3-code.tex` from
+  the package `l3kernel` in your configuration file `.explcheckrc`:
+
+  ``` toml
+  [package.l3kernel]
+  expl3_detection_strategy = "always"
+  ignored_issues = ["w200", "w202", "e209"]
+  max_line_length = 140
+  ```
+
+- Add value `"never"` for the command-line option `--expl3-detection-strategy`
+  and the Lua option `expl3_detection_strategy`. (#63)
+
+- Pre-configure all remaining expl3 files from current TeX Live with more than
+  1 error in <https://koppor.github.io/explcheck-issues/>. (#32, #57, #62, #63)
 
 ## expltools 2025-02-24
 

@@ -137,8 +137,9 @@ local function print_usage()
     "Options:\n\n"
     .. "\t--error-format=FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
     .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
-    .. "\t--expl3-detection-strategy={always|precision|recall|auto}\n\n"
+    .. "\t--expl3-detection-strategy={never|always|precision|recall|auto}\n\n"
     .. "\t                           The strategy for detecting expl3 parts of the input files:\n\n"
+    .. '\t                           - "never": Assume that no part of the input files is in expl3.\n'
     .. '\t                           - "always": Assume that the whole input files are in expl3.\n'
     .. '\t                           - "precision", "recall", and "auto": Analyze standard delimiters such as \n'
     .. '\t                             \\ExplSyntaxOn and Off. If no standard delimiters exist, assume either that:\n'

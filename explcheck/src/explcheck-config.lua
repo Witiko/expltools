@@ -30,10 +30,15 @@ local function get_option(key, options, pathname)
   -- Otherwise, try the user-defined configuration first, if it exists, and then the default configuration.
   for _, config in ipairs({user_config, default_config}) do
     if pathname ~= nil then
-      -- If a a pathname is provided and the current configuration specifies the option for the provided filename, use it.
+      -- If a pathname is provided and the current configuration specifies the option for this filename, use it.
       local filename = utils.get_basename(pathname)
       if config["filename"] and config["filename"][filename] ~= nil and config["filename"][filename][key] ~= nil then
         return config["filename"][filename][key]
+      end
+      -- If a pathname is provided and the current configuration specifies the option for this package, use it.
+      local package = utils.get_basename(utils.get_parent(pathname))
+      if config["package"] and config["package"][package] ~= nil and config["package"][package][key] ~= nil then
+        return config["package"][package][key]
       end
     end
     -- If the current configuration specifies the option in the defaults, use it.
