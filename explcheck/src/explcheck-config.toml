@@ -110,3 +110,7 @@ ignored_issues = ["e201"]
 [filename."scontents.tex"]
 expl3_detection_strategy = "always"
 max_line_length = 90
+
+[filename."hwexam.sty"]
+expl3_detection_strategy = "always"
+max_line_length = 110
