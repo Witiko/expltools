@@ -8,7 +8,7 @@ local parsers = require("explcheck-parsers")
 local lpeg = require("lpeg")
 
 -- Tokenize the content and register any issues.
-local function lexical_analysis(issues, pathname, all_content, expl_ranges, seems_like_latex_style_file, options)
+local function lexical_analysis(pathname, all_content, issues, results, options)
 
   -- Process bytes within a given range similarly to TeX's input processor (TeX's "eyes" [1]) and produce lines.
   --
@@ -66,7 +66,7 @@ local function lexical_analysis(issues, pathname, all_content, expl_ranges, seem
     -- Determine the category code of the at sign ("@").
     local make_at_letter = get_option("make_at_letter", options, pathname)
     if make_at_letter == "auto" then
-      make_at_letter = seems_like_latex_style_file
+      make_at_letter = results.seems_like_latex_style_file
     end
 
     for line_text, map_back in lines do
@@ -226,7 +226,7 @@ local function lexical_analysis(issues, pathname, all_content, expl_ranges, seem
 
   -- Tokenize the content.
   local all_tokens = {}
-  for _, range in ipairs(expl_ranges) do
+  for _, range in ipairs(results.expl_ranges) do
     local lines = (function()
       local co = coroutine.create(function()
         get_lines(range)
@@ -288,7 +288,8 @@ local function lexical_analysis(issues, pathname, all_content, expl_ranges, seem
     end
   end
 
-  return all_tokens
+  -- Store the intermediate results of the analysis.
+  results.tokens = all_tokens
 end
 
 return lexical_analysis

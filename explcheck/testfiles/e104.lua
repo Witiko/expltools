@@ -8,8 +8,9 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 local issues = new_issues()
+local results = {}
 
-local line_starting_byte_numbers = preprocessing(issues, filename, content)
+preprocessing(filename, content, issues, results)
 
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
@@ -20,7 +21,7 @@ local err = errors[1]
 assert(err[1] == "e104")
 assert(err[2] == [[multiple delimiters `\ProvidesExpl*` in a single file]])
 local byte_range = err[3]
-local start_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:start())
-local end_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, byte_range:stop())
+local start_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:start())
+local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
 assert(start_line_number == 4)
 assert(end_line_number == 5)

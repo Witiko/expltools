@@ -7,8 +7,9 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 local issues = new_issues()
+local results = {}
 
-preprocessing(issues, filename, content)
+preprocessing(filename, content, issues, results)
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 1)

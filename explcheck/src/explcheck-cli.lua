@@ -82,31 +82,29 @@ local function main(pathnames, options)
         issues:ignore(issue_identifier)
       end
 
+      -- Set up the intermediate analysis results.
+      local results = {}
+
       -- Load an input file.
       local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
       local content = assert(file:read("*a"))
       assert(file:close())
 
-      -- Run all processing steps.
-      local line_starting_byte_numbers, expl_ranges, seems_like_latex_style_file, tokens  -- luacheck: ignore tokens
-
-      line_starting_byte_numbers, expl_ranges, seems_like_latex_style_file = preprocessing(issues, pathname, content, options)
-
-      if #issues.errors > 0 then
-        goto continue
+      -- Run all steps.
+      for _, processing_step in ipairs({preprocessing, lexical_analysis}) do
+        processing_step(pathname, content, issues, results, options)
+        -- If a processing step ended with error, skip all following steps.
+        if #issues.errors > 0 then
+          goto continue
+        end
       end
-
-      tokens = lexical_analysis(issues, pathname, content, expl_ranges, seems_like_latex_style_file, options)
-
-      -- syntactic_analysis(issues)
-      -- semantic_analysis(issues)
-      -- pseudo_flow_analysis(issues)
 
       -- Print warnings and errors.
       ::continue::
       num_warnings = num_warnings + #issues.warnings
       num_errors = num_errors + #issues.errors
-      format.print_results(pathname, issues, line_starting_byte_numbers, pathname_number == #pathnames, options)
+      assert(results.line_starting_byte_numbers ~= nil)
+      format.print_results(pathname, issues, results.line_starting_byte_numbers, pathname_number == #pathnames, options)
     end, debug.traceback)
     if not is_ok then
       error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
