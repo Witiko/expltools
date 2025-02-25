@@ -63,8 +63,8 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 
-local _, expl_ranges = preprocessing(issues, filename, content)
-lexical_analysis(issues, filename, content, expl_ranges)
+local _, expl_ranges, is_latex = preprocessing(issues, filename, content, options)
+lexical_analysis(issues, filename, content, expl_ranges, is_latex, options)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "
@@ -120,8 +120,8 @@ local options = { max_line_length = 120 }
 issues:ignore("w100")
 issues:ignore("S204")
 
-local _, expl_ranges = preprocessing(issues, content, options)
-lexical_analysis(issues, content, expl_ranges, options)
+local _, expl_ranges, is_latex = preprocessing(issues, filename, content, options)
+lexical_analysis(issues, filename, content, expl_ranges, is_latex, options)
 ```
 
 Command-line options, configuration files, and Lua code allow you to ignore certain warnings and errors everywhere.
