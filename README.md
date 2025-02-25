@@ -58,13 +58,14 @@ end
 -- Process file "code.tex" and print warnings and errors.
 local filename = "code.tex"
 local issues = new_issues()
+local results = {}
 
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 
-local _, expl_ranges, is_latex = preprocessing(issues, filename, content, options)
-lexical_analysis(issues, filename, content, expl_ranges, is_latex, options)
+preprocessing(filename, content, issues, results)
+lexical_analysis(filename, content, issues, results)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "
@@ -120,8 +121,8 @@ local options = { max_line_length = 120 }
 issues:ignore("w100")
 issues:ignore("S204")
 
-local _, expl_ranges, is_latex = preprocessing(issues, filename, content, options)
-lexical_analysis(issues, filename, content, expl_ranges, is_latex, options)
+preprocessing(filename, content, issues, results, options)
+lexical_analysis(filename, content, issues, results, options)
 ```
 
 Command-line options, configuration files, and Lua code allow you to ignore certain warnings and errors everywhere.

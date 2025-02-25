@@ -9,7 +9,7 @@ local lpeg = require("lpeg")
 local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
-local function preprocessing(issues, pathname, content, options)
+local function preprocessing(pathname, content, issues, results, options)
 
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
@@ -231,7 +231,10 @@ local function preprocessing(issues, pathname, content, options)
     lpeg.match(overline_lines_grammar, transformed_content:sub(expl_range:start(), expl_range:stop()))
   end
 
-  return line_starting_byte_numbers, expl_ranges, seems_like_latex_style_file
+  -- Store the intermediate results of the analysis.
+  results.line_starting_byte_numbers = line_starting_byte_numbers
+  results.expl_ranges = expl_ranges
+  results.seems_like_latex_style_file = seems_like_latex_style_file
 end
 
 return preprocessing
