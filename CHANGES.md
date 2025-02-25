@@ -4,6 +4,17 @@
 
 ### explcheck v0.8.0
 
+#### Development
+
+- Stabilize the Lua API of processing steps. (#64)
+
+  All processing steps are now functions that accept the following arguments:
+  1. The filename of a processed file
+  2. The content of the processed file
+  3. A registry of issues with the processed file (write-only)
+  4. Intermediate analysis results (read-write)
+  5. Options (read-only, optional)
+
 ## expltools 2025-02-25
 
 ### explcheck v0.7.1
