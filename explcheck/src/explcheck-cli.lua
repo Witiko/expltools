@@ -7,7 +7,7 @@ local utils = require("explcheck-utils")
 
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
--- local syntactic_analysis = require("explcheck-syntactic-analysis")
+local syntactic_analysis = require("explcheck-syntactic-analysis")
 -- local semantic_analysis = require("explcheck-semantic-analysis")
 -- local pseudo_flow_analysis = require("explcheck-pseudo-flow-analysis")
 
@@ -91,7 +91,7 @@ local function main(pathnames, options)
       assert(file:close())
 
       -- Run all steps.
-      for _, processing_step in ipairs({preprocessing, lexical_analysis}) do
+      for _, processing_step in ipairs({preprocessing, lexical_analysis, syntactic_analysis}) do
         processing_step(pathname, content, issues, results, options)
         -- If a processing step ended with error, skip all following steps.
         if #issues.errors > 0 then

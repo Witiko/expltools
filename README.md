@@ -45,15 +45,18 @@ Furthermore, you may also use the tool from your own Lua code by importing the c
 For example, here is Lua code that applies the preprocessing step to the code from a file named `code.tex`:
 
 ``` lua
-local new_issues = require("explcheck-issues")
-local preprocessing = require("explcheck-preprocessing")
-local lexical_analysis = require("explcheck-lexical-analysis")
-
 -- LuaTeX users must initialize Kpathsea Lua module searchers first.
 local using_luatex, kpse = pcall(require, "kpse")
 if using_luatex then
   kpse.set_program_name("texlua", "explcheck")
 end
+
+-- Import explcheck.
+local new_issues = require("explcheck-issues")
+
+local preprocessing = require("explcheck-preprocessing")
+local lexical_analysis = require("explcheck-lexical-analysis")
+local syntactic_analysis = require("explcheck-syntactic-analysis")
 
 -- Process file "code.tex" and print warnings and errors.
 local filename = "code.tex"
@@ -66,6 +69,7 @@ assert(file:close())
 
 preprocessing(filename, content, issues, results)
 lexical_analysis(filename, content, issues, results)
+syntactic_analysis(filename, content, issues, results)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "
@@ -123,6 +127,7 @@ issues:ignore("S204")
 
 preprocessing(filename, content, issues, results, options)
 lexical_analysis(filename, content, issues, results, options)
+syntactic_analysis(filename, content, issues, results, options)
 ```
 
 Command-line options, configuration files, and Lua code allow you to ignore certain warnings and errors everywhere.
