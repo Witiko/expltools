@@ -69,53 +69,175 @@ local function decolorize(text)
   return text:gsub("\27%[[0-9]+m", "")
 end
 
+-- Format the percentage of expl3 material in a piece of content.
+local function format_num_expl_bytes(num_expl_bytes, num_total_bytes)
+  if num_expl_bytes == 0 then
+    return "0%"
+  elseif num_expl_bytes < num_total_bytes then
+    local expl_coverage = num_expl_bytes / num_total_bytes
+    return string.format("%2.0f%%", math.max(1, math.min(99, 100 * expl_coverage)))
+  else
+    return "all"
+  end
+end
+
+-- Print the summary results of analyzing multiple files.
+local function print_summary(pathname, options, print_state)
+  local num_pathnames = print_state.num_pathnames or 0
+  local num_warnings = print_state.num_warnings or 0
+  local num_errors = print_state.num_errors or 0
+
+  io.write("\n\nTotal: ")
+
+  local errors_message = tostring(num_errors) .. " " .. pluralize("error", num_errors)
+  errors_message = colorize(errors_message, 1, (num_errors > 0 and 31) or 32)
+  io.write(errors_message .. ", ")
+
+  local warnings_message = tostring(num_warnings) .. " " .. pluralize("warning", num_warnings)
+  warnings_message = colorize(warnings_message, 1, (num_warnings > 0 and 33) or 32)
+  io.write(warnings_message .. " in ")
+
+  io.write(tostring(num_pathnames) .. " " .. pluralize("file", num_pathnames))
+
+  if get_option('verbose', options, pathname) then
+    local notes = {}
+
+    if print_state.filetypes ~= nil then
+      local max_filetype, max_num_total_bytes = nil, -1
+      local filetypes = {}
+      for filetype, _ in pairs(print_state.filetypes) do
+        table.insert(filetypes, filetype)
+      end
+      assert(#filetypes > 0)
+      table.sort(filetypes)
+      for _, filetype in ipairs(filetypes) do
+        local num_total_bytes = print_state.filetypes[filetype]
+        if num_total_bytes > max_num_total_bytes then
+          max_filetype = filetype
+        elseif num_total_bytes == max_num_total_bytes then
+          max_filetype = string.format("%s and %s", max_filetype, filetype)
+        end
+        max_num_total_bytes = num_total_bytes
+      end
+      assert(max_filetype ~= nil)
+      if #filetypes > 1 then
+        max_filetype = string.format("mostly %s", max_filetype)
+      end
+      table.insert(notes, max_filetype)
+    end
+
+    if print_state.num_total_bytes ~= nil then
+      local num_total_bytes = print_state.num_total_bytes
+      local num_expl_bytes = print_state.num_expl_bytes or 0
+      table.insert(notes, string.format("%s expl3", format_num_expl_bytes(num_expl_bytes, num_total_bytes)))
+    end
+
+    if #notes > 0 then
+      io.write(string.format(" (%s)", table.concat(notes, ", ")))
+    end
+  end
+
+  print()
+end
+
 -- Print the results of analyzing a file.
-local function print_results(pathname, issues, line_starting_byte_numbers, is_last_file, options)
+local function print_results(pathname, content, issues, results, options, is_last_file, print_state)
+  print_state.num_pathnames = (print_state.num_pathnames or 0) + 1
+  print_state.num_warnings = (print_state.num_warnings or 0) + #issues.warnings
+  print_state.num_errors = (print_state.num_errors or 0) + #issues.errors
+
   -- Display an overview.
   local all_issues = {}
   local status
   local porcelain = get_option('porcelain', options, pathname)
   if(#issues.errors > 0) then
-    status = (
-      colorize(
-        (
-          tostring(#issues.errors)
-          .. " "
-          .. pluralize("error", #issues.errors)
-        ), 1, 31
+    if not porcelain then
+      status = (
+        colorize(
+          (
+            tostring(#issues.errors)
+            .. " "
+            .. pluralize("error", #issues.errors)
+          ), 1, 31
+        )
       )
-    )
+    end
     table.insert(all_issues, issues.errors)
     if(#issues.warnings > 0) then
-      status = (
-        status
-        .. ", "
-        .. colorize(
+      if not porcelain then
+        status = (
+          status
+          .. ", "
+          .. colorize(
+            (
+              tostring(#issues.warnings)
+              .. " "
+              .. pluralize("warning", #issues.warnings)
+            ), 1, 33
+          )
+        )
+      end
+      table.insert(all_issues, issues.warnings)
+    end
+  else
+    if(#issues.warnings > 0) then
+      if not porcelain then
+        status = colorize(
           (
             tostring(#issues.warnings)
             .. " "
             .. pluralize("warning", #issues.warnings)
           ), 1, 33
         )
-      )
+      end
       table.insert(all_issues, issues.warnings)
+    else
+      if not porcelain then
+        status = colorize("OK", 1, 32)
+      end
     end
-  elseif(#issues.warnings > 0) then
-    status = colorize(
-      (
-        tostring(#issues.warnings)
-        .. " "
-        .. pluralize("warning", #issues.warnings)
-      ), 1, 33
-    )
-    table.insert(all_issues, issues.warnings)
-  else
-    status = colorize("OK", 1, 32)
   end
 
   if not porcelain then
-    local max_overview_length = 72
+    local notes = {}
+
+    if get_option('verbose', options, pathname) then
+      if results.expl_ranges ~= nil then
+        local num_total_bytes = #content
+        print_state.num_total_bytes = (print_state.num_total_bytes or 0) + num_total_bytes
+        if num_total_bytes > 0 then
+          local filetype
+          if results.seems_like_latex_style_file then
+            filetype = "LaTeX"
+          else
+            filetype = "other"
+          end
+          table.insert(notes, filetype)
+          print_state.filetypes = print_state.filetypes or {}
+          print_state.filetypes[filetype] = (print_state.filetypes[filetype] or 0) + num_total_bytes
+          local num_expl_bytes = 0
+          for _, expl_range in ipairs(results.expl_ranges) do
+            num_expl_bytes = num_expl_bytes + #expl_range
+          end
+          print_state.num_expl_bytes = (print_state.num_expl_bytes or 0) + num_expl_bytes
+          local expl_coverage = string.format("%03s expl3", format_num_expl_bytes(num_expl_bytes, num_total_bytes))
+          table.insert(notes, expl_coverage)
+        else
+          table.insert(notes, "empty")
+        end
+      end
+    end
+
+    local postfix
+    if #notes == 0 then
+      postfix = ""
+    else
+      postfix = string.format(" (%s)", table.concat(notes, ", "))
+    end
+
+    local max_overview_length = get_option('terminal_width', options, pathname)
     local prefix = "Checking "
+    local reserved_postfix_length = 19
     local formatted_pathname = format_pathname(
       pathname,
       math.max(
@@ -124,6 +246,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           - #prefix
           - #(" ")
           - #decolorize(status)
+          - math.max(#postfix, reserved_postfix_length)
         ), 1
       )
     )
@@ -137,11 +260,18 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
             - #prefix
             - #decolorize(status)
             - #formatted_pathname
+            - math.max(#postfix, reserved_postfix_length)
           ), 1
         )
       )
       .. status
     )
+    if #postfix > 0 then
+      overview = (
+        overview
+        .. postfix
+      )
+    end
     io.write("\n" .. overview)
   end
 
@@ -159,12 +289,13 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         local start_line_number, start_column_number = 1, 1
         local end_line_number, end_column_number = 1, 1
         if range ~= nil then
-          start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())
-          end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:stop())
+          start_line_number, start_column_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, range:start())
+          end_line_number, end_column_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, range:stop())
           end_column_number = end_column_number
         end
         local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
-        local max_line_length = 88
+        local terminal_width = get_option('terminal_width', options, pathname)
+        local max_line_length = math.max(math.min(88, terminal_width), terminal_width - 16)
         local reserved_position_length = 10
         local reserved_suffix_length = 30
         local label_indent = (" "):rep(4)
@@ -231,29 +362,16 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         end
       end
     end
-    if not is_last_file and not porcelain then
+    if not porcelain and not is_last_file then
       print()
     end
   end
-end
-
--- Print the summary results of analyzing multiple files.
-local function print_summary(num_pathnames, num_warnings, num_errors)
-  io.write("\n\nTotal: ")
-
-  local errors_message = tostring(num_errors) .. " " .. pluralize("error", num_errors)
-  errors_message = colorize(errors_message, 1, (num_errors > 0 and 31) or 32)
-  io.write(errors_message .. ", ")
-
-  local warnings_message = tostring(num_warnings) .. " " .. pluralize("warning", num_warnings)
-  warnings_message = colorize(warnings_message, 1, (num_warnings > 0 and 33) or 32)
-  io.write(warnings_message .. " in ")
-
-  print(tostring(num_pathnames) .. " " .. pluralize("file", num_pathnames))
+  if not porcelain and is_last_file then
+    print_summary(pathname, options, print_state)
+  end
 end
 
 return {
   pluralize = pluralize,
   print_results = print_results,
-  print_summary = print_summary,
 }

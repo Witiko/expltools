@@ -72,6 +72,16 @@ function Range:stop()
   return self.range_end
 end
 
+-- Get the length of the range.
+function Range:__len()
+  return self.range_end - self.range_start + 1
+end
+
+-- Get a string representation of the range.
+function Range:__tostring()
+  return string.format("[%d, %d]", self.range_start, self.range_end)
+end
+
 return function(...)
   return Range:new(...)
 end

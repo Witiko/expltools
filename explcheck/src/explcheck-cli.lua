@@ -73,6 +73,7 @@ local function main(pathnames, options)
     print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
   end
 
+  local print_state = {}
   for pathname_number, pathname in ipairs(pathnames) do
     local is_ok, error_message = xpcall(function()
 
@@ -104,16 +105,11 @@ local function main(pathnames, options)
       num_warnings = num_warnings + #issues.warnings
       num_errors = num_errors + #issues.errors
       assert(results.line_starting_byte_numbers ~= nil)
-      format.print_results(pathname, issues, results.line_starting_byte_numbers, pathname_number == #pathnames, options)
+      format.print_results(pathname, content, issues, results, options, pathname_number == #pathnames, print_state)
     end, debug.traceback)
     if not is_ok then
       error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
     end
-  end
-
-  -- Print a summary.
-  if not options.porcelain then
-    format.print_summary(#pathnames, num_warnings, num_errors, options.porcelain)
   end
 
   if(num_errors > 0) then

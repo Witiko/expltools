@@ -1,2 +1,4 @@
 [defaults]
+terminal_width = 110
+verbose = true
 warnings_are_errors = true

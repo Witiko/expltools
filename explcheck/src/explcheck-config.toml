@@ -5,6 +5,8 @@ ignored_issues = []
 make_at_letter = "auto"
 max_line_length = 80
 porcelain = false
+terminal_width = 80
+verbose = false
 warnings_are_errors = false
 
 [package.l3kernel]
