@@ -46,7 +46,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
     end
   end
 
-  -- Tokenize a line, similarly to TeX's token processor (TeX's "mouth" [1]).
+  -- Process lines similarly to TeX's token processor (TeX's "mouth" [1]) and produce tokens and a tree of apparent TeX groupings.
   --
   -- See also:
   -- - Section 303 on page 122 of Knuth (1986) [1]
@@ -60,8 +60,12 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
   --
   local function get_tokens(lines)
     local tokens = {}
+
+    local groupings = {}
+    local current_grouping = groupings
+    local parent_grouping
+
     local state
-    local num_open_groups_upper_estimate = 0
 
     -- Determine the category code of the at sign ("@").
     local make_at_letter = get_option("make_at_letter", options, pathname)
@@ -188,11 +192,19 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
           character_index = character_index + character_index_increment
         else
           if catcode == 1 or catcode == 2 then  -- begin/end grouping
-            if catcode == 1 then
-              num_open_groups_upper_estimate = num_open_groups_upper_estimate + 1
-            elseif catcode == 2 then
-              if num_open_groups_upper_estimate > 0 then
-                num_open_groups_upper_estimate = num_open_groups_upper_estimate - 1
+            if catcode == 1 then  -- begin grouping
+              current_grouping = {parent = current_grouping, start = #tokens + 1}
+              assert(groupings[current_grouping.start] == nil)
+              assert(current_grouping.parent[current_grouping.start] == nil)
+              groupings[current_grouping.start] = current_grouping  -- provide flat access to groupings
+              current_grouping.parent[current_grouping.start] = current_grouping  -- provide recursive access to groupings
+            elseif catcode == 2 then  -- end grouping
+              if current_grouping.parent ~= nil then
+                current_grouping.stop = #tokens + 1
+                assert(current_grouping.start ~= nil and current_grouping.start < current_grouping.stop)
+                parent_grouping = current_grouping.parent
+                current_grouping.parent = nil  -- remove a circular reference for the current grouping
+                current_grouping = parent_grouping
               else
                 issues:add('e208', 'too many closing braces', range)
               end
@@ -221,11 +233,17 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
         end
       end
     end
-    return tokens
+    -- Remove circular references for all unclosed groupings.
+    while current_grouping.parent ~= nil do
+      parent_grouping = current_grouping.parent
+      current_grouping.parent = nil
+      current_grouping = parent_grouping
+    end
+    return tokens, groupings
   end
 
   -- Tokenize the content.
-  local all_tokens = {}
+  local all_tokens, all_groupings = {}, {}
   for _, range in ipairs(results.expl_ranges) do
     local lines = (function()
       local co = coroutine.create(function()
@@ -236,8 +254,9 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
         return line_text, map_back
       end
     end)()
-    local tokens = get_tokens(lines)
+    local tokens, groupings = get_tokens(lines)
     table.insert(all_tokens, tokens)
+    table.insert(all_groupings, groupings)
   end
 
   for _, tokens in ipairs(all_tokens) do
@@ -290,6 +309,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
 
   -- Store the intermediate results of the analysis.
   results.tokens = all_tokens
+  results.groupings = all_groupings
 end
 
 return lexical_analysis
