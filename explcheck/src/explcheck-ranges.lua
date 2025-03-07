@@ -10,7 +10,7 @@ local Range = {}
 -- Since empty ranges are usually a mistake, they are not allowed.
 -- For example, `Range:new(index, index, "exclusive", #array)` will cause an
 -- assertion error. The exception to this rule are empty arrays, which permit
--- the empty range `Range:new(0, 0, "inclusive", 0)`.
+-- the empty range `Range:new(x, 0, "inclusive", 0)` for any x.
 function Range.new(cls, range_start, range_end, end_type, transformed_array_size, map_back, original_array_size)
   -- Instantiate the class.
   local new_object = {}
@@ -18,7 +18,7 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
   cls.__index = cls
   -- Check pre-conditions.
   if transformed_array_size == 0 then
-    assert(range_start == 0)
+    range_start = 0
   else
     assert(range_start >= 1)
     assert(range_start <= transformed_array_size)
@@ -70,6 +70,21 @@ end
 -- Get the inclusive end of the range, optionally mapped back to the original array.
 function Range:stop()
   return self.range_end
+end
+
+-- Get the length of the range.
+function Range:__len()
+  if self.range_start == 0 then
+    assert(self.range_end == 0)
+    return 0  -- empty range
+  else
+    return self.range_end - self.range_start + 1  -- non-empty range
+  end
+end
+
+-- Get a string representation of the range.
+function Range:__tostring()
+  return string.format("[%d, %d]", self.range_start, self.range_end)
 end
 
 return function(...)
