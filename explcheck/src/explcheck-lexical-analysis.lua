@@ -8,7 +8,7 @@ local parsers = require("explcheck-parsers")
 local lpeg = require("lpeg")
 
 -- Tokenize the content and register any issues.
-local function lexical_analysis(pathname, all_content, issues, results, options)
+local function lexical_analysis(pathname, content, issues, results, options)
 
   -- Process bytes within a given range similarly to TeX's input processor (TeX's "eyes" [1]) and produce lines.
   --
@@ -23,17 +23,17 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
   --       https://petr.olsak.net/ftp/olsak/tbn/tbn.pdf
   --
   local function get_lines(range)
-    local content = all_content:sub(range:start(), range:stop())
-    for _, line in ipairs(lpeg.match(parsers.tex_lines, content)) do
+    local range_content = content:sub(range:start(), range:stop())
+    for _, line in ipairs(lpeg.match(parsers.tex_lines, range_content)) do
       local line_start, line_text, line_end = table.unpack(line)
-      local line_range = new_range(line_start, line_end, "exclusive", #all_content)
+      local line_range = new_range(line_start, line_end, "exclusive", #content)
       local map_back = (function(line_text, line_range)  -- luacheck: ignore line_text line_range
         return function (index)
           assert(index > 0)
           assert(index <= #line_text + #parsers.expl3_endlinechar)
           if index <= #line_text then
             local mapped_index = range:start() + line_range:start() + index - 2  -- a line character
-            assert(line_text[index] == content[mapped_index])
+            assert(line_text[index] == range_content[mapped_index])
             return mapped_index
           elseif index > #line_text and index <= #line_text + #parsers.expl3_endlinechar then
             return math.max(1, range:start() + line_range:start() + #line_text - 2)  -- an \endlinechar
@@ -108,7 +108,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
       local previous_catcode, previous_csname = 9, nil
       while character_index <= #line_text do
         local character, catcode, character_index_increment = get_character_and_catcode(character_index)
-        local range = new_range(character_index, character_index, "inclusive", #line_text, map_back, #all_content)
+        local range = new_range(character_index, character_index, "inclusive", #line_text, map_back, #content)
         if (
               catcode ~= 9 and catcode ~= 10  -- a potential missing stylistic whitespace
               and (
@@ -158,7 +158,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
             end
           end
           local csname = table.concat(csname_table)
-          range = new_range(character_index, previous_csname_index, "inclusive", #line_text, map_back, #all_content)
+          range = new_range(character_index, previous_csname_index, "inclusive", #line_text, map_back, #content)
           table.insert(tokens, {"control sequence", csname, 0, range})
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
@@ -243,7 +243,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
   end
 
   -- Tokenize the content.
-  local all_tokens, all_groupings = {}, {}
+  local tokens, groupings = {}, {}
   for _, range in ipairs(results.expl_ranges) do
     local lines = (function()
       local co = coroutine.create(function()
@@ -254,13 +254,13 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
         return line_text, map_back
       end
     end)()
-    local tokens, groupings = get_tokens(lines)
-    table.insert(all_tokens, tokens)
-    table.insert(all_groupings, groupings)
+    local part_tokens, part_groupings = get_tokens(lines)
+    table.insert(tokens, part_tokens)
+    table.insert(groupings, part_groupings)
   end
 
-  for _, tokens in ipairs(all_tokens) do
-    for token_index, token in ipairs(tokens) do
+  for _, part_tokens in ipairs(tokens) do
+    for token_index, token in ipairs(part_tokens) do
       local token_type, payload, catcode, range = table.unpack(token)  -- luacheck: ignore catcode
       if token_type == "control sequence" then
         local csname = payload
@@ -276,8 +276,8 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
         if lpeg.match(obsolete.deprecated_csname, csname) ~= nil then
           issues:add('w202', 'deprecated control sequences', range)
         end
-        if token_index + 1 <= #tokens then
-          local next_token = tokens[token_index + 1]
+        if token_index + 1 <= #part_tokens then
+          local next_token = part_tokens[token_index + 1]
           local next_token_type, next_csname, _, next_range = table.unpack(next_token)
           if next_token_type == "control sequence" then
             if (
@@ -308,8 +308,8 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
   end
 
   -- Store the intermediate results of the analysis.
-  results.tokens = all_tokens
-  results.groupings = all_groupings
+  results.tokens = tokens
+  results.groupings = groupings
 end
 
 return lexical_analysis
