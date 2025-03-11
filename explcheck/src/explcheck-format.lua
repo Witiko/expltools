@@ -69,8 +69,8 @@ local function decolorize(text)
   return text:gsub("\27%[[0-9]+m", "")
 end
 
--- Format the percentage of expl3 material in a piece of content.
-local function format_num_expl_bytes(num_expl_bytes, num_total_bytes)
+-- Format a ratio as a percentage.
+local function format_ratio(num_expl_bytes, num_total_bytes)
   if num_expl_bytes == 0 then
     return "no"
   elseif num_expl_bytes < num_total_bytes then
@@ -81,34 +81,34 @@ local function format_num_expl_bytes(num_expl_bytes, num_total_bytes)
   end
 end
 
--- Format the number of expl3 tokens in a piece of content.
-local function format_num_expl_tokens(num_tokens)
-  if num_tokens == 0 then
+-- Format a number in a human-readable way, using words for small numbers and metric prefixes for large numbers.
+local function format_human_readable(number)
+  if number == 0 then
     return "no"
-  elseif num_tokens == 1 then
+  elseif number == 1 then
     return "one"
-  elseif num_tokens == 2 then
+  elseif number == 2 then
     return "two"
-  elseif num_tokens == 4 then
+  elseif number == 4 then
     return "four"
-  elseif num_tokens == 5 then
+  elseif number == 5 then
     return "five"
-  elseif num_tokens == 6 then
+  elseif number == 6 then
     return "six"
-  elseif num_tokens == 9 then
+  elseif number == 9 then
     return "nine"
-  elseif num_tokens == 10 then
+  elseif number == 10 then
     return "ten"
-  elseif num_tokens < 10^4 then
-    return tostring(num_tokens)
-  elseif num_tokens < 10^6 then
-    return string.format("~%.0fk", num_tokens / 10^3)
-  elseif num_tokens < 10^9 then
-    return string.format("~%.0fM", num_tokens / 10^6)
-  elseif num_tokens < 10^12 then
-    return string.format("~%.0fG", num_tokens / 10^9)
+  elseif number < 10^4 then
+    return tostring(number)
+  elseif number < 10^6 then
+    return string.format("~%.0fk", number / 10^3)
+  elseif number < 10^9 then
+    return string.format("~%.0fM", number / 10^6)
+  elseif number < 10^12 then
+    return string.format("~%.0fG", number / 10^9)
   else
-    return string.format("~%.0fT", num_tokens / 10^12)
+    return string.format("~%.0fT", number / 10^12)
   end
 end
 
@@ -160,12 +160,17 @@ local function print_summary(pathname, options, print_state)
     if print_state.num_total_bytes ~= nil then
       local num_total_bytes = print_state.num_total_bytes
       local num_expl_bytes = print_state.num_expl_bytes or 0
-      table.insert(notes, string.format("%s expl3", format_num_expl_bytes(num_expl_bytes, num_total_bytes)))
+      table.insert(notes, string.format("%s expl3", format_ratio(num_expl_bytes, num_total_bytes)))
     end
 
     if print_state.num_expl_tokens ~= nil then
       local num_expl_tokens = print_state.num_expl_tokens
-      table.insert(notes, string.format("%s %s", format_num_expl_tokens(num_expl_tokens), pluralize("token", num_expl_tokens)))
+      table.insert(notes, string.format("%s %s", format_human_readable(num_expl_tokens), pluralize("token", num_expl_tokens)))
+    end
+
+    if print_state.num_expl_calls ~= nil then
+      local num_expl_calls = print_state.num_expl_calls
+      table.insert(notes, string.format("%s %s", format_human_readable(num_expl_calls), pluralize("call", num_expl_calls)))
     end
 
     if #notes > 0 then
@@ -256,7 +261,7 @@ local function print_results(pathname, content, issues, results, options, is_las
             num_expl_bytes = num_expl_bytes + #expl_range
           end
           print_state.num_expl_bytes = (print_state.num_expl_bytes or 0) + num_expl_bytes
-          local expl_coverage = string.format("%3s expl3", format_num_expl_bytes(num_expl_bytes, num_total_bytes))
+          local expl_coverage = string.format("%3s expl3", format_ratio(num_expl_bytes, num_total_bytes))
           table.insert(notes, expl_coverage)
           if num_expl_bytes > 0 then
             local num_expl_tokens = 0
@@ -264,10 +269,19 @@ local function print_results(pathname, content, issues, results, options, is_las
               num_expl_tokens = num_expl_tokens + #tokens
             end
             print_state.num_expl_tokens = (print_state.num_expl_tokens or 0) + num_expl_tokens
-            assert(num_expl_tokens > 0)
-            local formatted_num_expl_tokens = format_num_expl_tokens(num_expl_tokens)
+            local formatted_num_expl_tokens = format_human_readable(num_expl_tokens)
             formatted_num_expl_tokens = string.format("%4s %s", formatted_num_expl_tokens:sub(-4), pluralize("token", num_expl_tokens))
             table.insert(notes, formatted_num_expl_tokens)
+            if num_expl_tokens > 0 then
+              local num_expl_calls = 0
+              for _, calls in ipairs(results.calls) do
+                num_expl_calls = num_expl_calls + #calls
+              end
+              print_state.num_expl_calls = (print_state.num_expl_calls or 0) + num_expl_calls
+              local formatted_num_expl_calls = format_human_readable(num_expl_calls)
+              formatted_num_expl_calls = string.format("%4s %s", formatted_num_expl_calls:sub(-4), pluralize("call", num_expl_calls))
+              table.insert(notes, formatted_num_expl_calls)
+            end
           end
         else
           table.insert(notes, "empty")
@@ -284,7 +298,7 @@ local function print_results(pathname, content, issues, results, options, is_las
 
     local max_overview_length = get_option('terminal_width', options, pathname)
     local prefix = "Checking "
-    local reserved_postfix_length = 32
+    local reserved_postfix_length = 44
     local formatted_pathname = format_pathname(
       pathname,
       math.max(
