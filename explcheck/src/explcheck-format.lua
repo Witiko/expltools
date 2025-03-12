@@ -275,7 +275,11 @@ local function print_results(pathname, content, issues, results, options, is_las
             if num_expl_tokens > 0 then
               local num_expl_calls = 0
               for _, calls in ipairs(results.calls) do
-                num_expl_calls = num_expl_calls + #calls
+                for _, call in ipairs(calls) do
+                  if call[1] == "call" then
+                    num_expl_calls = num_expl_calls + 1
+                  end
+                end
               end
               print_state.num_expl_calls = (print_state.num_expl_calls or 0) + num_expl_calls
               local formatted_num_expl_calls = format_human_readable(num_expl_calls)
