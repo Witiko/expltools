@@ -16,7 +16,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
     end
     local token_number = token_range:start()
 
-    local function record_other_token(token_number)
+    local function record_other_token()
       local previous_call = #calls > 0 and calls[#calls] or nil
       if previous_call == nil or previous_call[1] ~= "other" then  -- record a new span of other tokens between calls
         table.insert(calls, {"other", new_range(token_number, token_number, "inclusive", #tokens)})
@@ -90,7 +90,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
         error('Unexpected token type "' .. token_type .. '"')
       end
       ::skip_other_token::
-      record_other_token(token_number)
+      record_other_token()
       token_number = token_number + 1
       ::continue::
     end
