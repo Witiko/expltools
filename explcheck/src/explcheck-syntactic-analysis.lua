@@ -5,6 +5,7 @@ local parsers = require("explcheck-parsers")
 
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
+local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local lpeg = require("lpeg")
 
@@ -17,6 +18,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
     if #token_range == 0 then
       return calls
     end
+
     local token_number = token_range:start()
 
     local function record_other_tokens(other_token_range)
@@ -68,11 +70,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   goto skip_other_token
                 elseif next_token_type == "character" and next_catcode == 1 then  -- begin grouping, record the parameter text
                   next_token_number = next_token_number - 1
-                  if next_token_number > parameter_text_start_token_number then  -- record non-empty parameter text
-                    table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, EXCLUSIVE, #tokens))
-                  else  -- record empty parameter text
-                    table.insert(arguments, nil)
-                  end
+                  table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE | MAYBE_EMPTY, #tokens))
                   break
                 end
                 next_token_number = next_token_number + 1
