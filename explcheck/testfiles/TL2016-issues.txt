@@ -14,7 +14,7 @@ URrules.sty s103,s204,s206,w101
 URspecialopts.sty e300,s103,s204,s205,s206
 acro.sty e300,s103,s204,s206,w200,w202
 acro_en.tex e102
-animate.sty e300,s204
+animate.sty e300,e301,s204
 beamerouterthemeUR.sty e300,s204,s205,s206
 beamerswitch.cls s204
 beamerthemeUR.sty s204
@@ -23,7 +23,7 @@ biblatex-sbl-ibid.tex s204
 biblatex-sbl-test.tex s204
 biblatex-sbl.tex s204
 bidi-media9.sty s204,s206,w202
-breqn.sty e300,s204
+breqn.sty e300,e301,s204
 caesar_book.cls s204
 cfntinst.sty s204,w100
 chemformula.sty e300,s103,s204,s206,w101,w200,w202
@@ -90,10 +90,10 @@ download.sty e300,s204
 download.tex e300,s204
 dynamicnumber.sty s204
 ecgdraw.sty e201,s103,s204,s206
-embrac.sty e300,s204,w200,w202
+embrac.sty e300,e301,s204,w200,w202
 endiagram.sty e300,s103,s204,w200
 enotez.sty e300,s103,s204,s206,w200,w202
-expl3-code.tex e300,s204,s205,s206,w200,w202
+expl3-code.tex e300,e301,s204,s205,s206,w200,w202
 expl3-generic.tex s204,w200
 expl3.sty s204
 exsheets-listings.sty e300,s103,s204,w101,w200
@@ -164,7 +164,7 @@ leadsheets.library.chords.code.tex e300,s103,s204,w100
 leadsheets.library.external.code.tex e300,s103,s204,w100,w200
 leadsheets.library.musejazz.code.tex e300,s103,s204,w100,w200
 leadsheets.library.properties.code.tex e300,s103,s204,w100
-leadsheets.library.shorthands.code.tex e300,s204,w100
+leadsheets.library.shorthands.code.tex e300,e301,s204,w100
 leadsheets.library.songs.code.tex e300,s103,s204,w100,w101
 leadsheets.library.templates.code.tex e300,s204,w100,w200
 leadsheets.library.translations.code.tex e300,s204,w100,w200
@@ -256,7 +256,7 @@ source3.tex s204
 source3body.tex e300,s204,s206
 spath3.sty e300,s103,s204,s206,w202
 stex.sty s204
-substances.sty e300,s204,w101,w200
+substances.sty e300,e301,s204,w101,w200
 substances_en.tex s204
 tap.tex s204,w100
 tasks.sty e300,s103,s204,s205,s206,w101,w200

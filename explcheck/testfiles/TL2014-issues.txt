@@ -9,7 +9,7 @@ acro.sty e300,s103,s204,s206,w200,w202
 asts.tex s204
 beamerouterthemeUR.sty s103,s204
 bnumexpr.sty e201,s103,s204,w100
-breqn.sty e300,s204
+breqn.sty e300,e301,s204
 caesar_book.cls s204
 cfntinst.sty s204,w100
 chemformula.sty e300,s103,s204,s205,s206,w101,w200,w202
@@ -31,7 +31,7 @@ ctexcap.sty s204
 ctexrep.cls s204
 download.sty e300,s204
 download.tex e300,s204
-embrac.sty e300,s103,s204,w200,w202
+embrac.sty e300,e301,s103,s204,w200,w202
 endiagram.sty e300,s103,s204,w200
 enotez.sty e300,s103,s204,s206,w200
 expl3-code.tex e300,s204,s205,s206,w200,w202

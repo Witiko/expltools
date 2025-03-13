@@ -10,7 +10,7 @@ acro.definitions.tex e300,s204
 acro.sty e300,s103,s204,s206,w101,w200,w202
 algobox.sty e300,s103,s204,s205
 aligned-overset.sty e300,s103,s204
-animate.sty e300,s204
+animate.sty e300,e301,s204
 asmejour.cls s204
 beamercolorthemeTUDa.sty s204
 beamerfontthemeTUDa.sty s204
@@ -24,7 +24,7 @@ bearwear.sty e300,s103,s204
 beuron.sty e300,s103,s204
 biblatex-ext-oasymb-l3draw.sty s204,w200
 bidi-media9.sty s204,s206,w202
-breqn.sty e300,s204
+breqn.sty e300,e301,s204
 bxjaholiday.sty e300,s103,s204,w200
 caesar_book.cls s204
 cas-common.sty e300,s103,s204,s205,s206,w200,w202
@@ -47,14 +47,14 @@ chemmacros.module.isotopes.code.tex e300,s103,s204,w100
 chemmacros.module.lang.code.tex e300,s103,s204,w100
 chemmacros.module.mechanisms.code.tex e300,s204,w100
 chemmacros.module.newman.code.tex e300,s103,s204,w100
-chemmacros.module.nomenclature.code.tex e300,s103,s204,s205,w100,w200
+chemmacros.module.nomenclature.code.tex e300,e301,s103,s204,s205,w100,w200
 chemmacros.module.orbital.code.tex e300,s103,s204,w100
 chemmacros.module.particles.code.tex e300,s204,w100,w101
 chemmacros.module.phases.code.tex e300,s103,s204,w100
 chemmacros.module.polymers.code.tex e300,s204,w100,w200
 chemmacros.module.reactions.code.tex e300,s103,s204,s206,w100
-chemmacros.module.redox.code.tex e300,s204,w100
-chemmacros.module.scheme.code.tex e300,s204,w100
+chemmacros.module.redox.code.tex e300,e301,s204,w100
+chemmacros.module.scheme.code.tex e300,e301,s204,w100
 chemmacros.module.spectroscopy.code.tex e300,s103,s204,s205,s206,w100
 chemmacros.module.symbols.code.tex s204,w100,w200
 chemmacros.module.thermodynamics.code.tex e300,s103,s204,w100
@@ -141,7 +141,7 @@ gzt.cls e300,s103,s204,s205,s206,w101,w202
 gztarticle.cls e300,s103,s204,s205,s206,w101,w202
 hobby.code.tex e300,s204,s206
 hobete.sty s103,s204,s205,s206
-hvfloat.sty e300,s103,s204,s206
+hvfloat.sty e300,e301,s103,s204,s206
 interchar.sty e300,s204,s206,w200,w202
 intopdf.sty e300,s204,s206,w200
 invoice2.sty e300,s103,s204
@@ -149,7 +149,7 @@ istgame.sty e300,s103,s204,s205,s206
 jslectureplanner.sty e300,s204
 kalendarium.sty e300,s103,s204,w101
 kantlipsum.sty e300,s204,w200,w202
-knowledge.sty e300,s103,s204,s205,s206,w101,w202
+knowledge.sty e300,e301,s103,s204,s205,s206,w101,w202
 kvmap.sty e300,s103,s204
 l3benchmark.sty e300,s103,s204,s205,w200
 l3cctab.sty e300,s204,s206,w200
@@ -168,7 +168,7 @@ leadsheets.library.chords.code.tex e300,s103,s204,w100
 leadsheets.library.external.code.tex e300,s103,s204,w100,w200
 leadsheets.library.musejazz.code.tex e300,s103,s204,w100,w200
 leadsheets.library.properties.code.tex e300,s103,s204,w100
-leadsheets.library.shorthands.code.tex e300,s204,w100
+leadsheets.library.shorthands.code.tex e300,e301,s204,w100
 leadsheets.library.songs.code.tex e300,s103,s204,w100,w101
 leadsheets.library.templates.code.tex e300,s204,w100,w200
 leadsheets.library.translations.code.tex e300,s204,w100
@@ -253,7 +253,7 @@ pmhanguljamo-rrk.sty e300,s204,s206,w100,w202
 pmhanguljamo.sty e300,s204,s206,w202
 pml3array.sty e300,s204,s206
 polyglossia.sty e102,s103,w101
-powerdot.cls e300,s204
+powerdot.cls e300,e301,s204
 primargs.sty e300,s103,s204,w200
 pseudo.sty e300,s204,s205,w200,w202
 pst-calculate.sty s204
@@ -308,7 +308,7 @@ sseqmessages.code.tex e300,s103,s204
 sseqparsers.code.tex e300,s103,s204
 statistics.sty e300,s204,s206
 stex.sty s204
-substances.sty e300,s204,w101,w200
+substances.sty e300,e301,s204,w101,w200
 tagpdf-attr-code.sty s204
 tagpdf-checks-code.sty s103,s204
 tagpdf-mc-code-generic.sty s103,s204,s206
@@ -356,7 +356,7 @@ xCJK2uni.sty e300,s103,s204
 xassoccnt.sty e300,s103,s204,s205,s206,w202
 xcntperchap.sty s103,s204,s205,s206
 xcoffins.sty e300
-xcpdftips.sty s204,w200
+xcpdftips.sty e301,s204,w200
 xeCJK-listings.sty e300,s204,w200
 xeCJK.sty e300,s204,s205,s206,w200,w202
 xeCJKfntef.sty e300,s204,s205,s206,w200
@@ -394,7 +394,7 @@ xsim.style.schule-tabelle-kurz.code.tex s204
 xsim.tags.code.tex e300,s204,s206,w100
 xsim.templates.code.tex e300,s204,w100
 xsim.translations.code.tex e300,s103,s204,w100
-xsim.verbwrite.code.tex e300,s103,s204,w100
+xsim.verbwrite.code.tex e300,e301,s103,s204,w100
 xsimverb.sty e300,s204,w101
 xtemplate.sty e300,s204,s206
 xunicode-addon.sty e300,s204,w200

@@ -16,7 +16,7 @@ acro2.sty e300,s103,s204,s206,w200,w202
 akshar.sty e300,s204
 algobox.sty e300,s103,s204,s205
 aligned-overset.sty e300,s103,s204
-animate.sty e300,s204
+animate.sty e300,e301,s204
 annee-scolaire.sty s204
 antanilipsum.sty e300,s103,s204,w200,w202
 asmeconf.cls s204
@@ -54,7 +54,7 @@ biblatex-ext-oasymb-l3draw.sty s204,w200
 bidi-atbegshi.sty e300,s103,s204,w200
 bidi-media9.sty s204,s206,w202
 blx-case-expl3.sty e300,s103,s204
-breqn.sty e300,s204
+breqn.sty e300,e301,s204
 bxjaholiday.sty e300,s103,s204,w200
 caesar_book.cls s204
 cas-common.sty e300,s103,s204,s205,s206,w200,w202
@@ -222,7 +222,7 @@ hpstatement-sl.inc.sty s103,s204
 hpstatement-sv.inc.sty s103,s204
 hpstatement.sty e300,s103,s204
 hvarabic.sty s103,s204
-hvfloat.sty e300,s103,s204,s206
+hvfloat.sty e300,e301,s103,s204,s206
 hvlogos.sty s204
 hwexam.cls s204
 hwexam.sty e300,s204
@@ -243,7 +243,7 @@ kalendarium.sty e300,s103,s204,w101
 kanbun.sty s103,s204,s206,w101
 kantlipsum.sty e300,s204,w200,w202
 keyparse.sty s204,w101
-knowledge.sty e300,s103,s204,s205,s206,w101,w202
+knowledge.sty e300,e301,s103,s204,s205,s206,w101,w202
 kvmap.sty e300,s103,s204
 l3benchmark.sty e300,s103,s204,s205
 l3bitset.sty e300,s103,w200
@@ -267,7 +267,7 @@ leadsheets.library.chords.code.tex e300,s103,s204,w100
 leadsheets.library.external.code.tex e300,s103,s204,w100,w200
 leadsheets.library.musejazz.code.tex e300,s103,s204,w100,w200
 leadsheets.library.properties.code.tex e300,s103,s204,w100
-leadsheets.library.shorthands.code.tex e300,s204,w100
+leadsheets.library.shorthands.code.tex e300,e301,s204,w100
 leadsheets.library.songs.code.tex e300,s103,s204,w100,w101
 leadsheets.library.templates.code.tex e300,s204,w100,w200
 leadsheets.library.translations.code.tex e300,s204,w100
@@ -338,7 +338,7 @@ markdown.sty s204
 matapli.cls e300,s103,s204,s206,w101
 mathcommand.sty e300,s103,s204,s205,s206,w101,w200
 mathspec.sty s204
-media4svg.sty s103,s204,s206,w202
+media4svg.sty e301,s103,s204,s206,w202
 media9.sty e300,s204,s206,w202
 memhangul-common.sty s204
 memhangul-ucs.sty s206
@@ -422,7 +422,7 @@ pmhanguljamo-rrk.sty e300,s204,s206,w100,w202
 pmhanguljamo.sty e300,s204,s206,w202
 pml3array.sty e300,s204,s206
 polyglossia.sty e102,s103,w101
-powerdot.cls e300,s204
+powerdot.cls e300,e301,s204
 prelim2e.sty s204
 preview.sty s204,w100,w200
 primargs.sty e300,s103,s204,w200
@@ -518,7 +518,7 @@ stricttex.sty s103
 stripsemantex.sty e300,s103,s204,w101
 structuredlog.sty e300,s204
 styledcmd.sty e300,s204
-substances.sty e300,s204,w101,w200
+substances.sty e300,e301,s204,w101,w200
 swfigure.sty e300,s204
 tabularray-2021.sty e300,s103,s204,s206,w200,w202
 tabularray.sty e300,s103,s204,s206,w200,w202
@@ -594,7 +594,7 @@ xassoccnt.sty e300,s103,s204,s205,s206,w202
 xcntperchap.sty s103,s204,s205,s206
 xcoffins.sty e300
 xcolor-patches-tmp-ltx.sty e300,s204
-xcpdftips.sty s204,w200
+xcpdftips.sty e301,s204,w200
 xeCJK-listings.sty e300,s204,w200
 xeCJK.sty e300,s204,s205,s206,w200,w202
 xeCJKfntef.sty e300,s204,s205,s206,w200
@@ -624,7 +624,7 @@ xsavebox.sty s204,s206,w200,w202
 xsim-manual.cls s103,s204
 xsim.sty e300,s103,s204,s206,w101,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
-xsimverb.sty e300,s103,s204,w101
+xsimverb.sty e300,e301,s103,s204,w101
 xtemplate.sty e300,s204,s206
 xunicode-addon.sty e300,s204,w200
 zhlipsum.sty e300,s204,s205,s206,w202

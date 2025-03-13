@@ -22,7 +22,7 @@ akshar.sty e300,s204
 algobox.sty e300,s103,s204,s205
 algxpar.sty e300,s103,s204
 aligned-overset.sty e300,s103,s204
-animate.sty e300,s204
+animate.sty e300,e301,s204
 annee-scolaire.sty s204
 annotate-equations.sty e300,s204
 antanilipsum.sty e300,s103,s204,w200,w202
@@ -72,7 +72,7 @@ bfhbeamer.cls s204
 bfhcolors.sty s204
 bfhlayout.sty s103,s204,w101
 bfhletter.sty s103,s204,s206
-bfhmodule.sty s204,w101
+bfhmodule.sty e301,s204,w101
 bfhpub.cls s103,s204,w202
 bfhsciposter.cls s103,s204,w101,w202
 bfhthesis.cls s103,s204,w202
@@ -85,8 +85,8 @@ bithesis.cls e300,s103,s204,s205
 bitreport.cls e300,s103,s204,s205
 blx-case-expl3-ms.sty e300,s103,s204
 blx-case-expl3.sty e300,s103,s204
-bookmark.sty e300,s204
-breqn.sty e300,s204
+bookmark.sty e300,e301,s204
+breqn.sty e300,e301,s204
 bxjaholiday.sty e300,s103,s204,w200
 caesar_book.cls s204
 cas-common.sty e300,s103,s204,s205,s206,w200,w202
@@ -117,7 +117,7 @@ citation-style-language.sty e300,s103,s204
 citeall.sty s103,s204,w200
 classics.sty e300,s103,s204
 cleveref-forward.sty e300,s204,w202
-cleveref-usedon.sty s204,w101,w202
+cleveref-usedon.sty e301,s204,w101,w202
 clistmap.sty e300,s103,s204,s205,s206
 cnltx-base.sty s103,s204,w100
 codebox.sty e300,s103,s204,w202
@@ -303,10 +303,10 @@ hpstatement.sty e300,s103,s204
 huaz.sty s204
 hvarabic.sty s103,s204
 hvextern.sty s204
-hvfloat.sty e300,s204,s206
+hvfloat.sty e300,e301,s204,s206
 hvlogos.sty s204
 hwexam.sty e300,s204
-hyperref.sty e300,s204
+hyperref.sty e300,e301,s204
 iexec.sty s204
 incgraph.sty e300,s103,s204,s206
 inconsolata-nerd-font.sty s103,s204
@@ -330,7 +330,7 @@ kanbun.sty s103,s204,s206,w101
 kantlipsum.sty e300,s204,w200
 keyparse.sty s204,w101
 kfupm-math-exam.cls e300,s204,s206
-knowledge.sty e300,s103,s204,s205,s206,w101,w202
+knowledge.sty e300,e301,s103,s204,s205,s206,w101,w202
 koma-script-source-doc.cls s204
 kvmap.sty e300,s103,s204
 l3benchmark.sty e300,s103,s204,s205
@@ -365,7 +365,7 @@ leadsheets.library.chords.code.tex e300,s103,s204,w100
 leadsheets.library.external.code.tex e300,s103,s204,w100,w200
 leadsheets.library.musejazz.code.tex e300,s103,s204,w100,w200
 leadsheets.library.properties.code.tex e300,s103,s204,w100
-leadsheets.library.shorthands.code.tex e300,s204,w100
+leadsheets.library.shorthands.code.tex e300,e301,s204,w100
 leadsheets.library.songs.code.tex e300,s103,s204,w100,w101
 leadsheets.library.templates.code.tex e300,s204,w100,w200
 leadsheets.library.translations.code.tex e300,s204,w100
@@ -445,14 +445,14 @@ mahjong.sty e300,s103,s204,s205,s206
 mandi.sty e300,s103,s204
 mandistudent.sty e300,s204
 marathi.sty s204
-markdown.sty s204,s205
+markdown.sty e301,s204,s205
 markdown.tex e209,s103,s204,w101
 matapli.cls e300,s103,s204,s206,w101
 mathcommand.sty e300,s103,s204,s205,s206,w101,w200
 mathfont.sty s204,w100
 mathspec.sty s204
 maze.sty s103,s204
-media4svg.sty s103,s204,s206,w202
+media4svg.sty e301,s103,s204,s206,w202
 media9.sty e300,s204,s206,w202
 memhangul-common.sty s204
 memhangul-ucs.sty s206
@@ -485,7 +485,7 @@ multifootnote.sty s103,s204
 musicography.sty s204
 naive-ebnf.sty e300,s204,s205,s206
 namedef.sty e300,s204,s206,w200
-nameref.sty s204
+nameref.sty e301,s204
 newpax.sty s103,s204,w202
 nicematrix.sty e300,s103,s204,s205,s206,w200,w202
 niceverb.sty s204,w100
@@ -551,10 +551,10 @@ pmhanguljamo.sty e300,s103,s204,s205,s206
 pml3array.sty e300,s204,s206
 polyglossia.sty e300,s103,s204,s205,s206
 postnotes.sty e300,s103,s204,w202
-powerdot.cls e300,s204
-precattl.sty e300,s103,s204,s205,s206
+powerdot.cls e300,e301,s204
+precattl.sty e300,e301,s103,s204,s205,s206
 prelim2e.sty s204
-prettytok.sty e300,s103,s204,s205,s206
+prettytok.sty e300,e301,s103,s204,s205,s206
 preview.sty s103,s204,w100,w200
 primargs.sty e300,s103,s204,w200
 problem.sty e300,s204,s206
@@ -680,7 +680,7 @@ string-diagrams.sty e300,s204,s206
 stripsemantex.sty e300,s103,s204,w101
 structuredlog.sty e300,s204
 styledcmd.sty e300,s103,s204,w202
-substances.sty e300,s204,w101,w200
+substances.sty e300,e301,s204,w101,w200
 superiors.sty s103,s204
 swfigure.sty e300,s204
 swiss.qrbill-cfg.tex s204
@@ -697,6 +697,7 @@ tagpdf.sty e300,s103,s204,s205,s206
 tagpdfdocu-patches.sty s103,s204,w101
 tap.tex s204,w100
 tasks.sty e300,s103,s204,s206,w101
+tblr-extras.sty e301
 tcbdocumentation.code.tex e300,s103,s204
 tcbexternal.code.tex s103,s204
 tcbfitting.code.tex e300,s204
@@ -815,7 +816,7 @@ xcntperchap.sty s103,s204,s205,s206
 xcoffins.sty e300
 xcolor-patches-tmp-ltx.sty s204
 xcolor.sty e300,s204
-xcpdftips.sty s204,w200
+xcpdftips.sty e301,s204,w200
 xdufont.sty e300,s103,s204
 xdupgthesis.cls e300,s103,s204,s206
 xduugthesis.cls e300,s103,s204,s206
@@ -849,7 +850,7 @@ xsavebox.sty s204,s206,w200,w202
 xsim-manual.cls s103,s204
 xsim.sty e300,s103,s204,s206,w101,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
-xsimverb.sty e300,s103,s204,w101
+xsimverb.sty e300,e301,s103,s204,w101
 xtemplate-2023-10-10.sty e300,s103,s204,s206
 xtemplate.sty s204
 xunicode-addon.sty e300,s204,w200

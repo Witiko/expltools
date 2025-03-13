@@ -7,10 +7,10 @@ GS_set_EAN_control_digit.tex e300,s204,s206
 GS_set_code_digit_seq.tex s204,s206
 acro.sty e300,s103,s204,s206,w200,w202
 acro_en.tex e102
-animate.sty e300,s204
+animate.sty e300,e301,s204
 beamerouterthemeUR.sty s103,s204
 bidi-media9.sty s204,s206
-breqn.sty e300,s204
+breqn.sty e300,e301,s204
 caesar_book.cls s204
 cfntinst.sty s204,w100
 chemformula.sty e300,s103,s204,s206,w101,w200,w202
@@ -45,7 +45,7 @@ chemmacros.sty e300,s204,w200
 chemmacros4.sty e300,s103,s204,s205,s206,w101,w200
 chemmacros5.sty e300,s204,w101,w200
 chemmacros_en.tex e102
-chemnum.sty e300,s103,s204,w200,w202
+chemnum.sty e300,e301,s103,s204,w200,w202
 citeall.sty s103,s204,s205,w200
 classics.sty e300,s103,s204
 cnltx-base.sty s103,s204,w100
@@ -70,7 +70,7 @@ denisbdoc.sty e300,s103,s204,s205,s206,w200
 download.sty e300,s204
 download.tex e300,s204
 dynamicnumber.sty s204
-embrac.sty e300,s204,w200,w202
+embrac.sty e300,e301,s204,w200,w202
 endiagram.sty e300,s103,s204,w200
 enotez.sty e300,s103,s204,s206,w200,w202
 expl3-code.tex e201,s204,s205,s206,w200,w202
