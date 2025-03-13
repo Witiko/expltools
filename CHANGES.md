@@ -15,6 +15,11 @@
   4. Intermediate analysis results (read-write)
   5. Options (read-only, optional)
 
+#### Continuous integration
+
+- Configure Dependabot version updates for GitHub Actions.
+  (contributed by @koppor in #70)
+
 ## expltools 2025-02-25
 
 ### explcheck v0.7.1
