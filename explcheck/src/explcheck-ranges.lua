@@ -127,7 +127,9 @@ end
 -- Get an iterator over the range.
 function Range:iter()
   if #self == 0 then
-    return function() end  -- empty range
+    return function()  -- empty range
+      return nil
+    end
   else
     local i = self:start() - 1
     return function()  -- non-empty range
