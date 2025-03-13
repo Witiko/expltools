@@ -37,16 +37,14 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
           local arguments = {}
           local next_token_number = token_number + 1
           local next_token, next_token_type, next_payload, next_catcode, next_byte_range  -- luacheck: ignore next_payload
-          local next_grouping
+          local next_grouping, parameter_text_start_token_number
           for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
-            if lpeg.match(parsers.parameter_argument_specifier, argument_specifier) then
-              goto skip_other_token  -- a "TeX parameter" argument specifier, skip the control sequence
-            elseif lpeg.match(parsers.weird_argument_specifier, argument_specifier) then
+            if lpeg.match(parsers.weird_argument_specifier, argument_specifier) then
               goto skip_other_token  -- a "weird" argument specifier, skip the control sequence
             elseif lpeg.match(parsers.do_not_use_argument_specifier, argument_specifier) then
               goto skip_other_token  -- a "do not use" argument specifier, skip the control sequence
             end
-            if next_token_number > token_range:stop() then  -- a missing argument (partial application?), skip all remaining tokens
+            if next_token_number > token_range:stop() then  -- missing argument (partial application?), skip all remaining tokens
               if token_range:stop() == #tokens then
                 issues:add('e301', 'end of expl3 part within function call', next_byte_range)
               end
@@ -56,7 +54,35 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
             end
             next_token = tokens[next_token_number]
             next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
-            if lpeg.match(parsers.N_type_argument_specifier, argument_specifier) then  -- an N-type argument specifier
+            if lpeg.match(parsers.parameter_argument_specifier, argument_specifier) then
+              parameter_text_start_token_number = next_token_number  -- a "TeX parameter" argument specifier, try to collect parameter text
+              next_token_number = next_token_number + 1
+              while next_token_number <= token_range:stop() do
+                next_token = tokens[next_token_number]
+                next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
+                if next_token_type == "character" and next_catcode == 2 then  -- end grouping, skip the control sequence
+                  issues:add('e300', 'unexpected function call argument', next_byte_range)
+                  goto skip_other_token
+                elseif next_token_type == "character" and next_catcode == 1 then  -- begin grouping, record the parameter text
+                  next_token_number = next_token_number - 1
+                  if next_token_number > parameter_text_start_token_number then  -- record non-empty parameter text
+                    table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, "exclusive", #tokens))
+                  else  -- record empty parameter text
+                    table.insert(arguments, nil)
+                  end
+                  break
+                end
+                next_token_number = next_token_number + 1
+              end
+              if next_token_number > token_range:stop() then  -- missing begin grouping (partial application?), skip all remaining tokens
+                if token_range:stop() == #tokens then
+                  issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                end
+                record_other_tokens(new_range(token_number, token_range:stop(), "inclusive", #tokens))
+                token_number = next_token_number
+                goto continue
+              end
+            elseif lpeg.match(parsers.N_type_argument_specifier, argument_specifier) then  -- an N-type argument specifier
               if next_token_type == "character" and next_catcode == 1 then  -- begin grouping, skip the control sequence
                 issues:add('e300', 'unexpected function call argument', next_byte_range)
                 goto skip_other_token

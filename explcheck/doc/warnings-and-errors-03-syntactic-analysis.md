@@ -6,6 +6,7 @@ A function is called with an unexpected argument.
 
  /e300-02.tex
  /e300-03.tex
+ /e300-04.tex
 
 Partial applications are detected by analysing closing braces (`}`) and do not produce an error:
 
