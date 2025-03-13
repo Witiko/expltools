@@ -1,7 +1,10 @@
 -- The syntactic analysis step of static analysis converts TeX tokens into a tree of function calls.
 
-local new_range = require("explcheck-ranges")
+local new_range, range_flags = table.unpack(require("explcheck-ranges"))
 local parsers = require("explcheck-parsers")
+
+local EXCLUSIVE = range_flags.EXCLUSIVE
+local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
 
@@ -23,7 +26,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
       else  -- extend the previous span of other tokens
         assert(previous_call[1] == "other")
         assert(previous_call[2]:stop() == other_token_range:start() - 1)
-        previous_call[2] = new_range(previous_call[2]:start(), other_token_range:stop(), "inclusive", #tokens)
+        previous_call[2] = new_range(previous_call[2]:start(), other_token_range:stop(), INCLUSIVE, #tokens)
       end
     end
 
@@ -48,7 +51,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
               if token_range:stop() == #tokens then
                 issues:add('e301', 'end of expl3 part within function call', next_byte_range)
               end
-              record_other_tokens(new_range(token_number, token_range:stop(), "inclusive", #tokens))
+              record_other_tokens(new_range(token_number, token_range:stop(), INCLUSIVE, #tokens))
               token_number = next_token_number
               goto continue
             end
@@ -66,7 +69,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 elseif next_token_type == "character" and next_catcode == 1 then  -- begin grouping, record the parameter text
                   next_token_number = next_token_number - 1
                   if next_token_number > parameter_text_start_token_number then  -- record non-empty parameter text
-                    table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, "exclusive", #tokens))
+                    table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, EXCLUSIVE, #tokens))
                   else  -- record empty parameter text
                     table.insert(arguments, nil)
                   end
@@ -78,7 +81,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 if token_range:stop() == #tokens then
                   issues:add('e301', 'end of expl3 part within function call', next_byte_range)
                 end
-                record_other_tokens(new_range(token_number, token_range:stop(), "inclusive", #tokens))
+                record_other_tokens(new_range(token_number, token_range:stop(), INCLUSIVE, #tokens))
                 token_number = next_token_number
                 goto continue
               end
@@ -87,7 +90,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 issues:add('e300', 'unexpected function call argument', next_byte_range)
                 goto skip_other_token
               else  -- an N-type argument, record it
-                table.insert(arguments, new_range(next_token_number, next_token_number, "inclusive", #tokens))
+                table.insert(arguments, new_range(next_token_number, next_token_number, INCLUSIVE, #tokens))
               end
             elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
               if next_token_type == "character" and next_catcode == 1 then  -- an n-type argument, try to collect the balanced text
@@ -100,7 +103,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   end
                   goto skip_other_token
                 else  -- a balanced text, record it
-                  table.insert(arguments, new_range(next_grouping.start, next_grouping.stop, "inclusive", #tokens))
+                  table.insert(arguments, new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens))
                   next_token_number = next_grouping.stop
                 end
               else  -- not begin grouping, skip the control sequence
@@ -112,7 +115,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
             end
             next_token_number = next_token_number + 1
           end
-          table.insert(calls, {"call", new_range(token_number, next_token_number, "exclusive", #tokens), csname, arguments})
+          table.insert(calls, {"call", new_range(token_number, next_token_number, EXCLUSIVE, #tokens), csname, arguments})
           token_number = next_token_number
           goto continue
         else  -- a non-expl3 control sequence, skip it
@@ -124,7 +127,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
         error('Unexpected token type "' .. token_type .. '"')
       end
       ::skip_other_token::
-      record_other_tokens(new_range(token_number, token_number, "inclusive", #tokens))
+      record_other_tokens(new_range(token_number, token_number, INCLUSIVE, #tokens))
       token_number = token_number + 1
       ::continue::
     end
@@ -134,7 +137,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
   local calls = {}
   for part_number, part_tokens in ipairs(results.tokens) do
     local part_groupings = results.groupings[part_number]
-    local part_token_range = new_range(1, #part_tokens, "inclusive", #part_tokens)
+    local part_token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens)
     local part_calls = get_calls(part_tokens, part_token_range, part_groupings)
     table.insert(calls, part_calls)
   end

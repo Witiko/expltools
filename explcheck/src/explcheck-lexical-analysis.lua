@@ -1,9 +1,12 @@
 -- The lexical analysis step of static analysis converts expl3 parts of the input files into TeX tokens.
 
 local get_option = require("explcheck-config")
-local new_range = require("explcheck-ranges")
+local new_range, range_flags = table.unpack(require("explcheck-ranges"))
 local obsolete = require("explcheck-obsolete")
 local parsers = require("explcheck-parsers")
+
+local EXCLUSIVE = range_flags.EXCLUSIVE
+local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
 
@@ -26,7 +29,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
     local range_content = content:sub(range:start(), range:stop())
     for _, line in ipairs(lpeg.match(parsers.tex_lines, range_content)) do
       local line_start, line_text, line_end = table.unpack(line)
-      local line_range = new_range(line_start, line_end, "exclusive", #content)
+      local line_range = new_range(line_start, line_end, EXCLUSIVE, #content)
       local map_back = (function(line_text, line_range)  -- luacheck: ignore line_text line_range
         return function (index)
           assert(index > 0)
@@ -108,7 +111,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
       local previous_catcode, previous_csname = 9, nil
       while character_index <= #line_text do
         local character, catcode, character_index_increment = get_character_and_catcode(character_index)
-        local range = new_range(character_index, character_index, "inclusive", #line_text, map_back, #content)
+        local range = new_range(character_index, character_index, INCLUSIVE, #line_text, map_back, #content)
         if (
               catcode ~= 9 and catcode ~= 10  -- a potential missing stylistic whitespace
               and (
@@ -158,7 +161,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
             end
           end
           local csname = table.concat(csname_table)
-          range = new_range(character_index, previous_csname_index, "inclusive", #line_text, map_back, #content)
+          range = new_range(character_index, previous_csname_index, INCLUSIVE, #line_text, map_back, #content)
           table.insert(tokens, {"control sequence", csname, 0, range})
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace

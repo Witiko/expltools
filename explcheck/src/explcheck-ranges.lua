@@ -2,15 +2,20 @@
 
 local Range = {}
 
+local range_flags = {
+  EXCLUSIVE = 0,
+  INCLUSIVE = 1,
+}
+
 -- Create a new range based on the start/end indices, the type of the end index
--- (inclusive/exclusive), the size of the array that contains the range, and an
+-- (INCLUSIVE/EXCLUSIVE), the size of the array that contains the range, and an
 -- optional nondecreasing map-back function from indices in the array to
 -- indices in an original array and the size of the original array.
 --
 -- Since empty ranges are usually a mistake, they are not allowed.
--- For example, `Range:new(index, index, "exclusive", #array)` will cause an
+-- For example, `Range:new(index, index, EXCLUSIVE, #array)` will cause an
 -- assertion error. The exception to this rule are empty arrays, which permit
--- the empty range `Range:new(x, 0, "inclusive", 0)` for any x.
+-- the empty range `Range:new(x, 0, INCLUSIVE, 0)` for any x.
 function Range.new(cls, range_start, range_end, end_type, transformed_array_size, map_back, original_array_size)
   -- Instantiate the class.
   local new_object = {}
@@ -23,8 +28,7 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
     assert(range_start >= 1)
     assert(range_start <= transformed_array_size)
   end
-  assert(end_type == "inclusive" or end_type == "exclusive")
-  if end_type == "exclusive" then
+  if end_type % 2 == range_flags.EXCLUSIVE then
     -- Convert exclusive range end to inclusive.
     range_end = range_end - 1
   end
@@ -87,6 +91,9 @@ function Range:__tostring()
   return string.format("[%d, %d]", self.range_start, self.range_end)
 end
 
-return function(...)
-  return Range:new(...)
-end
+return {
+  function(...)
+    return Range:new(...)
+  end,
+  range_flags,
+}
