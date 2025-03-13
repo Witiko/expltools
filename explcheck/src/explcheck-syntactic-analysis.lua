@@ -47,6 +47,9 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
               goto skip_other_token  -- a "do not use" argument specifier, skip the control sequence
             end
             if next_token_number > token_range:stop() then  -- a missing argument (partial application?), skip all remaining tokens
+              if token_range:stop() == #tokens then
+                issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+              end
               record_other_tokens(new_range(token_number, token_range:stop(), "inclusive", #tokens))
               token_number = next_token_number
               goto continue
@@ -66,6 +69,9 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 assert(next_grouping ~= nil)
                 assert(next_grouping.start == next_token_number)
                 if next_grouping.stop == nil then  -- an unclosed grouping, skip the control sequence
+                  if token_range:stop() == #tokens then
+                    issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                  end
                   goto skip_other_token
                 else  -- a balanced text, record it
                   table.insert(arguments, new_range(next_grouping.start, next_grouping.stop, "inclusive", #tokens))
