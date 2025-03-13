@@ -158,10 +158,15 @@ local argument = (
   * expl3_catcodes[2]
 )
 
+local N_type_argument_specifier = S("NV")
+local n_type_argument_specifier = S("ncvoxefTF")
+local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
 local do_not_use_argument_specifier = S("D")
 local argument_specifier = (
-  S("NncVvoxefTFp")
+  N_type_argument_specifier
+  + n_type_argument_specifier
+  + parameter_argument_specifier
   + weird_argument_specifier
   + do_not_use_argument_specifier
 )
@@ -511,26 +516,31 @@ return {
   commented_lines = commented_lines,
   decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
+  do_not_use_argument_specifier = do_not_use_argument_specifier,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
   eof = eof,
-  fail = fail,
-  expl3like_material = expl3like_material,
   expl3_endlinechar = expl3_endlinechar,
   expl3_function_assignment_csname = expl3_function_assignment_csname,
   expl3_function_csname = expl3_function_csname,
+  expl3like_material = expl3like_material,
+  expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
+  expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl3_variable_or_constant_use_csname = expl3_variable_or_constant_use_csname,
-  expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
-  expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
+  fail = fail,
   ignored_issues = ignored_issues,
   latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
   non_expl3_csname = non_expl3_csname,
+  n_type_argument_specifier = n_type_argument_specifier,
+  N_type_argument_specifier = N_type_argument_specifier,
+  parameter_argument_specifier = parameter_argument_specifier,
   provides = provides,
   tex_lines = tex_lines,
+  weird_argument_specifier = weird_argument_specifier,
 }

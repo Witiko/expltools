@@ -102,6 +102,7 @@ jobs:
           - TL2021
           - TL2022
           - TL2023
+          - TL2024
     container:
       image: texlive/texlive:${{ matrix.release }}-historic
     steps:

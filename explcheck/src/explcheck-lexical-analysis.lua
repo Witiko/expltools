@@ -1,14 +1,17 @@
 -- The lexical analysis step of static analysis converts expl3 parts of the input files into TeX tokens.
 
 local get_option = require("explcheck-config")
-local new_range = require("explcheck-ranges")
+local new_range, range_flags = table.unpack(require("explcheck-ranges"))
 local obsolete = require("explcheck-obsolete")
 local parsers = require("explcheck-parsers")
+
+local EXCLUSIVE = range_flags.EXCLUSIVE
+local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
 
 -- Tokenize the content and register any issues.
-local function lexical_analysis(pathname, all_content, issues, results, options)
+local function lexical_analysis(pathname, content, issues, results, options)
 
   -- Process bytes within a given range similarly to TeX's input processor (TeX's "eyes" [1]) and produce lines.
   --
@@ -23,17 +26,17 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
   --       https://petr.olsak.net/ftp/olsak/tbn/tbn.pdf
   --
   local function get_lines(range)
-    local content = all_content:sub(range:start(), range:stop())
-    for _, line in ipairs(lpeg.match(parsers.tex_lines, content)) do
+    local range_content = content:sub(range:start(), range:stop())
+    for _, line in ipairs(lpeg.match(parsers.tex_lines, range_content)) do
       local line_start, line_text, line_end = table.unpack(line)
-      local line_range = new_range(line_start, line_end, "exclusive", #all_content)
+      local line_range = new_range(line_start, line_end, EXCLUSIVE, #content)
       local map_back = (function(line_text, line_range)  -- luacheck: ignore line_text line_range
         return function (index)
           assert(index > 0)
           assert(index <= #line_text + #parsers.expl3_endlinechar)
           if index <= #line_text then
             local mapped_index = range:start() + line_range:start() + index - 2  -- a line character
-            assert(line_text[index] == content[mapped_index])
+            assert(line_text[index] == range_content[mapped_index])
             return mapped_index
           elseif index > #line_text and index <= #line_text + #parsers.expl3_endlinechar then
             return math.max(1, range:start() + line_range:start() + #line_text - 2)  -- an \endlinechar
@@ -46,7 +49,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
     end
   end
 
-  -- Tokenize a line, similarly to TeX's token processor (TeX's "mouth" [1]).
+  -- Process lines similarly to TeX's token processor (TeX's "mouth" [1]) and produce tokens and a tree of apparent TeX groupings.
   --
   -- See also:
   -- - Section 303 on page 122 of Knuth (1986) [1]
@@ -60,8 +63,12 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
   --
   local function get_tokens(lines)
     local tokens = {}
+
+    local groupings = {}
+    local current_grouping = groupings
+    local parent_grouping
+
     local state
-    local num_open_groups_upper_estimate = 0
 
     -- Determine the category code of the at sign ("@").
     local make_at_letter = get_option("make_at_letter", options, pathname)
@@ -104,7 +111,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
       local previous_catcode, previous_csname = 9, nil
       while character_index <= #line_text do
         local character, catcode, character_index_increment = get_character_and_catcode(character_index)
-        local range = new_range(character_index, character_index, "inclusive", #line_text, map_back, #all_content)
+        local range = new_range(character_index, character_index, INCLUSIVE, #line_text, map_back, #content)
         if (
               catcode ~= 9 and catcode ~= 10  -- a potential missing stylistic whitespace
               and (
@@ -154,7 +161,7 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
             end
           end
           local csname = table.concat(csname_table)
-          range = new_range(character_index, previous_csname_index, "inclusive", #line_text, map_back, #all_content)
+          range = new_range(character_index, previous_csname_index, INCLUSIVE, #line_text, map_back, #content)
           table.insert(tokens, {"control sequence", csname, 0, range})
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
@@ -188,11 +195,19 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
           character_index = character_index + character_index_increment
         else
           if catcode == 1 or catcode == 2 then  -- begin/end grouping
-            if catcode == 1 then
-              num_open_groups_upper_estimate = num_open_groups_upper_estimate + 1
-            elseif catcode == 2 then
-              if num_open_groups_upper_estimate > 0 then
-                num_open_groups_upper_estimate = num_open_groups_upper_estimate - 1
+            if catcode == 1 then  -- begin grouping
+              current_grouping = {parent = current_grouping, start = #tokens + 1}
+              assert(groupings[current_grouping.start] == nil)
+              assert(current_grouping.parent[current_grouping.start] == nil)
+              groupings[current_grouping.start] = current_grouping  -- provide flat access to groupings
+              current_grouping.parent[current_grouping.start] = current_grouping  -- provide recursive access to groupings
+            elseif catcode == 2 then  -- end grouping
+              if current_grouping.parent ~= nil then
+                current_grouping.stop = #tokens + 1
+                assert(current_grouping.start ~= nil and current_grouping.start < current_grouping.stop)
+                parent_grouping = current_grouping.parent
+                current_grouping.parent = nil  -- remove a circular reference for the current grouping
+                current_grouping = parent_grouping
               else
                 issues:add('e208', 'too many closing braces', range)
               end
@@ -221,11 +236,17 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
         end
       end
     end
-    return tokens
+    -- Remove circular references for all unclosed groupings.
+    while current_grouping.parent ~= nil do
+      parent_grouping = current_grouping.parent
+      current_grouping.parent = nil
+      current_grouping = parent_grouping
+    end
+    return tokens, groupings
   end
 
   -- Tokenize the content.
-  local all_tokens = {}
+  local tokens, groupings = {}, {}
   for _, range in ipairs(results.expl_ranges) do
     local lines = (function()
       local co = coroutine.create(function()
@@ -236,12 +257,13 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
         return line_text, map_back
       end
     end)()
-    local tokens = get_tokens(lines)
-    table.insert(all_tokens, tokens)
+    local part_tokens, part_groupings = get_tokens(lines)
+    table.insert(tokens, part_tokens)
+    table.insert(groupings, part_groupings)
   end
 
-  for _, tokens in ipairs(all_tokens) do
-    for token_index, token in ipairs(tokens) do
+  for _, part_tokens in ipairs(tokens) do
+    for token_index, token in ipairs(part_tokens) do
       local token_type, payload, catcode, range = table.unpack(token)  -- luacheck: ignore catcode
       if token_type == "control sequence" then
         local csname = payload
@@ -257,8 +279,8 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
         if lpeg.match(obsolete.deprecated_csname, csname) ~= nil then
           issues:add('w202', 'deprecated control sequences', range)
         end
-        if token_index + 1 <= #tokens then
-          local next_token = tokens[token_index + 1]
+        if token_index + 1 <= #part_tokens then
+          local next_token = part_tokens[token_index + 1]
           local next_token_type, next_csname, _, next_range = table.unpack(next_token)
           if next_token_type == "control sequence" then
             if (
@@ -289,7 +311,8 @@ local function lexical_analysis(pathname, all_content, issues, results, options)
   end
 
   -- Store the intermediate results of the analysis.
-  results.tokens = all_tokens
+  results.tokens = tokens
+  results.groupings = groupings
 end
 
 return lexical_analysis

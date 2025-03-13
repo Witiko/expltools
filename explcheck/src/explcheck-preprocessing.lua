@@ -1,9 +1,12 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
 local get_option = require("explcheck-config")
-local new_range = require("explcheck-ranges")
+local new_range, range_flags = table.unpack(require("explcheck-ranges"))
 local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")
+
+local EXCLUSIVE = range_flags.EXCLUSIVE
+local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
 local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
@@ -51,10 +54,10 @@ local function preprocessing(pathname, content, issues, results, options)
             local comment_range_end, comment_range
             if(comment_line_number + 1 <= #line_starting_byte_numbers) then
               comment_range_end = line_starting_byte_numbers[comment_line_number + 1]
-              comment_range = new_range(comment_range_start, comment_range_end, "exclusive", #content)
+              comment_range = new_range(comment_range_start, comment_range_end, EXCLUSIVE, #content)
             else
               comment_range_end = #content
-              comment_range = new_range(comment_range_start, comment_range_end, "inclusive", #content)
+              comment_range = new_range(comment_range_start, comment_range_end, INCLUSIVE, #content)
             end
             if #ignored_issues == 0 then  -- ignore all issues on this line
               issues:ignore(nil, comment_range)
@@ -97,13 +100,13 @@ local function preprocessing(pathname, content, issues, results, options)
   local expl_ranges = {}
 
   local function capture_range(range_start, range_end)
-    local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
+    local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
     table.insert(expl_ranges, range)
   end
 
   local function unexpected_pattern(pattern, code, message, test)
     return Cp() * pattern * Cp() / function(range_start, range_end)
-      local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
+      local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
       if test == nil or test() then
         issues:add(code, message, range)
       end
@@ -196,14 +199,14 @@ local function preprocessing(pathname, content, issues, results, options)
       if expl3_detection_strategy == "recall" then
         issues:add('w100', 'no standard delimiters')
       end
-      local range = new_range(1, #content, "inclusive", #content)
+      local range = new_range(1, #content, INCLUSIVE, #content)
       table.insert(expl_ranges, range)
     elseif expl3_detection_strategy == "auto" then
       -- Use context clues to determine whether no part or the whole
       -- input file is in expl3.
       if has_expl3like_material then
         issues:add('w100', 'no standard delimiters')
-        local range = new_range(1, #content, "inclusive", #content)
+        local range = new_range(1, #content, INCLUSIVE, #content)
         table.insert(expl_ranges, range)
       end
     else
@@ -216,7 +219,7 @@ local function preprocessing(pathname, content, issues, results, options)
     local offset = expl_range:start() - 1
 
     local function line_too_long(range_start, range_end)
-      local range = new_range(offset + range_start, offset + range_end, "exclusive", #transformed_content, map_back, #content)
+      local range = new_range(offset + range_start, offset + range_end, EXCLUSIVE, #transformed_content, map_back, #content)
       issues:add('s103', 'line too long', range)
     end
 
