@@ -247,15 +247,17 @@ local function print_results(pathname, content, issues, results, options, is_las
         local num_total_bytes = #content
         print_state.num_total_bytes = (print_state.num_total_bytes or 0) + num_total_bytes
         if num_total_bytes > 0 then
-          local filetype
-          if results.seems_like_latex_style_file then
-            filetype = "LaTeX"
-          else
-            filetype = "other"
+          if results.seems_like_latex_style_file ~= nil then
+            local filetype
+            if results.seems_like_latex_style_file then
+              filetype = "LaTeX"
+            else
+              filetype = "other"
+            end
+            table.insert(notes, filetype)
+            print_state.filetypes = print_state.filetypes or {}
+            print_state.filetypes[filetype] = (print_state.filetypes[filetype] or 0) + num_total_bytes
           end
-          table.insert(notes, filetype)
-          print_state.filetypes = print_state.filetypes or {}
-          print_state.filetypes[filetype] = (print_state.filetypes[filetype] or 0) + num_total_bytes
           local num_expl_bytes = 0
           for _, expl_range in ipairs(results.expl_ranges) do
             num_expl_bytes = num_expl_bytes + #expl_range
@@ -263,7 +265,7 @@ local function print_results(pathname, content, issues, results, options, is_las
           print_state.num_expl_bytes = (print_state.num_expl_bytes or 0) + num_expl_bytes
           local expl_coverage = string.format("%3s expl3", format_ratio(num_expl_bytes, num_total_bytes))
           table.insert(notes, expl_coverage)
-          if num_expl_bytes > 0 then
+          if num_expl_bytes > 0 and results.tokens ~= nil then
             local num_expl_tokens = 0
             for _, tokens in ipairs(results.tokens) do
               num_expl_tokens = num_expl_tokens + #tokens
@@ -272,7 +274,7 @@ local function print_results(pathname, content, issues, results, options, is_las
             local formatted_num_expl_tokens = format_human_readable(num_expl_tokens)
             formatted_num_expl_tokens = string.format("%4s %s", formatted_num_expl_tokens:sub(-4), pluralize("token", num_expl_tokens))
             table.insert(notes, formatted_num_expl_tokens)
-            if num_expl_tokens > 0 then
+            if num_expl_tokens > 0 and results.calls ~= nil then
               local num_expl_calls = 0
               for _, calls in ipairs(results.calls) do
                 for _, call in ipairs(calls) do
