@@ -88,7 +88,12 @@ end
 
 -- Get a string representation of the range.
 function Range:__tostring()
-  return string.format("[%d, %d]", self.range_start, self.range_end)
+  if self.range_start == 0 then
+    assert(self.range_end == 0)
+    return "empty"  -- empty range
+  else
+    return string.format("[%d, %d]", self.range_start, self.range_end)  -- non-empty range
+  end
 end
 
 return {
