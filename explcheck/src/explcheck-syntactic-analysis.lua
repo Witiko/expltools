@@ -16,14 +16,14 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
     end
     local token_number = token_range:start()
 
-    local function record_other_token()
+    local function record_other_tokens(other_token_range)
       local previous_call = #calls > 0 and calls[#calls] or nil
       if previous_call == nil or previous_call[1] ~= "other" then  -- record a new span of other tokens between calls
-        table.insert(calls, {"other", new_range(token_number, token_number, "inclusive", #tokens)})
+        table.insert(calls, {"other", other_token_range})
       else  -- extend the previous span of other tokens
         assert(previous_call[1] == "other")
-        assert(previous_call[2]:stop() == token_number - 1)
-        previous_call[2] = new_range(previous_call[2]:start(), token_number, "inclusive", #tokens)
+        assert(previous_call[2]:stop() == other_token_range:start() - 1)
+        previous_call[2] = new_range(previous_call[2]:start(), other_token_range:stop(), "inclusive", #tokens)
       end
     end
 
@@ -46,8 +46,10 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
             elseif lpeg.match(parsers.do_not_use_argument_specifier, argument_specifier) then
               goto skip_other_token  -- a "do not use" argument specifier, skip the control sequence
             end
-            if next_token_number > token_range:stop() then
-              goto skip_other_token  -- a missing argument (partial application?), skip the control sequence
+            if next_token_number > token_range:stop() then  -- a missing argument (partial application?), skip all remaining tokens
+              record_other_tokens(new_range(token_number, token_range:stop(), "inclusive", #tokens))
+              token_number = next_token_number
+              goto continue
             end
             next_token = tokens[next_token_number]
             next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
@@ -90,7 +92,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
         error('Unexpected token type "' .. token_type .. '"')
       end
       ::skip_other_token::
-      record_other_token()
+      record_other_tokens(new_range(token_number, token_number, "inclusive", #tokens))
       token_number = token_number + 1
       ::continue::
     end
