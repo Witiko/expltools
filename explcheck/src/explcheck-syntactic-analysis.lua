@@ -61,7 +61,6 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
             next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
             if lpeg.match(parsers.parameter_argument_specifier, argument_specifier) then
               parameter_text_start_token_number = next_token_number  -- a "TeX parameter" argument specifier, try to collect parameter text
-              next_token_number = next_token_number + 1
               while next_token_number <= token_range:stop() do
                 next_token = tokens[next_token_number]
                 next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
