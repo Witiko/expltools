@@ -359,7 +359,7 @@ local ignored_issues = Ct(
 ---- Standard delimiters
 local provides = (
   expl3_catcodes[0]
-  * P([[ProvidesExpl]])
+  * P("ProvidesExpl")
   * (
       P("Package")
       + P("Class")
