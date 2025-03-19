@@ -14,18 +14,18 @@ local lpeg = require("lpeg")
 
 local call_types = {
   CALL = 0,
-  OTHER = 1,
+  OTHER_TOKENS = 1,
 }
 
 local CALL = call_types.CALL
-local OTHER = call_types.OTHER
+local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 -- Convert the content to a tree of function calls an register any issues.
 local function syntactic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname content options
 
   local token_types = require("explcheck-lexical-analysis").token_types
 
-  local CSNAME = token_types.CSNAME
+  local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
   local CHARACTER = token_types.CHARACTER
 
   -- Extract function calls from TeX tokens and groupings.
@@ -39,10 +39,10 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
 
     local function record_other_tokens(other_token_range)
       local previous_call = #calls > 0 and calls[#calls] or nil
-      if previous_call == nil or previous_call[1] ~= OTHER then  -- record a new span of other tokens between calls
-        table.insert(calls, {OTHER, other_token_range})
+      if previous_call == nil or previous_call[1] ~= OTHER_TOKENS then  -- record a new span of other tokens between calls
+        table.insert(calls, {OTHER_TOKENS, other_token_range})
       else  -- extend the previous span of other tokens
-        assert(previous_call[1] == OTHER)
+        assert(previous_call[1] == OTHER_TOKENS)
         assert(previous_call[2]:stop() == other_token_range:start() - 1)
         previous_call[2] = new_range(previous_call[2]:start(), other_token_range:stop(), INCLUSIVE, #tokens)
       end
@@ -51,7 +51,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
     while token_number <= token_range:stop() do
       local token = tokens[token_number]
       local token_type, payload, catcode, byte_range = table.unpack(token)  -- luacheck: ignore catcode byte_range
-      if token_type == CSNAME then  -- a control sequence, try to extract a call
+      if token_type == CONTROL_SEQUENCE then  -- a control sequence, try to extract a call
         local csname = payload
         local _, _, argument_specifiers = csname:find(":([^:]*)")
         if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
@@ -145,7 +145,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
       elseif token_type == CHARACTER then  -- an ordinary character
         if payload == "=" then  -- an equal sign
           if token_number + 2 <= token_range:stop() then  -- followed by two other tokens
-            if tokens[token_number + 1][1] == CSNAME then  -- the first being a control sequence
+            if tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- the first being a control sequence
               if tokens[token_number + 2][1] == CHARACTER and tokens[token_number + 2][2] == "," then  -- and the second being a comma
                 -- (probably l3keys definition?), skip all three tokens
                 record_other_tokens(new_range(token_number, token_number + 2, INCLUSIVE, #tokens))
