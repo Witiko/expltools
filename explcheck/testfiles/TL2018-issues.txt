@@ -9,9 +9,9 @@ URspecialopts.sty s103,s204,s205,s206
 acro.sty e300,s103,s204,s206,w200,w202
 algobox.sty e300,s103,s204,s205
 aligned-overset.sty e300,s103,s204
-animate.sty e300,e301,s204
+animate.sty e300,s204,w100
 beamerouterthemeUR.sty e300,s204,s205,s206
-beamerswitch.cls s204
+beamerswitch.cls s103,s204,w100
 beamerthemeUR.sty s204
 beuron.sty s103,s204
 biblatex-ext-oasymb-l3draw.sty s204,w200
@@ -37,7 +37,7 @@ chemmacros.module.mechanisms.code.tex s204,w100
 chemmacros.module.newman.code.tex s103,s204,w100,w200
 chemmacros.module.nomenclature.code.tex e300,s103,s204,s205,w100,w200
 chemmacros.module.orbital.code.tex s103,s204,w100
-chemmacros.module.particles.code.tex e300,s204,w100,w101,w200
+chemmacros.module.particles.code.tex e300,s204,w100,w200
 chemmacros.module.phases.code.tex e300,s103,s204,w100,w200
 chemmacros.module.polymers.code.tex s204,w100,w200
 chemmacros.module.reactions.code.tex s103,s204,s206,w100,w200
@@ -109,7 +109,7 @@ fixocgx.sty s204
 flexisym.sty e300,s204,w200
 fnpct.sty e300,s103,s204,s206,w200
 fontawesome5-generic-helper.sty s204
-fontawesome5-utex-helper.sty s103,s204,s205,w101,w200,w202
+fontawesome5-utex-helper.sty s103,s204,s205,w200,w202
 fontawesome5.sty e300,s103,s204,s205
 fontinst.sty s204,w100
 fontspec-luatex.sty e300,s103,s204,s205,s206,w200,w202
@@ -130,7 +130,7 @@ istgame.sty e300,s103,s204,s205,s206
 jslectureplanner.sty e300,s204
 kalendarium.sty s103,s204,w101
 kantlipsum.sty e300,s103,s204,w200
-knowledge.sty e300,e301,s103,s204,s205,s206,w101,w202
+knowledge.sty e300,s103,s204,s205,s206,w101,w202
 kvmap.sty s103,s204
 l3benchmark.sty s103,s204,s205,w200
 l3cctab.sty s206,w200
@@ -142,7 +142,7 @@ l3galley.sty e300,s103,s205,s206,w200
 l3keys2e.sty s103,w202
 l3str-convert.sty s204,s206,w200
 l3str-format.sty s103,s204
-l3sys-shell.sty e102
+l3sys-shell.sty s206
 leadsheets.library.chordnames.code.tex s103,s204,w100,w202
 leadsheets.library.chords.code.tex s103,s204,w100
 leadsheets.library.external.code.tex s103,s204,w100,w200
@@ -161,7 +161,7 @@ lisp-mod-l3regex.sty s103,s204,s206
 lltjp-fontspec.sty s103,s204
 lltjp-siunitx.sty s204,w200
 lltjp-unicode-math.sty s204,s205
-longdivision.sty s103,s204,w101
+longdivision.sty s103,s204
 lt3graph.sty s103,s204,s205
 ltxmdf.cls s204,s205
 lualatex-math.sty s204,s206,w200
@@ -169,7 +169,7 @@ luatexja-fontspec-25c.sty e300,s103,s204,s205,w202
 luatexja-fontspec-26h.sty e300,s103,s204,s205,s206,w202
 luatexja-fontspec.sty s204,s206,w202
 luatexja-preset.sty s103,s204,s206
-luatexko.sty e300,s103,s204,s206
+luatexko.sty e300,s103,s204,s206,w100
 lwarp-acro.sty s204
 lwarp-chemformula.sty s204
 lwarp-chemgreek.sty s204
@@ -225,7 +225,7 @@ platexrelease.sty s204
 plsiunitx.sty s204,w200
 pml3array.sty s204,s206
 polyglossia.sty e300,s103,s204
-powerdot.cls e300,e301,s204
+powerdot.cls e300,s103,s204,w100
 primargs.sty s103,s204,w200
 pst-calculate.sty s204
 pstool.sty s204
@@ -260,7 +260,7 @@ sseqmessages.code.tex e300,s103,s204
 sseqparsers.code.tex e300,s103,s204
 statistics.sty e300,s204,s206
 stex.sty s204
-substances.sty e300,e301,s204,w101,w200
+substances.sty e300,e301,s204,w200
 tagpdf-attr-code.sty s204
 tagpdf-checks-code.sty s103,s204
 tagpdf-mc-code-generic.sty s103,s204,s206
@@ -275,7 +275,6 @@ tagpdf.sty s103,s204,w200
 tap.tex s204,w100
 tasks.sty e300,s103,s204,s205,s206,w101,w200
 termmenu.tex s204,s206,w100
-texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204,w202
 tikzlibraryceltic.code.tex s103,s204,s206,w202
 tikzlibraryknots.code.tex s103,s204,w202
@@ -324,7 +323,7 @@ xsim.exercises.code.tex s103,s204,s206,w100
 xsim.goals.code.tex s204,w100
 xsim.grades.code.tex s204,w100
 xsim.interface.code.tex e300,s204,w100
-xsim.modules.code.tex s204,w101
+xsim.modules.code.tex s204
 xsim.properties.code.tex e300,s204,w100,w202
 xsim.random.code.tex s103,s204,w100
 xsim.solutions.code.tex s103,s204,s206,w100

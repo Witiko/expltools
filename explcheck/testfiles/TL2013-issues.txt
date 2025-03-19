@@ -9,7 +9,7 @@ acro.sty e300,s103,s204,s206,w200,w202
 asts.tex s204
 breqn.sty e300,s204
 cfntinst.sty s204,w100
-chemformula.sty e300,s103,s204,s205,s206,w101,w200
+chemformula.sty e300,s103,s204,s205,s206,w200
 chemgreek.sty e300,s103,s204,w200
 chemmacros.sty e300,s204,s205,s206,w200
 chemnum.sty s103,s204,w200,w202
@@ -99,7 +99,7 @@ ltxmdf.cls s204,s205
 lualatex-doc-DE.tex e300,s103,s204,w100
 lualatex-doc.tex e300,s103,s204,w100
 lualatex-math.sty s206
-luatexja-adjust.sty s204,s206
+luatexja-adjust.sty s204,s206,w100
 luatexja-fontspec.sty s103,s204
 luatexja-preset.sty s103,s204,s206
 luatexko.sty s103,s204
@@ -145,7 +145,7 @@ skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
 skrapport.cls e300,s204,s205,s206
-skrapport.tex e102,e104,s103,w101
+skrapport.tex e104,s103,w101
 source3.tex s204
 source3body.tex s204,s206
 spath3.sty e300,s103,s204,s206
@@ -159,15 +159,13 @@ tarai.tex s204
 tasks.sty s204,s205,s206,w200
 tex-overview-aux.tex s103,s204,s205,s206,w100
 tex-overview.tex s103,s204,s206
-texapi-doc.tex s103,s204
-texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204
 tikzlibraryknots.code.tex s103,s204
 tikzlibrarytikzmark.code.tex s103,s204
 tikzscale.sty s204
 ufntinst.sty s103,s204,w100
-unicode-math-luatex.sty s204,s205,s206,w101,w200
-unicode-math-xetex.sty s204,s205,s206,w101,w200
+unicode-math-luatex.sty s204,s205,s206,w200
+unicode-math-xetex.sty s204,s205,s206,w200
 unicode-math.sty s204,s206,w200
 unravel.sty e300,s204,s205,s206,w200,w202
 with.sty s204,s205
