@@ -541,6 +541,8 @@ return {
   N_type_argument_specifier = N_type_argument_specifier,
   parameter_argument_specifier = parameter_argument_specifier,
   provides = provides,
+  space = space,
+  tab = tab,
   tex_lines = tex_lines,
   weird_argument_specifier = weird_argument_specifier,
 }

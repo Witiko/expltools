@@ -9,7 +9,7 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
-local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
+local Cp, Ct, P, V = lpeg.Cp, lpeg.Ct, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
 local function preprocessing(pathname, content, issues, results, options)
@@ -105,7 +105,8 @@ local function preprocessing(pathname, content, issues, results, options)
   end
 
   local function unexpected_pattern(pattern, code, message, test)
-    return Cp() * pattern * Cp() / function(range_start, range_end)
+    return Ct(Cp() * pattern * Cp()) / function(range_table)
+      local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
       local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
       if test == nil or test() then
         issues:add(code, message, range)
@@ -114,22 +115,24 @@ local function preprocessing(pathname, content, issues, results, options)
   end
 
   local num_provides = 0
-  local Opener, Closer = parsers.fail, parsers.fail
+  local FirstLineOpener, HeadlessCloser = parsers.fail, parsers.fail
   local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
   if expl3_detection_strategy ~= 'never' and expl3_detection_strategy ~= 'always' then
-    Opener = (
-      parsers.expl_syntax_on
-      + unexpected_pattern(
-        parsers.provides,
-        "e104",
-        [[multiple delimiters `\ProvidesExpl*` in a single file]],
-        function()
-          num_provides = num_provides + 1
-          return num_provides > 1
-        end
+    FirstLineOpener = (
+      (
+        parsers.expl_syntax_on
+        + unexpected_pattern(
+          parsers.provides,
+          "e104",
+          [[multiple delimiters `\ProvidesExpl*` in a single file]],
+          function()
+            num_provides = num_provides + 1
+            return num_provides > 1
+          end
+        )
       )
     )
-    Closer = parsers.expl_syntax_off
+    HeadlessCloser = parsers.expl_syntax_off
   end
 
   local has_expl3like_material = false
@@ -137,6 +140,9 @@ local function preprocessing(pathname, content, issues, results, options)
     "Root";
     Root = (
       (
+        V"FirstLineExplPart" / capture_range
+      )^-1
+      * (
         V"NonExplPart"
         * V"ExplPart" / capture_range
       )^0
@@ -145,7 +151,11 @@ local function preprocessing(pathname, content, issues, results, options)
     NonExplPart = (
       (
         unexpected_pattern(
-          V"Closer",
+          (
+            parsers.newline
+            * Cp()
+            * V"HeadlessCloser"
+          ),
           "w101",
           "unexpected delimiters"
         )
@@ -161,22 +171,43 @@ local function preprocessing(pathname, content, issues, results, options)
         + (parsers.any - V"Opener")
       )^0
     ),
-    ExplPart = (
-      V"Opener"
+    FirstLineExplPart = (
+      V"FirstLineOpener"
       * Cp()
       * (
           unexpected_pattern(
-            V"Opener",
+            (
+              parsers.newline
+              * Cp()
+              * V"FirstLineOpener"
+            ),
             "w101",
             "unexpected delimiters"
           )
           + (parsers.any - V"Closer")
         )^0
-      * Cp()
-      * (V"Closer" + parsers.eof)
+      * (
+        parsers.newline
+        * Cp()
+        * V"HeadlessCloser"
+        + Cp()
+        * parsers.eof
+      )
     ),
-    Opener = Opener,
-    Closer = Closer,
+    ExplPart = (
+      parsers.newline
+      * V"FirstLineExplPart"
+    ),
+    FirstLineOpener = FirstLineOpener,
+    Opener = (
+      parsers.newline
+      * V"FirstLineOpener"
+    ),
+    HeadlessCloser = HeadlessCloser,
+    Closer = (
+      parsers.newline
+      * HeadlessCloser
+    ),
   }
   lpeg.match(analysis_grammar, transformed_content)
 
