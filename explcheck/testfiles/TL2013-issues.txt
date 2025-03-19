@@ -97,7 +97,7 @@ ltxmdf.cls s204,s205
 lualatex-doc-DE.tex e300,s103,s204,w100
 lualatex-doc.tex e300,s103,s204,w100
 lualatex-math.sty s206
-luatexja-adjust.sty s204,s206,w100
+luatexja-adjust.sty s204,s206
 luatexja-fontspec.sty s103,s204
 luatexja-preset.sty s103,s204,s206
 luatexko.sty s103,s204
@@ -110,7 +110,7 @@ metrix.sty s103,s204,s205
 mhchem.sty s103,s204,s205,s206
 mhsetup.sty e201,s204,w100
 minibox.sty s204
-minibox.tex s103,s204
+minibox.tex s204
 mkpatter.tex s103,s204,w100,w200
 modiagram.sty e300,s103,s204,w200
 morewrites.sty s103,s204,s205,s206,w200
@@ -151,11 +151,12 @@ stex.sty s204
 stex.tex s103,s204
 substances.sty s204
 substances_en.tex s204
-tap.tex s204,w100
 tarai.tex s204
 tasks.sty s204,s205,s206,w200
 tex-overview-aux.tex s103,s204,s205,s206,w100
 tex-overview.tex s103,s204,s206
+texapi-doc.tex s103,s204
+texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204
 tikzlibraryknots.code.tex s103,s204
 tikzlibrarytikzmark.code.tex s103,s204
