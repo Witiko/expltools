@@ -11,7 +11,7 @@ local issues = new_issues()
 local results = {}
 local options = {expl3_detection_strategy = "recall"}
 
-preprocessing(filename, content, issues, results, options)
+preprocessing.process(filename, content, issues, results, options)
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 2)

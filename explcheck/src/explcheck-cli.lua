@@ -92,8 +92,8 @@ local function main(pathnames, options)
       assert(file:close())
 
       -- Run all steps.
-      for _, processing_step in ipairs({preprocessing, lexical_analysis, syntactic_analysis}) do
-        processing_step(pathname, content, issues, results, options)
+      for _, step in ipairs({preprocessing, lexical_analysis, syntactic_analysis}) do
+        step.process(pathname, content, issues, results, options)
         -- If a processing step ended with error, skip all following steps.
         if #issues.errors > 0 then
           goto continue

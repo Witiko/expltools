@@ -13,8 +13,8 @@ issues:ignore('s204')
 local results = {}
 local options = {expl3_detection_strategy = "always"}
 
-preprocessing(filename, content, issues, results, options)
-lexical_analysis(filename, content, issues, results, options)
+preprocessing.process(filename, content, issues, results, options)
+lexical_analysis.process(filename, content, issues, results, options)
 
 assert(#issues.errors == 2)
 assert(#issues.warnings == 0)

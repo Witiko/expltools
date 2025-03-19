@@ -1,14 +1,25 @@
 -- The lexical analysis step of static analysis converts expl3 parts of the input files into TeX tokens.
 
 local get_option = require("explcheck-config")
-local new_range, range_flags = table.unpack(require("explcheck-ranges"))
+local ranges = require("explcheck-ranges")
 local obsolete = require("explcheck-obsolete")
 local parsers = require("explcheck-parsers")
+
+local new_range = ranges.new_range
+local range_flags = ranges.range_flags
 
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
+
+local token_types = {
+  CONTROL_SEQUENCE = 0,
+  CHARACTER = 1,
+}
+
+local CSNAME = token_types.CSNAME
+local CHARACTER = token_types.CHARACTER
 
 -- Tokenize the content and register any issues.
 local function lexical_analysis(pathname, content, issues, results, options)
@@ -162,7 +173,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           end
           local csname = table.concat(csname_table)
           range = new_range(character_index, previous_csname_index, INCLUSIVE, #line_text, map_back, #content)
-          table.insert(tokens, {"control sequence", csname, 0, range})
+          table.insert(tokens, {CSNAME, csname, 0, range})
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
                 -- do not require whitespace before non-expl3 control sequences or control sequences with empty or one-character names
@@ -174,9 +185,9 @@ local function lexical_analysis(pathname, content, issues, results, options)
           character_index = csname_index
         elseif catcode == 5 then  -- end of line
           if state == "N" then
-            table.insert(tokens, {"control sequence", "par", range})
+            table.insert(tokens, {CSNAME, "par", range})
           elseif state == "M" then
-            table.insert(tokens, {"character", " ", 10, range})
+            table.insert(tokens, {CHARACTER, " ", 10, range})
           end
           character_index = character_index + character_index_increment
         elseif catcode == 9 then  -- ignored character
@@ -184,7 +195,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           character_index = character_index + character_index_increment
         elseif catcode == 10 then  -- space
           if state == "M" then
-            table.insert(tokens, {"character", " ", 10, range})
+            table.insert(tokens, {CHARACTER, " ", 10, range})
           end
           previous_catcode = catcode
           character_index = character_index + character_index_increment
@@ -230,7 +241,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           else  -- some other character
             previous_catcode = catcode
           end
-          table.insert(tokens, {"character", character, catcode, range})
+          table.insert(tokens, {CHARACTER, character, catcode, range})
           state = "M"
           character_index = character_index + character_index_increment
         end
@@ -265,7 +276,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
   for _, part_tokens in ipairs(tokens) do
     for token_index, token in ipairs(part_tokens) do
       local token_type, payload, catcode, range = table.unpack(token)  -- luacheck: ignore catcode
-      if token_type == "control sequence" then
+      if token_type == CSNAME then
         local csname = payload
         local _, _, argument_specifiers = csname:find(":([^:]*)")
         if argument_specifiers ~= nil then
@@ -282,7 +293,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
         if token_index + 1 <= #part_tokens then
           local next_token = part_tokens[token_index + 1]
           local next_token_type, next_csname, _, next_range = table.unpack(next_token)
-          if next_token_type == "control sequence" then
+          if next_token_type == CSNAME then
             if (
                   lpeg.match(parsers.expl3_function_assignment_csname, csname) ~= nil
                   and lpeg.match(parsers.non_expl3_csname, next_csname) == nil
@@ -315,4 +326,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
   results.groupings = groupings
 end
 
-return lexical_analysis
+return {
+  process = lexical_analysis,
+  token_types = token_types,
+}

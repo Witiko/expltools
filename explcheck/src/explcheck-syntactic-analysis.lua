@@ -1,7 +1,10 @@
 -- The syntactic analysis step of static analysis converts TeX tokens into a tree of function calls.
 
-local new_range, range_flags = table.unpack(require("explcheck-ranges"))
+local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
+
+local new_range = ranges.new_range
+local range_flags = ranges.range_flags
 
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
@@ -9,8 +12,21 @@ local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local lpeg = require("lpeg")
 
+local call_types = {
+  CALL = 0,
+  OTHER = 1,
+}
+
+local CALL = call_types.CALL
+local OTHER = call_types.OTHER
+
 -- Convert the content to a tree of function calls an register any issues.
 local function syntactic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname content options
+
+  local token_types = require("explcheck-lexical-analysis").token_types
+
+  local CSNAME = token_types.CSNAME
+  local CHARACTER = token_types.CHARACTER
 
   -- Extract function calls from TeX tokens and groupings.
   local function get_calls(tokens, token_range, groupings)
@@ -23,10 +39,10 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
 
     local function record_other_tokens(other_token_range)
       local previous_call = #calls > 0 and calls[#calls] or nil
-      if previous_call == nil or previous_call[1] ~= "other" then  -- record a new span of other tokens between calls
-        table.insert(calls, {"other", other_token_range})
+      if previous_call == nil or previous_call[1] ~= OTHER then  -- record a new span of other tokens between calls
+        table.insert(calls, {OTHER, other_token_range})
       else  -- extend the previous span of other tokens
-        assert(previous_call[1] == "other")
+        assert(previous_call[1] == OTHER)
         assert(previous_call[2]:stop() == other_token_range:start() - 1)
         previous_call[2] = new_range(previous_call[2]:start(), other_token_range:stop(), INCLUSIVE, #tokens)
       end
@@ -35,7 +51,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
     while token_number <= token_range:stop() do
       local token = tokens[token_number]
       local token_type, payload, catcode, byte_range = table.unpack(token)  -- luacheck: ignore catcode byte_range
-      if token_type == "control sequence" then  -- a control sequence, try to extract a call
+      if token_type == CSNAME then  -- a control sequence, try to extract a call
         local csname = payload
         local _, _, argument_specifiers = csname:find(":([^:]*)")
         if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
@@ -64,10 +80,10 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
               while next_token_number <= token_range:stop() do
                 next_token = tokens[next_token_number]
                 next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
-                if next_token_type == "character" and next_catcode == 2 then  -- end grouping, skip the control sequence
+                if next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping, skip the control sequence
                   issues:add('e300', 'unexpected function call argument', next_byte_range)
                   goto skip_other_token
-                elseif next_token_type == "character" and next_catcode == 1 then  -- begin grouping, record the parameter text
+                elseif next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, record the parameter text
                   next_token_number = next_token_number - 1
                   table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE | MAYBE_EMPTY, #tokens))
                   break
@@ -83,10 +99,10 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 goto continue
               end
             elseif lpeg.match(parsers.N_type_argument_specifier, argument_specifier) then  -- an N-type argument specifier
-              if next_token_type == "character" and next_catcode == 1 then  -- begin grouping, skip the control sequence
+              if next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, skip the control sequence
                 issues:add('e300', 'unexpected function call argument', next_byte_range)
                 goto skip_other_token
-              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
+              elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
                 record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
                 token_number = next_token_number
                 goto continue
@@ -94,7 +110,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 table.insert(arguments, new_range(next_token_number, next_token_number, INCLUSIVE, #tokens))
               end
             elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
-              if next_token_type == "character" and next_catcode == 1 then  -- begin grouping, try to collect the balanced text
+              if next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, try to collect the balanced text
                 next_grouping = groupings[next_token_number]
                 assert(next_grouping ~= nil)
                 assert(next_grouping.start == next_token_number)
@@ -107,7 +123,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE | MAYBE_EMPTY, #tokens))
                   next_token_number = next_grouping.stop
                 end
-              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
+              elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
                 record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
                 token_number = next_token_number
                 goto continue
@@ -120,17 +136,17 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
             end
             next_token_number = next_token_number + 1
           end
-          table.insert(calls, {"call", new_range(token_number, next_token_number, EXCLUSIVE, #tokens), csname, arguments})
+          table.insert(calls, {CALL, new_range(token_number, next_token_number, EXCLUSIVE, #tokens), csname, arguments})
           token_number = next_token_number
           goto continue
         else  -- a non-expl3 control sequence, skip it
           goto skip_other_token
         end
-      elseif token_type == "character" then  -- an ordinary character
+      elseif token_type == CHARACTER then  -- an ordinary character
         if payload == "=" then  -- an equal sign
           if token_number + 2 <= token_range:stop() then  -- followed by two other tokens
-            if tokens[token_number + 1][1] == "control sequence" then  -- the first being a control sequence
-              if tokens[token_number + 2][1] == "character" and tokens[token_number + 2][2] == "," then  -- and the second being a comma
+            if tokens[token_number + 1][1] == CSNAME then  -- the first being a control sequence
+              if tokens[token_number + 2][1] == CHARACTER and tokens[token_number + 2][2] == "," then  -- and the second being a comma
                 -- (probably l3keys definition?), skip all three tokens
                 record_other_tokens(new_range(token_number, token_number + 2, INCLUSIVE, #tokens))
                 token_number = token_number + 3
@@ -142,7 +158,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
         -- an ordinary character, skip it
         goto skip_other_token
       else
-        error('Unexpected token type "' .. token_type .. '"')
+        error('Unexpected token type ' .. token_type)
       end
       ::skip_other_token::
       record_other_tokens(new_range(token_number, token_number, INCLUSIVE, #tokens))
@@ -164,4 +180,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
   results.calls = calls
 end
 
-return syntactic_analysis
+return {
+  process = syntactic_analysis,
+  call_types = call_types
+}

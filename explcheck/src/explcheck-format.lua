@@ -2,6 +2,9 @@
 
 local get_option = require("explcheck-config")
 local utils = require("explcheck-utils")
+local call_types = require("explcheck-syntactic-analysis").call_types
+
+local CALL = call_types.CALL
 
 -- Transform a singular into plural if the count is zero or greater than two.
 local function pluralize(singular, count)
@@ -278,7 +281,7 @@ local function print_results(pathname, content, issues, results, options, is_las
               local num_expl_calls = 0
               for _, calls in ipairs(results.calls) do
                 for _, call in ipairs(calls) do
-                  if call[1] == "call" then
+                  if call[1] == CALL then
                     num_expl_calls = num_expl_calls + 1
                   end
                 end

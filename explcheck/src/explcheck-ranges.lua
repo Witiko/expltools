@@ -158,8 +158,8 @@ function Range:__tostring()
 end
 
 return {
-  function(...)
+  new_range = function(...)
     return Range:new(...)
   end,
-  range_flags,
+  range_flags = range_flags,
 }
