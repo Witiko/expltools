@@ -466,7 +466,7 @@ xepersian-mathsdigitspec.sty s103,s204,w200
 xepersian.sty e300,s103,s204
 xetexko.sty e300,s103,s204,s205
 xfntinst.sty s204,w100
-xfrac.sty e300,s103,s204,w200
+xfrac.sty s103,s204,w200
 xgalley.sty e300,s204,s205,s206,w200
 xltxtra.sty s204
 xmuthesis.cls s103,s204

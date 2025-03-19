@@ -412,7 +412,7 @@ lwarp-chemmacros.sty s103,s204,s206
 lwarp-chemnum.sty s204
 lwarp-common-mathjax-siunitx.sty s204
 lwarp-embrac.sty s204
-lwarp-enotez.sty e300,s103,s204,s206
+lwarp-enotez.sty s103,s204,s206
 lwarp-fontawesome5-generic-helper.sty s204
 lwarp-fontawesome5-utex-helper.sty s204
 lwarp-froufrou.sty s204
@@ -696,7 +696,7 @@ tcblistingscore.code.tex e300,s103,s204
 tcbminted.code.tex s103,s204
 tcbprocessing.code.tex s204
 tcbskins.code.tex s103,s204
-tcbtheorems.code.tex e300,s103,s204
+tcbtheorems.code.tex s103,s204
 tcolorbox.sty e300,s103,s204
 termmenu.tex s204,s206,w100
 termsim.sty s103,s204,w202
@@ -821,7 +821,7 @@ xepersian-mathdigitspec.sty s103,s204,s205,w200
 xepersian.sty e300,s103,s204
 xetexko.sty e300,s103,s204,s205
 xfntinst.sty s204,w100
-xfrac.sty e300,s103,w200
+xfrac.sty s103,w200
 xgalley.sty e300,s204,s205,s206,w200
 xintsession.tex s103,s204,w100
 xistercian.sty e300,s204

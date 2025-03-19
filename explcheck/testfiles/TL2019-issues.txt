@@ -7,7 +7,7 @@ URpagestyles.sty s103,s204
 URrules.sty s103,s204,s206,w101
 URspecialopts.sty s103,s204,s205,s206
 acro.definitions.tex e300,s204
-acro.sty e300,s103,s204,s206,w101,w200,w202
+acro.sty s103,s204,s206,w101,w200,w202
 algobox.sty e300,s103,s204,s205
 aligned-overset.sty e300,s103,s204
 animate.sty e300,e301,s204
@@ -360,7 +360,7 @@ xepersian-mathsdigitspec.sty s103,s204,w200
 xepersian.sty e300,s103,s204
 xetexko-font.sty e300,s103,s204,s205
 xfntinst.sty s204,w100
-xfrac.sty e300,s103,s204,w200
+xfrac.sty s103,s204,w200
 xgalley.sty e300,s204,s205,s206,w200
 xltxtra.sty s204
 xob-font.sty e300,s103,s204,s206

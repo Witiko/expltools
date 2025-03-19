@@ -92,7 +92,7 @@ ebproof.sty s103,s204,s206,w200
 ecgdraw.sty e201,s103,s204,s206
 embrac.sty e300,s204,w200,w202
 endiagram.sty s103,s204,w200
-enotez.sty e300,s103,s204,s206,w200,w202
+enotez.sty s103,s204,s206,w200,w202
 erw-l3.sty s103,s204,s206,w101
 expl3-code.tex e300,e301,s204,s205,s206,w200,w202
 expl3-generic.tex s204,w200
@@ -300,7 +300,7 @@ xepersian-mathsdigitspec.sty s103,s204,w200
 xepersian.sty s103,s204
 xetexko-font.sty e300,s103,s204,s206
 xfntinst.sty s204,w100
-xfrac.sty e300,s103,s204,w200
+xfrac.sty s103,s204,w200
 xgalley.sty e300,s204,s205,s206,w200
 xltxtra.sty s204
 xob-font.sty e300,s103,s204,s206

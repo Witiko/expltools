@@ -5,7 +5,7 @@ GSSetup.tex s204
 GS_cut_EAN_control_digit.tex s204,s206
 GS_set_EAN_control_digit.tex e300,s204,s206
 GS_set_code_digit_seq.tex s204,s206
-acro.sty e300,s103,s204,s206,w200,w202
+acro.sty s103,s204,s206,w200,w202
 asts.tex s204
 breqn.sty e300,s204
 cfntinst.sty s204,w100
@@ -29,7 +29,7 @@ embrac.sty e300,s103,s204,w200,w202
 empheq.sty e201,s204,w100
 endiagram.sty s103,s204
 endiagram_en.tex s103,s204
-enotez.sty e300,s103,s204,s206,w200
+enotez.sty s103,s204,s206,w200
 expl3.sty e300,s204,s206,w200
 exsheets-listings.sty s103,s204
 exsheets.sty s103,s204,w200
@@ -178,7 +178,7 @@ xepersian-mathsdigitspec.sty s103,s204
 xepersian.sty s103,s204
 xetexko-font.sty s103,s204
 xfntinst.sty s204,w100
-xfrac.sty e300,s204,w200
+xfrac.sty s204,w200
 xgalley.sty e300,s204,s205,s206,w200
 xltxtra.sty s204
 xparse.sty s204,s205,s206,w200
