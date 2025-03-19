@@ -209,7 +209,10 @@ local function preprocessing(pathname, content, issues, results, options)
               return true
             end
           )
-        + (Any - V"Opener")
+        + (
+          V"Any"
+          - V"Opener"
+        )
       )^0
     ),
     FirstLineExplPart = (
@@ -226,7 +229,10 @@ local function preprocessing(pathname, content, issues, results, options)
             "w101",
             "unexpected delimiters"
           )
-          + (Any - V"Closer")
+          + (
+            V"Any"
+            - V"Closer"
+          )
         )^0
       * (
         V"Head"
@@ -251,6 +257,7 @@ local function preprocessing(pathname, content, issues, results, options)
       * V"HeadlessCloser"
     ),
     Head = Head,
+    Any = Any,
   }
   lpeg.match(analysis_grammar, transformed_content)
 
