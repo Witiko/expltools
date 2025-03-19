@@ -6,7 +6,7 @@
 
 #### Development
 
-- Stabilize the Lua API of processing steps. (#64)
+- Stabilize the Lua API of processing steps. (#64, 0a98f5fa)
 
   All processing steps are now functions that accept the following arguments:
   1. The filename of a processed file
