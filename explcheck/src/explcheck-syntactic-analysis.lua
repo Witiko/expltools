@@ -86,7 +86,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
               if next_token_type == "character" and next_catcode == 1 then  -- begin grouping, skip the control sequence
                 issues:add('e300', 'unexpected function call argument', next_byte_range)
                 goto skip_other_token
-              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all remaining tokens
+              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
                 record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
                 token_number = next_token_number
                 goto continue
@@ -107,7 +107,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE | MAYBE_EMPTY, #tokens))
                   next_token_number = next_grouping.stop
                 end
-              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all remaining tokens
+              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
                 record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
                 token_number = next_token_number
                 goto continue
