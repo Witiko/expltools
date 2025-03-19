@@ -9,7 +9,7 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
-local Cp, Ct, Cc, P, V = lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
+local B, Cmt, Cp, Ct, Cc, P, V = lpeg.B, lpeg.Cmt, lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
 local function preprocessing(pathname, content, issues, results, options)
@@ -118,7 +118,7 @@ local function preprocessing(pathname, content, issues, results, options)
   end
 
   local num_provides = 0
-  local FirstLineOpener, HeadlessCloser = parsers.fail, parsers.fail
+  local FirstLineOpener, HeadlessCloser, Head, Any = parsers.fail, parsers.fail, parsers.fail, parsers.any
   local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
   if expl3_detection_strategy ~= 'never' and expl3_detection_strategy ~= 'always' then
     FirstLineOpener = (
@@ -142,6 +142,38 @@ local function preprocessing(pathname, content, issues, results, options)
         input_ended = true
       end
     )
+    -- (Under)estimate the current TeX grouping level.
+    local estimated_grouping_level = 0
+    Any = (
+      -B(parsers.expl3_catcodes[0])  -- no preceding backslash
+      * parsers.expl3_catcodes[1]  -- begin grouping
+      * Cmt(
+        parsers.success,
+        function()
+          estimated_grouping_level = estimated_grouping_level + 1
+          return true
+        end
+      )
+      + parsers.expl3_catcodes[2]  -- end grouping
+      * Cmt(
+        parsers.success,
+        function()
+          estimated_grouping_level = math.max(0, estimated_grouping_level - 1)
+          return true
+        end
+      )
+      + parsers.any
+    )
+    -- Allow indent before a standard delimiter outside a TeX grouping.
+    Head = (
+      parsers.newline
+      + Cmt(
+        parsers.success,
+        function()
+          return estimated_grouping_level == 0
+        end
+      )
+    )
   end
 
   local has_expl3like_material = false
@@ -161,7 +193,7 @@ local function preprocessing(pathname, content, issues, results, options)
       (
         unexpected_pattern(
           (
-            parsers.newline
+            V"Head"
             * Cp()
             * V"HeadlessCloser"
           ),
@@ -177,7 +209,7 @@ local function preprocessing(pathname, content, issues, results, options)
               return true
             end
           )
-        + (parsers.any - V"Opener")
+        + (Any - V"Opener")
       )^0
     ),
     FirstLineExplPart = (
@@ -187,17 +219,17 @@ local function preprocessing(pathname, content, issues, results, options)
       * (
           unexpected_pattern(
             (
-              parsers.newline
+              V"Head"
               * Cp()
               * V"FirstLineOpener"
             ),
             "w101",
             "unexpected delimiters"
           )
-          + (parsers.any - V"Closer")
+          + (Any - V"Closer")
         )^0
       * (
-        parsers.newline
+        V"Head"
         * Cp()
         * V"HeadlessCloser"
         + Cp()
@@ -205,19 +237,20 @@ local function preprocessing(pathname, content, issues, results, options)
       )
     ),
     ExplPart = (
-      parsers.newline
+      V"Head"
       * V"FirstLineExplPart"
     ),
     FirstLineOpener = FirstLineOpener,
     Opener = (
-      parsers.newline
+      V"Head"
       * V"FirstLineOpener"
     ),
     HeadlessCloser = HeadlessCloser,
     Closer = (
-      parsers.newline
-      * HeadlessCloser
+      V"Head"
+      * V"HeadlessCloser"
     ),
+    Head = Head,
   }
   lpeg.match(analysis_grammar, transformed_content)
 

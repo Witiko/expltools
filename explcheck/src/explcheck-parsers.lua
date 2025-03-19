@@ -8,6 +8,7 @@ local C, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt,
 local any = P(1)
 local eof = -any
 local fail = P(false)
+local success = P(true)
 
 ---- Tokens
 local ampersand = P("&")
@@ -528,6 +529,7 @@ return {
   double_superscript_convention = double_superscript_convention,
   endinput = endinput,
   eof = eof,
+  expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
   expl3_function_assignment_csname = expl3_function_assignment_csname,
   expl3_function_csname = expl3_function_csname,
@@ -550,6 +552,7 @@ return {
   parameter_argument_specifier = parameter_argument_specifier,
   provides = provides,
   space = space,
+  success = success,
   tab = tab,
   tex_lines = tex_lines,
   weird_argument_specifier = weird_argument_specifier,
