@@ -9,7 +9,7 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
 local lpeg = require("lpeg")
-local Cp, Ct, P, V = lpeg.Cp, lpeg.Ct, lpeg.P, lpeg.V
+local Cp, Ct, Cc, P, V = lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
 local function preprocessing(pathname, content, issues, results, options)
@@ -98,17 +98,20 @@ local function preprocessing(pathname, content, issues, results, options)
 
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}
+  local input_ended = false
 
-  local function capture_range(range_start, range_end)
-    local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
-    table.insert(expl_ranges, range)
+  local function capture_range(should_skip, range_start, range_end)
+    if not should_skip then
+      local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
+      table.insert(expl_ranges, range)
+    end
   end
 
   local function unexpected_pattern(pattern, code, message, test)
     return Ct(Cp() * pattern * Cp()) / function(range_table)
-      local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
-      local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
-      if test == nil or test() then
+      if not input_ended and (test == nil or test()) then
+        local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
+        local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
         issues:add(code, message, range)
       end
     end
@@ -132,7 +135,13 @@ local function preprocessing(pathname, content, issues, results, options)
         )
       )
     )
-    HeadlessCloser = parsers.expl_syntax_off
+    HeadlessCloser = (
+      parsers.expl_syntax_off
+      + parsers.endinput
+      / function()
+        input_ended = true
+      end
+    )
   end
 
   local has_expl3like_material = false
@@ -172,7 +181,8 @@ local function preprocessing(pathname, content, issues, results, options)
       )^0
     ),
     FirstLineExplPart = (
-      V"FirstLineOpener"
+      Cc(input_ended)
+      * V"FirstLineOpener"
       * Cp()
       * (
           unexpected_pattern(

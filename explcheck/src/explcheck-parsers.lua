@@ -374,8 +374,15 @@ local provides = (
   * optional_spaces_and_newline
   * argument
 )
-local expl_syntax_on = expl3_catcodes[0] * P([[ExplSyntaxOn]])
-local expl_syntax_off = expl3_catcodes[0] * P([[ExplSyntaxOff]])
+local expl_syntax_on = expl3_catcodes[0] * P("ExplSyntaxOn")
+local expl_syntax_off = expl3_catcodes[0] * P("ExplSyntaxOff")
+local endinput = (
+  expl3_catcodes[0]
+  * (
+    P("tex_endinput:D")
+    + P("endinput")
+  )
+)
 
 ---- Commands from LaTeX style files
 local latex_style_file_csname =
@@ -519,6 +526,7 @@ return {
   do_not_use_argument_specifier = do_not_use_argument_specifier,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
+  endinput = endinput,
   eof = eof,
   expl3_endlinechar = expl3_endlinechar,
   expl3_function_assignment_csname = expl3_function_assignment_csname,
