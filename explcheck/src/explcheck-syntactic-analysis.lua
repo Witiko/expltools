@@ -86,11 +86,15 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
               if next_token_type == "character" and next_catcode == 1 then  -- begin grouping, skip the control sequence
                 issues:add('e300', 'unexpected function call argument', next_byte_range)
                 goto skip_other_token
-              else  -- an N-type argument, record it
+              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all remaining tokens
+                record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
+                token_number = next_token_number
+                goto continue
+              else  -- not begin/end grouping, i.e. an N-type argument, record it
                 table.insert(arguments, new_range(next_token_number, next_token_number, INCLUSIVE, #tokens))
               end
             elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
-              if next_token_type == "character" and next_catcode == 1 then  -- an n-type argument, try to collect the balanced text
+              if next_token_type == "character" and next_catcode == 1 then  -- begin grouping, try to collect the balanced text
                 next_grouping = groupings[next_token_number]
                 assert(next_grouping ~= nil)
                 assert(next_grouping.start == next_token_number)
@@ -103,6 +107,10 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE | MAYBE_EMPTY, #tokens))
                   next_token_number = next_grouping.stop
                 end
+              elseif next_token_type == "character" and next_catcode == 2 then  -- end grouping (partial application?), skip all remaining tokens
+                record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
+                token_number = next_token_number
+                goto continue
               else  -- not begin grouping, skip the control sequence
                 issues:add('e300', 'unexpected function call argument', next_byte_range)
                 goto skip_other_token
