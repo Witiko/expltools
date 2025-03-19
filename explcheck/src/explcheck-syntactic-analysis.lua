@@ -101,7 +101,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   end
                   goto skip_other_token
                 else  -- a balanced text, record it
-                  table.insert(arguments, new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens))
+                  table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE | MAYBE_EMPTY, #tokens))
                   next_token_number = next_grouping.stop
                 end
               else  -- not begin grouping, skip the control sequence
