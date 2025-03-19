@@ -60,7 +60,7 @@ bfhpub.cls s103,s204,w202
 bfhsciposter.cls s103,s204,w101,w202
 bfhthesis.cls s103,s204,w202
 biblatex-cv.sty s204
-biblatex-ext-oasymb-l3draw.sty s204,w200
+biblatex-ext-oasymb-l3draw.sty s204
 bidi-atbegshi.sty s103,s204,w200
 bidi-media9.sty s204,s206,w202
 bitbeamer.cls s204,s205
@@ -83,7 +83,7 @@ changelog.sty s103,s204,s205,s206
 chemfig-lewis.tex s103,s204,w100
 chemfig.tex s103,s204,w100
 chemformula.sty s103,s204,s205,s206,w101,w200,w202
-chemgreek.sty e300,s103,s204,w101,w200
+chemgreek.sty s103,s204,w101,w200
 chemmacros-2015-02-08.sty e300,s103,s204,s205,s206,w200
 chemmacros-2020-03-07.sty s204,w101
 chemmacros.sty e300,s204,s205,s206,w200,w202
@@ -94,7 +94,6 @@ citation-style-language.sty e300,s103,s204
 citeall.sty s103,s204,w200
 classics.sty s103,s204
 clistmap.sty s103,s204,s205,s206,w100,w101
-cnltx-base.sty s103,s204,w100
 codebox.sty s103,s204,w202
 codehigh.sty e300,s103,s204,s206
 color-ltx.sty s204
@@ -176,7 +175,7 @@ enotez.sty e300,s103,s204,s206,w200
 erw-l3.sty s103,s204,w100,w101
 etl.sty s103,s204,w200
 exam-zh-chinese-english.sty s103,s204
-exam-zh-choices.sty e300,s103,s204
+exam-zh-choices.sty e301,s103,s204
 exam-zh-font.sty s103,s204
 exam-zh-question.sty e300,s103,s204,w200
 exam-zh-symbols.sty s103,s204,s205
@@ -429,7 +428,6 @@ naive-ebnf.sty s204,s206
 namedef.sty e300,s204,s206,w200
 newpax.sty s204
 nicematrix.sty e300,s103,s204,s205,s206,w200,w202
-niceverb.sty s204,w100
 ninecolors.sty s204
 njuthesis.cls s103,s204,s206,w200,w202
 njuvisual.sty s103,s204
@@ -601,7 +599,7 @@ stricttex.sty s103
 stripsemantex.sty s103,s204
 structuredlog.sty s204
 styledcmd.sty e300,s103,s204,w202
-substances.sty e300,e301,s204,w200
+substances.sty s204
 swfigure.sty e300,s204
 swiss.qrbill-cfg.tex s204
 t-markdown.tex s103,s204

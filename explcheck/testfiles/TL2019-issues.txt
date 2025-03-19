@@ -22,7 +22,7 @@ beamerthemeTUDa.sty s103,s204
 beamerthemeUR.sty s204
 bearwear.sty s103,s204
 beuron.sty s103,s204
-biblatex-ext-oasymb-l3draw.sty s204,w200
+biblatex-ext-oasymb-l3draw.sty s204
 bidi-media9.sty s204,s206,w202
 breqn.sty e300,s204
 bxjaholiday.sty s103,s204,w200
@@ -34,8 +34,8 @@ cascade.sty e300,s103,s204,s206
 cellprops.sty e300,s103,s204,s205,s206
 cfntinst.sty s204,w100
 chemfig.tex s103,s204,w100
-chemformula.sty e300,s103,s204,s206,w101,w200,w202
-chemgreek.sty e300,s103,s204,w101,w200
+chemformula.sty s103,s204,s206,w101,w200,w202
+chemgreek.sty s103,s204,w101,w200
 chemmacros.module.acid-base.code.tex e300,s103,s204,w100
 chemmacros.module.all.code.tex s204,w100
 chemmacros.module.base.code.tex e300,s103,s204,w100,w200,w202
@@ -64,10 +64,9 @@ chemmacros.module.xfrac.code.tex s103,s204,w100
 chemmacros.sty s204
 chemmacros4.sty e300,s103,s204,s205,s206,w101,w200
 chemmacros5.sty e300,s204,w101
-chemnum.sty e300,s103,s204,w101,w200,w202
+chemnum.sty s103,s204,w101,w200,w202
 citeall.sty s103,s204,w200
 classics.sty s103,s204
-cnltx-base.sty s103,s204,w100
 coloring.sty s103,s204
 combofont.sty s103,s204
 comicneue.sty s204,s206
@@ -218,7 +217,6 @@ morewrites.sty s103,s204,s205,s206,w200
 mucproc.cls s103,s204,s205,s206
 multicolrule.sty s204,w200,w202
 nicematrix.sty e300,s103,s204,s205,s206,w200,w202
-niceverb.sty s204,w100
 notes2bib.sty e300,s103,s204,w200
 novel-Footnotes.sty s204
 novel-TextMacros.sty s204
@@ -307,7 +305,7 @@ sseqmessages.code.tex e300,s103,s204
 sseqparsers.code.tex e300,s103,s204
 statistics.sty e300,s204,s206
 stex.sty s204
-substances.sty e300,e301,s204,w200
+substances.sty s204
 tagpdf-attr-code.sty s204
 tagpdf-checks-code.sty s103,s204
 tagpdf-mc-code-generic.sty s103,s204,s206
