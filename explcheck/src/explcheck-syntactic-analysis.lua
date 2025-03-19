@@ -126,7 +126,20 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
         else  -- a non-expl3 control sequence, skip it
           goto skip_other_token
         end
-      elseif token_type == "character" then  -- an ordinary character, skip it
+      elseif token_type == "character" then  -- an ordinary character
+        if payload == "=" then  -- an equal sign
+          if token_number + 2 <= token_range:stop() then  -- followed by two other tokens
+            if tokens[token_number + 1][1] == "control sequence" then  -- the first being a csname
+              if tokens[token_number + 2][1] == "character" and tokens[token_number + 2][2] == "," then  -- and the second being a comma
+                -- (probably l3keys definition?), skip all three tokens
+                record_other_tokens(new_range(token_number, token_number + 2, INCLUSIVE, #tokens))
+                token_number = token_number + 3
+                goto continue
+              end
+            end
+          end
+        end
+        -- an ordinary character, skip it
         goto skip_other_token
       else
         error('Unexpected token type "' .. token_type .. '"')
