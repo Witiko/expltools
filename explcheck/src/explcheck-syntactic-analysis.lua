@@ -129,7 +129,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
       elseif token_type == "character" then  -- an ordinary character
         if payload == "=" then  -- an equal sign
           if token_number + 2 <= token_range:stop() then  -- followed by two other tokens
-            if tokens[token_number + 1][1] == "control sequence" then  -- the first being a csname
+            if tokens[token_number + 1][1] == "control sequence" then  -- the first being a control sequence
               if tokens[token_number + 2][1] == "character" and tokens[token_number + 2][2] == "," then  -- and the second being a comma
                 -- (probably l3keys definition?), skip all three tokens
                 record_other_tokens(new_range(token_number, token_number + 2, INCLUSIVE, #tokens))
