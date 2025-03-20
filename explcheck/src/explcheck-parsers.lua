@@ -60,20 +60,25 @@ local expl3_catcodes = {
   [11] = letter + colon + underscore,  -- letter
   [13] = form_feed,  -- active character
   [14] = percent_sign,  -- comment character
-  [15] = control_character,  -- invalid character
+  [15] = control_character - newline,  -- invalid character
 }
 expl3_catcodes[12] = any  -- other
-for catcode, parser in pairs(expl3_catcodes) do
+for catcode = 0, 15 do
+  local parser = expl3_catcodes[catcode]
   if catcode ~= 12 then
     expl3_catcodes[12] = expl3_catcodes[12] - parser
   end
 end
 
 local determine_expl3_catcode = fail
-for catcode, parser in pairs(expl3_catcodes) do
+for catcode = 0, 15 do
+  local parser = expl3_catcodes[catcode]
   determine_expl3_catcode = (
     determine_expl3_catcode
-    + parser / function() return catcode end
+    + parser
+    / function()
+      return catcode
+    end
   )
 end
 
