@@ -185,7 +185,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           character_index = csname_index
         elseif catcode == 5 then  -- end of line
           if state == "N" then
-            table.insert(tokens, {CONTROL_SEQUENCE, "par", range})
+            table.insert(tokens, {CONTROL_SEQUENCE, "par", 0, range})
           elseif state == "M" then
             table.insert(tokens, {CHARACTER, " ", 10, range})
           end
