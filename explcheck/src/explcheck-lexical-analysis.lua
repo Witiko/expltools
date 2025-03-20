@@ -14,8 +14,8 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local lpeg = require("lpeg")
 
 local token_types = {
-  CONTROL_SEQUENCE = 0,
-  CHARACTER = 1,
+  CONTROL_SEQUENCE = "control sequence",
+  CHARACTER = "character",
 }
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE

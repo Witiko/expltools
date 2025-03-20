@@ -13,8 +13,8 @@ local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 local lpeg = require("lpeg")
 
 local call_types = {
-  CALL = 0,
-  OTHER_TOKENS = 1,
+  CALL = "call",
+  OTHER_TOKENS = "other tokens",
 }
 
 local CALL = call_types.CALL
@@ -158,7 +158,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
         -- an ordinary character, skip it
         goto skip_other_token
       else
-        error('Unexpected token type ' .. token_type)
+        error('Unexpected token type "' .. token_type .. '"')
       end
       ::skip_other_token::
       record_other_tokens(new_range(token_number, token_number, INCLUSIVE, #tokens))
