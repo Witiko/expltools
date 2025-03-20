@@ -19,7 +19,7 @@ local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 --
 -- Since empty ranges are usually a mistake, they are not allowed unless MAYBE_EMPTY
 -- is specified. For example, `Range:new(index, index, EXCLUSIVE, #array)` is not
--- allowed but `Range:new(index, index, EXCLUSIVE | MAYBE_EMPTY, #array)` is.
+-- allowed but `Range:new(index, index, EXCLUSIVE + MAYBE_EMPTY, #array)` is.
 -- The exception to this rule are empty arrays, which always produce an empty range.
 function Range.new(cls, range_start, range_end, end_type, transformed_array_size, map_back, original_array_size)
   -- Instantiate the class.
@@ -31,13 +31,15 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
     -- If the transformed array is empty, produce an empty range, encoded as [0; 0].
     range_start = 0
     range_end = 0
-    end_type = INCLUSIVE | MAYBE_EMPTY
+    end_type = INCLUSIVE + MAYBE_EMPTY
   else
     -- Otherwise, check that the range start is not out of bounds.
     assert(range_start >= 1)
     assert(range_start <= transformed_array_size)
   end
-  if end_type & 0x01 == EXCLUSIVE then
+  local exclusive_end = end_type % 2 == EXCLUSIVE
+  local maybe_empty = end_type - (end_type % 2) == MAYBE_EMPTY
+  if exclusive_end then
     -- Convert exclusive range end to inclusive.
     range_end = range_end - 1
   end
@@ -47,7 +49,7 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
     assert(range_end == 0)
   else
     -- Otherwise:
-    if end_type & 0x02 == MAYBE_EMPTY then
+    if maybe_empty then
       -- If MAYBE_EMPTY is specified, allow empty ranges [x, x).
       assert(range_end >= range_start - 1)
     else
@@ -73,7 +75,7 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
     end
     if range_end < range_start then
       -- If the range is supposed to be empty, set the range end to the range start - 1.
-      assert(end_type & 0x02 == MAYBE_EMPTY)
+      assert(maybe_empty)
       mapped_range_end = mapped_range_start - 1
     else
       -- Otherwise, apply the map-back function to the range end as well.
@@ -84,7 +86,7 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
       assert(mapped_range_end == 0)
     else
       -- Otherwise:
-      if end_type & 0x02 == MAYBE_EMPTY then
+      if maybe_empty then
         -- If MAYBE_EMPTY is specified, allow empty ranges [x, x).
         assert(mapped_range_end >= mapped_range_start - 1)
       else

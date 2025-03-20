@@ -85,7 +85,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   goto skip_other_token
                 elseif next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, record the parameter text
                   next_token_number = next_token_number - 1
-                  table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE | MAYBE_EMPTY, #tokens))
+                  table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE + MAYBE_EMPTY, #tokens))
                   break
                 end
                 next_token_number = next_token_number + 1
@@ -120,7 +120,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   end
                   goto skip_other_token
                 else  -- a balanced text, record it
-                  table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE | MAYBE_EMPTY, #tokens))
+                  table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens))
                   next_token_number = next_grouping.stop
                 end
               elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
