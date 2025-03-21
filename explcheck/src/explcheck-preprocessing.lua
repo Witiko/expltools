@@ -121,23 +121,20 @@ local function preprocessing(pathname, content, issues, results, options)
   end
 
   local num_provides = 0
-  local FirstLineOpener, HeadlessCloser, Head, Any = parsers.fail, parsers.fail, parsers.fail, parsers.any
+  local FirstLineProvides, FirstLineExplSyntaxOn, HeadlessCloser, Head, Any =
+    parsers.fail, parsers.fail, parsers.fail, parsers.fail, parsers.any
   local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
   if expl3_detection_strategy ~= 'never' and expl3_detection_strategy ~= 'always' then
-    FirstLineOpener = (
-      (
-        parsers.expl_syntax_on
-        + unexpected_pattern(
-          parsers.provides,
-          "e104",
-          [[multiple delimiters `\ProvidesExpl*` in a single file]],
-          function()
-            num_provides = num_provides + 1
-            return num_provides > 1
-          end
-        )
-      )
+    FirstLineProvides = unexpected_pattern(
+      parsers.provides,
+      "e104",
+      [[multiple delimiters `\ProvidesExpl*` in a single file]],
+      function()
+        num_provides = num_provides + 1
+        return num_provides > 1
+      end
     )
+    FirstLineExplSyntaxOn = parsers.expl_syntax_on
     HeadlessCloser = (
       parsers.expl_syntax_off
       + parsers.endinput
@@ -223,7 +220,8 @@ local function preprocessing(pathname, content, issues, results, options)
       * V"FirstLineOpener"
       * Cp()
       * (
-          unexpected_pattern(
+          V"Provides"
+          + unexpected_pattern(
             (
               V"Head"
               * Cp()
@@ -249,7 +247,15 @@ local function preprocessing(pathname, content, issues, results, options)
       V"Head"
       * V"FirstLineExplPart"
     ),
-    FirstLineOpener = FirstLineOpener,
+    FirstLineProvides = FirstLineProvides,
+    Provides = (
+      V"Head"
+      * V"FirstLineProvides"
+    ),
+    FirstLineOpener = (
+      FirstLineExplSyntaxOn
+      + V"FirstLineProvides"
+    ),
     Opener = (
       V"Head"
       * V"FirstLineOpener"
