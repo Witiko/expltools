@@ -14,8 +14,8 @@ URspecialopts.sty s103,s204,s205,s206
 aalok.cls s204
 abspos.sty s204,s206
 acmart-tagged.cls s204
-acro.sty e300,s103,s204,s205,s206,w101,w200,w202
-acro2.sty e300,s103,s204,s206,w101,w200,w202
+acro.sty e300,s103,s204,s205,s206,w200,w202
+acro2.sty e300,s103,s204,s206,w200,w202
 adfarrows.sty s103,s204
 adfbullets.sty s204
 adforn.sty s204
@@ -116,12 +116,12 @@ cellprops.sty e300,s103,s204,s205,s206
 cfntinst.sty s204,w100
 cfr-lm.sty s103,s204
 changelog.sty s103,s204,s205,s206
-chemformula.sty s103,s204,s205,s206,w101,w200,w202
-chemgreek.sty s103,s204,w101,w200
+chemformula.sty s103,s204,s205,s206,w200,w202
+chemgreek.sty s103,s204,w200
 chemmacros-2015-02-08.sty e300,s103,s204,s205,s206,w200
-chemmacros-2020-03-07.sty s204,w101
+chemmacros-2020-03-07.sty s204
 chemmacros.sty e300,s204,s205,s206,w200,w202
-chemnum.sty e300,s103,s204,w101,w200,w202
+chemnum.sty e300,s103,s204,w200,w202
 chessboard-pgf.sty e300,s204
 chinesechess.sty s103,s204,s206,w200,w202
 chronos.sty s103,s204,s206,w202
@@ -246,8 +246,8 @@ expex-acro.sty s103,s204
 expl3-code.tex e300,e301,s204,s205,s206,w200,w202
 expl3-generic.tex s204,w200
 expl3.sty s204,w200
-exsheets-listings.sty s103,s204,w101
-exsheets.sty e300,s103,s204,w101,w200,w202
+exsheets-listings.sty s103,s204
+exsheets.sty e300,s103,s204,w200,w202
 extramarks-v4.sty e300,s204,w101
 factura.cls e300,s103,s204
 fancyhdr.sty s204,w101
@@ -264,8 +264,8 @@ fixocgx.sty s204
 flexipage.sty s204
 flexisym.sty e300,s204,w200
 floatrowbytocbasic.sty s204,s206
-fnpct-2019-10-05.sty e300,s103,s204,w101,w200
-fnpct.sty e300,s103,s204,w101,w200
+fnpct-2019-10-05.sty e300,s103,s204,w200
+fnpct.sty e300,s103,s204,w200
 fontawesome5-generic-helper.sty s204
 fontawesome5-utex-helper.sty s103,s204,s205,w200,w202
 fontawesome5.sty e300,s103,s204,s205
@@ -284,7 +284,7 @@ gatherenum.sty s204,s206
 gelasiomath.sty s204
 genealogy-profiles.sty e300,s103,s204
 genealogytree.sty s204
-ghsystem.sty s103,s204,w101,w200
+ghsystem.sty s103,s204,w200
 gitver.sty s204
 glossaries-2022-11-03.sty s204
 glossaries-2024-04-03.sty s204
@@ -425,7 +425,7 @@ leadsheets.library.songs.code.tex s103,s204,w100,w101
 leadsheets.library.templates.code.tex s204,w100,w200
 leadsheets.library.translations.code.tex e300,s204,w100
 leadsheets.library.transposing.code.tex s204,w100
-leadsheets.sty s103,s204,w101
+leadsheets.sty s103,s204
 lebhart.cls s103,s204
 leftindex.sty s103,s204,s206
 lengthconvert.sty s103,s204,w200,w202
@@ -520,7 +520,7 @@ mandistudent.sty s204
 marathi.sty s204
 marginalia.sty s204,s205,s206
 markdown.tex e300
-matapli.cls e300,s103,s204,s206,w101
+matapli.cls e300,s103,s204,s206
 mathcommand.sty e300,e301,s103,s204,s205,s206,w101,w200
 mathspec.sty s204
 maze.sty s103,s204
@@ -792,7 +792,7 @@ tagpdf-mc-code-generic.sty s103,s204,s206,w200
 tagpdf-mc-code-lua.sty s103,s204,s206
 tagpdf.sty s103,s204,s205,s206
 tagpdfdocu-patches.sty s103,s204,w101,w200
-tasks.sty e300,s103,s204,s206,w101
+tasks.sty e300,s103,s204,s206
 tblr-extras.sty e300,s103,s204
 tcbdocumentation.code.tex s103,s204
 tcbexternal.code.tex s103,s204
@@ -957,9 +957,9 @@ xpiano.sty s103,s204,w200
 xpinyin.sty s103,s204,w200
 xsavebox.sty s204,s206,w200,w202
 xsim-manual.cls s103,s204
-xsim.sty e300,s103,s204,s206,w101,w200,w202
+xsim.sty e300,s103,s204,s206,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
-xsimverb.sty e301,s103,s204,w101
+xsimverb.sty e301,s103,s204
 xtemplate-2023-10-10.sty s103,s204,s206
 xtemplate.sty s204
 xunicode-addon.sty e300,s204,w200

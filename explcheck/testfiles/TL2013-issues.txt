@@ -67,7 +67,7 @@ l3galley.sty e300,s103,s204,s205,s206,w200
 l3int.sty s204,s206,w200
 l3keys.sty s204,s206,w202
 l3keys2e.sty w202
-l3keysdemo.sty s204,s206,w101
+l3keysdemo.sty s204,s206
 l3luatex.sty s204,s205,s206,w200
 l3msg.sty s204,s206,w200,w202
 l3names.sty s204,w200

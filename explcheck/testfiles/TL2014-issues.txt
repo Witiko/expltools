@@ -73,9 +73,9 @@ l3fp.sty s204
 l3galley.sty e300,s103,s204,s205,s206,w200
 l3int.sty s204
 l3keys.sty s204
-l3keys2e-demo.tex e104,w101
+l3keys2e-demo.tex e104
 l3keys2e.sty s103,w202
-l3keysdemo.sty s204,s206,w101
+l3keysdemo.sty s204,s206
 l3msg.sty s204
 l3names.sty s204
 l3prg.sty s204
@@ -104,7 +104,7 @@ leadsheets.library.songs.code.tex e300,s103,s204,w100,w101
 leadsheets.library.templates.code.tex s204,w100,w200
 leadsheets.library.translations.code.tex s204,w100
 leadsheets.library.transposing.code.tex s204,w100
-leadsheets.sty s103,s204,w101
+leadsheets.sty s103,s204
 lengthconvert.sty s103,s204,w200,w202
 lltjp-fontspec.sty s204
 lltjp-unicode-math.sty s204,w200
@@ -187,7 +187,7 @@ unravel.sty e300,s204,s205,s206,w200,w202
 with.sty s204,s205
 withargs.sty s204,s205
 withargs.tex s204
-xCJK2uni-make.tex e209,s103,s204,w101,w200
+xCJK2uni-make.tex e209,s103,s204,w200
 xCJK2uni.sty s103,s204,w200
 xcoffins.sty e300
 xeCJK-listings.sty s204,w200
