@@ -106,7 +106,18 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
                 token_number = next_token_number
                 goto continue
-              else  -- not begin/end grouping, i.e. an N-type argument, record it
+              else
+                if next_token_type == CHARACTER and next_catcode == 6 then  -- a parameter
+                  if next_token_number + 1 <= token_range:stop() then  -- followed by one other token
+                    if tokens[next_token_number + 1][1] == CHARACTER and  -- that is a digit (unrecognized parameter/replacement text?)
+                        lpeg.match(parsers.decimal_digit, tokens[next_token_number + 1][2]) then  -- skip all tokens
+                      record_other_tokens(new_range(token_number, next_token_number + 1, INCLUSIVE, #tokens))
+                      token_number = next_token_number + 2
+                      goto continue
+                    end
+                  end
+                end
+                -- an N-type argument, record it
                 table.insert(arguments, new_range(next_token_number, next_token_number, INCLUSIVE, #tokens))
               end
             elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
@@ -127,7 +138,18 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
                 token_number = next_token_number
                 goto continue
-              else  -- not begin grouping, skip the control sequence
+              else  -- not begin grouping
+                if next_token_type == CHARACTER and next_catcode == 6 then  -- a parameter
+                  if next_token_number + 1 <= token_range:stop() then  -- followed by one other token
+                    if tokens[next_token_number + 1][1] == CHARACTER and  -- that is a digit (unrecognized parameter/replacement text?)
+                        lpeg.match(parsers.decimal_digit, tokens[next_token_number + 1][2]) then  -- skip all tokens
+                      record_other_tokens(new_range(token_number, next_token_number + 1, INCLUSIVE, #tokens))
+                      token_number = next_token_number + 2
+                      goto continue
+                    end
+                  end
+                end
+                -- skip the control sequence
                 issues:add('e300', 'unexpected function call argument', next_byte_range)
                 goto skip_other_token
               end
