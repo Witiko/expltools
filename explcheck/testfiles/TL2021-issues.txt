@@ -1,4 +1,4 @@
-GS1.sty e300,s204,w302
+GS1.sty s204,w302,w303
 PJLlang.sty s204,w202
 PJLthm.sty s103,s204
 ProfCollege.sty s103,s204
@@ -15,7 +15,7 @@ acro.sty s103,s204,s205,w200,w202,w302
 acro2.sty s103,s204,s206,w200,w202
 akshar.sty s204
 algobox.sty s103,s204,s205,w302
-aligned-overset.sty e300,s103,s204,w302
+aligned-overset.sty s103,s204,w302,w303
 animate.sty e301,s204,w302
 annee-scolaire.sty s204
 antanilipsum.sty s103,s204,w200,w202
@@ -32,7 +32,7 @@ beamerinnerthemeBFH.sty s103,s204
 beamerinnerthemeTUDa.sty s103,s204
 beamerouterthemeBFH-sidebar.sty s204
 beamerouterthemeBFH.sty s103,s204
-beamerouterthemeTUDa.sty e300,s103,s204
+beamerouterthemeTUDa.sty s103,s204,w303
 beamerouterthemeUR.sty s204,s205,s206,w302
 beamerswitch.cls s103,s204
 beamerthemeTUDa-mecheng.sty s103,s204
@@ -57,7 +57,7 @@ blx-case-expl3.sty s103,s204
 breqn.sty s204
 bxjaholiday.sty s103,s204,w200
 caesar_book.cls s204
-cas-common.sty e300,s103,s204,s205,s206,w200,w202
+cas-common.sty s103,s204,s205,s206,w200,w202,w303
 cas-dc.cls s204,w200
 cas-sc.cls s204,w200
 cascade.sty s103,s204,s206,w302
@@ -110,7 +110,7 @@ ctexrep.cls s204,s206,w200,w202
 ctexsize.sty s204,w200
 ctxdoc.cls s204,s206,w200
 ctxdocstrip.tex s204
-currency.sty e300,s204
+currency.sty s204,w303
 curve2e.sty s204
 dashundergaps.sty s204,w302
 dbshow.sty s103,s204,s205,s206
@@ -153,7 +153,7 @@ expl3-generic.tex s204,w200
 expl3.sty s204,w200
 exsheets-listings.sty s103,s204
 exsheets.sty s103,s204,w200,w202
-factura.cls e300,s103,s204
+factura.cls s103,s204,w303
 fapapersize.sty s204
 fdudoc.cls s204,s206,w200
 fdulogo.sty s204
@@ -185,13 +185,13 @@ gtrcore.drawing.code.tex s103,s204
 gtrcore.options.code.tex s103,s204
 gtrcore.symbols.code.tex s204
 gtrlib.fanchart.code.tex s103,s204,s206
-gzt.cls e300,s103,s204,s205,w202,w302
-gztarticle.cls e300,s103,s204,s205,w202,w302
+gzt.cls e300,s103,s204,s205,w202,w302,w303
+gztarticle.cls e300,s103,s204,s205,w202,w302,w303
 handoutWithNotes.sty s103,s204
 hanzibox.sty s103,s204,w200,w202
 hep-bibliography.sty s204,s205
 hep-math.sty s204
-hobby.code.tex e300,s204,s206
+hobby.code.tex s204,s206,w303
 hobete.sty s103,s204,s205,s206
 hpstatement-bg.inc.sty s103,s204
 hpstatement-cs.inc.sty s103,s204
@@ -228,14 +228,14 @@ hyperxmp-patches-tmp-ltx.sty s103,s204
 incgraph.sty e300,s103,s204,s206
 interchar.sty e300,s204,s206,w200,w202
 intopdf.sty s204
-invoice2.sty e300,s103,s204
+invoice2.sty s103,s204,w303
 istgame.sty s103,s204,s205,s206,w302
 jlreq-deluxe.sty s204
 jlreq-helpers.sty s103,s204
 jlreq-trimmarks.sty s103,s204,s205
 jlreq.cls s103,s204,s205,s206,w302
 jmsdelim.sty s103,s204,s206
-jslectureplanner.sty e300,s103,s204
+jslectureplanner.sty e300,s103,s204,w303
 kalendarium.sty s103,s204,w101
 kanbun.sty s103,s204,s206,w101
 kantlipsum.sty s204,w200,w202
@@ -249,7 +249,7 @@ l3draw.sty s103,s204,s206,w202
 l3galley.sty s103,s205,s206,w200,w302
 l3graphics.sty s103,w200,w202
 l3keys2e.sty s103
-l3pdffield-testphase.sty e300,s103,s204,w202
+l3pdffield-testphase.sty s103,s204,w202,w303
 l3ref-tmp.sty w202
 l3str-format.sty s103,s204
 l3sys-shell.sty s206,w200
@@ -272,7 +272,7 @@ lebhart.cls s103,s204
 leftindex.sty s103,s204,s206
 lengthconvert.sty s103,s204,w200,w202
 letgut-banner.sty s204,s206,w302
-letgut.cls e300,s204,s206,w202,w302
+letgut.cls s204,s206,w202,w302,w303
 letterswitharrows.sty s204,w200
 lie-hasse.sty s204
 limecv.cls s204
@@ -329,7 +329,7 @@ mandi.sty s103,s204
 mandistudent.sty s204
 marathi.sty s204
 markdown.sty s204
-matapli.cls e300,s103,s204,s206
+matapli.cls s103,s204,s206,w303
 mathcommand.sty e301,s103,s204,s205,s206,w101,w200
 mathspec.sty s204
 media4svg.sty e301,s103,s204,s206,w202
@@ -343,7 +343,7 @@ metrix.sty s103,s204,s205,w202
 mhchem.sty s103,s204,s205,s206,w302
 minibox.sty s204
 minimalist-classical.sty s103,s204,s206
-minimalist-plain.sty e300,s103,s204,s206
+minimalist-plain.sty s103,s204,s206,w303
 minimalist.sty s103,s204
 minimart.cls s103,s204
 minimbook.cls s103,s204
@@ -370,8 +370,8 @@ numerica-plus.sty s103,s204
 numerica-tables.sty s103,s204,s205,s206
 numerica.sty s103,s204,s206,w202
 nwafuthesis.cls s204,s206,w200,w202
-nwejm.cls e300,s103,s204,s205,s206,w202,w302
-nwejmart.cls e300,s103,s204,s205,s206,w101,w202
+nwejm.cls e300,s103,s204,s205,s206,w202,w302,w303
+nwejmart.cls e300,s103,s204,s205,s206,w101,w202,w303
 ob-mathleading.sty s204
 ob-unfontsdefault.sty s204
 obchaptertoc.sty s103,s204,s206
@@ -414,7 +414,7 @@ plsiunitx.sty s204,w200
 pmhanguljamo-rrk.sty s204,s206,w100,w202
 pmhanguljamo.sty s204,s206,w202
 pml3array.sty s204,s206
-polyglossia.sty e300,s103,s204,s205,w202,w302
+polyglossia.sty e300,s103,s204,s205,w202,w302,w303
 powerdot.cls e301,s204,w302
 prelim2e.sty s204
 primargs.sty s103,s204,w200
@@ -427,11 +427,11 @@ projlib-language.sty s103,s204,w202,w302
 projlib-logo.sty s103,s204
 projlib-math.sty s103,s204
 projlib-paper.sty s103
-projlib-theorem.sty e300,s103,s204
-pseudo.sty e300,s204,s205,w200,w202,w302
+projlib-theorem.sty s103,s204,w303
+pseudo.sty s204,s205,w200,w202,w302,w303
 pst-calculate.sty s204
 pstool.sty s204
-pyluatex.sty e300,s103,s204
+pyluatex.sty s103,s204,w303
 qrbill.sty s204,s206
 randomwalk.sty s204,s205
 rbt-mathnotes-formula-sheet.cls s204,s205
@@ -548,7 +548,7 @@ tikzlings.sty s204
 tikzscale.sty s204
 tikzsymbols.sty s103,s204,s206,w202
 tipauni.sty s103,s204,w202
-topiclongtable.sty e300,s103,s204,s206
+topiclongtable.sty s103,s204,s206,w303
 transparent-ltx.sty s204
 tuda-pgfplots.sty s103,s204
 tudabeamer.cls s103,s204,s206,w202
@@ -562,7 +562,7 @@ tudapub.cls s103,s204,s205,s206,w202
 tudarules.sty s103,s204,w302
 tudasciposter.cls s103,s204,s206,w202,w302
 typoaid.sty s103,s204,s206
-tzplot.sty e300,s103,s204,s205,w302
+tzplot.sty s103,s204,s205,w302,w303
 uantwerpenbamathesis.cls s103,s204,s206
 uantwerpencoursetext.cls s204,s206
 uantwerpenexam.cls s204,s206
@@ -579,7 +579,7 @@ widows-and-orphans.sty s204
 withargs.sty s204,s205
 witharrows.sty s103,s204,s205,s206,w200,w202,w302
 xCJK2uni.sty s103,s204
-xassoccnt.sty e300,s103,s204,s205,s206,w202
+xassoccnt.sty e300,s103,s204,s205,s206,w202,w303
 xcntperchap.sty s103,s204,s205,s206
 xcolor-patches-tmp-ltx.sty s204
 xcpdftips.sty e301,s204,w200

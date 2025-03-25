@@ -1,4 +1,4 @@
-GS1.sty e300,s204,w302
+GS1.sty s204,w302,w303
 URbeamer.cls s204
 URcolors.sty s204
 URletter.cls s103,s204,s206,w202
@@ -9,7 +9,7 @@ URspecialopts.sty s103,s204,s205,s206
 acro.definitions.tex s204
 acro.sty s103,s204,s206,w200,w202
 algobox.sty s103,s204,s205,w302
-aligned-overset.sty e300,s103,s204,w302
+aligned-overset.sty s103,s204,w302,w303
 animate.sty e301,s204,w302
 asmejour.cls s204
 beamercolorthemeTUDa.sty s204
@@ -27,7 +27,7 @@ bidi-media9.sty s204,s206,w202
 breqn.sty s204
 bxjaholiday.sty s103,s204,w200
 caesar_book.cls s204
-cas-common.sty e300,s103,s204,s205,s206,w200,w202
+cas-common.sty s103,s204,s205,s206,w200,w202,w303
 cas-dc.cls s204,w200
 cas-sc.cls s204,w200
 cascade.sty s103,s204,s206,w302
@@ -88,7 +88,7 @@ ctexsize.sty s204,w200
 ctexspamacro.tex s206,w200
 ctxdoc.cls s204,s206,w200,w202
 ctxdocstrip.tex s204
-currency.sty e300,s204
+currency.sty s204,w303
 curve2e.sty s204
 dashundergaps.sty s204,w302
 ddphonism.sty s204
@@ -116,7 +116,7 @@ expl3-generic.tex s204,w200
 expl3.sty s204,w200,w202
 exsheets-listings.sty s103,s204
 exsheets.sty s103,s204,w200,w202
-factura.cls e300,s204
+factura.cls s204,w303
 fdudoc.cls s204,s206,w200
 fdulogo.sty s204
 fduthesis-en.cls s103,s204,s206,w200,w202
@@ -136,16 +136,16 @@ ftc-notebook.sty s204
 gatherenum.sty s204,s206
 ghsystem.sty s103,s204,w200
 gtl.sty s204,s205,s206
-gzt.cls e300,s103,s204,s205,s206,w202,w302
-gztarticle.cls e300,s103,s204,s205,s206,w202,w302
-hobby.code.tex e300,s204,s206
+gzt.cls e300,s103,s204,s205,s206,w202,w302,w303
+gztarticle.cls e300,s103,s204,s205,s206,w202,w302,w303
+hobby.code.tex s204,s206,w303
 hobete.sty s103,s204,s205,s206
 hvfloat.sty e301,s103,s204,s206,w302
 interchar.sty e300,s204,s206,w200,w202
 intopdf.sty s204,s206,w200
-invoice2.sty e300,s103,s204
+invoice2.sty s103,s204,w303
 istgame.sty s103,s204,s205,s206,w302
-jslectureplanner.sty e300,s204
+jslectureplanner.sty e300,s204,w303
 kalendarium.sty s103,s204,w101
 kantlipsum.sty s204,w200,w202
 knowledge.sty e300,e301,s103,s204,s205,s206,w101,w202,w302
@@ -177,7 +177,7 @@ lengthconvert.sty s103,s204,w200,w202
 letterswitharrows.sty s204,w200
 lie-hasse.sty s204
 limecv.cls s204
-lipsum.sty e300,s204,w200
+lipsum.sty s204,w200,w302,w303
 lisp-mod-l3regex.sty s103,s204,s206
 lltjp-fontspec.sty s103,s204
 lltjp-siunitx.sty s204,w200
@@ -221,8 +221,8 @@ notes2bib.sty s103,s204,w200,w302
 novel-Footnotes.sty s204
 novel-TextMacros.sty s204
 numberpt.sty s103,s204,s206
-nwejm.cls e300,s103,s204,s205,s206,w202,w302
-nwejmart.cls e300,s103,s204,s205,s206,w101,w202
+nwejm.cls e300,s103,s204,s205,s206,w202,w302,w303
+nwejmart.cls e300,s103,s204,s205,s206,w101,w202,w303
 ocgbase.sty s204,w200,w202
 ocgx2.sty s204,s206,w202
 onedown.sty s204,s205
@@ -249,10 +249,10 @@ plsiunitx.sty s204,w200
 pmhanguljamo-rrk.sty s204,s206,w100,w202
 pmhanguljamo.sty s204,s206,w202
 pml3array.sty s204,s206
-polyglossia.sty e300,s103,s204,s205,w202,w302
+polyglossia.sty e300,s103,s204,s205,w202,w302,w303
 powerdot.cls e301,s204,w302
 primargs.sty s103,s204,w200
-pseudo.sty e300,s204,s205,w200,w202,w302
+pseudo.sty s204,s205,w200,w202,w302,w303
 pst-calculate.sty s204
 pstool.sty s204
 randomwalk.sty s204,s205
@@ -329,7 +329,7 @@ tikzlibrarypenrose.code.tex s204,w200
 tikzlibrarytikzmark.code.tex s103,s204,s206
 tikzscale.sty s204
 tikzsymbols.sty s103,s204,s206,w202
-topiclongtable.sty e300,s103,s204,s206
+topiclongtable.sty s103,s204,s206,w303
 tuda-pgfplots.sty s103,s204
 tudabeamer.cls s103,s204,s206,w202
 tudacolors.sty s103,s204
@@ -337,7 +337,7 @@ tudaexercise.cls s103,s204,s206,w202,w302
 tudafonts.sty s103,s204
 tudaletter.cls s103,s204,s205,s206,w202
 tudaposter.cls s103,s204,s206
-tudapub.cls e300,s103,s204,s205,s206,w202
+tudapub.cls s103,s204,s205,s206,w202,w303
 tudarules.sty s103,s204,w302
 tudasciposter.cls s103,s204,s205,s206,w202
 typoaid.sty s103,s204,s206
@@ -349,7 +349,7 @@ widows-and-orphans.sty s204
 withargs.sty s204,s205
 witharrows.sty s103,s204,s205,s206,w200,w202,w302
 xCJK2uni.sty s103,s204
-xassoccnt.sty e300,s103,s204,s205,s206,w202
+xassoccnt.sty e300,s103,s204,s205,s206,w202,w303
 xcntperchap.sty s103,s204,s205,s206
 xcpdftips.sty e301,s204,w200
 xeCJK-listings.sty s204,w200

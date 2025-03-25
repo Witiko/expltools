@@ -22,3 +22,10 @@ An n-type function call argument is unbraced:
  /w302.tex
 
 Depending on the specific function, this may or may not be an error.
+
+## Braced N-type function call argument {.w label=w303}
+An N-type function call argument is braced:
+
+ /w302.tex
+
+Depending on the specific function, this may or may not be an error.

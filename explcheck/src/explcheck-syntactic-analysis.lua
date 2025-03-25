@@ -99,9 +99,25 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 goto continue
               end
             elseif lpeg.match(parsers.N_type_argument_specifier, argument_specifier) then  -- an N-type argument specifier
-              if next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, skip the control sequence
-                issues:add('e300', 'unexpected function call argument', next_byte_range)
-                goto skip_other_token
+              if next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, try to collect the balanced text
+                next_grouping = groupings[next_token_number]
+                assert(next_grouping ~= nil)
+                assert(next_grouping.start == next_token_number)
+                if next_grouping.stop == nil then  -- an unclosed grouping, skip the control sequence
+                  if token_range:stop() == #tokens then
+                    issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                  end
+                  goto skip_other_token
+                else  -- a balanced text
+                  if next_grouping.start + 1 == next_grouping.stop - 1 then  -- a single token, record it
+                      issues:add('w303', 'braced N-type function call argument', next_byte_range)
+                      table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens))
+                      next_token_number = next_grouping.stop
+                  else
+                    issues:add('e300', 'unexpected function call argument', next_byte_range)
+                    goto skip_other_token  -- no token / more than one token, skip the control sequence
+                  end
+                end
               elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
                 record_other_tokens(new_range(token_number, next_token_number, EXCLUSIVE, #tokens))
                 token_number = next_token_number
