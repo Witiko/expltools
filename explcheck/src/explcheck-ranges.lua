@@ -118,8 +118,11 @@ end
 
 -- Get the length of the range.
 function Range:__len()
-  if self:start() == 0 or self:stop() < self:start() then
+  if self:start() == 0 then
     assert(self:stop() == 0)
+    return 0  -- empty range
+  elseif self:stop() < self:start() then
+    assert(self:stop() == self:start() - 1)
     return 0  -- empty range
   else
     return self:stop() - self:start() + 1  -- non-empty range
