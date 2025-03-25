@@ -121,7 +121,7 @@ chemgreek.sty s103,s204,w200
 chemmacros-2015-02-08.sty s103,s204,s205,s206,w200
 chemmacros-2020-03-07.sty s204
 chemmacros.sty e300,s204,s205,s206,w200,w202
-chemnum.sty e300,s103,s204,w200,w202
+chemnum.sty s103,s204,w200,w202
 chessboard-pgf.sty s204
 chinesechess.sty s103,s204,s206,w200,w202
 chronos.sty s103,s204,s206,w202
@@ -224,12 +224,12 @@ einfart.cls s103,s204
 electrum.sty s204
 elsarticle.cls s103,s204,w202
 elzcards.sty s103,s204
-embrac.sty e300,s204,w200,w202
+embrac.sty s204,w200,w202
 emoji.sty s204
 emojicite.sty s103,s204,w101
 emotion.sty s204,w101
 endiagram.sty s103,s204,w200
-enotez.sty e300,s103,s204,s206,w200
+enotez.sty s103,s204,s206,w200
 enumext.sty s103,s204,s206,w200
 enverb.sty s204
 erw-l3.sty s103,s204
@@ -247,7 +247,7 @@ expl3-code.tex e300,e301,s204,s205,s206,w200,w202
 expl3-generic.tex s204,w200
 expl3.sty s204,w200
 exsheets-listings.sty s103,s204
-exsheets.sty e300,s103,s204,w200,w202
+exsheets.sty s103,s204,w200,w202
 extramarks-v4.sty e300,s204,w101
 factura.cls e300,s103,s204
 fancyhdr.sty s204,w101
@@ -379,7 +379,7 @@ kanbun.sty s103,s204,s206,w101
 kantlipsum.sty s204,w200
 keyparse.sty s204,w101
 keytheorems.sty s103,s204,s205
-keythms-amsart-support.tex e300,s204
+keythms-amsart-support.tex e301,s204
 keythms-beamer-support.tex s103,s204
 keythms-jlreq-support.tex s103,s204
 keythms-memoir-support.tex s204
@@ -792,7 +792,7 @@ tagpdf-mc-code-generic.sty s103,s204,s206,w200
 tagpdf-mc-code-lua.sty s103,s204,s206
 tagpdf.sty s103,s204,s205,s206
 tagpdfdocu-patches.sty s103,s204,w101,w200
-tasks.sty e300,s103,s204,s206
+tasks.sty s103,s204,s206
 tblr-extras.sty e300,s103,s204
 tcbdocumentation.code.tex s103,s204
 tcbexternal.code.tex s103,s204
