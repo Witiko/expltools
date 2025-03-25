@@ -19,7 +19,7 @@ syntactic_analysis.process(filename, content, issues, results, options)
 
 assert(#issues.errors == 1)
 
-local expected_line_numbers = {2}
+local expected_line_numbers = {1}
 for index, err in ipairs(issues.sort(issues.errors)) do
   assert(err[1] == "e301")
   assert(err[2] == "end of expl3 part within function call")

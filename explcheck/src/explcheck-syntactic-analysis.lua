@@ -67,7 +67,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
             end
             if next_token_number > token_range:stop() then  -- missing argument (partial application?), skip all remaining tokens
               if token_range:stop() == #tokens then
-                issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                issues:add('e301', 'end of expl3 part within function call', byte_range)
               end
               record_other_tokens(new_range(token_number, token_range:stop(), INCLUSIVE, #tokens))
               token_number = next_token_number
