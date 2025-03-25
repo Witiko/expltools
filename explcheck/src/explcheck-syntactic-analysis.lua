@@ -149,9 +149,9 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                     end
                   end
                 end
-                -- skip the control sequence
-                issues:add('e300', 'unexpected function call argument', next_byte_range)
-                goto skip_other_token
+                -- an unbraced n-type argument, record it
+                issues:add('w302', 'unbraced n-type function call argument', next_byte_range)
+                table.insert(arguments, new_range(next_token_number, next_token_number, INCLUSIVE, #tokens))
               end
             else
               error('Unexpected argument specifier "' .. argument_specifier .. '"')

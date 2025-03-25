@@ -6,7 +6,6 @@ A function is called with an unexpected argument.
 
  /e300-02.tex
  /e300-03.tex
- /e300-04.tex
 
 Partial applications are detected by analysing closing braces (`}`) and do not produce an error:
 
@@ -16,3 +15,10 @@ Partial applications are detected by analysing closing braces (`}`) and do not p
 A function call is cut off by the end of a file or an expl3 part of a file:
 
  /e301.tex
+
+## Unbraced n-type function call argument {.w label=w302}
+An n-type function call argument is unbraced:
+
+ /w302.tex
+
+Depending on the specific function, this may or may not be an error.

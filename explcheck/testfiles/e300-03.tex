@@ -1,3 +1,5 @@
-\tl_set:Nn
-  \l_tmpa_tl
-  \unexpected  % error on this line
+{
+  \cs_new:Npn
+    \example_foo:w
+    #1 }  % error on this line
+    { foo~#1 }
