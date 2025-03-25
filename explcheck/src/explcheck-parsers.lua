@@ -387,6 +387,7 @@ local endinput = (
   * (
     P("tex_endinput:D")
     + P("endinput")
+    + P("file_input_stop:")
   )
 )
 
