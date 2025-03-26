@@ -2,9 +2,6 @@
 
 local get_option = require("explcheck-config")
 local utils = require("explcheck-utils")
-local call_types = require("explcheck-syntactic-analysis").call_types
-
-local CALL = call_types.CALL
 
 -- Transform a singular into plural if the count is zero or greater than two.
 local function pluralize(singular, count)
@@ -72,51 +69,8 @@ local function decolorize(text)
   return text:gsub("\27%[[0-9]+m", "")
 end
 
--- Format a ratio as a percentage.
-local function format_ratio(num_expl_bytes, num_total_bytes)
-  if num_expl_bytes == 0 then
-    return "no"
-  elseif num_expl_bytes < num_total_bytes then
-    local expl_coverage = num_expl_bytes / num_total_bytes
-    return string.format("%2.0f%%", math.max(1, math.min(99, 100 * expl_coverage)))
-  else
-    return "all"
-  end
-end
-
--- Format a number in a human-readable way, using words for small numbers and metric prefixes for large numbers.
-local function format_human_readable(number)
-  if number == 0 then
-    return "no"
-  elseif number == 1 then
-    return "one"
-  elseif number == 2 then
-    return "two"
-  elseif number == 4 then
-    return "four"
-  elseif number == 5 then
-    return "five"
-  elseif number == 6 then
-    return "six"
-  elseif number == 9 then
-    return "nine"
-  elseif number == 10 then
-    return "ten"
-  elseif number < 10^4 then
-    return tostring(number)
-  elseif number < 10^6 then
-    return string.format("~%.0fk", number / 10^3)
-  elseif number < 10^9 then
-    return string.format("~%.0fM", number / 10^6)
-  elseif number < 10^12 then
-    return string.format("~%.0fG", number / 10^9)
-  else
-    return string.format("~%.0fT", number / 10^12)
-  end
-end
-
 -- Print the summary results of analyzing multiple files.
-local function print_summary(pathname, options, print_state)
+local function print_summary(pathname, options, print_state)  -- luacheck: ignore pathname options
   local num_pathnames = print_state.num_pathnames or 0
   local num_warnings = print_state.num_warnings or 0
   local num_errors = print_state.num_errors or 0
@@ -133,59 +87,11 @@ local function print_summary(pathname, options, print_state)
 
   io.write(tostring(num_pathnames) .. " " .. pluralize("file", num_pathnames))
 
-  if get_option('verbose', options, pathname) then
-    local notes = {}
-
-    if print_state.filetypes ~= nil then
-      local max_filetype, max_num_total_bytes = nil, -1
-      local filetypes = {}
-      for filetype, _ in pairs(print_state.filetypes) do
-        table.insert(filetypes, filetype)
-      end
-      assert(#filetypes > 0)
-      table.sort(filetypes)
-      for _, filetype in ipairs(filetypes) do
-        local num_total_bytes = print_state.filetypes[filetype]
-        if num_total_bytes > max_num_total_bytes then
-          max_filetype = filetype
-        elseif num_total_bytes == max_num_total_bytes then
-          max_filetype = string.format("%s and %s", max_filetype, filetype)
-        end
-        max_num_total_bytes = num_total_bytes
-      end
-      assert(max_filetype ~= nil)
-      if #filetypes > 1 then
-        max_filetype = string.format("mostly %s", max_filetype)
-      end
-      table.insert(notes, max_filetype)
-    end
-
-    if print_state.num_total_bytes ~= nil then
-      local num_total_bytes = print_state.num_total_bytes
-      local num_expl_bytes = print_state.num_expl_bytes or 0
-      table.insert(notes, string.format("%s expl3", format_ratio(num_expl_bytes, num_total_bytes)))
-    end
-
-    if print_state.num_expl_tokens ~= nil then
-      local num_expl_tokens = print_state.num_expl_tokens
-      table.insert(notes, string.format("%s %s", format_human_readable(num_expl_tokens), pluralize("token", num_expl_tokens)))
-    end
-
-    if print_state.num_expl_calls ~= nil then
-      local num_expl_calls = print_state.num_expl_calls
-      table.insert(notes, string.format("%s %s", format_human_readable(num_expl_calls), pluralize("call", num_expl_calls)))
-    end
-
-    if #notes > 0 then
-      io.write(string.format(" (%s)", table.concat(notes, ", ")))
-    end
-  end
-
   print()
 end
 
 -- Print the results of analyzing a file.
-local function print_results(pathname, content, issues, results, options, is_last_file, print_state)
+local function print_results(pathname, content, issues, results, options, is_last_file, print_state)  -- luacheck: ignore content
   print_state.num_pathnames = (print_state.num_pathnames or 0) + 1
   print_state.num_warnings = (print_state.num_warnings or 0) + #issues.warnings
   print_state.num_errors = (print_state.num_errors or 0) + #issues.errors
@@ -243,71 +149,8 @@ local function print_results(pathname, content, issues, results, options, is_las
   end
 
   if not porcelain then
-    local notes = {}
-
-    if get_option('verbose', options, pathname) then
-      if results.expl_ranges ~= nil then
-        local num_total_bytes = #content
-        print_state.num_total_bytes = (print_state.num_total_bytes or 0) + num_total_bytes
-        if num_total_bytes > 0 then
-          if results.seems_like_latex_style_file ~= nil then
-            local filetype
-            if results.seems_like_latex_style_file then
-              filetype = "LaTeX"
-            else
-              filetype = "other"
-            end
-            table.insert(notes, filetype)
-            print_state.filetypes = print_state.filetypes or {}
-            print_state.filetypes[filetype] = (print_state.filetypes[filetype] or 0) + num_total_bytes
-          end
-          local num_expl_bytes = 0
-          for _, expl_range in ipairs(results.expl_ranges) do
-            num_expl_bytes = num_expl_bytes + #expl_range
-          end
-          print_state.num_expl_bytes = (print_state.num_expl_bytes or 0) + num_expl_bytes
-          local expl_coverage = string.format("%3s expl3", format_ratio(num_expl_bytes, num_total_bytes))
-          table.insert(notes, expl_coverage)
-          if num_expl_bytes > 0 and results.tokens ~= nil then
-            local num_expl_tokens = 0
-            for _, tokens in ipairs(results.tokens) do
-              num_expl_tokens = num_expl_tokens + #tokens
-            end
-            print_state.num_expl_tokens = (print_state.num_expl_tokens or 0) + num_expl_tokens
-            local formatted_num_expl_tokens = format_human_readable(num_expl_tokens)
-            formatted_num_expl_tokens = string.format("%4s %s", formatted_num_expl_tokens:sub(-4), pluralize("token", num_expl_tokens))
-            table.insert(notes, formatted_num_expl_tokens)
-            if num_expl_tokens > 0 and results.calls ~= nil then
-              local num_expl_calls = 0
-              for _, calls in ipairs(results.calls) do
-                for _, call in ipairs(calls) do
-                  if call[1] == CALL then
-                    num_expl_calls = num_expl_calls + 1
-                  end
-                end
-              end
-              print_state.num_expl_calls = (print_state.num_expl_calls or 0) + num_expl_calls
-              local formatted_num_expl_calls = format_human_readable(num_expl_calls)
-              formatted_num_expl_calls = string.format("%4s %s", formatted_num_expl_calls:sub(-4), pluralize("call", num_expl_calls))
-              table.insert(notes, formatted_num_expl_calls)
-            end
-          end
-        else
-          table.insert(notes, "empty")
-        end
-      end
-    end
-
-    local postfix
-    if #notes == 0 then
-      postfix = ""
-    else
-      postfix = string.format(" (%s)", table.concat(notes, ", "))
-    end
-
     local max_overview_length = get_option('terminal_width', options, pathname)
     local prefix = "Checking "
-    local reserved_postfix_length = 44
     local formatted_pathname = format_pathname(
       pathname,
       math.max(
@@ -316,7 +159,6 @@ local function print_results(pathname, content, issues, results, options, is_las
           - #prefix
           - #(" ")
           - #decolorize(status)
-          - math.max(#postfix, reserved_postfix_length)
         ), 1
       )
     )
@@ -330,18 +172,11 @@ local function print_results(pathname, content, issues, results, options, is_las
             - #prefix
             - #decolorize(status)
             - #formatted_pathname
-            - math.max(#postfix, reserved_postfix_length)
           ), 1
         )
       )
       .. status
     )
-    if #postfix > 0 then
-      overview = (
-        overview
-        .. postfix
-      )
-    end
     io.write("\n" .. overview)
   end
 
