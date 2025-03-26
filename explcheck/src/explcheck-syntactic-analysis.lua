@@ -37,6 +37,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
 
     local token_number = token_range:start()
 
+    -- Record a range of unrecognized tokens.
     local function record_other_tokens(other_token_range)
       local previous_call = #calls > 0 and calls[#calls] or nil
       if previous_call == nil or previous_call[1] ~= OTHER_TOKENS then  -- record a new span of other tokens between calls
@@ -48,16 +49,113 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
       end
     end
 
+    -- Normalize common non-expl3 commands to expl3 equivalents.
+    local function normalize_csname(csname)
+      local next_token_number = token_number + 1
+      local normalized_csname = csname
+      local ignored_token_number
+
+      if csname == "let" then  -- \let
+        if token_number + 1 <= token_range:stop() then
+          if tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- followed by a control sequence
+            if token_number + 2 <= token_range:stop() then
+              if tokens[token_number + 2][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
+                normalized_csname = "cs_set_eq:NN"  -- \let \csname \csname
+              elseif tokens[token_number + 2][1] == CHARACTER then  -- followed by a character
+                if tokens[token_number + 2][2] == "=" then  -- that is an equal sign
+                  if token_number + 3 <= token_range:stop() then
+                    if tokens[token_number + 3][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
+                      ignored_token_number = token_number + 2
+                      normalized_csname = "cs_set_eq:NN"  -- \let \csname = \csname
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      elseif csname == "def" or csname == "gdef" or csname == "edef" or csname == "xdef" then  -- \?def
+        if token_number + 1 <= token_range:stop() then
+          if tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- followed by a control sequence
+            if csname == "def" then  -- \def \csname
+              normalized_csname = "cs_set:Npn"
+            elseif csname == "gdef" then  -- \gdef \csname
+              normalized_csname = "cs_gset:Npn"
+            elseif csname == "edef" then  -- \edef \csname
+              normalized_csname = "cs_set:Npe"
+            elseif csname == "xdef" then  -- \xdef \csname
+              normalized_csname = "cs_set:Npx"
+            else
+              assert(false, csname)
+            end
+          end
+        end
+      elseif csname == "global" then  -- \global
+        next_token_number = next_token_number + 1
+        assert(next_token_number == token_number + 2)
+        if token_number + 1 <= token_range:stop() then
+          if tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- followed by a control sequence
+            csname = tokens[token_number + 1][2]
+            if csname == "let" then  -- \global \let
+              if token_number + 2 <= token_range:stop() then
+                if tokens[token_number + 2][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
+                  if token_number + 3 <= token_range:stop() then
+                    if tokens[token_number + 3][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
+                      normalized_csname = "cs_gset_eq:NN"  -- \global \let \csname \csname
+                      goto skip_decrement
+                    elseif tokens[token_number + 3][1] == CHARACTER then  -- followed by a character
+                      if tokens[token_number + 3][2] == "=" then  -- that is an equal sign
+                        if token_number + 4 <= token_range:stop() then
+                          if tokens[token_number + 4][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
+                            ignored_token_number = token_number + 3
+                            normalized_csname = "cs_gset_eq:NN"  -- \global \let \csname = \csname
+                            goto skip_decrement
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            elseif csname == "def" or csname == "gdef" or csname == "edef" or csname == "xdef" then  -- \global \?def
+              if token_number + 2 <= token_range:stop() then
+                if tokens[token_number + 2][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
+                  if csname == "def" then  -- \global \def \csname
+                    normalized_csname = "cs_gset:Npn"
+                  elseif csname == "gdef" then  -- \global \gdef \csname
+                    normalized_csname = "cs_gset:Npn"
+                  elseif csname == "edef" then  -- \global \edef \csname
+                    normalized_csname = "cs_gset:Npe"
+                  elseif csname == "xdef" then  -- \global \xdef \csname
+                    normalized_csname = "cs_gset:Npx"
+                  else
+                    assert(false)
+                  end
+                  goto skip_decrement
+                end
+              end
+            end
+          end
+        end
+        next_token_number = next_token_number - 1
+        assert(next_token_number == token_number + 1)
+        ::skip_decrement::
+      end
+      return normalized_csname, next_token_number, ignored_token_number
+    end
+
     while token_number <= token_range:stop() do
       local token = tokens[token_number]
-      local token_type, payload, catcode, byte_range = table.unpack(token)  -- luacheck: ignore catcode byte_range
-      if token_type == CONTROL_SEQUENCE then  -- a control sequence, try to extract a call
-        local csname = payload
-        local _, _, argument_specifiers = csname:find(":([^:]*)")
+      local token_type, payload, _, byte_range = table.unpack(token)
+      if token_type == CONTROL_SEQUENCE then  -- a control sequence
+        local original_csname = payload
+        local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
+        ::retry_control_sequence::
+        local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
         if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
           local arguments = {}
-          local next_token_number = token_number + 1
-          local next_token, next_token_type, next_payload, next_catcode, next_byte_range  -- luacheck: ignore next_payload
+          local next_token
+          local next_token_type, _, next_catcode, next_byte_range
           local next_grouping, parameter_text_start_token_number
           for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
             if lpeg.match(parsers.weird_argument_specifier, argument_specifier) then
@@ -65,24 +163,39 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
             elseif lpeg.match(parsers.do_not_use_argument_specifier, argument_specifier) then
               goto skip_other_token  -- a "do not use" argument specifier, skip the control sequence
             end
+            ::check_token::
             if next_token_number > token_range:stop() then  -- missing argument (partial application?), skip all remaining tokens
               if token_range:stop() == #tokens then
-                issues:add('e301', 'end of expl3 part within function call', byte_range)
+                if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
+                  csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                  goto retry_control_sequence
+                else
+                  issues:add('e301', 'end of expl3 part within function call', byte_range)
+                end
               end
               record_other_tokens(new_range(token_number, token_range:stop(), INCLUSIVE, #tokens))
               token_number = next_token_number
               goto continue
             end
             next_token = tokens[next_token_number]
-            next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
+            next_token_type, _, next_catcode, next_byte_range = table.unpack(next_token)
+            if ignored_token_number ~= nil and next_token_number == ignored_token_number then
+              next_token_number = next_token_number + 1
+              goto check_token
+            end
             if lpeg.match(parsers.parameter_argument_specifier, argument_specifier) then
               parameter_text_start_token_number = next_token_number  -- a "TeX parameter" argument specifier, try to collect parameter text
               while next_token_number <= token_range:stop() do
                 next_token = tokens[next_token_number]
-                next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
+                next_token_type, _, next_catcode, next_byte_range = table.unpack(next_token)
                 if next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping, skip the control sequence
-                  issues:add('e300', 'unexpected function call argument', next_byte_range)
-                  goto skip_other_token
+                  if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
+                    csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                    goto retry_control_sequence
+                  else
+                    issues:add('e300', 'unexpected function call argument', next_byte_range)
+                    goto skip_other_token
+                  end
                 elseif next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, record the parameter text
                   next_token_number = next_token_number - 1
                   table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE + MAYBE_EMPTY, #tokens))
@@ -92,7 +205,12 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
               end
               if next_token_number > token_range:stop() then  -- missing begin grouping (partial application?), skip all remaining tokens
                 if token_range:stop() == #tokens then
-                  issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                  if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
+                    csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                    goto retry_control_sequence
+                  else
+                    issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                  end
                 end
                 record_other_tokens(new_range(token_number, token_range:stop(), INCLUSIVE, #tokens))
                 token_number = next_token_number
@@ -105,7 +223,12 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 assert(next_grouping.start == next_token_number)
                 if next_grouping.stop == nil then  -- an unclosed grouping, skip the control sequence
                   if token_range:stop() == #tokens then
-                    issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                    if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
+                      csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                      goto retry_control_sequence
+                    else
+                      issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                    end
                   end
                   goto skip_other_token
                 else  -- a balanced text
@@ -114,8 +237,13 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                       table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens))
                       next_token_number = next_grouping.stop
                   else
-                    issues:add('e300', 'unexpected function call argument', next_byte_range)
-                    goto skip_other_token  -- no token / more than one token, skip the control sequence
+                    if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
+                      csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                      goto retry_control_sequence
+                    else
+                      issues:add('e300', 'unexpected function call argument', next_byte_range)
+                      goto skip_other_token  -- no token / more than one token, skip the control sequence
+                    end
                   end
                 end
               elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
@@ -143,7 +271,12 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 assert(next_grouping.start == next_token_number)
                 if next_grouping.stop == nil then  -- an unclosed grouping, skip the control sequence
                   if token_range:stop() == #tokens then
-                    issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                    if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
+                      csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                      goto retry_control_sequence
+                    else
+                      issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                    end
                   end
                   goto skip_other_token
                 else  -- a balanced text, record it
