@@ -148,7 +148,7 @@ endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200
 erw-l3.sty s103,s204
 etl.sty s103,s204,w200
-expl3-code.tex e300,e301,s204,s205,s206,w200,w202,w302
+expl3-code.tex s204,s205,s206,w200,w202
 expl3-generic.tex s204,w200
 expl3.sty s204,w200
 exsheets-listings.sty s103,s204
@@ -226,7 +226,7 @@ hwexam.sty s204,w302
 hyperref.sty e209,s103,s204,w101
 hyperxmp-patches-tmp-ltx.sty s103,s204
 incgraph.sty s103,s204,s206
-interchar.sty e300,s204,s206,w200,w202
+interchar.sty s204,s206,w200,w202
 intopdf.sty s204
 invoice2.sty s103,s204,w303
 istgame.sty s103,s204,s205,s206,w302
@@ -240,11 +240,11 @@ kalendarium.sty s103,s204,w101
 kanbun.sty s103,s204,s206,w101
 kantlipsum.sty s204,w200,w202
 keyparse.sty s204,w101
-knowledge.sty e300,e301,s103,s204,s205,s206,w101,w202,w302
+knowledge.sty s103,s204,s205,s206,w101,w202
 kvmap.sty s103,s204
 l3benchmark.sty s103,s204,s205
 l3bitset.sty s103,w200
-l3doc.cls s204,s205,s206,w200,w302
+l3doc.cls s204,s205,s206,w200
 l3draw.sty s103,s204,s206,w202
 l3galley.sty s103,s205,s206,w200,w302
 l3graphics.sty s103,w200,w202
@@ -262,7 +262,7 @@ leadsheets.library.chords.code.tex s103,s204,w100
 leadsheets.library.external.code.tex s103,s204,w100,w200
 leadsheets.library.musejazz.code.tex s103,s204,w100,w200
 leadsheets.library.properties.code.tex s103,s204,w100
-leadsheets.library.shorthands.code.tex e301,s204,w100
+leadsheets.library.shorthands.code.tex s204,w100
 leadsheets.library.songs.code.tex s103,s204,w100,w101
 leadsheets.library.templates.code.tex s204,w100,w200
 leadsheets.library.translations.code.tex s204,w100,w302
@@ -330,9 +330,9 @@ mandistudent.sty s204
 marathi.sty s204
 markdown.sty s204
 matapli.cls s103,s204,s206,w303
-mathcommand.sty e301,s103,s204,s205,s206,w101,w200
+mathcommand.sty s103,s204,s205,s206,w101,w200
 mathspec.sty s204
-media4svg.sty e301,s103,s204,s206,w202
+media4svg.sty s103,s204,s206,w202
 media9.sty s204,s206,w202
 memhangul-common.sty s204
 memhangul-ucs.sty s206
@@ -487,7 +487,7 @@ skrapport-colortheme-skdoc.sty s204
 skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
-skrapport.cls e300,s204,s205,s206
+skrapport.cls s204,s205,s206
 smart-eqn.sty s103,s204,w101
 soup.sty s103,s204,s206,w302
 source2edoc.cls s103,s204,s206,w200,w302
@@ -584,7 +584,7 @@ xcntperchap.sty s103,s204,s205,s206
 xcolor-patches-tmp-ltx.sty s204
 xcpdftips.sty s204,w200
 xeCJK-listings.sty s204,w200
-xeCJK.sty e300,s204,s205,s206,w200,w202,w302
+xeCJK.sty s204,s205,s206,w200,w202,w302
 xeCJKfntef.sty s204,s205,s206,w200
 xepersian-hm-common-kashida.tex s103,s204,w200
 xepersian-hm-kashida.tex s103,s204,s205,w200
@@ -612,12 +612,12 @@ xsavebox.sty s204,s206,w200,w202
 xsim-manual.cls s103,s204
 xsim.sty s103,s204,s206,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
-xsimverb.sty e301,s103,s204
+xsimverb.sty s103,s204
 xtemplate.sty s204,s206
 xunicode-addon.sty s204,w200
 zhlipsum.sty s204,s205,s206,w202
 zhnumber.sty s103,s204,w200,w202
-zitie.sty e300,s103,s204,w200,w202
+zitie.sty s103,s204,w200,w202
 zref-check.sty s103,s204,s206
 zref-clever.sty s103,s204,w302
 zref-vario.sty s103,s204

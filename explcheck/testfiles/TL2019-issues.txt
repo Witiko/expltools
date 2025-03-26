@@ -111,7 +111,7 @@ emoji.sty e209,s103,s204
 endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200
 erw-l3.sty s103,s204,s206,w101
-expl3-code.tex e300,e301,s204,s205,s206,w200,w202,w302
+expl3-code.tex s204,s205,s206,w200,w202
 expl3-generic.tex s204,w200
 expl3.sty s204,w200,w202
 exsheets-listings.sty s103,s204
@@ -141,19 +141,19 @@ gztarticle.cls e300,s103,s204,s205,s206,w202,w302,w303
 hobby.code.tex s204,s206,w303
 hobete.sty s103,s204,s205,s206
 hvfloat.sty s103,s204,s206
-interchar.sty e300,s204,s206,w200,w202
+interchar.sty s204,s206,w200,w202
 intopdf.sty s204,s206,w200
 invoice2.sty s103,s204,w303
 istgame.sty s103,s204,s205,s206,w302
 jslectureplanner.sty e300,s204,w303
 kalendarium.sty s103,s204,w101
 kantlipsum.sty s204,w200,w202
-knowledge.sty e300,e301,s103,s204,s205,s206,w101,w202,w302
+knowledge.sty s103,s204,s205,s206,w101,w202
 kvmap.sty s103,s204
 l3benchmark.sty s103,s204,s205,w200
 l3cctab.sty s204,s206,w200
 l3color.sty s103,s206
-l3doc.cls s204,s205,s206,w200,w302
+l3doc.cls s204,s205,s206,w200
 l3docstrip.tex s204
 l3draw.sty s103,s204,s206,w200,w202
 l3galley.sty s103,s205,s206,w200,w302
@@ -167,7 +167,7 @@ leadsheets.library.chords.code.tex s103,s204,w100
 leadsheets.library.external.code.tex s103,s204,w100,w200
 leadsheets.library.musejazz.code.tex s103,s204,w100,w200
 leadsheets.library.properties.code.tex s103,s204,w100
-leadsheets.library.shorthands.code.tex e301,s204,w100
+leadsheets.library.shorthands.code.tex s204,w100
 leadsheets.library.songs.code.tex s103,s204,w100,w101
 leadsheets.library.templates.code.tex s204,w100,w200
 leadsheets.library.translations.code.tex s204,w100,w302
@@ -203,7 +203,7 @@ lwarp-sidecap.sty s204
 lwarp-siunitx.sty s103,s204
 lwarp-xpiano.sty s204
 mandi.sty s204
-mathcommand.sty e301,s103,s204,s205,s206,w101
+mathcommand.sty s103,s204,s205,s206,w101
 mathspec.sty s204
 media9.sty s204,s206,w202
 memhangul-common.sty s204
@@ -293,7 +293,7 @@ skrapport-colortheme-skdoc.sty s204
 skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
-skrapport.cls e300,s204,s205,s206
+skrapport.cls s204,s205,s206
 soup.sty s103,s204,s206,w302
 spath3.sty s103,s204,s206,w202
 spreadtab.sty s103,s204
@@ -353,7 +353,7 @@ xassoccnt.sty e300,s103,s204,s205,s206,w202,w303
 xcntperchap.sty s103,s204,s205,s206
 xcpdftips.sty s204,w200
 xeCJK-listings.sty s204,w200
-xeCJK.sty e300,s204,s205,s206,w200,w202,w302
+xeCJK.sty s204,s205,s206,w200,w202,w302
 xeCJKfntef.sty s204,s205,s206,w200
 xepersian-mathsdigitspec.sty s103,s204,w200
 xepersian.sty s103,s204
@@ -389,7 +389,7 @@ xsim.style.schule-tabelle-kurz.code.tex s204
 xsim.tags.code.tex s204,s206,w100
 xsim.templates.code.tex s204,w100
 xsim.translations.code.tex s103,s204,w100
-xsim.verbwrite.code.tex e301,s103,s204,w100
+xsim.verbwrite.code.tex s103,s204,w100
 xsimverb.sty s204
 xtemplate.sty s204,s206
 xunicode-addon.sty s204,w200

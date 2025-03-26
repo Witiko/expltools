@@ -92,7 +92,7 @@ ecgdraw.sty e201,s103,s204,s206
 embrac.sty s204,w200,w202
 endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200,w202
-expl3-code.tex e300,e301,s204,s205,s206,w200,w202,w302,w303
+expl3-code.tex s204,s205,s206,w200,w202,w303
 expl3-generic.tex s204,w200
 expl3.sty s204
 exsheets-listings.sty s103,s204
@@ -116,7 +116,7 @@ hobby.code.tex s204,s206,w303
 hobby_doc.tex s103,s204,w100
 hobete.sty s103,s204,s205,s206
 int_set_to_EAN_control_digit.tex s204,s206,w303
-interchar.sty e300,s204,s206,w200,w202
+interchar.sty s204,s206,w200,w202
 interchartest.tex e102,s103
 interface3.tex s204
 kantlipsum.sty s204,w200
@@ -127,7 +127,7 @@ l3candidates.sty s204
 l3clist.sty s204
 l3coffins.sty s204
 l3color.sty s204
-l3doc.cls s204,s205,s206,w200,w302
+l3doc.cls s204,s205,s206,w200
 l3docstrip.tex s204
 l3expan.sty s204
 l3file.sty s204
@@ -151,7 +151,7 @@ l3sort.sty s204
 l3str-convert.sty s204,s206,w200
 l3str-format.sty e208,s103,s204
 l3str.sty s204
-l3styleguide.tex s204,s206,w200,w302
+l3styleguide.tex s204,s206,w200
 l3syntax-changes.tex s204
 l3tl-analysis.sty e209,s103,s204,s205,s206,w200
 l3tl-build.sty s206,w200
@@ -162,7 +162,7 @@ leadsheets.library.chords.code.tex s103,s204,w100
 leadsheets.library.external.code.tex s103,s204,w100,w200
 leadsheets.library.musejazz.code.tex s103,s204,w100,w200
 leadsheets.library.properties.code.tex s103,s204,w100
-leadsheets.library.shorthands.code.tex e301,s204,w100
+leadsheets.library.shorthands.code.tex s204,w100
 leadsheets.library.songs.code.tex s103,s204,w100,w101
 leadsheets.library.templates.code.tex s204,w100,w200
 leadsheets.library.translations.code.tex s204,w100,w200,w302
@@ -246,11 +246,11 @@ skrapport-colortheme-skdoc.sty s204
 skrapport-colortheme-unscathed.sty s204
 skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
-skrapport.cls e300,s204,s205,s206
+skrapport.cls s204,s205,s206
 skrapport.tex e300,s103,s204,s205,s206
 soup.sty s204,s206,w302
 source3.tex s204
-source3body.tex s204,s206,w302
+source3body.tex s204,s206
 spath3.sty s103,s204,s206,w202
 stex.sty s204
 substances.sty s204
@@ -280,7 +280,7 @@ xassoccnt.sty s103,s204,s205,s206,w303
 xassoccnt_getparentcounter_example.tex s103,s204,w202,w303
 xcntperchap.sty s103,s204,s206
 xeCJK-listings.sty s204,w200
-xeCJK.sty e300,s204,s205,s206,w200,w202,w302
+xeCJK.sty s204,s205,s206,w200,w202,w302
 xeCJKfntef.sty s204,s205,s206,w200
 xepersian-mathsdigitspec.sty s103,s204
 xepersian.sty s103,s204
