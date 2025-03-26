@@ -8,9 +8,9 @@ URrules.sty s103,s204,s206,w101
 URspecialopts.sty s103,s204,s205,s206
 acro.sty s103,s204,s206,w200,w202
 algobox.sty s103,s204,s205,w302
-aligned-overset.sty s103,s204,w302,w303
-animate.sty e301,s204,w302
-beamerouterthemeUR.sty s204,s205,s206,w302
+aligned-overset.sty s103,s204,w303
+animate.sty s204
+beamerouterthemeUR.sty s204,s205,s206
 beamerswitch.cls s204
 beamerthemeUR.sty s204
 beuron.sty s103,s204
@@ -93,7 +93,7 @@ exsheets-listings.sty s103,s204
 exsheets.sty s103,s204,w200,w202
 finstmsc.sty s204,w100
 fixocgx.sty s204
-flexisym.sty s204,w200,w302
+flexisym.sty s204,w200
 fnpct.sty s103,s204,s206,w200
 fontawesome5-generic-helper.sty s204
 fontawesome5-utex-helper.sty s103,s204,s205,w200,w202
@@ -214,8 +214,8 @@ pkgloader.sty s103,s204,s206
 placeat.sty s204
 platexrelease.sty s204
 pml3array.sty s204,s206
-polyglossia.sty s103,s204,w302
-powerdot.cls e301,s204,w302
+polyglossia.sty s103,s204
+powerdot.cls s204
 primargs.sty s103,s204,w200
 pst-calculate.sty s204
 pstool.sty s204
@@ -229,7 +229,7 @@ sidenotes.sty s204,w101,w302
 simurgh-fonts.sty s103,s204
 simurgh-mathdigitspec.sty s204
 siunitx.sty s103,s204,s205,s206,w200,w202
-skdoc.cls s103,s204,s206,w302
+skdoc.cls s103,s204,s206
 skmath.sty s103,s204
 skrapport-colortheme-cruelwater.sty s204
 skrapport-colortheme-default.sty s204
@@ -242,10 +242,10 @@ soup.sty s204,s206,w302
 spath3.sty s103,s204,s206,w202
 sseqcheckdefinitions.code.tex s204
 sseqdrawing.code.tex s103,s204
-sseqforeach.code.tex s103,s204,w302
-sseqmacromakers.code.tex s103,s204,s205,w302
+sseqforeach.code.tex s103,s204
+sseqmacromakers.code.tex s103,s204,s205
 sseqmessages.code.tex s103,s204,w302
-sseqparsers.code.tex s103,s204,w200,w302
+sseqparsers.code.tex s103,s204,w200
 stex.sty s204
 substances.sty s204
 tasks.sty s103,s204,s205,s206
@@ -261,7 +261,7 @@ typoaid.sty s103,s204,s206
 unicode-math-luatex.sty s204,s205,s206,w200,w202,w302
 unicode-math-xetex.sty s204,s205,s206,w200,w202,w302
 unicode-math.sty s204
-unravel.sty s204,s205,s206,w200,w202,w302
+unravel.sty s204,s205,s206,w200,w202
 withargs.sty s204,s205
 witharrows.sty s103,s204,s205,s206,w202,w302,w303
 xCJK2uni.sty s103,s204

@@ -14,8 +14,8 @@ URrules.sty s103,s204,s206,w101
 URspecialopts.sty s103,s204,s205,s206
 acro.sty s103,s204,s206,w200,w202
 acro_en.tex e102
-animate.sty e301,s204,w302
-beamerouterthemeUR.sty s204,s205,s206,w302
+animate.sty s204
+beamerouterthemeUR.sty s204,s205,s206
 beamerswitch.cls s204
 beamerthemeUR.sty s204
 beuron.sty s204
@@ -99,7 +99,7 @@ exsheets-listings.sty s103,s204
 exsheets.sty s103,s204,w200,w202
 finstmsc.sty s204,w100
 fixocgx.sty s204
-flexisym.sty s204,w200,w302
+flexisym.sty s204,w200
 fnpct.sty s103,s204,s206,w200
 fontinst.sty s204,w100
 fontspec-doc-api.tex s103,s204,w100
@@ -224,7 +224,7 @@ pkgloader.sty s103,s204,s206
 placeat.sty s204
 platexrelease.sty s204
 pml3array.sty s204,s206
-polyglossia.sty s103,s204,w302
+polyglossia.sty s103,s204
 primargs.sty s205,w200
 pstool.sty s204
 pstool.tex s204,s205,s206
@@ -237,7 +237,7 @@ sidenotes.sty s204,w101,w302
 simurgh-fonts.sty s103,s204
 simurgh-mathdigitspec.sty s204
 siunitx.sty s103,s204,s205,s206,w200,w202
-skdoc.cls s103,s204,s206,w302
+skdoc.cls s103,s204,s206
 skmath.sty s103,s204
 skmath.tex s103,s204
 skrapport-colortheme-cruelwater.sty s204
@@ -271,7 +271,7 @@ unicode-math-doc.tex s103,s204,s206,w302
 unicode-math-luatex.sty s204,s205,s206,w202,w302
 unicode-math-xetex.sty s204,s205,s206,w202,w302
 unicode-math.sty s204,s206,w200
-unravel.sty s204,s205,s206,w200,w202,w302
+unravel.sty s204,s205,s206,w200,w202
 with.sty s204,s205
 withargs.sty s204,s205
 withargs.tex s204
