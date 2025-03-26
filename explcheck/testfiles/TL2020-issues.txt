@@ -108,7 +108,7 @@ dashundergaps.sty s204,w302
 ddphonism.sty s204
 decision-table.sty s103
 denisbdoc.sty e201,s103,s204,s206,w200
-derivative.sty e300,s103,s204
+derivative.sty s103,s204
 diagbox.sty s103,s204
 diffcoeff.sty s103,s204
 dmlb.sty s204
@@ -358,7 +358,7 @@ sdapspdf.sty s103,s204,s205,w302
 secnum.sty s204,w302
 semantex.sty e300,s103,s204,s205,s206
 semtex.sty s103,s204
-shtthesis.cls e300,s204
+shtthesis.cls s204
 sidenotes.sty s204,w101,w302
 simplebnf.sty s204,s206
 simurgh-fonts.sty s103,s204
@@ -469,7 +469,7 @@ xfrac.sty s103,s204,w200
 xgalley.sty s204,s205,s206,w200,w302
 xltxtra.sty s204
 xmuthesis.cls s103,s204
-xob-font.sty e300,s103,s204,s206,w302
+xob-font.sty s103,s204,s206,w302
 xparse-2018-04-12.sty s204,s205,s206,w200,w202
 xparse-2020-10-01.sty s204
 xparse-generic.tex s204,s205,s206,w200,w202

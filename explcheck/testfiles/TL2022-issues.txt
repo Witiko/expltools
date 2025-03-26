@@ -210,7 +210,7 @@ fontspec.sty s204
 formal-grammar.sty s204
 froufrou.sty s204
 ftc-notebook.sty s204
-functional.sty e300,s204,s207,w202
+functional.sty s204,s207,w202
 gatherenum.sty s204,s206
 genealogytree.sty s204
 ghsystem.sty s103,s204,w200
@@ -267,7 +267,7 @@ hvlogos.sty s204
 hwexam.sty s204,w302
 hyperref.sty s204,w101
 iexec.sty s204
-incgraph.sty e300,s103,s204,s206
+incgraph.sty s103,s204,s206
 interchar.sty e300,s204,s206,w200,w202
 intopdf.sty s204
 invoice2.sty s103,s204,w303
@@ -480,7 +480,7 @@ pmhanguljamo-frkim.sty s204,s206
 pmhanguljamo-rrk.sty s204,s206,w100
 pmhanguljamo.sty s103,s204,s205,s206
 pml3array.sty s204,s206
-polyglossia.sty e300,s103,s204,s205,s206,w202,w302,w303
+polyglossia.sty s103,s204,s205,s206,w202,w302,w303
 postnotes.sty s103,s204,w202
 powerdot.cls s204
 precattl.sty s103,s204,s205,s206,w302
@@ -548,9 +548,9 @@ se2colors.sty s204
 se2fonts.sty s204
 se2thesis.cls s103,s204,w202
 secnum.sty s204,s206,w302
-semantex.sty e300,s103,s204,s205,s206
+semantex.sty s103,s204,s205,s206
 semtex.sty s103,s204
-shtthesis.cls e300,s204
+shtthesis.cls s204
 sidenotes.sty s204,w101,w302
 sidenotesplus.sty s103,s204,w302
 sillypage.sty s204,w202
@@ -572,7 +572,7 @@ skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
 skrapport.cls e300,s204,s205,s206
 smart-eqn.sty s103,s204,w101
-songproj.sty e300,s204,s206,w302,w303
+songproj.sty s204,s206,w302,w303
 soup.sty s103,s204,s206,w302
 source2edoc.cls s103,s204,s206,w200,w302
 spath3.sty s103,s204,s206,w202
@@ -712,7 +712,7 @@ xintsession.tex s103,s204,w100
 xistercian.sty s204,w302
 xltxtra.sty s204
 xmuthesis.cls s103,s204
-xob-font.sty e300,s103,s204,s206,w302
+xob-font.sty s103,s204,s206,w302
 xparse-2018-04-12.sty s204,s205,s206,w200,w202
 xparse-2020-10-01.sty s204
 xparse-generic.tex s204,s205,s206,w200,w202

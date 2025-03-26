@@ -192,7 +192,7 @@ datagidx.sty s204,w202
 datapie.sty s103,s204
 dataplot.sty s204,s206
 dataref.sty s204
-datatool-base.sty e300,s103,s204,s205,s206
+datatool-base.sty s103,s204,s205,s206
 datatool.sty s103,s204,s206,w202
 dbshow.sty s103,s204,s205,s206
 ddphonism.sty s204
@@ -279,10 +279,10 @@ fontspec.sty s204
 formal-grammar.sty s204
 froufrou.sty s204
 ftc-notebook.sty s204
-functional.sty e300,s204,s207,w202
+functional.sty s204,s207,w202
 gatherenum.sty s204,s206
 gelasiomath.sty s204
-genealogy-profiles.sty e300,s103,s204,w302
+genealogy-profiles.sty s103,s204,w302
 genealogytree.sty s204
 ghsystem.sty s103,s204,w200
 gitver.sty s204
@@ -354,7 +354,7 @@ hvlogos.sty s204
 hwexam.sty s204,w302
 hyperref.sty s204
 iexec.sty s103,s204
-incgraph.sty e300,s103,s204,s205
+incgraph.sty s103,s204,s205
 inconsolata-nerd-font.sty s103,s204
 indextra.sty s103,s204
 informations-gut.tex s204
@@ -631,7 +631,7 @@ pmhanguljamo-frkim.sty s204,s206
 pmhanguljamo-rrk.sty s204,s206,w100
 pmhanguljamo.sty s103,s204,s205,s206
 pml3array.sty s204,s206
-polyglossia.sty e300,s103,s204,s205,s206,w302
+polyglossia.sty s103,s204,s205,s206,w302
 polyomino.sty s103,s204
 postnotes.sty s103,s204
 powerdot.cls s204
@@ -678,7 +678,7 @@ regexpatch.sty s103,s204,w200,w202
 rescansync.sty s103,s204,s205,s206
 responsive.sty e300,s103,s204,s205,s206,w302
 returntogrid.sty s103,s204
-robust-externalize.sty e300,s103,s204,s205,s206,w202,w303
+robust-externalize.sty s103,s204,s205,s206,w202,w303
 romande.sty s204
 rpgicons-l3.sty s103,s204,w303
 rpgicons-pgf.sty s204
@@ -718,10 +718,10 @@ se2fonts.sty s204
 se2packages.sty s103,s204
 se2thesis.cls s103,s204,w202
 secnum.sty s204,s206,w302
-semantex.sty e300,s103,s204,s205,s206
+semantex.sty s103,s204,s205,s206
 semtex.sty s103,s204
 setspaceenhanced.sty s204
-shtthesis.cls e300,s204
+shtthesis.cls s204
 sidenotes.sty s204,w101,w302
 sidenotesplus.sty s103,s204,w302
 sillypage.sty s204,w202
@@ -746,7 +746,7 @@ skrapport-colortheme-violet.sty s204
 skrapport-size-common.sty s204
 skrapport.cls e300,s204,s205,s206
 smart-eqn.sty s103,s204,w101
-songproj.sty e300,s204,s206,w302,w303
+songproj.sty s204,s206,w302,w303
 soup.sty s103,s204,s206,w302
 source2edoc.cls s103,s204
 spath3.sty s103,s204,s206
@@ -862,7 +862,7 @@ tudarules.sty s103,s204,w302
 tudasciposter.cls s103,s204,s206,w202,w302
 tutodoc.cls s204,w101,w303
 typoaid.sty s103,s204,s206
-typog.sty e300,s204
+typog.sty s204
 tzplot.sty s103,s204,s205,w302,w303
 uantwerpenbamathesis.cls s103,s204,s206
 uantwerpencoursetext.cls s103,s204,s206
@@ -873,7 +873,7 @@ uantwerpenreport.cls s204
 udes-genie-these.cls s103,s204,s205,s206
 ufrgscca-abnt.sty s103,s204
 ufrgscca-coord.sty s103,s204
-ufrgscca-core.sty e300,s103,s204
+ufrgscca-core.sty s103,s204
 ufrgscca-cover.sty s103,s204
 ufrgscca-curr.sty s103,s204
 ufrgscca-forms.sty s103,s204,w302,w303
@@ -890,11 +890,11 @@ unicode-persianmath.sty s103,s204,s205,w200
 unicodefonttable.sty s103,s204,w200
 unigrazpub.cls s103,s204,w202
 unitconv.sty s204
-univie-ling-expose.cls e300,s103,s204,w100
-univie-ling-handout.cls e300,s103,s204,w100
-univie-ling-paper.cls e300,s103,s204,w100
-univie-ling-poster.cls e300,s103,s204,w100
-univie-ling-thesis.cls e300,s103,s204,w100
+univie-ling-expose.cls s103,s204,w100
+univie-ling-handout.cls s103,s204,w100
+univie-ling-paper.cls s103,s204,w100
+univie-ling-poster.cls s103,s204,w100
+univie-ling-thesis.cls s103,s204,w100
 unravel.sty s204,s205,s206,w200
 updatemarks-nums.sty s205
 updatemarks.sty s103,s204,s205,s206,w200,w302
@@ -943,7 +943,7 @@ xintsession.tex s103,s204,w100
 xistercian.sty s204,w302
 xltxtra.sty s204
 xmuthesis.cls s103,s204
-xob-font.sty e300,s103,s204,s206,w302
+xob-font.sty s103,s204,s206,w302
 xparse-2018-04-12.sty s204,s205,s206,w200,w202
 xparse-2020-10-01.sty s204
 xparse-generic.tex s204,s205,s206,w200,w202

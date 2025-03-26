@@ -277,7 +277,7 @@ xfntinst.sty s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200,w302
 xltxtra.sty s204
-xob-font.sty e300,s103,s204,s206,w302
+xob-font.sty s103,s204,s206,w302
 xparse.sty s204,s205,s206,w200
 xpatch.sty s103,s204,s206,w200
 xpeek.sty s206
