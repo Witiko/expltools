@@ -154,7 +154,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
         local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
         if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
           local arguments = {}
-          local next_token
+          local next_token, next_token_range
           local next_token_type, _, next_catcode, next_byte_range
           local next_grouping, parameter_text_start_token_number
           for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
@@ -232,17 +232,25 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   end
                   goto skip_other_token
                 else  -- a balanced text
-                  if next_grouping.start + 1 == next_grouping.stop - 1 then  -- a single token, record it
+                  next_token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens)
+                  if #next_token_range == 1 then  -- a single token, record it
                       issues:add('w303', 'braced N-type function call argument', next_byte_range)
-                      table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens))
+                      table.insert(arguments, next_token_range)
                       next_token_number = next_grouping.stop
-                  else
+                  elseif #next_token_range == 2 and  -- two tokens
+                      tokens[next_token_range:start()][1] == CHARACTER and tokens[next_token_range:start()][3] == 6 and  -- a parameter
+                      tokens[next_token_range:stop()][1] == CHARACTER and  -- followed by a digit (unrecognized parameter/replacement text?)
+                      lpeg.match(parsers.decimal_digit, tokens[next_token_range:stop()][2]) then
+                    record_other_tokens(new_range(token_number, next_grouping.stop, INCLUSIVE, #tokens))
+                    token_number = next_grouping.stop + 1
+                    goto continue
+                  else  -- no token / more than one token, skip the control sequence
                     if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
                       csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                       goto retry_control_sequence
                     else
                       issues:add('e300', 'unexpected function call argument', next_byte_range)
-                      goto skip_other_token  -- no token / more than one token, skip the control sequence
+                      goto skip_other_token
                     end
                   end
                 end
