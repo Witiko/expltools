@@ -6,6 +6,9 @@
 
 #### Development
 
+- Add Lua option `terminal_width` that determines the layout of the
+  human-readable command-line output. (#66)
+
 - Stabilize the Lua API of processing steps. (#64, 0a98f5fa)
 
   All processing steps are now functions that accept the following arguments:
@@ -15,7 +18,23 @@
   4. Intermediate analysis results (read-write)
   5. Options (read-only, optional)
 
+#### Fixes
+
+- During preprocessing, only consider standard delimiters of expl3 parts that
+  are either not indented or not in braces. (discussed in #17, fixed in #66)
+
+- During preprocessing, support `\endinput`, `\tex_endinput:D`, and
+  `\file_input_stop:` as standard delimiters of expl3 parts. (#66)
+
+- During preprocessing, do not produce warning W101 (Unexpected delimiters) for
+  a `\ProvidesExpl*` after `\ExplSyntaxOn`. (#66)
+
+- Prevent newlines from being recognized as catcode 15 (invalid) with Lua 5.2
+  due to unreliable order of table keys. (#66)
+
 #### Continuous integration
+
+- Add regression tests for TeX Live 2024. (#66)
 
 - Configure Dependabot version updates for GitHub Actions.
   (contributed by @koppor in #70)
