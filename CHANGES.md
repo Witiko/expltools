@@ -6,6 +6,68 @@
 
 #### Development
 
+- Add Lua option `verbose` and a command-line option `--verbose` that
+  prints additional information in non-machine-readable output. (#66)
+
+  For example, here is the output of processing the files `markdown.tex` and
+  `markdownthemewitiko_markdown_defaults.sty` of the Markdown package for TeX
+  with TeX Live 2024:
+
+  ```
+  $ explcheck --verbose `kpsewhich markdown.tex markdownthemewitiko_markdown_defaults.sty`
+  ```
+  ```
+  Checking 2 files
+
+  Checking /usr/local/texlive/2024/texmf-dist/tex/generic/markdown/markdown.tex OK
+
+      File size: 103,972 bytes
+
+      Preprocessing results:
+      - Doesn't seem like a LaTeX style file
+      - Six expl3 parts spanning 97,657 bytes (94% of file):
+          1. Between 48:14 and 620:11
+          2. Between 637:14 and 788:4
+          3. Between 791:14 and 2104:8
+          4. Between 2108:14 and 3398:4
+          5. Between 3413:14 and 4210:4
+          6. Between 4287:14 and 4444:4
+
+      Lexical analysis results:
+      - 19,344 TeX tokens in expl3 parts
+
+      Syntactic analysis results:
+      - 645 top-level expl3 calls spanning all tokens
+
+  Checking /.../tex/latex/markdown/markdownthemewitiko_markdown_defaults.sty    OK
+
+      File size: 34,894 bytes
+
+      Preprocessing results:
+      - Seems like a LaTeX style file
+      - Seven expl3 parts spanning 18,515 bytes (53% of file):
+          1. Between 47:14 and 349:4
+          2. Between 382:14 and 431:2
+          3. Between 446:14 and 512:4
+          4. Between 523:14 and 564:2
+          5. Between 865:14 and 931:2
+          6. Between 969:14 and 1003:2
+          7. Between 1072:14 and 1328:2
+
+      Lexical analysis results:
+      - 3,848 TeX tokens in expl3 parts
+
+      Syntactic analysis results:
+      - 69 top-level expl3 calls spanning 2,082 tokens (54% of tokens, ~29% of file)
+
+  Total: 0 errors, 0 warnings in 2 files
+
+  Aggregate statistics:
+  - 138,866 total bytes
+  - 116,172 expl3 bytes (84%) containing 23,192 TeX tokens
+  - 714 top-level expl3 calls spanning 21,426 tokens (92% of tokens, ~77% of files)
+  ```
+
 - Add Lua option `terminal_width` that determines the layout of the
   human-readable command-line output. (#66)
 
