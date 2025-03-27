@@ -103,6 +103,5 @@ return {
   end,
   new_aggregate_results = function(...)
     return AggregateEvaluationResults:new(...)
-  end,
-  filetype_flags = filetype_flags,
+  end
 }
