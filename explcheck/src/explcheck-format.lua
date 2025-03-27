@@ -164,14 +164,24 @@ local function print_summary(options, evaluation_results)
     io.write(string.format("\n- %s total %s", titlecase(humanize(num_total_bytes)), pluralize("byte", num_total_bytes)))
     -- Evaluate the evalution results of the preprocessing.
     local num_expl_bytes = evaluation_results.num_expl_bytes
+    if num_expl_bytes == 0 then
+      goto skip_remaining_additional_information
+    end
     io.write(string.format("\n- %s expl3 %s ", titlecase(humanize(num_expl_bytes)), pluralize("byte", num_expl_bytes)))
     io.write(string.format("(%s)", format_ratio(num_expl_bytes, num_total_bytes)))
     -- Evaluate the evalution results of the lexical analysis.
     local num_tokens = evaluation_results.num_tokens
+    if num_tokens == 0 then
+      goto skip_remaining_additional_information
+    end
     io.write(string.format(" containing %s %s", humanize(num_tokens), pluralize("TeX token", num_tokens)))
     -- Evaluate the evalution results of the syntactic analysis.
     local num_calls = evaluation_results.num_calls
     local num_call_tokens = evaluation_results.num_call_tokens
+    if num_calls == 0 then
+      goto skip_remaining_additional_information
+    end
+    assert(num_call_tokens > 0)
     io.write(string.format("\n- %s top-level expl3 %s spanning ", titlecase(humanize(num_calls)), pluralize("call", num_calls)))
     if num_call_tokens == num_tokens then
       io.write("all tokens")
@@ -182,6 +192,8 @@ local function print_summary(options, evaluation_results)
       io.write(string.format("(%s of tokens, ~%s of %s)", formatted_token_ratio, formatted_byte_ratio, pluralize("file", num_files)))
     end
   end
+
+  ::skip_remaining_additional_information::
 
   print()
 end
@@ -415,7 +427,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     -- Evaluate the evalution results of the lexical analysis.
     io.write(string.format("\n\n%s%s", line_indent, colorize("Lexical analysis results:", BOLD)))
     local num_tokens = evaluation_results.num_tokens
-    if num_tokens == 0 and num_tokens == nil then
+    if num_tokens == 0 or num_tokens == nil then
       io.write(string.format("\n%s- No TeX tokens in expl3 parts", line_indent))
       goto skip_remaining_additional_information
     end
@@ -424,10 +436,12 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
     local num_calls = evaluation_results.num_calls
     local num_call_tokens = evaluation_results.num_call_tokens
-    if num_call_tokens == 0 and num_call_tokens == nil then
+    if num_calls == 0 or num_calls == nil then
       io.write(string.format("\n%s- No top-level expl3 calls", line_indent))
       goto skip_remaining_additional_information
     end
+    assert(num_calls ~= nil)
+    assert(num_calls > 0)
     io.write(string.format("\n%s- %s %s ", line_indent, titlecase(humanize(num_calls)), pluralize("top-level expl3 call", num_calls)))
     io.write("spanning ")
     if num_call_tokens == num_tokens then
