@@ -1,9 +1,13 @@
 -- A command-line interface for the static analyzer explcheck.
 
+local evaluation = require("explcheck-evaluation")
 local format = require("explcheck-format")
 local get_option = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
+
+local new_file_result = evaluation.new_file_result
+local new_aggregate_result = evaluation.new_aggregate_result
 
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
@@ -66,14 +70,11 @@ end
 
 -- Process all input files.
 local function main(pathnames, options)
-  local num_warnings = 0
-  local num_errors = 0
-
   if not options.porcelain then
     print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
   end
 
-  local print_state = {}
+  local aggregate_evaluation_result = new_aggregate_result()
   for pathname_number, pathname in ipairs(pathnames) do
     local is_ok, error_message = xpcall(function()
 
@@ -83,38 +84,40 @@ local function main(pathnames, options)
         issues:ignore(issue_identifier)
       end
 
-      -- Set up the intermediate analysis results.
-      local results = {}
-
       -- Load an input file.
       local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
       local content = assert(file:read("*a"))
       assert(file:close())
 
       -- Run all steps.
+      local analysis_results = {}
       for _, step in ipairs({preprocessing, lexical_analysis, syntactic_analysis}) do
-        step.process(pathname, content, issues, results, options)
+        step.process(pathname, content, issues, analysis_results, options)
         -- If a processing step ended with error, skip all following steps.
         if #issues.errors > 0 then
-          goto continue
+          goto skip_remaining_steps
         end
       end
 
       -- Print warnings and errors.
-      ::continue::
-      num_warnings = num_warnings + #issues.warnings
-      num_errors = num_errors + #issues.errors
-      assert(results.line_starting_byte_numbers ~= nil)
-      format.print_results(pathname, content, issues, results, options, pathname_number == #pathnames, print_state)
+      ::skip_remaining_steps::
+      local file_evaluation_result = new_file_result(content, analysis_results, issues)
+      aggregate_evaluation_result:add(file_evaluation_result)
+      local line_starting_byte_numbers = analysis_results.line_starting_byte_numbers
+      assert(line_starting_byte_numbers ~= nil)
+      local is_last_file = pathname_number == #pathnames
+      format.print_results(pathname, issues, file_evaluation_result, line_starting_byte_numbers, options, is_last_file)
     end, debug.traceback)
     if not is_ok then
       error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
     end
   end
 
-  if(num_errors > 0) then
+  format.print_summary(options, aggregate_evaluation_result)
+
+  if(aggregate_evaluation_result.num_errors > 0) then
     return 1
-  elseif(get_option("warnings_are_errors", options) and num_warnings > 0) then
+  elseif(get_option("warnings_are_errors", options) and aggregate_evaluation_result.num_warnings > 0) then
     return 2
   else
     return 0

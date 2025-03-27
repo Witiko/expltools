@@ -4,14 +4,14 @@ local Issues = {}
 
 function Issues.new(cls)
   -- Instantiate the class.
-  local new_object = {}
-  setmetatable(new_object, cls)
+  local self = {}
+  setmetatable(self, cls)
   cls.__index = cls
   -- Initialize the class.
-  new_object.errors = {}
-  new_object.warnings = {}
-  new_object.ignored_issues = {}
-  return new_object
+  self.errors = {}
+  self.warnings = {}
+  self.ignored_issues = {}
+  return self
 end
 
 -- Normalize an issue identifier.

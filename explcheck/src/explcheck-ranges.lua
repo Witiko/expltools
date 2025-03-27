@@ -23,8 +23,8 @@ local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 -- The exception to this rule are empty arrays, which always produce an empty range.
 function Range.new(cls, range_start, range_end, end_type, transformed_array_size, map_back, original_array_size)
   -- Instantiate the class.
-  local new_object = {}
-  setmetatable(new_object, cls)
+  local self = {}
+  setmetatable(self, cls)
   cls.__index = cls
   -- Check pre-conditions.
   if transformed_array_size == 0 then
@@ -101,9 +101,9 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
     mapped_range_end = range_end
   end
   -- Initialize the class.
-  new_object.range_start = mapped_range_start
-  new_object.range_end = mapped_range_end
-  return new_object
+  self.range_start = mapped_range_start
+  self.range_end = mapped_range_end
+  return self
 end
 
 -- Get the inclusive start of the range, optionally mapped back to the original array.

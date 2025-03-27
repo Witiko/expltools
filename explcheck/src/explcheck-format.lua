@@ -70,10 +70,14 @@ local function decolorize(text)
 end
 
 -- Print the summary results of analyzing multiple files.
-local function print_summary(pathname, options, print_state)  -- luacheck: ignore pathname options
-  local num_pathnames = print_state.num_pathnames or 0
-  local num_warnings = print_state.num_warnings or 0
-  local num_errors = print_state.num_errors or 0
+local function print_summary(options, aggregate_evaluation_result)
+  if get_option('porcelain', options) then
+    return
+  end
+
+  local num_files = aggregate_evaluation_result.num_files
+  local num_warnings = aggregate_evaluation_result.num_warnings
+  local num_errors = aggregate_evaluation_result.num_errors
 
   io.write("\n\nTotal: ")
 
@@ -85,17 +89,13 @@ local function print_summary(pathname, options, print_state)  -- luacheck: ignor
   warnings_message = colorize(warnings_message, 1, (num_warnings > 0 and 33) or 32)
   io.write(warnings_message .. " in ")
 
-  io.write(tostring(num_pathnames) .. " " .. pluralize("file", num_pathnames))
+  io.write(tostring(num_files) .. " " .. pluralize("file", num_files))
 
   print()
 end
 
 -- Print the results of analyzing a file.
-local function print_results(pathname, content, issues, results, options, is_last_file, print_state)  -- luacheck: ignore content
-  print_state.num_pathnames = (print_state.num_pathnames or 0) + 1
-  print_state.num_warnings = (print_state.num_warnings or 0) + #issues.warnings
-  print_state.num_errors = (print_state.num_errors or 0) + #issues.errors
-
+local function print_results(pathname, issues, _, line_starting_byte_numbers, options, is_last_file)
   -- Display an overview.
   local all_issues = {}
   local status
@@ -194,8 +194,8 @@ local function print_results(pathname, content, issues, results, options, is_las
         local start_line_number, start_column_number = 1, 1
         local end_line_number, end_column_number = 1, 1
         if range ~= nil then
-          start_line_number, start_column_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, range:start())
-          end_line_number, end_column_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, range:stop())
+          start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())
+          end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:stop())
           end_column_number = end_column_number
         end
         local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
@@ -271,12 +271,10 @@ local function print_results(pathname, content, issues, results, options, is_las
       print()
     end
   end
-  if not porcelain and is_last_file then
-    print_summary(pathname, options, print_state)
-  end
 end
 
 return {
   pluralize = pluralize,
   print_results = print_results,
+  print_summary = print_summary,
 }
