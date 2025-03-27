@@ -168,13 +168,13 @@ local function print_summary(options, evaluation_results)
       goto skip_remaining_additional_information
     end
     io.write(string.format("\n- %s expl3 %s ", titlecase(humanize(num_expl_bytes)), pluralize("byte", num_expl_bytes)))
-    io.write(string.format("(%s of %s)", format_ratio(num_expl_bytes, num_total_bytes), pluralize("file", num_files)))
+    io.write(string.format("(%s of total bytes)", format_ratio(num_expl_bytes, num_total_bytes)))
     -- Evaluate the evalution results of the lexical analysis.
     local num_tokens = evaluation_results.num_tokens
     if num_tokens == 0 then
       goto skip_remaining_additional_information
     end
-    io.write(string.format(" containing %s %s", humanize(num_tokens), pluralize("TeX token", num_tokens)))
+    io.write(string.format(" containing %s %s", humanize(num_tokens), pluralize("token", num_tokens)))
     -- Evaluate the evalution results of the syntactic analysis.
     local num_calls = evaluation_results.num_calls
     local num_call_tokens = evaluation_results.num_call_tokens
@@ -189,7 +189,7 @@ local function print_summary(options, evaluation_results)
       io.write(string.format("%s %s ", humanize(num_call_tokens), pluralize("token", num_call_tokens)))
       local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
       local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
-      io.write(string.format("(%s of tokens, ~%s of %s)", formatted_token_ratio, formatted_byte_ratio, pluralize("file", num_files)))
+      io.write(string.format("(%s of tokens, ~%s of total bytes)", formatted_token_ratio, formatted_byte_ratio))
     end
   end
 
@@ -411,7 +411,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     else
       local formatted_expl_bytes = string.format("%s %s", humanize(num_expl_bytes), pluralize("byte", num_expl_bytes))
       local formatted_expl_ratio = format_ratio(num_expl_bytes, num_total_bytes)
-      io.write(string.format("%s (%s of file)", formatted_expl_bytes, formatted_expl_ratio))
+      io.write(string.format("%s (%s of file size)", formatted_expl_bytes, formatted_expl_ratio))
     end
     if not (#expl_ranges == 1 and #expl_ranges[1] == num_total_bytes) then
       io.write(":")
@@ -428,10 +428,10 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     io.write(string.format("\n\n%s%s", line_indent, colorize("Lexical analysis results:", BOLD)))
     local num_tokens = evaluation_results.num_tokens
     if num_tokens == 0 or num_tokens == nil then
-      io.write(string.format("\n%s- No TeX tokens in expl3 parts", line_indent))
+      io.write(string.format("\n%s- No tokens in expl3 parts", line_indent))
       goto skip_remaining_additional_information
     end
-    io.write(string.format("\n%s- %s %s in expl3 parts", line_indent, titlecase(humanize(num_tokens)), pluralize("TeX token", num_tokens)))
+    io.write(string.format("\n%s- %s %s in expl3 parts", line_indent, titlecase(humanize(num_tokens)), pluralize("token", num_tokens)))
     -- Evaluate the evalution results of the syntactic analysis.
     io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
     local num_calls = evaluation_results.num_calls
@@ -450,7 +450,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
       local formatted_call_tokens = string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens))
       local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
       local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
-      io.write(string.format("%s (%s of tokens, ~%s of file)", formatted_call_tokens, formatted_token_ratio, formatted_byte_ratio))
+      io.write(string.format("%s (%s of tokens, ~%s of file size)", formatted_call_tokens, formatted_token_ratio, formatted_byte_ratio))
     end
   end
 

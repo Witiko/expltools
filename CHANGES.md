@@ -27,7 +27,7 @@
 
       Preprocessing results:
       - Doesn't seem like a LaTeX style file
-      - Six expl3 parts spanning 97,657 bytes (94% of file):
+      - Six expl3 parts spanning 97,657 bytes (94% of file size):
           1. Between 48:14 and 620:11
           2. Between 637:14 and 788:4
           3. Between 791:14 and 2104:8
@@ -47,7 +47,7 @@
 
       Preprocessing results:
       - Seems like a LaTeX style file
-      - Seven expl3 parts spanning 18,515 bytes (53% of file):
+      - Seven expl3 parts spanning 18,515 bytes (53% of file size):
           1. Between 47:14 and 349:4
           2. Between 382:14 and 431:2
           3. Between 446:14 and 512:4
@@ -60,14 +60,14 @@
       - 3,848 TeX tokens in expl3 parts
 
       Syntactic analysis results:
-      - 69 top-level expl3 calls spanning 2,082 tokens (54% of tokens, ~29% of file)
+      - 69 top-level expl3 calls spanning 2,082 tokens (54% of tokens, ~29% of file size)
 
   Total: 0 errors, 0 warnings in 2 files
 
   Aggregate statistics:
   - 138,866 total bytes
-  - 116,172 expl3 bytes (84% of files) containing 23,192 TeX tokens
-  - 714 top-level expl3 calls spanning 21,426 tokens (92% of tokens, ~77% of files)
+  - 116,172 expl3 bytes (84% of total bytes) containing 23,192 TeX tokens
+  - 714 top-level expl3 calls spanning 21,426 tokens (92% of tokens, ~77% of total bytes)
   ```
 
 - Add Lua option `terminal_width` that determines the layout of the
