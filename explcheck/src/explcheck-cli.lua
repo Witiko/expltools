@@ -6,8 +6,8 @@ local get_option = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
 
-local new_file_result = evaluation.new_file_result
-local new_aggregate_result = evaluation.new_aggregate_result
+local new_file_results = evaluation.new_file_results
+local new_aggregate_results = evaluation.new_aggregate_results
 
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
@@ -74,7 +74,7 @@ local function main(pathnames, options)
     print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
   end
 
-  local aggregate_evaluation_result = new_aggregate_result()
+  local aggregate_evaluation_results = new_aggregate_results()
   for pathname_number, pathname in ipairs(pathnames) do
     local is_ok, error_message = xpcall(function()
 
@@ -101,23 +101,23 @@ local function main(pathnames, options)
 
       -- Print warnings and errors.
       ::skip_remaining_steps::
-      local file_evaluation_result = new_file_result(content, analysis_results, issues)
-      aggregate_evaluation_result:add(file_evaluation_result)
-      local line_starting_byte_numbers = analysis_results.line_starting_byte_numbers
-      assert(line_starting_byte_numbers ~= nil)
+      local file_evaluation_results = new_file_results(content, analysis_results, issues)
+      aggregate_evaluation_results:add(file_evaluation_results)
       local is_last_file = pathname_number == #pathnames
-      format.print_results(pathname, issues, file_evaluation_result, line_starting_byte_numbers, options, is_last_file)
+      format.print_results(pathname, issues, analysis_results, options, file_evaluation_results, is_last_file)
     end, debug.traceback)
     if not is_ok then
       error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
     end
   end
 
-  format.print_summary(options, aggregate_evaluation_result)
+  format.print_summary(options, aggregate_evaluation_results)
 
-  if(aggregate_evaluation_result.num_errors > 0) then
+  local num_errors = aggregate_evaluation_results.num_errors
+  local num_warnings = aggregate_evaluation_results.num_warnings
+  if(num_errors > 0) then
     return 1
-  elseif(get_option("warnings_are_errors", options) and aggregate_evaluation_result.num_warnings > 0) then
+  elseif(get_option("warnings_are_errors", options) and num_warnings > 0) then
     return 2
   else
     return 0

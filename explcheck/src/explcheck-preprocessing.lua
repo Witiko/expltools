@@ -276,7 +276,7 @@ local function preprocessing(pathname, content, issues, results, options)
   if suffix == ".cls" or suffix == ".opt" or suffix == ".sty" then
     seems_like_latex_style_file = true
   else
-    seems_like_latex_style_file = lpeg.match(parsers.latex_style_file_content, transformed_content)
+    seems_like_latex_style_file = lpeg.match(parsers.latex_style_file_content, transformed_content) ~= nil
   end
 
   -- If no expl3 parts were detected, decide whether no part or the whole input file is in expl3.
