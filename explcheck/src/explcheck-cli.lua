@@ -155,6 +155,7 @@ local function print_usage()
     .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output. See also --error-format.\n\n"
+    .. "\t--verbose                  Print additional information in non-machine-readable output. See also --porcelain.\n\n"
     .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
   )
   print("The options are provisional and may be changed or removed before version 1.0.0.")
@@ -212,6 +213,8 @@ else
       options.max_line_length = tonumber(argument:sub(19))
     elseif argument == "--porcelain" or argument == "-p" then
       options.porcelain = true
+    elseif argument == "--verbose" then
+      options.verbose = true
     elseif argument == "--warnings-are-errors" then
       options.warnings_are_errors = true
     elseif argument:sub(1, 2) == "--" then

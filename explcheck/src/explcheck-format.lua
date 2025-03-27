@@ -442,7 +442,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
 
   ::skip_remaining_additional_information::
 
-  if not porcelain and not is_last_file then
+  if not porcelain and not is_last_file and (#all_issues > 0 or verbose) then
     print()
   end
 end
