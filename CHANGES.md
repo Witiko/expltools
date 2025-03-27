@@ -9,7 +9,7 @@
 - Add syntactic analysis. (#66)
 
 - Add Lua option `verbose` and a command-line option `--verbose` that
-  prints extra information in human-readable output. (#66, 766c69bc, 4fb47cdc)
+  prints extra information in human-readable output. (#66)
 
   For example, here is the output of processing the files `markdown.tex` and
   `markdownthemewitiko_markdown_defaults.sty` of the Markdown package for TeX
