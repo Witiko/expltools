@@ -7,7 +7,7 @@
 #### Development
 
 - Add Lua option `verbose` and a command-line option `--verbose` that
-  prints additional information in non-machine-readable output. (#66)
+  prints extra information in human-readable output. (#66, 766c69bc, 4fb47cdc)
 
   For example, here is the output of processing the files `markdown.tex` and
   `markdownthemewitiko_markdown_defaults.sty` of the Markdown package for TeX
