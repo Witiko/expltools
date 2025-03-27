@@ -73,7 +73,7 @@
 - Add Lua option `terminal_width` that determines the layout of the
   human-readable command-line output. (#66)
 
-- Stabilize the Lua API of processing steps. (#64, 0a98f5fa)
+- Stabilize the Lua API of processing steps. (#64)
 
   All processing steps are now functions that accept the following arguments:
   1. The filename of a processed file
