@@ -168,7 +168,7 @@ local function print_summary(options, evaluation_results)
       goto skip_remaining_additional_information
     end
     io.write(string.format("\n- %s expl3 %s ", titlecase(humanize(num_expl_bytes)), pluralize("byte", num_expl_bytes)))
-    io.write(string.format("(%s)", format_ratio(num_expl_bytes, num_total_bytes)))
+    io.write(string.format("(%s of %s)", format_ratio(num_expl_bytes, num_total_bytes), pluralize("file", num_files)))
     -- Evaluate the evalution results of the lexical analysis.
     local num_tokens = evaluation_results.num_tokens
     if num_tokens == 0 then

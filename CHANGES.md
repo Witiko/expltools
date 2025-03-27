@@ -64,7 +64,7 @@
 
   Aggregate statistics:
   - 138,866 total bytes
-  - 116,172 expl3 bytes (84%) containing 23,192 TeX tokens
+  - 116,172 expl3 bytes (84% of files) containing 23,192 TeX tokens
   - 714 top-level expl3 calls spanning 21,426 tokens (92% of tokens, ~77% of files)
   ```
 
