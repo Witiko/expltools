@@ -10,7 +10,7 @@ assert(file:close())
 local issues = new_issues()
 local results = {}
 
-preprocessing(filename, content, issues, results)
+preprocessing.process(filename, content, issues, results)
 
 assert(#issues.errors == 3)
 assert(#issues.warnings == 0)

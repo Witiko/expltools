@@ -1,12 +1,18 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
 local get_option = require("explcheck-config")
-local new_range = require("explcheck-ranges")
+local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")
 
+local new_range = ranges.new_range
+local range_flags = ranges.range_flags
+
+local EXCLUSIVE = range_flags.EXCLUSIVE
+local INCLUSIVE = range_flags.INCLUSIVE
+
 local lpeg = require("lpeg")
-local Cp, P, V = lpeg.Cp, lpeg.P, lpeg.V
+local B, Cmt, Cp, Ct, Cc, P, V = lpeg.B, lpeg.Cmt, lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
 
 -- Preprocess the content and register any issues.
 local function preprocessing(pathname, content, issues, results, options)
@@ -51,10 +57,10 @@ local function preprocessing(pathname, content, issues, results, options)
             local comment_range_end, comment_range
             if(comment_line_number + 1 <= #line_starting_byte_numbers) then
               comment_range_end = line_starting_byte_numbers[comment_line_number + 1]
-              comment_range = new_range(comment_range_start, comment_range_end, "exclusive", #content)
+              comment_range = new_range(comment_range_start, comment_range_end, EXCLUSIVE, #content)
             else
               comment_range_end = #content
-              comment_range = new_range(comment_range_start, comment_range_end, "inclusive", #content)
+              comment_range = new_range(comment_range_start, comment_range_end, INCLUSIVE, #content)
             end
             if #ignored_issues == 0 then  -- ignore all issues on this line
               issues:ignore(nil, comment_range)
@@ -95,38 +101,79 @@ local function preprocessing(pathname, content, issues, results, options)
 
   -- Determine which parts of the input files contain expl3 code.
   local expl_ranges = {}
+  local input_ended = false
 
-  local function capture_range(range_start, range_end)
-    local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
-    table.insert(expl_ranges, range)
+  local function capture_range(should_skip, range_start, range_end)
+    if not should_skip then
+      local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
+      table.insert(expl_ranges, range)
+    end
   end
 
   local function unexpected_pattern(pattern, code, message, test)
-    return Cp() * pattern * Cp() / function(range_start, range_end)
-      local range = new_range(range_start, range_end, "exclusive", #transformed_content, map_back, #content)
-      if test == nil or test() then
+    return Ct(Cp() * pattern * Cp()) / function(range_table)
+      if not input_ended and (test == nil or test()) then
+        local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
+        local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
         issues:add(code, message, range)
       end
     end
   end
 
   local num_provides = 0
-  local Opener, Closer = parsers.fail, parsers.fail
+  local FirstLineProvides, FirstLineExplSyntaxOn, HeadlessCloser, Head, Any =
+    parsers.fail, parsers.fail, parsers.fail, parsers.fail, parsers.any
   local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
   if expl3_detection_strategy ~= 'never' and expl3_detection_strategy ~= 'always' then
-    Opener = (
-      parsers.expl_syntax_on
-      + unexpected_pattern(
-        parsers.provides,
-        "e104",
-        [[multiple delimiters `\ProvidesExpl*` in a single file]],
+    FirstLineProvides = unexpected_pattern(
+      parsers.provides,
+      "e104",
+      [[multiple delimiters `\ProvidesExpl*` in a single file]],
+      function()
+        num_provides = num_provides + 1
+        return num_provides > 1
+      end
+    )
+    FirstLineExplSyntaxOn = parsers.expl_syntax_on
+    HeadlessCloser = (
+      parsers.expl_syntax_off
+      + parsers.endinput
+      / function()
+        input_ended = true
+      end
+    )
+    -- (Under)estimate the current TeX grouping level.
+    local estimated_grouping_level = 0
+    Any = (
+      -B(parsers.expl3_catcodes[0])  -- no preceding backslash
+      * parsers.expl3_catcodes[1]  -- begin grouping
+      * Cmt(
+        parsers.success,
         function()
-          num_provides = num_provides + 1
-          return num_provides > 1
+          estimated_grouping_level = estimated_grouping_level + 1
+          return true
+        end
+      )
+      + parsers.expl3_catcodes[2]  -- end grouping
+      * Cmt(
+        parsers.success,
+        function()
+          estimated_grouping_level = math.max(0, estimated_grouping_level - 1)
+          return true
+        end
+      )
+      + parsers.any
+    )
+    -- Allow indent before a standard delimiter outside a TeX grouping.
+    Head = (
+      parsers.newline
+      + Cmt(
+        parsers.success,
+        function()
+          return estimated_grouping_level == 0
         end
       )
     )
-    Closer = parsers.expl_syntax_off
   end
 
   local has_expl3like_material = false
@@ -134,6 +181,9 @@ local function preprocessing(pathname, content, issues, results, options)
     "Root";
     Root = (
       (
+        V"FirstLineExplPart" / capture_range
+      )^-1
+      * (
         V"NonExplPart"
         * V"ExplPart" / capture_range
       )^0
@@ -142,7 +192,11 @@ local function preprocessing(pathname, content, issues, results, options)
     NonExplPart = (
       (
         unexpected_pattern(
-          V"Closer",
+          (
+            V"Head"
+            * Cp()
+            * V"HeadlessCloser"
+          ),
           "w101",
           "unexpected delimiters"
         )
@@ -155,25 +209,64 @@ local function preprocessing(pathname, content, issues, results, options)
               return true
             end
           )
-        + (parsers.any - V"Opener")
+        + (
+          V"Any"
+          - V"Opener"
+        )
       )^0
     ),
-    ExplPart = (
-      V"Opener"
+    FirstLineExplPart = (
+      Cc(input_ended)
+      * V"FirstLineOpener"
       * Cp()
       * (
-          unexpected_pattern(
-            V"Opener",
+          V"Provides"
+          + unexpected_pattern(
+            (
+              V"Head"
+              * Cp()
+              * V"FirstLineOpener"
+            ),
             "w101",
             "unexpected delimiters"
           )
-          + (parsers.any - V"Closer")
+          + (
+            V"Any"
+            - V"Closer"
+          )
         )^0
-      * Cp()
-      * (V"Closer" + parsers.eof)
+      * (
+        V"Head"
+        * Cp()
+        * V"HeadlessCloser"
+        + Cp()
+        * parsers.eof
+      )
     ),
-    Opener = Opener,
-    Closer = Closer,
+    ExplPart = (
+      V"Head"
+      * V"FirstLineExplPart"
+    ),
+    FirstLineProvides = FirstLineProvides,
+    Provides = (
+      V"Head"
+      * V"FirstLineProvides"
+    ),
+    FirstLineOpener = (
+      FirstLineExplSyntaxOn
+      + V"FirstLineProvides"
+    ),
+    Opener = (
+      V"Head"
+      * V"FirstLineOpener"
+    ),
+    HeadlessCloser = HeadlessCloser,
+    Closer = (
+      V"Head"
+      * V"HeadlessCloser"
+    ),
+    Head = Head,
+    Any = Any,
   }
   lpeg.match(analysis_grammar, transformed_content)
 
@@ -183,7 +276,7 @@ local function preprocessing(pathname, content, issues, results, options)
   if suffix == ".cls" or suffix == ".opt" or suffix == ".sty" then
     seems_like_latex_style_file = true
   else
-    seems_like_latex_style_file = lpeg.match(parsers.latex_style_file_content, transformed_content)
+    seems_like_latex_style_file = lpeg.match(parsers.latex_style_file_content, transformed_content) ~= nil
   end
 
   -- If no expl3 parts were detected, decide whether no part or the whole input file is in expl3.
@@ -196,14 +289,14 @@ local function preprocessing(pathname, content, issues, results, options)
       if expl3_detection_strategy == "recall" then
         issues:add('w100', 'no standard delimiters')
       end
-      local range = new_range(1, #content, "inclusive", #content)
+      local range = new_range(1, #content, INCLUSIVE, #content)
       table.insert(expl_ranges, range)
     elseif expl3_detection_strategy == "auto" then
       -- Use context clues to determine whether no part or the whole
       -- input file is in expl3.
       if has_expl3like_material then
         issues:add('w100', 'no standard delimiters')
-        local range = new_range(1, #content, "inclusive", #content)
+        local range = new_range(1, #content, INCLUSIVE, #content)
         table.insert(expl_ranges, range)
       end
     else
@@ -216,25 +309,27 @@ local function preprocessing(pathname, content, issues, results, options)
     local offset = expl_range:start() - 1
 
     local function line_too_long(range_start, range_end)
-      local range = new_range(offset + range_start, offset + range_end, "exclusive", #transformed_content, map_back, #content)
-      issues:add('s103', 'line too long', range)
+        local range = new_range(offset + range_start, offset + range_end, EXCLUSIVE, #transformed_content, map_back, #content)
+        issues:add('s103', 'line too long', range)
+      end
+
+      local overline_lines_grammar = (
+        (
+          Cp() * parsers.linechar^(get_option('max_line_length', options, pathname) + 1) * Cp() / line_too_long
+          + parsers.linechar^0
+        )
+        * parsers.newline
+      )^0
+
+      lpeg.match(overline_lines_grammar, transformed_content:sub(expl_range:start(), expl_range:stop()))
     end
 
-    local overline_lines_grammar = (
-      (
-        Cp() * parsers.linechar^(get_option('max_line_length', options, pathname) + 1) * Cp() / line_too_long
-        + parsers.linechar^0
-      )
-      * parsers.newline
-    )^0
-
-    lpeg.match(overline_lines_grammar, transformed_content:sub(expl_range:start(), expl_range:stop()))
+    -- Store the intermediate results of the analysis.
+    results.line_starting_byte_numbers = line_starting_byte_numbers
+    results.expl_ranges = expl_ranges
+    results.seems_like_latex_style_file = seems_like_latex_style_file
   end
 
-  -- Store the intermediate results of the analysis.
-  results.line_starting_byte_numbers = line_starting_byte_numbers
-  results.expl_ranges = expl_ranges
-  results.seems_like_latex_style_file = seems_like_latex_style_file
-end
-
-return preprocessing
+  return {
+  process = preprocessing
+}

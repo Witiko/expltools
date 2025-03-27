@@ -1,0 +1,12 @@
+\cs_new:Nn
+  \example_foo:n
+  { foo~#1 }
+\cs_new:Nn
+  \example_bar:
+  { \example_foo:n }
+\cs_new:Nn
+  \example_baz:
+  {
+    \example_bar:
+      { bar }
+  }

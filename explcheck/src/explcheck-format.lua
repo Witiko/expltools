@@ -3,12 +3,63 @@
 local get_option = require("explcheck-config")
 local utils = require("explcheck-utils")
 
+local color_codes = {
+  BOLD = 1,
+  RED = 31,
+  GREEN = 32,
+  YELLOW = 33,
+}
+
+local BOLD = color_codes.BOLD
+local RED = color_codes.RED
+local GREEN = color_codes.GREEN
+local YELLOW = color_codes.YELLOW
+
 -- Transform a singular into plural if the count is zero or greater than two.
 local function pluralize(singular, count)
   if count == 1 then
     return singular
   else
     return singular .. "s"
+  end
+end
+
+-- Upper-case the initial letter of a word.
+local function titlecase(word)
+  assert(#word > 0)
+  return string.format("%s%s", word:sub(1, 1):upper(), word:sub(2))
+end
+
+-- Convert a number to a string with thousand separators.
+local function separate_thousands(number)
+  local initial_digit, following_digits = string.match(tostring(number), '^(%d)(%d*)$')
+	return initial_digit .. following_digits:reverse():gsub('(%d%d%d)', '%1,'):reverse()
+end
+
+-- Transform short numbers to words and make long numbers more readable using thousand separators.
+local function humanize(number)
+  if number == 1 then
+    return "one"
+  elseif number == 2 then
+    return "two"
+  elseif number == 3 then
+    return "three"
+  elseif number == 4 then
+    return "four"
+  elseif number == 5 then
+    return "five"
+  elseif number == 6 then
+    return "six"
+  elseif number == 7 then
+    return "seven"
+  elseif number == 8 then
+    return "eight"
+  elseif number == 9 then
+    return "nine"
+  elseif number == 10 then
+    return "ten"
+  else
+    return separate_thousands(number)
   end
 end
 
@@ -69,52 +120,130 @@ local function decolorize(text)
   return text:gsub("\27%[[0-9]+m", "")
 end
 
+-- Format a ratio as a percentage.
+local function format_ratio(numerator, denominator)
+  assert(numerator <= denominator)
+  if numerator == denominator then
+    return "100%"
+  else
+    assert(denominator > 0)
+    return string.format("%.0f%%", 100.0 * numerator / denominator)
+  end
+end
+
+-- Print the summary results of analyzing multiple files.
+local function print_summary(options, evaluation_results)
+  local porcelain, verbose = get_option('porcelain', options), get_option('verbose', options)
+
+  if porcelain then
+    return
+  end
+
+  local num_files = evaluation_results.num_files
+  local num_warnings = evaluation_results.num_warnings
+  local num_errors = evaluation_results.num_errors
+
+  io.write(string.format("\n\n%s ", colorize("Total:", BOLD)))
+
+  local errors_message = tostring(num_errors) .. " " .. pluralize("error", num_errors)
+  errors_message = colorize(errors_message, BOLD, (num_errors > 0 and RED) or GREEN)
+  io.write(errors_message .. ", ")
+
+  local warnings_message = tostring(num_warnings) .. " " .. pluralize("warning", num_warnings)
+  warnings_message = colorize(warnings_message, BOLD, (num_warnings > 0 and YELLOW) or GREEN)
+  io.write(warnings_message .. " in ")
+
+  io.write(tostring(num_files) .. " " .. pluralize("file", num_files))
+
+  -- Display additional information.
+  if verbose then
+    print()
+    io.write(string.format("\n%s", colorize("Aggregate statistics:", BOLD)))
+    -- Display pre-evaluation information.
+    local num_total_bytes = evaluation_results.num_total_bytes
+    io.write(string.format("\n- %s total %s", titlecase(humanize(num_total_bytes)), pluralize("byte", num_total_bytes)))
+    -- Evaluate the evalution results of the preprocessing.
+    local num_expl_bytes = evaluation_results.num_expl_bytes
+    io.write(string.format("\n- %s expl3 %s ", titlecase(humanize(num_expl_bytes)), pluralize("byte", num_expl_bytes)))
+    io.write(string.format("(%s)", format_ratio(num_expl_bytes, num_total_bytes)))
+    -- Evaluate the evalution results of the lexical analysis.
+    local num_tokens = evaluation_results.num_tokens
+    io.write(string.format(" containing %s %s", humanize(num_tokens), pluralize("TeX token", num_tokens)))
+    -- Evaluate the evalution results of the syntactic analysis.
+    local num_calls = evaluation_results.num_calls
+    local num_call_tokens = evaluation_results.num_call_tokens
+    io.write(string.format("\n- %s top-level expl3 %s spanning ", titlecase(humanize(num_calls)), pluralize("call", num_calls)))
+    if num_call_tokens == num_tokens then
+      io.write("all tokens")
+    else
+      io.write(string.format("%s %s ", humanize(num_call_tokens), pluralize("token", num_call_tokens)))
+      local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
+      local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
+      io.write(string.format("(%s of tokens, ~%s of %s)", formatted_token_ratio, formatted_byte_ratio, pluralize("file", num_files)))
+    end
+  end
+
+  print()
+end
+
 -- Print the results of analyzing a file.
-local function print_results(pathname, issues, line_starting_byte_numbers, is_last_file, options)
+local function print_results(pathname, issues, analysis_results, options, evaluation_results, is_last_file)
+  local porcelain, verbose = get_option('porcelain', options), get_option('verbose', options)
+  local line_starting_byte_numbers = analysis_results.line_starting_byte_numbers
+  assert(line_starting_byte_numbers ~= nil)
   -- Display an overview.
   local all_issues = {}
   local status
-  local porcelain = get_option('porcelain', options, pathname)
   if(#issues.errors > 0) then
-    status = (
-      colorize(
-        (
-          tostring(#issues.errors)
-          .. " "
-          .. pluralize("error", #issues.errors)
-        ), 1, 31
+    if not porcelain then
+      status = (
+        colorize(
+          (
+            tostring(#issues.errors)
+            .. " "
+            .. pluralize("error", #issues.errors)
+          ), BOLD, RED
+        )
       )
-    )
+    end
     table.insert(all_issues, issues.errors)
     if(#issues.warnings > 0) then
-      status = (
-        status
-        .. ", "
-        .. colorize(
+      if not porcelain then
+        status = (
+          status
+          .. ", "
+          .. colorize(
+            (
+              tostring(#issues.warnings)
+              .. " "
+              .. pluralize("warning", #issues.warnings)
+            ), BOLD, YELLOW
+          )
+        )
+      end
+      table.insert(all_issues, issues.warnings)
+    end
+  else
+    if(#issues.warnings > 0) then
+      if not porcelain then
+        status = colorize(
           (
             tostring(#issues.warnings)
             .. " "
             .. pluralize("warning", #issues.warnings)
-          ), 1, 33
+          ), BOLD, YELLOW
         )
-      )
+      end
       table.insert(all_issues, issues.warnings)
+    else
+      if not porcelain then
+        status = colorize("OK", BOLD, GREEN)
+      end
     end
-  elseif(#issues.warnings > 0) then
-    status = colorize(
-      (
-        tostring(#issues.warnings)
-        .. " "
-        .. pluralize("warning", #issues.warnings)
-      ), 1, 33
-    )
-    table.insert(all_issues, issues.warnings)
-  else
-    status = colorize("OK", 1, 32)
   end
 
   if not porcelain then
-    local max_overview_length = 72
+    local max_overview_length = get_option('terminal_width', options, pathname)
     local prefix = "Checking "
     local formatted_pathname = format_pathname(
       pathname,
@@ -124,7 +253,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           - #prefix
           - #(" ")
           - #decolorize(status)
-        ), 1
+        ), BOLD
       )
     )
     local overview = (
@@ -137,7 +266,7 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
             - #prefix
             - #decolorize(status)
             - #formatted_pathname
-          ), 1
+          ), BOLD
         )
       )
       .. status
@@ -164,7 +293,8 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
           end_column_number = end_column_number
         end
         local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
-        local max_line_length = 88
+        local terminal_width = get_option('terminal_width', options, pathname)
+        local max_line_length = math.max(math.min(88, terminal_width), terminal_width - 16)
         local reserved_position_length = 10
         local reserved_suffix_length = 30
         local label_indent = (" "):rep(4)
@@ -231,25 +361,90 @@ local function print_results(pathname, issues, line_starting_byte_numbers, is_la
         end
       end
     end
-    if not is_last_file and not porcelain then
-      print()
+  end
+
+  -- Display additional information.
+  if verbose and not porcelain then
+    local line_indent = (" "):rep(4)
+    print()
+    -- Display pre-evaluation information.
+    local num_total_bytes = evaluation_results.num_total_bytes
+    if num_total_bytes == 0 then
+      io.write(string.format("\n%sEmpty file", line_indent))
+      goto skip_remaining_additional_information
+    end
+    local formatted_file_size = string.format("%s %s", titlecase(humanize(num_total_bytes)), pluralize("byte", num_total_bytes))
+    io.write(string.format("\n%s%s %s", line_indent, colorize("File size:", BOLD), formatted_file_size))
+    -- Evaluate the evalution results of the preprocessing.
+    io.write(string.format("\n\n%s%s", line_indent, colorize("Preprocessing results:", BOLD)))
+    local seems_like_latex_style_file = analysis_results.seems_like_latex_style_file
+    if seems_like_latex_style_file ~= nil then
+      if seems_like_latex_style_file then
+        io.write(string.format("\n%s- Seems like a LaTeX style file", line_indent))
+      else
+        io.write(string.format("\n%s- Doesn't seem like a LaTeX style file", line_indent))
+      end
+    end
+    local num_expl_bytes = evaluation_results.num_expl_bytes
+    if num_expl_bytes == 0 or num_expl_bytes == nil then
+      io.write(string.format("\n%s- No expl3 material", line_indent))
+      goto skip_remaining_additional_information
+    end
+    local expl_ranges = analysis_results.expl_ranges
+    assert(expl_ranges ~= nil)
+    assert(#expl_ranges > 0)
+    io.write(string.format("\n%s- %s %s spanning ", line_indent, titlecase(humanize(#expl_ranges)), pluralize("expl3 part", #expl_ranges)))
+    if num_expl_bytes == num_total_bytes then
+      io.write("the whole file")
+    else
+      local formatted_expl_bytes = string.format("%s %s", humanize(num_expl_bytes), pluralize("byte", num_expl_bytes))
+      local formatted_expl_ratio = format_ratio(num_expl_bytes, num_total_bytes)
+      io.write(string.format("%s (%s of file)", formatted_expl_bytes, formatted_expl_ratio))
+    end
+    if not (#expl_ranges == 1 and #expl_ranges[1] == num_total_bytes) then
+      io.write(":")
+      for part_number, range in ipairs(expl_ranges) do
+        local start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())
+        local end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:stop())
+        local formatted_range_start = string.format("%d:%d", start_line_number, start_column_number)
+        local formatted_range_end = string.format("%d:%d", end_line_number, end_column_number)
+        io.write(string.format("\n%s%d. Between ", line_indent:rep(2), part_number))
+        io.write(string.format("%s and %s", formatted_range_start, formatted_range_end))
+      end
+    end
+    -- Evaluate the evalution results of the lexical analysis.
+    io.write(string.format("\n\n%s%s", line_indent, colorize("Lexical analysis results:", BOLD)))
+    local num_tokens = evaluation_results.num_tokens
+    if num_tokens == 0 and num_tokens == nil then
+      io.write(string.format("\n%s- No TeX tokens in expl3 parts", line_indent))
+      goto skip_remaining_additional_information
+    end
+    io.write(string.format("\n%s- %s %s in expl3 parts", line_indent, titlecase(humanize(num_tokens)), pluralize("TeX token", num_tokens)))
+    -- Evaluate the evalution results of the syntactic analysis.
+    io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
+    local num_calls = evaluation_results.num_calls
+    local num_call_tokens = evaluation_results.num_call_tokens
+    if num_call_tokens == 0 and num_call_tokens == nil then
+      io.write(string.format("\n%s- No top-level expl3 calls", line_indent))
+      goto skip_remaining_additional_information
+    end
+    io.write(string.format("\n%s- %s %s ", line_indent, titlecase(humanize(num_calls)), pluralize("top-level expl3 call", num_calls)))
+    io.write("spanning ")
+    if num_call_tokens == num_tokens then
+      io.write("all tokens")
+    else
+      local formatted_call_tokens = string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens))
+      local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
+      local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
+      io.write(string.format("%s (%s of tokens, ~%s of file)", formatted_call_tokens, formatted_token_ratio, formatted_byte_ratio))
     end
   end
-end
 
--- Print the summary results of analyzing multiple files.
-local function print_summary(num_pathnames, num_warnings, num_errors)
-  io.write("\n\nTotal: ")
+  ::skip_remaining_additional_information::
 
-  local errors_message = tostring(num_errors) .. " " .. pluralize("error", num_errors)
-  errors_message = colorize(errors_message, 1, (num_errors > 0 and 31) or 32)
-  io.write(errors_message .. ", ")
-
-  local warnings_message = tostring(num_warnings) .. " " .. pluralize("warning", num_warnings)
-  warnings_message = colorize(warnings_message, 1, (num_warnings > 0 and 33) or 32)
-  io.write(warnings_message .. " in ")
-
-  print(tostring(num_pathnames) .. " " .. pluralize("file", num_pathnames))
+  if not porcelain and not is_last_file and (#all_issues > 0 or verbose) then
+    print()
+  end
 end
 
 return {

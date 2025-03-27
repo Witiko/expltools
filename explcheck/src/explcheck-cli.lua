@@ -1,13 +1,17 @@
 -- A command-line interface for the static analyzer explcheck.
 
+local evaluation = require("explcheck-evaluation")
 local format = require("explcheck-format")
 local get_option = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
 
+local new_file_results = evaluation.new_file_results
+local new_aggregate_results = evaluation.new_aggregate_results
+
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
--- local syntactic_analysis = require("explcheck-syntactic-analysis")
+local syntactic_analysis = require("explcheck-syntactic-analysis")
 -- local semantic_analysis = require("explcheck-semantic-analysis")
 -- local pseudo_flow_analysis = require("explcheck-pseudo-flow-analysis")
 
@@ -66,13 +70,11 @@ end
 
 -- Process all input files.
 local function main(pathnames, options)
-  local num_warnings = 0
-  local num_errors = 0
-
   if not options.porcelain then
     print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
   end
 
+  local aggregate_evaluation_results = new_aggregate_results()
   for pathname_number, pathname in ipairs(pathnames) do
     local is_ok, error_message = xpcall(function()
 
@@ -82,40 +84,37 @@ local function main(pathnames, options)
         issues:ignore(issue_identifier)
       end
 
-      -- Set up the intermediate analysis results.
-      local results = {}
-
       -- Load an input file.
       local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
       local content = assert(file:read("*a"))
       assert(file:close())
 
       -- Run all steps.
-      for _, processing_step in ipairs({preprocessing, lexical_analysis}) do
-        processing_step(pathname, content, issues, results, options)
+      local analysis_results = {}
+      for _, step in ipairs({preprocessing, lexical_analysis, syntactic_analysis}) do
+        step.process(pathname, content, issues, analysis_results, options)
         -- If a processing step ended with error, skip all following steps.
         if #issues.errors > 0 then
-          goto continue
+          goto skip_remaining_steps
         end
       end
 
       -- Print warnings and errors.
-      ::continue::
-      num_warnings = num_warnings + #issues.warnings
-      num_errors = num_errors + #issues.errors
-      assert(results.line_starting_byte_numbers ~= nil)
-      format.print_results(pathname, issues, results.line_starting_byte_numbers, pathname_number == #pathnames, options)
+      ::skip_remaining_steps::
+      local file_evaluation_results = new_file_results(content, analysis_results, issues)
+      aggregate_evaluation_results:add(file_evaluation_results)
+      local is_last_file = pathname_number == #pathnames
+      format.print_results(pathname, issues, analysis_results, options, file_evaluation_results, is_last_file)
     end, debug.traceback)
     if not is_ok then
       error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
     end
   end
 
-  -- Print a summary.
-  if not options.porcelain then
-    format.print_summary(#pathnames, num_warnings, num_errors, options.porcelain)
-  end
+  format.print_summary(options, aggregate_evaluation_results)
 
+  local num_errors = aggregate_evaluation_results.num_errors
+  local num_warnings = aggregate_evaluation_results.num_warnings
   if(num_errors > 0) then
     return 1
   elseif(get_option("warnings_are_errors", options) and num_warnings > 0) then
@@ -156,6 +155,7 @@ local function print_usage()
     .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output. See also --error-format.\n\n"
+    .. "\t--verbose                  Print additional information in non-machine-readable output. See also --porcelain.\n\n"
     .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
   )
   print("The options are provisional and may be changed or removed before version 1.0.0.")
@@ -213,6 +213,8 @@ else
       options.max_line_length = tonumber(argument:sub(19))
     elseif argument == "--porcelain" or argument == "-p" then
       options.porcelain = true
+    elseif argument == "--verbose" then
+      options.verbose = true
     elseif argument == "--warnings-are-errors" then
       options.warnings_are_errors = true
     elseif argument:sub(1, 2) == "--" then
