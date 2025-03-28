@@ -34,6 +34,18 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
       num_tokens = num_tokens + #part_tokens
     end
   end
+  local num_groupings, num_unclosed_groupings
+  if analysis_results.groupings ~= nil then
+    num_groupings, num_unclosed_groupings = 0, 0
+    for _, part_groupings in ipairs(analysis_results.groupings) do
+      for _, grouping in pairs(part_groupings) do
+        num_groupings = num_groupings + 1
+        if grouping.stop == nil then
+          num_unclosed_groupings = num_unclosed_groupings + 1
+        end
+      end
+    end
+  end
   -- Evaluate the results of the syntactic analysis.
   local num_calls, num_call_tokens
   if analysis_results.calls ~= nil then
@@ -54,6 +66,8 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   self.num_errors = num_errors
   self.num_expl_bytes = num_expl_bytes
   self.num_tokens = num_tokens
+  self.num_groupings = num_groupings
+  self.num_unclosed_groupings = num_unclosed_groupings
   self.num_calls = num_calls
   self.num_call_tokens = num_call_tokens
   return self
@@ -72,6 +86,8 @@ function AggregateEvaluationResults.new(cls)
   self.num_errors = 0
   self.num_expl_bytes = 0
   self.num_tokens = 0
+  self.num_groupings = 0
+  self.num_unclosed_groupings = 0
   self.num_calls = 0
   self.num_call_tokens = 0
   return self
@@ -80,20 +96,10 @@ end
 -- Add evaluation results of an individual file to the aggregate.
 function AggregateEvaluationResults:add(evaluation_results)
   self.num_files = self.num_files + 1
-  self.num_total_bytes = self.num_total_bytes + evaluation_results.num_total_bytes
-  self.num_warnings = self.num_warnings + evaluation_results.num_warnings
-  self.num_errors = self.num_errors + evaluation_results.num_errors
-  if evaluation_results.num_expl_bytes ~= nil then
-    self.num_expl_bytes = self.num_expl_bytes + evaluation_results.num_expl_bytes
-  end
-  if evaluation_results.num_tokens ~= nil then
-    self.num_tokens = self.num_tokens + evaluation_results.num_tokens
-  end
-  if evaluation_results.num_calls ~= nil then
-    self.num_calls = self.num_calls + evaluation_results.num_calls
-  end
-  if evaluation_results.num_call_tokens ~= nil then
-    self.num_call_tokens = self.num_call_tokens + evaluation_results.num_call_tokens
+  for key, _ in pairs(self) do
+    if key ~= "num_files" and evaluation_results[key] ~= nil then
+      self[key] = self[key] + evaluation_results[key]
+    end
   end
 end
 

@@ -127,7 +127,12 @@ local function format_ratio(numerator, denominator)
     return "100%"
   else
     assert(denominator > 0)
-    return string.format("%.0f%%", 100.0 * numerator / denominator)
+    local formatted_percentage = string.format("%.0f%%", 100.0 * numerator / denominator)
+    if numerator > 0 and formatted_percentage == "0%" then
+      return ">0%"
+    else
+      return formatted_percentage
+    end
   end
 end
 
@@ -175,6 +180,15 @@ local function print_summary(options, evaluation_results)
       goto skip_remaining_additional_information
     end
     io.write(string.format(" containing %s %s", humanize(num_tokens), pluralize("token", num_tokens)))
+    local num_groupings = evaluation_results.num_groupings
+    if num_groupings > 0 then
+      io.write(string.format(" and %s %s", humanize(num_groupings), pluralize("grouping", num_groupings)))
+      local num_unclosed_groupings = evaluation_results.num_unclosed_groupings
+      if num_unclosed_groupings > 0 then
+        local formatted_grouping_ratio = format_ratio(num_unclosed_groupings, num_groupings)
+        io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
+      end
+    end
     -- Evaluate the evalution results of the syntactic analysis.
     local num_calls = evaluation_results.num_calls
     local num_call_tokens = evaluation_results.num_call_tokens
@@ -432,6 +446,17 @@ local function print_results(pathname, issues, analysis_results, options, evalua
       goto skip_remaining_additional_information
     end
     io.write(string.format("\n%s- %s %s in expl3 parts", line_indent, titlecase(humanize(num_tokens)), pluralize("token", num_tokens)))
+    local num_groupings = evaluation_results.num_groupings
+    if num_groupings ~= nil and num_groupings > 0 then
+      io.write(string.format("\n%s- %s %s", line_indent, titlecase(humanize(num_groupings)), pluralize("grouping", num_groupings)))
+      io.write(" in expl3 parts")
+      local num_unclosed_groupings = evaluation_results.num_unclosed_groupings
+      assert(num_unclosed_groupings ~= nil)
+      if num_unclosed_groupings > 0 then
+        local formatted_grouping_ratio = format_ratio(num_unclosed_groupings, num_groupings)
+        io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
+      end
+    end
     -- Evaluate the evalution results of the syntactic analysis.
     io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
     local num_calls = evaluation_results.num_calls

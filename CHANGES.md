@@ -21,7 +21,7 @@
   ```
   Checking 2 files
 
-  Checking /usr/local/texlive/2024/texmf-dist/tex/generic/markdown/markdown.tex OK
+  Checking /usr/local/texlive/2024/texmf-dist/tex/generic/markdown/markdown.tex        OK
 
       File size: 103,972 bytes
 
@@ -36,12 +36,13 @@
           6. Between 4287:14 and 4444:4
 
       Lexical analysis results:
-      - 19,344 TeX tokens in expl3 parts
+      - 19,344 tokens in expl3 parts
+      - 1,598 groupings in expl3 parts
 
       Syntactic analysis results:
       - 645 top-level expl3 calls spanning all tokens
 
-  Checking /.../tex/latex/markdown/markdownthemewitiko_markdown_defaults.sty    OK
+  Checking /.../tex/latex/markdown/markdownthemewitiko_markdown_defaults.sty           OK
 
       File size: 34,894 bytes
 
@@ -57,7 +58,8 @@
           7. Between 1072:14 and 1328:2
 
       Lexical analysis results:
-      - 3,848 TeX tokens in expl3 parts
+      - 3,848 tokens in expl3 parts
+      - 366 groupings in expl3 parts
 
       Syntactic analysis results:
       - 69 top-level expl3 calls spanning 2,082 tokens (54% of tokens, ~29% of file size)
@@ -66,7 +68,7 @@
 
   Aggregate statistics:
   - 138,866 total bytes
-  - 116,172 expl3 bytes (84% of total bytes) containing 23,192 TeX tokens
+  - 116,172 expl3 bytes (84% of total bytes) containing 23,192 tokens and 1,964 groupings
   - 714 top-level expl3 calls spanning 21,426 tokens (92% of tokens, ~77% of total bytes)
   ```
 
