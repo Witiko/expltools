@@ -265,3 +265,6 @@ ignored_issues = ["e301"]
 
 [package.zitie]
 ignored_issues = ["e300"]
+
+[filename."spreadtab.sty"]
+expl3_detection_strategy = "never"
