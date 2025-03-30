@@ -107,7 +107,7 @@ curve2e.sty s204
 dashundergaps.sty s204,w302
 ddphonism.sty s204
 decision-table.sty s103
-denisbdoc.sty e201,s103,s204,s206,w200
+denisbdoc.sty s103,s204,s206,w200
 derivative.sty s103,s204
 diagbox.sty s103,s204
 diffcoeff.sty s103,s204
@@ -123,7 +123,7 @@ dynkin-diagrams.sty s204
 easybook.cls s103,s204,s205,s206
 easyformat.sty s204
 ebproof.sty s103,s204,s206,w200
-ecgdraw.sty e201,s103,s204,s206
+ecgdraw.sty s103,s204,s206
 econlipsum.sty s103,s204,w200,w202
 elsarticle.cls s103,s204,w202
 elzcards.sty s103,s204
@@ -377,7 +377,6 @@ skrapport.cls s204,s205,s206
 soup.sty s103,s204,s206,w302
 source2edoc.cls s103,s204,w302
 spath3.sty s103,s204,s206,w202
-spreadtab.sty s103,s204
 sseqcheckdefinitions.code.tex s103,s204
 sseqdrawing.code.tex s103,s204
 sseqforeach.code.tex s103,s204

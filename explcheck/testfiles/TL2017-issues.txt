@@ -73,7 +73,7 @@ ctexspamacro.tex s206,w200
 ctxdoc.cls s204,s206,w200,w202
 ctxdocstrip.tex s204
 currency.sty s204,w303
-denisbdoc.sty e201,s103,s204,s206,w200
+denisbdoc.sty s103,s204,s206,w200
 diffcoeff.sty s204,s205,w202
 diffcoeffx.sty s204,s205,w202
 download.sty s204
@@ -82,7 +82,7 @@ dynamicnumber.sty s204
 dynkin-diagrams.sty s204
 easyformat.sty s204
 ebproof.sty s103,s204,s206,w200
-ecgdraw.sty e201,s103,s204,s206
+ecgdraw.sty s103,s204,s206
 embrac.sty s204,w200,w202
 endiagram.sty s103,s204,w200
 enotez.sty s103,s204,s206,w200,w202

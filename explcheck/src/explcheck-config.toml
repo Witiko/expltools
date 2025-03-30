@@ -198,6 +198,7 @@ max_line_length = 140
 
 [filename."denisbdoc.sty"]
 expl3_detection_strategy = "always"
+ignored_issues = ["e201"]
 
 [package.whatsnote]
 expl3_detection_strategy = "always"
@@ -265,3 +266,9 @@ ignored_issues = ["e301"]
 
 [package.zitie]
 ignored_issues = ["e300"]
+
+[filename."spreadtab.sty"]
+expl3_detection_strategy = "never"
+
+[filename."ecgdraw.sty"]
+ignored_issues = ["e201"]
