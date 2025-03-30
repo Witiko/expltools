@@ -198,7 +198,7 @@ dbshow.sty s103,s204,s205,s206
 ddphonism.sty s204
 decision-table.sty s103,s204,s206
 democodelisting.sty s204
-denisbdoc.sty e201,s103,s204,s206,w200,w202
+denisbdoc.sty s103,s204,s206,w200,w202,w302
 derivative.sty s103,s204
 diagbox.sty s103,s204
 didec.sty s103,s204
@@ -218,7 +218,7 @@ easybase.sty s103,s204,s206,w200
 easybook.cls s103,s204
 easyformat.sty s204
 ebproof.sty s103,s204,s206,w200
-ecgdraw.sty e201,s103,s204,s206
+ecgdraw.sty s103,s204,s206
 econlipsum.sty s103,s204,w200,w202
 einfart.cls s103,s204
 electrum.sty s204
@@ -752,7 +752,6 @@ source2edoc.cls s103,s204
 spath3.sty s103,s204,s206
 spbmark.sty s103,s204
 spelatex.sty s204,w303
-spreadtab.sty s103,s204,w100
 srdp-mathematik.sty s204
 sseqcheckdefinitions.code.tex s103,s204
 sseqdrawing.code.tex s103,s204
