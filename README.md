@@ -149,6 +149,8 @@ You can prepare the expltools bundle for distribution with the following two com
 
 The file `explcheck.lua` should be installed in the TDS directory `scripts/expltools/explcheck`. Furthermore, it should be made executable and either symlinked to system directories as `explcheck` on Unix or have a wrapper `explcheck.exe` installed on Windows.
 
+The files `explcheck-config.lua` and `explcheck-config.toml` must be installed in the same directory.
+
 ## Authors
 
 - Vít Starý Novotný (<witiko@mail.muni.cz>)
