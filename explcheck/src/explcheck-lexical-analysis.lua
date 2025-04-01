@@ -136,7 +136,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           if (
                 catcode ~= 0 and catcode ~= 1 and catcode ~= 2  -- for a control sequence or begin/end grouping, we handle this elsewhere
                 -- do not require whitespace after non-expl3 control sequences or control sequences with empty or one-character names
-                and (previous_catcode ~= 0 or #previous_csname > 1 and lpeg.match(parsers.non_expl3_csname, previous_csname) == nil)
+                and (previous_catcode ~= 0 or #previous_csname > 1 and lpeg.match(parsers.expl3like_csname, previous_csname) ~= nil)
                 and (previous_catcode ~= 0 or character ~= ",")  -- allow a comma after a control sequence without whitespace in between
                 and (previous_catcode ~= 1 or catcode ~= 6)  -- allow a parameter after begin grouping without whitespace in between
                 and (previous_catcode ~= 2 or character ~= ",")  -- allow a comma after end grouping without whitespace in between
@@ -177,7 +177,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
                 -- do not require whitespace before non-expl3 control sequences or control sequences with empty or one-character names
-                and #csname > 1 and lpeg.match(parsers.non_expl3_csname, csname) == nil
+                and #csname > 1 and lpeg.match(parsers.expl3like_csname, csname) ~= nil
               ) then
             issues:add('s204', 'missing stylistic whitespaces', range)
           end
@@ -226,7 +226,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
             if (
                     previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
                     -- do not require whitespace after non-expl3 control sequences or control sequences with empty or one-character names
-                    and (previous_catcode ~= 0 or #previous_csname > 1 and lpeg.match(parsers.non_expl3_csname, previous_csname) == nil)
+                    and (previous_catcode ~= 0 or #previous_csname > 1 and lpeg.match(parsers.expl3like_csname, previous_csname) ~= nil)
                     and (previous_catcode ~= 1 or catcode ~= 2)  -- allow an end grouping immediately after begin grouping
                     and (previous_catcode ~= 6 or catcode ~= 1 and catcode ~= 2)  -- allow a parameter immediately before grouping
                 ) then
@@ -296,14 +296,14 @@ local function lexical_analysis(pathname, content, issues, results, options)
           if next_token_type == CONTROL_SEQUENCE then
             if (
                   lpeg.match(parsers.expl3_function_assignment_csname, csname) ~= nil
-                  and lpeg.match(parsers.non_expl3_csname, next_csname) == nil
+                  and lpeg.match(parsers.expl3like_csname, next_csname) ~= nil
                   and lpeg.match(parsers.expl3_function_csname, next_csname) == nil
                 ) then
               issues:add('s205', 'malformed function name', next_range)
             end
             if (
                   lpeg.match(parsers.expl3_variable_or_constant_use_csname, csname) ~= nil
-                  and lpeg.match(parsers.non_expl3_csname, next_csname) == nil
+                  and lpeg.match(parsers.expl3like_csname, next_csname) ~= nil
                   and lpeg.match(parsers.expl3_scratch_variable_csname, next_csname) == nil
                   and lpeg.match(parsers.expl3_variable_or_constant_csname, next_csname) == nil
                 ) then

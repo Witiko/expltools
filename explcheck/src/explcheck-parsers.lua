@@ -262,9 +262,20 @@ local expl3_scratch_variable_csname = (
   * eof
 )
 
-local non_expl3_csname = (
-  (letter + at_sign)^1
-  * eof
+local expl3like_csname = (
+  underscore^0
+  * letter^1
+  * (
+    underscore  -- a csname with at least one underscore in the middle
+    * (letter + underscore)^1
+    * (
+      colon
+      * letter^0
+    )^-1
+    + (letter + underscore)^0
+    * colon  -- a csname with at least one colon at the end
+    * letter^0
+  )
 )
 
 ---- Comments
@@ -539,6 +550,7 @@ return {
   expl3_endlinechar = expl3_endlinechar,
   expl3_function_assignment_csname = expl3_function_assignment_csname,
   expl3_function_csname = expl3_function_csname,
+  expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
@@ -552,7 +564,6 @@ return {
   latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
-  non_expl3_csname = non_expl3_csname,
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
   parameter_argument_specifier = parameter_argument_specifier,
