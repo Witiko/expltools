@@ -27,7 +27,7 @@ chemmacros.module.isotopes.code.tex s103,s204,w100,w202
 chemmacros.module.lang.code.tex s204,w100,w200
 chemmacros.module.mechanisms.code.tex s204,w100
 chemmacros.module.newman.code.tex s204,w100
-chemmacros.module.nomenclature.code.tex s103,s204,s205,w100,w200,w302
+chemmacros.module.nomenclature.code.tex s103,s204,w100,w200,w302
 chemmacros.module.orbital.code.tex s103,s204,w100
 chemmacros.module.particles.code.tex s204,w100,w200
 chemmacros.module.phases.code.tex s103,s204,w100
@@ -35,14 +35,14 @@ chemmacros.module.polymers.code.tex s204,w100,w200
 chemmacros.module.reactions.code.tex s103,s204,s206,w100,w200
 chemmacros.module.redox.code.tex s204,w100,w200
 chemmacros.module.scheme.code.tex s204,w100,w200
-chemmacros.module.spectroscopy.code.tex s103,s204,s205,s206,w100,w200
+chemmacros.module.spectroscopy.code.tex s103,s204,s206,w100,w200
 chemmacros.module.symbols.code.tex s204,w100,w200
 chemmacros.module.thermodynamics.code.tex s103,s204,w100
 chemmacros.module.tikz.code.tex s204
 chemmacros.module.units.code.tex s204,w100,w200
 chemmacros.module.xfrac.code.tex s103,s204,w100
 chemmacros.sty s204
-chemmacros4.sty s103,s204,s205,s206,w200
+chemmacros4.sty s103,s204,s206,w200
 chemmacros5.sty s204,w200
 chemmacros_en.tex e102
 chemnum.sty s103,s204,w200,w202
@@ -87,7 +87,7 @@ fontspec-doc.tex e209,s103,s204,w100
 fontspec-luatex.sty s103,s204,s205,s206,w200,w202,w302
 fontspec-xetex.sty s103,s204,s205,s206,w200,w202,w302
 fontspec.sty s103,s204
-ghsystem.sty s103,s204,s205,w200
+ghsystem.sty s103,s204,w200
 gtl.sty s204,s205,s206
 gzt.cls e300,s103,s204,s205,s206,w302,w303
 gzt.tex s103,s204
@@ -232,7 +232,7 @@ tudscrbook.cls s204
 tudscrfonts.sty s204
 tudscrreprt.cls s204
 ufntinst.sty s103,s204,w100
-unicode-math-doc.tex s103,s204,s206,w302
+unicode-math-doc.tex s103,s204,w302
 unicode-math-luatex.sty s204,s205,s206,w202,w302
 unicode-math-xetex.sty s204,s205,s206,w202,w302
 unicode-math.sty s204,s206,w200

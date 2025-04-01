@@ -7,7 +7,7 @@ URpagestyles.sty s103,s204
 URrules.sty s103,s204,s206,w101
 URspecialopts.sty s103,s204,s205,s206
 acro.sty s103,s204,s206,w200,w202
-algobox.sty s103,s204,s205,w302
+algobox.sty s103,s204,w302
 aligned-overset.sty s103,s204,w303
 animate.sty s204
 beamerouterthemeUR.sty s204,s205,s206
@@ -31,7 +31,7 @@ chemmacros.module.isotopes.code.tex s103,s204,w100,w202
 chemmacros.module.lang.code.tex s103,s204,w100,w200,w302
 chemmacros.module.mechanisms.code.tex s204,w100
 chemmacros.module.newman.code.tex s103,s204,w100,w200
-chemmacros.module.nomenclature.code.tex s103,s204,s205,w100,w200,w302
+chemmacros.module.nomenclature.code.tex s103,s204,w100,w200,w302
 chemmacros.module.orbital.code.tex s103,s204,w100
 chemmacros.module.particles.code.tex s204,w100,w200
 chemmacros.module.phases.code.tex s103,s204,w100,w200
@@ -39,14 +39,14 @@ chemmacros.module.polymers.code.tex s204,w100,w200
 chemmacros.module.reactions.code.tex s103,s204,s206,w100,w200
 chemmacros.module.redox.code.tex s204,w100,w200
 chemmacros.module.scheme.code.tex s204,w100,w200,w302
-chemmacros.module.spectroscopy.code.tex s103,s204,s205,s206,w100,w200
+chemmacros.module.spectroscopy.code.tex s103,s204,s206,w100,w200
 chemmacros.module.symbols.code.tex s204,w100,w200
 chemmacros.module.thermodynamics.code.tex s103,s204,w100
 chemmacros.module.tikz.code.tex s204
 chemmacros.module.units.code.tex s204,w100,w200
 chemmacros.module.xfrac.code.tex s103,s204,w100
 chemmacros.sty s204
-chemmacros4.sty s103,s204,s205,s206,w200
+chemmacros4.sty s103,s204,s206,w200
 chemmacros5.sty s204,w200
 chemnum.sty s103,s204,w200,w202
 citeall.sty s103,s204,w200
@@ -186,7 +186,7 @@ minibox.sty s204
 mkpatter.tex s103,s204,w100,w200
 modiagram.sty s103,s204
 morewrites.sty s103,s204,s205,s206,w200
-mucproc.cls s103,s204,s205,s206
+mucproc.cls s103,s204,s206
 nicematrix.sty s103,s204,s205,s206,w302
 notes2bib.sty s103,s204,w302
 novel-ChapterScene.sty s204
@@ -263,7 +263,7 @@ unicode-math-xetex.sty s204,s205,s206,w200,w202,w302
 unicode-math.sty s204
 unravel.sty s204,s205,s206,w200,w202
 withargs.sty s204,s205
-witharrows.sty s103,s204,s205,s206,w202,w302,w303
+witharrows.sty s103,s204,s206,w202,w302,w303
 xCJK2uni.sty s103,s204
 xassoccnt.sty e300,s103,s204,s205,s206,w202,w303
 xcntperchap.sty s103,s204,s205,s206
