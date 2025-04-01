@@ -12,7 +12,6 @@ local success = P(true)
 
 ---- Tokens
 local ampersand = P("&")
-local at_sign = P("@")
 local backslash = P([[\]])
 local circumflex = P("^")
 local colon = P(":")
