@@ -1,5 +1,14 @@
 # Changes
 
+## expltools 2025-04-01
+
+### explcheck v0.8.1
+
+#### Fixes
+
+- Be more precise in detecting non-expl3 control sequences in expl3 parts.
+  (reported by @callegar in #72, fixed in #74)
+
 ## expltools 2025-03-27
 
 ### explcheck v0.8.0

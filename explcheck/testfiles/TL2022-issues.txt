@@ -15,7 +15,7 @@ abspos.sty s204,s206
 acro.sty s103,s204,s205,s206,w200,w202
 acro2.sty s103,s204,s206,w200,w202
 akshar.sty s204
-algobox.sty s103,s204,s205,w302
+algobox.sty s103,s204,w302
 aligned-overset.sty s103,s204,w303
 animate.sty s204
 annee-scolaire.sty s204
@@ -82,9 +82,9 @@ cfntinst.sty s204,w100
 changelog.sty s103,s204,s205,s206
 chemformula.sty s103,s204,s205,s206,w200,w202
 chemgreek.sty s103,s204,w200
-chemmacros-2015-02-08.sty s103,s204,s205,s206,w200
+chemmacros-2015-02-08.sty s103,s204,s206,w200
 chemmacros-2020-03-07.sty s204
-chemmacros.sty s204,s205,s206,w200,w202,w302
+chemmacros.sty s204,s206,w200,w202,w302
 chemnum.sty s103,s204,w200,w202
 chinesechess.sty s103,s204,s206,w200,w202
 circledtext.sty s103,s204,w200,w202
@@ -229,9 +229,9 @@ gzt.cls e300,s103,s204,s205,w202,w302,w303
 gztarticle.cls e300,s103,s204,s205,w202,w302,w303
 handoutWithNotes.sty s103,s204
 hanzibox.sty s103,s204,w200,w202
-hep-bibliography.sty s204,s205
+hep-bibliography.sty s204
 hep-math.sty s204
-hfutexam.cls s204,s205
+hfutexam.cls s204
 hobby.code.tex s204,s206,w303
 hobete.sty s103,s204,s205,s206
 hpstatement-bg.inc.sty s103,s204
@@ -291,7 +291,7 @@ koma-script-source-doc.cls s204
 kvmap.sty s103,s204
 l3benchmark.sty s103,s204,s205
 l3bitset.sty s103,w200
-l3doc.cls s204,s205,s206,w200
+l3doc.cls s204,s206,w200
 l3draw.sty s103,s204,s206,w202
 l3galley.sty s103,s205,s206,w200,w302
 l3graphics.sty s103,w200
@@ -355,7 +355,7 @@ luatexja-fontspec-27c.sty s103,s204,s205,s206,w202
 luatexja-fontspec.sty s204,s206
 luatexja-preset.sty s103,s204,s205,s206
 luatexko.sty s103,s204,w302
-lwarp-acro.sty s204,s205
+lwarp-acro.sty s204
 lwarp-chemformula.sty s204
 lwarp-chemgreek.sty s204
 lwarp-chemmacros.sty s103,s204,s206
@@ -372,7 +372,7 @@ lwarp-realscripts.sty s204
 lwarp-scrextend.sty s204
 lwarp-sidecap.sty s204
 lwarp-simplebnf.sty s103,s204,s206
-lwarp-siunitx-v2.sty s103,s204,s205
+lwarp-siunitx-v2.sty s103,s204
 lwarp-siunitx.sty s103,s204,w200
 lwarp-skmath.sty s103,s204,s205
 lwarp-statistics.sty s204
@@ -382,7 +382,7 @@ lwarp-tagpdf-mc-code-lua.sty s204
 lwarp-tagpdf.sty s204
 lwarp-unicode-math.sty s103,s204
 lwarp-xpiano.sty s204
-lwarp-xpinyin.sty s204,s205
+lwarp-xpinyin.sty s204
 lwarp.sty s204,w202
 magicwatermark.sty s204,s206
 mahjong.sty s103,s204,s205,s206
@@ -418,7 +418,7 @@ mkpatter.tex s103,s204,w100,w200
 moderncv.cls s204,s206
 modiagram.sty s103,s204
 morewrites.sty s103,s204,s205,s206,w200
-mucproc.cls s103,s204,s205,s206
+mucproc.cls s103,s204,s206
 multicolrule.sty s204,w200,w202
 multifootnote.sty s103,s204
 naive-ebnf.sty s204,s206
@@ -432,7 +432,7 @@ nlctuserguide.sty s204
 nodetree-embed.sty s204
 notes2bib.sty s103,s204,w200,w302
 notesslides.cls s204,w302
-notesslides.sty s103,s204,s206
+notesslides.sty s103,s204
 novel-Footnotes.sty s204
 novel-TextMacros.sty s204
 numberpt.sty s103,s204,s206
@@ -449,7 +449,7 @@ oblivoir-misc.sty s103,s204,s206
 oblivoir-xl.cls s204
 ocgbase.sty s204,s206,w200,w202
 ocgx2.sty s204,s206,w202
-onedown.sty s204,s205
+onedown.sty s204
 output-patches-tmp-ltx.sty s204
 pangram.sty s103,s204
 paresse-old.sty s204,s205
@@ -535,7 +535,7 @@ schulma.sty s204
 scontents-code.tex s103,s204,s206,w100,w200
 scontents.sty s204
 scontents.tex s204,w200,w202
-scripture.sty s103,s204,s205,w200
+scripture.sty s103,s204,w200
 scrlayer.sty s103,s204,w100
 scrlfile-hook-3.34.sty s103,s204,s205
 scrlfile-hook.sty s103,s204,s205
@@ -599,10 +599,10 @@ swiss.qrbill-cfg.tex s204
 t-markdown.tex s103,s204
 tabularray-2021.sty s103,s204,s206,w200,w202
 tabularray.sty s103,s204,s206,w200,w202
-tagpdf-base.sty s103,s204,s206,w200
-tagpdf-debug-generic.sty s103,s204,s206
+tagpdf-base.sty s103,s204,w200
+tagpdf-debug-generic.sty s103,s204
 tagpdf-debug.sty s103,s204,s205
-tagpdf-mc-code-generic.sty s103,s204,s206,w200
+tagpdf-mc-code-generic.sty s103,s204,w200
 tagpdf-mc-code-lua.sty s103,s204,s206
 tagpdf.sty s103,s204,s205,s206,w202
 tagpdfdocu-patches.sty s103,s204,w101
