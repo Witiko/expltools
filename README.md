@@ -59,6 +59,7 @@ local new_issues = require("explcheck-issues")
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
+local semantic_analysis = require("explcheck-semantic-analysis")
 
 -- Process file "code.tex" and print warnings and errors.
 local filename = "code.tex"
@@ -72,6 +73,7 @@ assert(file:close())
 preprocessing.process(filename, content, issues, results)
 lexical_analysis.process(filename, content, issues, results)
 syntactic_analysis.process(filename, content, issues, results)
+semantic_analysis.process(filename, content, issues, results)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "

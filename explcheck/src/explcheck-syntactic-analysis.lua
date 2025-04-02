@@ -20,7 +20,7 @@ local call_types = {
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 
--- Convert the content to a tree of function calls an register any issues.
+-- Convert the tokens to a tree of function calls and register any issues.
 local function syntactic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname content options
 
   local token_types = require("explcheck-lexical-analysis").token_types

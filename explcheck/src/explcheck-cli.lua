@@ -12,7 +12,7 @@ local new_aggregate_results = evaluation.new_aggregate_results
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
--- local semantic_analysis = require("explcheck-semantic-analysis")
+local semantic_analysis = require("explcheck-semantic-analysis")
 -- local pseudo_flow_analysis = require("explcheck-pseudo-flow-analysis")
 
 -- Deduplicate pathnames.
@@ -90,8 +90,9 @@ local function main(pathnames, options)
       assert(file:close())
 
       -- Run all steps.
+      local steps = {preprocessing, lexical_analysis, syntactic_analysis, semantic_analysis}
       local analysis_results = {}
-      for _, step in ipairs({preprocessing, lexical_analysis, syntactic_analysis}) do
+      for _, step in ipairs(steps) do
         step.process(pathname, content, issues, analysis_results, options)
         -- If a processing step ended with error, skip all following steps.
         if #issues.errors > 0 then
