@@ -2,8 +2,6 @@
 
 local call_types = require("explcheck-syntactic-analysis").call_types
 
-local CALL = call_types.CALL
-
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
 
@@ -49,14 +47,15 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   -- Evaluate the results of the syntactic analysis.
   local num_calls, num_call_tokens
   if analysis_results.calls ~= nil then
-    num_calls, num_call_tokens = 0, 0
+    num_calls, num_call_tokens = {}, {}
+    for _, call_type in pairs(call_types) do
+      num_calls[call_type], num_call_tokens[call_type] = 0, 0
+    end
     for _, part_calls in ipairs(analysis_results.calls) do
       for _, call in ipairs(part_calls) do
         local call_type, call_tokens, _, _ = table.unpack(call)
-        if call_type == CALL then
-          num_calls = num_calls + 1
-          num_call_tokens = num_call_tokens + #call_tokens
-        end
+        num_calls[call_type] = num_calls[call_type] + 1
+        num_call_tokens[call_type] = num_call_tokens[call_type] + #call_tokens
       end
     end
   end
@@ -88,8 +87,12 @@ function AggregateEvaluationResults.new(cls)
   self.num_tokens = 0
   self.num_groupings = 0
   self.num_unclosed_groupings = 0
-  self.num_calls = 0
-  self.num_call_tokens = 0
+  self.num_calls = {}
+  self.num_call_tokens = {}
+  for _, call_type in pairs(call_types) do
+    self.num_calls[call_type] = 0
+    self.num_call_tokens[call_type] = 0
+  end
   return self
 end
 
@@ -98,7 +101,15 @@ function AggregateEvaluationResults:add(evaluation_results)
   self.num_files = self.num_files + 1
   for key, _ in pairs(self) do
     if key ~= "num_files" and evaluation_results[key] ~= nil then
-      self[key] = self[key] + evaluation_results[key]
+      if type(self[key]) == "number" then  -- a simple count
+        self[key] = self[key] + evaluation_results[key]
+      elseif type(self[key]) == "table" then  -- a table of counts
+        for subkey, _ in pairs(self[key]) do
+          self[key][subkey] = self[key][subkey] + evaluation_results[key][subkey]
+        end
+      else
+        error('Unexpected field type "' .. type(self[key]) .. '"')
+      end
     end
   end
 end

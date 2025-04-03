@@ -1,7 +1,11 @@
 -- Formatting for the command-line interface of the static analyzer explcheck.
 
+local call_types = require("explcheck-syntactic-analysis").call_types
 local get_option = require("explcheck-config")
 local utils = require("explcheck-utils")
+
+local CALL = call_types.CALL
+local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 local color_codes = {
   BOLD = 1,
@@ -15,12 +19,19 @@ local RED = color_codes.RED
 local GREEN = color_codes.GREEN
 local YELLOW = color_codes.YELLOW
 
--- Transform a singular into plural if the count is zero or greater than two.
+-- Transform a singular into plural if the count is zero, greater than two, or unspecified.
 local function pluralize(singular, count)
   if count == 1 then
     return singular
   else
-    return singular .. "s"
+    local of_index = singular:find(" of ")
+    local plural
+    if of_index == nil then
+      plural = singular .. "s"
+    else
+      plural = singular:sub(1, of_index - 1) .. "s" .. singular:sub(of_index)
+    end
+    return plural
   end
 end
 
@@ -190,20 +201,26 @@ local function print_summary(options, evaluation_results)
       end
     end
     -- Evaluate the evalution results of the syntactic analysis.
-    local num_calls = evaluation_results.num_calls
-    local num_call_tokens = evaluation_results.num_call_tokens
-    if num_calls == 0 then
-      goto skip_remaining_additional_information
+    for _, call_type in ipairs({CALL, OTHER_TOKENS}) do
+      local num_calls = evaluation_results.num_calls[call_type]
+      local num_call_tokens = evaluation_results.num_call_tokens[call_type]
+      if num_calls == 0 then
+        goto next_call_type
+      end
+      assert(num_call_tokens > 0)
+      io.write(string.format("\n- %s top-level %s spanning ", titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
+      if num_call_tokens == num_tokens then
+        io.write("all tokens")
+      else
+        io.write(string.format("%s %s ", humanize(num_call_tokens), pluralize("token", num_call_tokens)))
+        local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
+        local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
+        io.write(string.format("(%s of tokens, ~%s of total bytes)", formatted_token_ratio, formatted_byte_ratio))
+      end
+      ::next_call_type::
     end
-    assert(num_call_tokens > 0)
-    io.write(string.format("\n- %s top-level expl3 %s spanning ", titlecase(humanize(num_calls)), pluralize("call", num_calls)))
-    if num_call_tokens == num_tokens then
-      io.write("all tokens")
-    else
-      io.write(string.format("%s %s ", humanize(num_call_tokens), pluralize("token", num_call_tokens)))
-      local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
-      local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
-      io.write(string.format("(%s of tokens, ~%s of total bytes)", formatted_token_ratio, formatted_byte_ratio))
+    if evaluation_results.num_calls[CALL] == 0 then
+      goto skip_remaining_additional_information
     end
   end
 
@@ -459,23 +476,31 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     end
     -- Evaluate the evalution results of the syntactic analysis.
     io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
-    local num_calls = evaluation_results.num_calls
-    local num_call_tokens = evaluation_results.num_call_tokens
-    if num_calls == 0 or num_calls == nil then
-      io.write(string.format("\n%s- No top-level expl3 calls", line_indent))
-      goto skip_remaining_additional_information
+    for _, call_type in ipairs({CALL, OTHER_TOKENS}) do
+      local num_calls = evaluation_results.num_calls and evaluation_results.num_calls[call_type]
+      local num_call_tokens = evaluation_results.num_call_tokens and evaluation_results.num_call_tokens[call_type]
+      if num_calls == 0 or num_calls == nil then
+        if call_type == CALL then
+          io.write(string.format("\n%s- No top-level %s", line_indent, pluralize(call_type)))
+        end
+        goto next_call_type
+      end
+      assert(num_calls ~= nil)
+      assert(num_calls > 0)
+      io.write(string.format("\n%s- %s top-level %s ", line_indent, titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
+      io.write("spanning ")
+      if num_call_tokens == num_tokens then
+        io.write("all tokens")
+      else
+        local formatted_call_tokens = string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens))
+        local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
+        local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
+        io.write(string.format("%s (%s of tokens, ~%s of file size)", formatted_call_tokens, formatted_token_ratio, formatted_byte_ratio))
+      end
+      ::next_call_type::
     end
-    assert(num_calls ~= nil)
-    assert(num_calls > 0)
-    io.write(string.format("\n%s- %s %s ", line_indent, titlecase(humanize(num_calls)), pluralize("top-level expl3 call", num_calls)))
-    io.write("spanning ")
-    if num_call_tokens == num_tokens then
-      io.write("all tokens")
-    else
-      local formatted_call_tokens = string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens))
-      local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
-      local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
-      io.write(string.format("%s (%s of tokens, ~%s of file size)", formatted_call_tokens, formatted_token_ratio, formatted_byte_ratio))
+    if evaluation_results.num_calls == nil or evaluation_results.num_calls[CALL] == 0 then
+      goto skip_remaining_additional_information
     end
   end
 

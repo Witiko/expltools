@@ -17,8 +17,8 @@ local CHARACTER = token_types.CHARACTER
 local lpeg = require("lpeg")
 
 local call_types = {
-  CALL = "call",
-  OTHER_TOKENS = "other tokens",
+  CALL = "expl3 call",
+  OTHER_TOKENS = "block of other tokens",
 }
 
 local CALL = call_types.CALL
