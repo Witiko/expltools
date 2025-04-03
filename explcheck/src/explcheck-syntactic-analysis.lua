@@ -1,5 +1,6 @@
 -- The syntactic analysis step of static analysis converts TeX tokens into a tree of function calls.
 
+local token_types = require("explcheck-lexical-analysis").token_types
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 
@@ -10,23 +11,21 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
+local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
+local CHARACTER = token_types.CHARACTER
+
 local lpeg = require("lpeg")
 
 local call_types = {
-  CALL = "call",
-  OTHER_TOKENS = "other tokens",
+  CALL = "expl3 call",
+  OTHER_TOKENS = "block of other tokens",
 }
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 
--- Convert the content to a tree of function calls an register any issues.
+-- Convert the tokens to a tree of function calls and register any issues.
 local function syntactic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname content options
-
-  local token_types = require("explcheck-lexical-analysis").token_types
-
-  local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
-  local CHARACTER = token_types.CHARACTER
 
   -- Extract function calls from TeX tokens and groupings.
   local function get_calls(tokens, token_range, groupings)
