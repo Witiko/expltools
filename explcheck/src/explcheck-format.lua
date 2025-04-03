@@ -5,7 +5,6 @@ local get_option = require("explcheck-config")
 local utils = require("explcheck-utils")
 
 local CALL = call_types.CALL
-local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 local color_codes = {
   BOLD = 1,
@@ -18,6 +17,26 @@ local BOLD = color_codes.BOLD
 local RED = color_codes.RED
 local GREEN = color_codes.GREEN
 local YELLOW = color_codes.YELLOW
+
+-- Get an iterator over the key-values in a table order by desceding values.
+local function pairs_sorted_by_descending_values(obj)
+  local items = {}
+  for key, value in pairs(obj) do
+    table.insert(items, {key, value})
+  end
+  table.sort(items, function(first_item, second_item)
+    return first_item[2] > second_item[2]
+  end)
+  local i = 0
+  return function()
+    i = i + 1
+    if i <= #items then
+      return table.unpack(items[i])
+    else
+      return nil
+    end
+  end
+end
 
 -- Transform a singular into plural if the count is zero, greater than two, or unspecified.
 local function pluralize(singular, count)
@@ -140,7 +159,7 @@ local function format_ratio(numerator, denominator)
     assert(denominator > 0)
     local formatted_percentage = string.format("%.0f%%", 100.0 * numerator / denominator)
     if numerator > 0 and formatted_percentage == "0%" then
-      return ">0%"
+      return "<1%"
     else
       return formatted_percentage
     end
@@ -173,6 +192,7 @@ local function print_summary(options, evaluation_results)
 
   -- Display additional information.
   if verbose then
+    local line_indent = (" "):rep(4)
     print()
     io.write(string.format("\n%s", colorize("Aggregate statistics:", BOLD)))
     -- Display pre-evaluation information.
@@ -201,12 +221,9 @@ local function print_summary(options, evaluation_results)
       end
     end
     -- Evaluate the evalution results of the syntactic analysis.
-    for _, call_type in ipairs({CALL, OTHER_TOKENS}) do
-      local num_calls = evaluation_results.num_calls[call_type]
+    for call_type, num_calls in pairs_sorted_by_descending_values(evaluation_results.num_calls) do
       local num_call_tokens = evaluation_results.num_call_tokens[call_type]
-      if num_calls == 0 then
-        goto next_call_type
-      end
+      assert(num_calls > 0)
       assert(num_call_tokens > 0)
       io.write(string.format("\n- %s top-level %s spanning ", titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
       if num_call_tokens == num_tokens then
@@ -217,9 +234,25 @@ local function print_summary(options, evaluation_results)
         local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
         io.write(string.format("(%s of tokens, ~%s of total bytes)", formatted_token_ratio, formatted_byte_ratio))
       end
-      ::next_call_type::
+      for statement_type, num_statements in pairs_sorted_by_descending_values(evaluation_results.num_statements[call_type]) do
+        local num_statement_tokens = evaluation_results.num_statement_tokens[call_type][statement_type]
+        assert(num_statements > 0)
+        assert(num_statement_tokens > 0)
+        io.write(string.format("\n%s- %s top-level ", line_indent, titlecase(humanize(num_statements))))
+        io.write(string.format("%s spanning ", pluralize(statement_type, num_statements)))
+        if num_statements == num_calls then
+          io.write(string.format("all top-level %s", pluralize(call_type)))
+        else
+          local formatted_statement_tokens = string.format(
+            "%s %s", humanize(num_statement_tokens), pluralize("token", num_statement_tokens))
+          local formatted_token_ratio = format_ratio(num_statement_tokens, num_tokens)
+          local formatted_byte_ratio = format_ratio(num_expl_bytes * num_statement_tokens, num_total_bytes * num_tokens)
+          io.write(string.format(
+            "%s (%s of tokens, ~%s of total bytes)", formatted_statement_tokens, formatted_token_ratio, formatted_byte_ratio))
+        end
+      end
     end
-    if evaluation_results.num_calls[CALL] == 0 then
+    if evaluation_results.num_calls_total == 0 then
       goto skip_remaining_additional_information
     end
   end
@@ -476,17 +509,15 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     end
     -- Evaluate the evalution results of the syntactic analysis.
     io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
-    for _, call_type in ipairs({CALL, OTHER_TOKENS}) do
-      local num_calls = evaluation_results.num_calls and evaluation_results.num_calls[call_type]
-      local num_call_tokens = evaluation_results.num_call_tokens and evaluation_results.num_call_tokens[call_type]
-      if num_calls == 0 or num_calls == nil then
-        if call_type == CALL then
-          io.write(string.format("\n%s- No top-level %s", line_indent, pluralize(call_type)))
-        end
-        goto next_call_type
-      end
+    if evaluation_results.num_calls == nil or evaluation_results.num_calls[CALL] == 0 then
+      io.write(string.format("\n%s- No top-level %s", line_indent, pluralize(CALL)))
+    end
+    for call_type, num_calls in pairs_sorted_by_descending_values(evaluation_results.num_calls) do
+      local num_call_tokens = evaluation_results.num_call_tokens[call_type]
       assert(num_calls ~= nil)
       assert(num_calls > 0)
+      assert(num_call_tokens ~= nil)
+      assert(num_call_tokens > 0)
       io.write(string.format("\n%s- %s top-level %s ", line_indent, titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
       io.write("spanning ")
       if num_call_tokens == num_tokens then
@@ -497,9 +528,36 @@ local function print_results(pathname, issues, analysis_results, options, evalua
         local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
         io.write(string.format("%s (%s of tokens, ~%s of file size)", formatted_call_tokens, formatted_token_ratio, formatted_byte_ratio))
       end
-      ::next_call_type::
     end
-    if evaluation_results.num_calls == nil or evaluation_results.num_calls[CALL] == 0 then
+    if evaluation_results.num_calls_total == nil or evaluation_results.num_calls_total == 0 then
+      goto skip_remaining_additional_information
+    end
+    -- Evaluate the evalution results of the semantic analysis.
+    io.write(string.format("\n\n%s%s", line_indent, colorize("Semantic analysis results:", BOLD)))
+    for call_type, num_calls in pairs_sorted_by_descending_values(evaluation_results.num_calls) do
+      assert(num_calls ~= nil)
+      assert(num_calls > 0)
+      for statement_type, num_statements in pairs_sorted_by_descending_values(evaluation_results.num_statements[call_type]) do
+        local num_statement_tokens = evaluation_results.num_statement_tokens[call_type][statement_type]
+        assert(num_statements ~= nil)
+        assert(num_statements > 0)
+        assert(num_statement_tokens ~= nil)
+        assert(num_statement_tokens > 0)
+        io.write(string.format("\n%s- %s top-level ", line_indent, titlecase(humanize(num_statements))))
+        io.write(string.format("%s spanning ", pluralize(statement_type, num_statements)))
+        if num_statements == num_calls then
+          io.write(string.format("all top-level %s", pluralize(call_type)))
+        else
+          local formatted_statement_tokens = string.format(
+            "%s %s", humanize(num_statement_tokens), pluralize("token", num_statement_tokens))
+          local formatted_token_ratio = format_ratio(num_statement_tokens, num_tokens)
+          local formatted_byte_ratio = format_ratio(num_expl_bytes * num_statement_tokens, num_total_bytes * num_tokens)
+          io.write(string.format(
+            "%s (%s of tokens, ~%s of total bytes)", formatted_statement_tokens, formatted_token_ratio, formatted_byte_ratio))
+        end
+      end
+    end
+    if evaluation_results.num_statements_total == nil or evaluation_results.num_statements_total == 0 then
       goto skip_remaining_additional_information
     end
   end

@@ -7,8 +7,8 @@ local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 local statement_types = {
   OTHER_STATEMENT = "other statement",
-  OTHER_TOKENS_SIMPLE = "other tokens (simple)",
-  OTHER_TOKENS_COMPLEX = "other tokens (complex)",
+  OTHER_TOKENS_SIMPLE = "block of other simple tokens",
+    OTHER_TOKENS_COMPLEX = "block of other complex tokens",
 }
 
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
@@ -79,4 +79,5 @@ end
 
 return {
   process = semantic_analysis,
+  statement_types = statement_types,
 }
