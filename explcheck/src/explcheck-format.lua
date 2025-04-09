@@ -238,6 +238,9 @@ local function print_summary(options, evaluation_results)
           io.write(string.format("(%s of tokens, ~%s of total bytes)", formatted_token_ratio, formatted_byte_ratio))
         end
       end
+      if evaluation_results.num_statement_tokens == nil or evaluation_results.num_statement_tokens[call_type] == nil then
+        goto skip_to_next_call_type
+      end
       for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens[call_type]) do
         local num_statements = evaluation_results.num_statements[call_type][statement_type]
         assert(num_statements > 0)
@@ -259,6 +262,7 @@ local function print_summary(options, evaluation_results)
           end
         end
       end
+      ::skip_to_next_call_type::
     end
     if evaluation_results.num_calls_total == 0 then
       goto skip_remaining_additional_information
@@ -519,6 +523,9 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
     if evaluation_results.num_calls == nil or evaluation_results.num_calls[CALL] == 0 then
       io.write(string.format("\n%s- No top-level %s", line_indent, pluralize(CALL)))
+      if evaluation_results.num_calls == nil then
+        goto skip_remaining_additional_information
+      end
     end
     for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
       local num_calls = evaluation_results.num_calls[call_type]
@@ -546,6 +553,10 @@ local function print_results(pathname, issues, analysis_results, options, evalua
     end
     -- Evaluate the evalution results of the semantic analysis.
     io.write(string.format("\n\n%s%s", line_indent, colorize("Semantic analysis results:", BOLD)))
+    if evaluation_results.num_statement_tokens == nil then
+      io.write(string.format("\n%s- No top-level %s", line_indent, pluralize("statement")))
+      goto skip_remaining_additional_information
+    end
     for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
       local num_calls = evaluation_results.num_calls[call_type]
       assert(num_calls ~= nil)
