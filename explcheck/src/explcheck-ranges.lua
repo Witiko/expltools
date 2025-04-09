@@ -129,8 +129,8 @@ function Range:__len()
   end
 end
 
--- Get an iterator over items from the original array within the range.
-function Range:iter(original_array)
+-- Get an iterator over pairs of indices and items from the original array within the range.
+function Range:enumerate(original_array)
   if #self == 0 then
     return function()  -- empty range
       return nil
@@ -144,7 +144,7 @@ function Range:iter(original_array)
     return function()  -- non-empty range
       i = i + 1
       if i <= self:stop() then
-        return original_array[i]
+        return i, original_array[i]
       else
         return nil
       end

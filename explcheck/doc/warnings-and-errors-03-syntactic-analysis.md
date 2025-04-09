@@ -26,6 +26,11 @@ Depending on the specific function, this may or may not be an error.
 ## Braced N-type function call argument {.w label=w303}
 An N-type function call argument is braced:
 
- /w302.tex
+ /w303.tex
 
 Depending on the specific function, this may or may not be an error.
+
+# Unexpected parameter number {.e label=e304}
+A p-type "TeX parameter" function call argument contains parameter tokens (`#`) followed by out-of-order digits:
+
+ /e304.tex

@@ -48,6 +48,37 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
       end
     end
 
+    -- Read the parameter text and determine its validity.
+    local function validate_parameter_text(parameter_text_token_range)
+      local num_parameters = 0
+      for token_number, token in parameter_text_token_range:enumerate(tokens) do  -- luacheck: ignore token_number
+        local token_type, _, catcode = table.unpack(token)
+        if token_type == CHARACTER and catcode == 6 then  -- parameter
+          local next_token_number = token_number + 1
+          if next_token_number > parameter_text_token_range:stop() then  -- not followed by anything, the text is invalid
+            return false
+          end
+          local next_token = tokens[next_token_number]
+          local next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
+          if next_token_type == CHARACTER and next_catcode == 6 then  -- followed by another parameter (unrecognized nesting?)
+            return false  -- the text is invalid
+          elseif next_token_type == CHARACTER and lpeg.match(parsers.decimal_digit, next_payload) then  -- followed by a digit
+            local next_digit = tonumber(next_payload)
+            assert(next_digit ~= nil)
+            if next_digit == num_parameters + 1 then  -- a correct digit, increment the number of parameters
+              num_parameters = num_parameters + 1
+            else  -- an incorrect digit, the parameter text is invalid
+              issues:add('e304', 'unexpected parameter number', next_byte_range)
+              return false
+            end
+          else  -- followed by some other token, the parameter text is invalid
+            return false
+          end
+        end
+      end
+      return true
+    end
+
     -- Normalize common non-expl3 commands to expl3 equivalents.
     local function normalize_csname(csname)
       local next_token_number = token_number + 1
@@ -156,6 +187,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
           local next_token, next_token_range
           local next_token_type, _, next_catcode, next_byte_range
           local next_grouping, parameter_text_start_token_number
+          local are_parameter_texts_valid = true
           for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
             if lpeg.match(parsers.weird_argument_specifier, argument_specifier) then
               goto skip_other_token  -- a "weird" argument specifier, skip the control sequence
@@ -195,9 +227,13 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                     issues:add('e300', 'unexpected function call argument', next_byte_range)
                     goto skip_other_token
                   end
-                elseif next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, record the parameter text
+                elseif next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, validate and record the parameter text
                   next_token_number = next_token_number - 1
-                  table.insert(arguments, new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE + MAYBE_EMPTY, #tokens))
+                  next_token_range = new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE + MAYBE_EMPTY, #tokens)
+                  if not validate_parameter_text(next_token_range) then
+                    are_parameter_texts_valid = false
+                  end
+                  table.insert(arguments, {argument_specifier, next_token_range})
                   break
                 end
                 next_token_number = next_token_number + 1
@@ -234,7 +270,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   next_token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens)
                   if #next_token_range == 1 then  -- a single token, record it
                       issues:add('w303', 'braced N-type function call argument', next_byte_range)
-                      table.insert(arguments, next_token_range)
+                      table.insert(arguments, {argument_specifier, next_token_range})
                       next_token_number = next_grouping.stop
                   elseif #next_token_range == 2 and  -- two tokens
                       tokens[next_token_range:start()][1] == CHARACTER and tokens[next_token_range:start()][3] == 6 and  -- a parameter
@@ -269,7 +305,8 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   end
                 end
                 -- an N-type argument, record it
-                table.insert(arguments, new_range(next_token_number, next_token_number, INCLUSIVE, #tokens))
+                next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #tokens)
+                table.insert(arguments, {argument_specifier, next_token_range})
               end
             elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
               if next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, try to collect the balanced text
@@ -287,7 +324,8 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                   end
                   goto skip_other_token
                 else  -- a balanced text, record it
-                  table.insert(arguments, new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens))
+                  next_token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens)
+                  table.insert(arguments, {argument_specifier, next_token_range})
                   next_token_number = next_grouping.stop
                 end
               elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
@@ -307,14 +345,20 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
                 end
                 -- an unbraced n-type argument, record it
                 issues:add('w302', 'unbraced n-type function call argument', next_byte_range)
-                table.insert(arguments, new_range(next_token_number, next_token_number, INCLUSIVE, #tokens))
+                next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #tokens)
+                table.insert(arguments, {argument_specifier, next_token_range})
               end
             else
               error('Unexpected argument specifier "' .. argument_specifier .. '"')
             end
             next_token_number = next_token_number + 1
           end
-          table.insert(calls, {CALL, new_range(token_number, next_token_number, EXCLUSIVE, #tokens), csname, arguments})
+          next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #tokens)
+          if are_parameter_texts_valid then  -- if all "TeX parameter" arguments are valid, record the call
+            table.insert(calls, {CALL, next_token_range, csname, arguments})
+          else  -- otherwise, skip all tokens from the call
+            record_other_tokens(next_token_range)
+          end
           token_number = next_token_number
           goto continue
         else  -- a non-expl3 control sequence, skip it

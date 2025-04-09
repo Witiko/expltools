@@ -42,7 +42,7 @@ local function semantic_analysis(pathname, content, _, results, options)  -- lua
   --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
   --
   local function classify_tokens(tokens, token_range)
-    for token in token_range:iter(tokens) do
+    for _, token in token_range:enumerate(tokens) do
       local catcode = token[3]
       if simple_text_catcodes[catcode] == nil then
         return OTHER_TOKENS_COMPLEX

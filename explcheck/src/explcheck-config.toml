@@ -272,3 +272,12 @@ expl3_detection_strategy = "never"
 
 [filename."ecgdraw.sty"]
 ignored_issues = ["e201"]
+
+[filename."xassoccnt.sty"]
+ignored_issues = ["e304"]
+
+[filename."skdoc.cls"]
+ignored_issues = ["e304"]
+
+[package."koma-script"]
+ignored_issues = ["e304"]
