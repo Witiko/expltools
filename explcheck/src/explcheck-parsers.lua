@@ -1,7 +1,7 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
 local lpeg = require("lpeg")
-local C, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
+local C, Cc, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cc, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
 
 -- Base parsers
 ---- Generic
@@ -490,7 +490,13 @@ local latex_style_file_content = (
 )
 
 ---- Assigning functions
-local expl3_function_assignment_csname = (
+local expl3_function_definition_csname = Ct(
+  P("cs_new")
+  * (P("_protected") * Cc(true) + Cc(false))
+  * (P("_nopar") * Cc(true) + Cc(false))
+  * P(":N")
+)
+local expl3_function_definition_or_assignment_csname = (
   P("cs_")
   * (
     (
@@ -547,7 +553,8 @@ return {
   eof = eof,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
-  expl3_function_assignment_csname = expl3_function_assignment_csname,
+  expl3_function_definition_csname = expl3_function_definition_csname,
+  expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_csname = expl3_function_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,

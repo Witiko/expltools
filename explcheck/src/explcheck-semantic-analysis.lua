@@ -1,16 +1,21 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
 local call_types = require("explcheck-syntactic-analysis").call_types
+local parsers = require("explcheck-parsers")
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 
+local lpeg = require("lpeg")
+
 local statement_types = {
+  FUNCTION_DEFINITION = "function definition",
   OTHER_STATEMENT = "other statement",
   OTHER_TOKENS_SIMPLE = "block of other simple tokens",
   OTHER_TOKENS_COMPLEX = "block of other complex tokens",
 }
 
+local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
 local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
@@ -53,7 +58,14 @@ local function semantic_analysis(pathname, content, _, results, options)  -- lua
       local call_type, token_range = table.unpack(call)
       local statement
       if call_type == CALL then  -- a function call
-        statement = {OTHER_STATEMENT}  -- TODO: recognize different types of statements
+        local _, _, csname, arguments = table.unpack(call)  -- luacheck: ignore arguments
+        local function_definition = lpeg.match(parsers.expl3_function_definition_csname, csname)
+        if function_definition ~= nil then  -- function definition
+          local protected, nopar = table.unpack(function_definition)
+          statement = {FUNCTION_DEFINITION, protected, nopar}
+        else  -- other statement
+          statement = {OTHER_STATEMENT}
+        end
       elseif call_type == OTHER_TOKENS then  -- other tokens
         local statement_type = classify_tokens(tokens, token_range)
         statement = {statement_type}
