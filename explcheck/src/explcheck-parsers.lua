@@ -168,6 +168,14 @@ local n_type_argument_specifier = S("ncvoxefTF")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
 local do_not_use_argument_specifier = S("D")
+local N_or_n_type_argument_specifier = (
+  N_type_argument_specifier
+  + n_type_argument_specifier
+)
+local N_or_n_type_argument_specifiers = (
+  N_or_n_type_argument_specifier^0
+  * eof
+)
 local argument_specifier = (
   N_type_argument_specifier
   + n_type_argument_specifier
@@ -175,7 +183,10 @@ local argument_specifier = (
   + weird_argument_specifier
   + do_not_use_argument_specifier
 )
-local argument_specifiers = argument_specifier^0 * eof
+local argument_specifiers = (
+  argument_specifier^0
+  * eof
+)
 local do_not_use_argument_specifiers = (
   (
     argument_specifier
@@ -570,6 +581,7 @@ return {
   latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
+  N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
   parameter_argument_specifier = parameter_argument_specifier,

@@ -16,6 +16,7 @@ local lpeg = require("lpeg")
 local token_types = {
   CONTROL_SEQUENCE = "control sequence",
   CHARACTER = "character",
+  ARGUMENT = "argument",  -- corresponds to zero or more tokens inserted by a function call, never produced by lexical analysis
 }
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE

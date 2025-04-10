@@ -31,6 +31,7 @@ An N-type function call argument is braced:
 Depending on the specific function, this may or may not be an error.
 
 # Unexpected parameter number {.e label=e304}
-A p-type "TeX parameter" function call argument contains parameter tokens (`#`) followed by out-of-order digits:
+A parameter or replacement text contains parameter tokens (`#`) followed by unexpected numbers:
 
- /e304.tex
+ /e304-01.tex
+ /e304-02.tex

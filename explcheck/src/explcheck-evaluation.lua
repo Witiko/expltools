@@ -1,5 +1,9 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
+local token_types = require("explcheck-lexical-analysis").token_types
+
+local ARGUMENT = token_types.ARGUMENT
+
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
 
@@ -27,7 +31,10 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   if analysis_results.tokens ~= nil then
     num_tokens = 0
     for _, part_tokens in ipairs(analysis_results.tokens) do
-      num_tokens = num_tokens + #part_tokens
+      for _, token in ipairs(part_tokens) do
+        assert(token[1] ~= ARGUMENT)
+        num_tokens = num_tokens + 1
+      end
     end
   end
   local num_groupings, num_unclosed_groupings

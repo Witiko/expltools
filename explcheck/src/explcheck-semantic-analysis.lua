@@ -1,7 +1,10 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
-local call_types = require("explcheck-syntactic-analysis").call_types
+local syntactic_analysis = require("explcheck-syntactic-analysis")
 local parsers = require("explcheck-parsers")
+
+local call_types = syntactic_analysis.call_types
+local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
@@ -33,7 +36,7 @@ local simple_text_catcodes = {
 }
 
 -- Determine the meaning of function calls and register any issues.
-local function semantic_analysis(pathname, content, _, results, options)  -- luacheck: ignore pathname content options
+local function semantic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname options
 
   -- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
   -- a more complex material that may have side effects and presents a boundary between chunks of well-understood
@@ -54,6 +57,7 @@ local function semantic_analysis(pathname, content, _, results, options)  -- lua
   -- Extract statements from function calls.
   local function get_statements(tokens, calls)
     local statements = {}
+    local replacement_text_tokens = {}
     for _, call in ipairs(calls) do
       local call_type, token_range = table.unpack(call)
       local statement
@@ -61,11 +65,50 @@ local function semantic_analysis(pathname, content, _, results, options)  -- lua
         local _, _, csname, arguments = table.unpack(call)  -- luacheck: ignore arguments
         local function_definition = lpeg.match(parsers.expl3_function_definition_csname, csname)
         if function_definition ~= nil then  -- function definition
-          local protected, nopar = table.unpack(function_definition)
+          local protected, nopar = table.unpack(function_definition)  -- determine properties of the defined function
+          -- determine the replacement text
+          local replacement_text_specifier, replacement_text_token_range = table.unpack(arguments[#arguments])
+          if replacement_text_specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
+            goto other_statement
+          end
+          -- determine the name of the defined function
+          local defined_csname_specifier, defined_csname_token_range = table.unpack(arguments[1])
+          assert(defined_csname_specifier == "N" and #defined_csname_token_range == 1)
+          local defined_csname = tokens[defined_csname_token_range:start()][2]
+          -- determine the number of parameters of the defined function
+          local num_parameters
+          local _, _, argument_specifiers = defined_csname:find(":([^:]*)")  -- first, parse the name of the defined function
+          if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
+            num_parameters = #argument_specifiers
+          end
+          for _, argument in ipairs(arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
+            if lpeg.match(parsers.parameter_argument_specifier, argument[1]) and argument[3] ~= nil then
+              if num_parameters == nil or argument[3] > num_parameters then  -- if one method gives a higher number, trust it
+                num_parameters = argument[3]
+              end
+              assert(num_parameters ~= nil)
+              break
+            end
+          end
+          if num_parameters == nil then  -- we couldn't determine the number of parameters, give up
+            goto other_statement
+          end
+          -- parse the replacement text and record the function definition
+          local transformed_tokens, map_back, map_forward = transform_replacement_text_tokens(
+            content, tokens, issues,
+            num_parameters, replacement_text_token_range
+          )
+          if transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
+            goto other_statement
+          end
+          table.insert(replacement_text_tokens, {transformed_tokens, map_back, map_forward})
+          -- TODO: get replacement text calls
           statement = {FUNCTION_DEFINITION, protected, nopar}
-        else  -- other statement
-          statement = {OTHER_STATEMENT}
+          goto continue
         end
+        ::other_statement::
+        statement = {OTHER_STATEMENT}
+        ::continue::
       elseif call_type == OTHER_TOKENS then  -- other tokens
         local statement_type = classify_tokens(tokens, token_range)
         statement = {statement_type}

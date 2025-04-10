@@ -4,7 +4,7 @@ local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 
-local filename = "e304.tex"
+local filename = "e304-01.tex"
 
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))

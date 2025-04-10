@@ -11,7 +11,7 @@ warnings_are_errors = false
 
 [package.l3kernel]
 expl3_detection_strategy = "always"
-ignored_issues = ["e208", "e209", "e300", "e301", "w302"]
+ignored_issues = ["e208", "e209", "e300", "e301", "w302", "e304"]
 max_line_length = 140
 
 [filename."tex4ht.sty"]
@@ -75,6 +75,7 @@ expl3_detection_strategy = "always"
 [package.ctex]
 expl3_detection_strategy = "always"
 max_line_length = 100
+ignored_issues = ["e304"]
 
 [filename."knowledge.sty"]
 ignored_issues = ["e201", "e300", "e301", "w302"]
@@ -280,4 +281,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package."koma-script"]
+ignored_issues = ["e304"]
+
+[package."duckuments"]
 ignored_issues = ["e304"]
