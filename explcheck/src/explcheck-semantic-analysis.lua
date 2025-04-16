@@ -4,6 +4,7 @@ local syntactic_analysis = require("explcheck-syntactic-analysis")
 local parsers = require("explcheck-parsers")
 
 local call_types = syntactic_analysis.call_types
+local get_calls = syntactic_analysis.get_calls
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
@@ -55,9 +56,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   end
 
   -- Extract statements from function calls.
-  local function get_statements(tokens, calls)
+  local function get_statements(tokens, groupings, calls)
     local statements = {}
     local replacement_text_tokens = {}
+    local replacement_text_calls = {}
     for _, call in ipairs(calls) do
       local call_type, token_range = table.unpack(call)
       local statement
@@ -94,16 +96,16 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             goto other_statement
           end
           -- parse the replacement text and record the function definition
-          local transformed_tokens, map_back, map_forward = transform_replacement_text_tokens(
-            content, tokens, issues,
-            num_parameters, replacement_text_token_range
-          )
+          local transformed_tokens, map_back, map_forward
+            = transform_replacement_text_tokens(content, tokens, issues, num_parameters, replacement_text_token_range)
           if transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
             goto other_statement
           end
-          table.insert(replacement_text_tokens, {transformed_tokens, map_back, map_forward})
-          -- TODO: get replacement text calls
-          statement = {FUNCTION_DEFINITION, protected, nopar}
+          local nested_calls
+            = get_calls(tokens, transformed_tokens, replacement_text_token_range, map_back, map_forward, issues, groupings)
+          table.insert(replacement_text_tokens, {replacement_text_token_range, transformed_tokens, map_back, map_forward})
+          table.insert(replacement_text_calls, nested_calls)
+          statement = {FUNCTION_DEFINITION, protected, nopar, #replacement_text_calls}
           goto continue
         end
         ::other_statement::
@@ -118,13 +120,15 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       table.insert(statements, statement)
     end
     assert(#statements == #calls)
+    assert(#replacement_text_calls == #replacement_text_tokens)
     return statements
   end
 
   local statements = {}
   for part_number, part_calls in ipairs(results.calls) do
     local part_tokens = results.tokens[part_number]
-    local part_statements = get_statements(part_tokens, part_calls)
+    local part_groupings = results.groupings[part_number]
+    local part_statements = get_statements(part_tokens, part_groupings, part_calls)
     table.insert(statements, part_statements)
   end
 
