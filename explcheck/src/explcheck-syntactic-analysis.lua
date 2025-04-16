@@ -53,7 +53,7 @@ local function transform_replacement_text_tokens(content, tokens, issues, num_pa
       elseif next_token_type == CHARACTER and lpeg.match(parsers.decimal_digit, next_payload) then  -- followed by a digit
         local next_digit = tonumber(next_payload)
         assert(next_digit ~= nil)
-        if next_digit <= num_parameters then  -- a correct digit, remove it and replace the parameter with an argument pseudo-token
+        if next_digit <= num_parameters then  -- a correct digit, remove it and replace the parameter with a function call argument
           local transformed_token = {ARGUMENT, nil, nil, new_range(byte_range:start(), next_byte_range:stop(), INCLUSIVE, #content)}
           table.insert(transformed_tokens, transformed_token)
           table.insert(deleted_token_numbers, next_token_number)
@@ -62,6 +62,12 @@ local function transform_replacement_text_tokens(content, tokens, issues, num_pa
           issues:add('e304', 'unexpected parameter number', next_byte_range)
           return nil
         end
+      elseif next_token_type == ARGUMENT then  -- followed by a function call argument
+        -- the argument could be a correct digit, so let's remove it and replace it with another function call argument
+        local transformed_token = {ARGUMENT, nil, nil, new_range(byte_range:start(), next_byte_range:stop(), INCLUSIVE, #content)}
+        table.insert(transformed_tokens, transformed_token)
+        table.insert(deleted_token_numbers, next_token_number)
+        next_token_number = next_token_number + 1
       else  -- followed by some other token, the replacement text is invalid
         return nil
       end
@@ -148,6 +154,9 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             issues:add('e304', 'unexpected parameter number', next_byte_range)
             return nil
           end
+        elseif next_token_type == ARGUMENT then  -- followed by a function call argument
+          -- the argument could be a correct digit, so let's increment the number of parameters
+          num_parameters = num_parameters + 1
         else  -- followed by some other token, the parameter text is invalid
           return nil
         end
@@ -363,8 +372,9 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                     next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
                     tokens[next_token_range:start()][1] == CHARACTER and tokens[next_token_range:start()][3] == 6 and  -- a parameter
-                    tokens[next_token_range:stop()][1] == CHARACTER and  -- followed by a digit (unrecognized parameter/replacement text?)
-                    lpeg.match(parsers.decimal_digit, tokens[next_token_range:stop()][2]) then  -- skip all tokens
+                    (tokens[next_token_range:stop()][1] == ARGUMENT or  -- followed by a function call argument (could be a digit)
+                     tokens[next_token_range:stop()][1] == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
+                     lpeg.match(parsers.decimal_digit, tokens[next_token_range:stop()][2])) then  -- skip all tokens
                   next_token_range
                     = new_range(token_number, map_forward(next_grouping.stop), INCLUSIVE, #transformed_tokens, map_back, #tokens)
                   record_other_tokens(next_token_range)
@@ -389,7 +399,8 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               if next_token_type == CHARACTER and next_catcode == 6 then  -- a parameter
                 if next_token_number + 1 <= transformed_token_range_end then  -- followed by one other token
                   next_next_token = transformed_tokens[next_token_number + 1]
-                  if next_next_token[1] == CHARACTER and  -- that is a digit (unrecognized parameter/replacement text?)
+                  if next_next_token[1] == ARGUMENT or  -- that is either a function call argument (could be a digit)
+                      next_next_token[1] == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
                       lpeg.match(parsers.decimal_digit, next_next_token[2]) then  -- skip all tokens
                     next_token_range = new_range(token_number, next_token_number + 1, INCLUSIVE, #transformed_tokens, map_back, #tokens)
                     record_other_tokens(next_token_range)
@@ -438,7 +449,8 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               if next_token_type == CHARACTER and next_catcode == 6 then  -- a parameter
                 if next_token_number + 1 <= transformed_token_range_end then  -- followed by one other token
                   next_next_token = transformed_tokens[next_token_number + 1]
-                  if next_next_token[1] == CHARACTER and  -- that is a digit (unrecognized parameter/replacement text?)
+                  if next_next_token[1] == ARGUMENT or  -- that is either a function call argument (could be a digit)
+                      next_next_token[1] == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
                       lpeg.match(parsers.decimal_digit, next_next_token[2]) then  -- skip all tokens
                     next_token_range = new_range(token_number, next_token_number + 1, INCLUSIVE, #transformed_tokens, map_back, #tokens)
                     record_other_tokens(next_token_range)
