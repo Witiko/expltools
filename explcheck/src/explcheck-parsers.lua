@@ -489,9 +489,18 @@ local latex_style_file_content = (
   * latex_style_file_csname
 )
 
+---- Argument expansion functions from the module l3expan
+local expl3_expansion_csname = (
+  P("exp")
+  * underscore
+  * letter * (letter + underscore)^0
+  * colon
+)
+
 ---- Assigning functions
 local expl3_function_assignment_csname = (
-  P("cs_")
+  P("cs")
+  * underscore
   * (
     (
       P("new")
@@ -540,7 +549,10 @@ local expl3_quark_or_scan_mark_definition_csname = (
   * P("_new:N")
   * eof
 )
-local expl3_quark_or_scan_mark_csname = S("qs") * P("_")
+local expl3_quark_or_scan_mark_csname = (
+  S("qs")
+  * underscore
+)
 
 return {
   any = any,
@@ -555,6 +567,7 @@ return {
   eof = eof,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
+  expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_assignment_csname = expl3_function_assignment_csname,
   expl3_function_csname = expl3_function_csname,
   expl3like_csname = expl3like_csname,
