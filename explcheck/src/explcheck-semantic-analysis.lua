@@ -1,7 +1,15 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
 local syntactic_analysis = require("explcheck-syntactic-analysis")
+local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
+local identity = require("explcheck-utils").identity
+
+local new_range = ranges.new_range
+local range_flags = ranges.range_flags
+
+local INCLUSIVE = range_flags.INCLUSIVE
+local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
 local get_calls = syntactic_analysis.get_calls
@@ -55,8 +63,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     return OTHER_TOKENS_SIMPLE
   end
 
-  -- Extract statements from function calls. For all identified function definitions, record replacement texts.
-  local function record_statements_and_replacement_texts(tokens, calls, statements, replacement_text_tokens)
+  -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
+  local function record_statements_and_replacement_texts(tokens, transformed_tokens, calls, first_map_back, first_map_forward)
+    local statements = {}
+    local replacement_text_tokens = {}
     for _, call in ipairs(calls) do
       local call_type, token_range = table.unpack(call)
       local statement
@@ -93,12 +103,20 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             goto other_statement
           end
           -- parse the replacement text and record the function definition
-          local transformed_tokens, map_back, map_forward
-            = transform_replacement_text_tokens(content, tokens, issues, num_parameters, replacement_text_token_range)
+          local mapped_replacement_text_token_range = new_range(
+            first_map_forward(replacement_text_token_range:start()),
+            first_map_forward(replacement_text_token_range:stop()),
+            INCLUSIVE + MAYBE_EMPTY,
+            #transformed_tokens
+          )
+          local doubly_transformed_tokens, second_map_back, second_map_forward
+            = transform_replacement_text_tokens(content, transformed_tokens, issues, num_parameters, mapped_replacement_text_token_range)
           if transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
             goto other_statement
           end
-          table.insert(replacement_text_tokens, {replacement_text_token_range, transformed_tokens, map_back, map_forward})
+          local function map_back(...) return first_map_back(second_map_back(...)) end
+          local function map_forward(...) return second_map_forward(first_map_forward(...)) end
+          table.insert(replacement_text_tokens, {replacement_text_token_range, doubly_transformed_tokens, map_back, map_forward})
           statement = {FUNCTION_DEFINITION, protected, nopar, #replacement_text_tokens}
           goto continue
         end
@@ -113,25 +131,53 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       end
       table.insert(statements, statement)
     end
+    assert(#statements == #calls)
+    return statements, replacement_text_tokens
   end
 
   -- Extract statements from function calls. For all identified function definitions, record replacement texts and recursively
   -- apply syntactic and semantic analysis on them.
   local function get_statements(tokens, groupings, calls)
-    local statements = {}
-    local replacement_texts = {tokens = {}, calls = {}}
-    local previous_num_tokens = #replacement_texts.tokens
-    record_statements_and_replacement_texts(tokens, calls, statements, replacement_texts.tokens)
-    assert(#statements == #calls)
-    for replacement_text_number = previous_num_tokens + 1, #replacement_texts.tokens do
-      local replacement_text_token_range, transformed_tokens, map_back, map_forward
-        = table.unpack(replacement_texts.tokens[replacement_text_number])
-      -- extract nested calls from the replacement text using syntactic analysis
-      local nested_calls
-        = get_calls(tokens, transformed_tokens, replacement_text_token_range, map_back, map_forward, issues, groupings)
-      table.insert(replacement_texts.calls, nested_calls)
+
+    -- First, record top-level statements.
+    local replacement_texts = {tokens = nil, calls = {}, statements = {}, max_depth = 0}
+    local statements
+    statements, replacement_texts.tokens = record_statements_and_replacement_texts(tokens, tokens, calls, identity, identity)
+
+    -- Then, process any new replacement texts until convergence.
+    local previous_num_replacement_texts = 0
+    local current_num_replacement_texts = #replacement_texts.tokens
+    while previous_num_replacement_texts < current_num_replacement_texts do
+      replacement_texts.max_depth = replacement_texts.max_depth + 1
+      for replacement_text_number = previous_num_replacement_texts + 1, current_num_replacement_texts do
+        local replacement_text_tokens = replacement_texts.tokens[replacement_text_number]
+        local replacement_text_token_range, transformed_tokens, map_back, map_forward = table.unpack(replacement_text_tokens)
+        -- extract nested calls from the replacement text using syntactic analysis
+        local nested_calls
+          = get_calls(tokens, transformed_tokens, replacement_text_token_range, map_back, map_forward, issues, groupings)
+        table.insert(replacement_texts.calls, nested_calls)
+        -- extract nested statements and replacement texts from the nested calls using semactic analysis
+        local nested_statements, nested_replacement_text_tokens
+          = record_statements_and_replacement_texts(tokens, transformed_tokens, nested_calls, map_back, map_forward)
+        for _, nested_statement in ipairs(nested_statements) do
+          if nested_statement[1] == FUNCTION_DEFINITION then
+            -- make the reference to the replacement text absolute instead of relative
+            nested_statement[#nested_statement] = nested_statement[#nested_statement] + current_num_replacement_texts
+          end
+        end
+        table.insert(replacement_texts.statements, nested_statements)
+        for _, nested_tokens in ipairs(nested_replacement_text_tokens) do
+          table.insert(replacement_texts.tokens, nested_tokens)
+        end
+      end
+      previous_num_replacement_texts = current_num_replacement_texts
+      current_num_replacement_texts = #replacement_texts.tokens
     end
-    assert(#replacement_texts.calls == #replacement_texts.tokens)
+
+    assert(#replacement_texts.tokens == current_num_replacement_texts)
+    assert(#replacement_texts.calls == current_num_replacement_texts)
+    assert(#replacement_texts.statements == current_num_replacement_texts)
+
     return statements, replacement_texts
   end
 
