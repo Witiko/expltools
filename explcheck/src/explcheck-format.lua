@@ -25,7 +25,13 @@ local function pairs_sorted_by_descending_values(obj)
     table.insert(items, {key, value})
   end
   table.sort(items, function(first_item, second_item)
-    return first_item[2] > second_item[2]
+    if first_item[2] > second_item[2] then
+      return true
+    elseif first_item[2] == second_item[2] and first_item[1] > second_item[1] then
+      return true
+    else
+      return false
+    end
   end)
   local i = 0
   return function()
