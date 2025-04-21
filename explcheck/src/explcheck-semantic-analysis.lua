@@ -55,11 +55,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     return OTHER_TOKENS_SIMPLE
   end
 
-  -- Extract statements from function calls.
-  local function get_statements(tokens, groupings, calls)
-    local statements = {}
-    local replacement_text_tokens = {}
-    local replacement_text_calls = {}
+  -- Extract statements from function calls. For all identified function definitions, record replacement texts.
+  local function record_statements_and_replacement_texts(tokens, calls, statements, replacement_text_tokens)
     for _, call in ipairs(calls) do
       local call_type, token_range = table.unpack(call)
       local statement
@@ -101,11 +98,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           if transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
             goto other_statement
           end
-          local nested_calls
-            = get_calls(tokens, transformed_tokens, replacement_text_token_range, map_back, map_forward, issues, groupings)
           table.insert(replacement_text_tokens, {replacement_text_token_range, transformed_tokens, map_back, map_forward})
-          table.insert(replacement_text_calls, nested_calls)
-          statement = {FUNCTION_DEFINITION, protected, nopar, #replacement_text_calls}
+          statement = {FUNCTION_DEFINITION, protected, nopar, #replacement_text_tokens}
           goto continue
         end
         ::other_statement::
@@ -119,21 +113,41 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       end
       table.insert(statements, statement)
     end
+  end
+
+  -- Extract statements from function calls. For all identified function definitions, record replacement texts and recursively
+  -- apply syntactic and semantic analysis on them.
+  local function get_statements(tokens, groupings, calls)
+    local statements = {}
+    local replacement_texts = {tokens = {}, calls = {}}
+    local previous_num_tokens = #replacement_texts.tokens
+    record_statements_and_replacement_texts(tokens, calls, statements, replacement_texts.tokens)
     assert(#statements == #calls)
-    assert(#replacement_text_calls == #replacement_text_tokens)
-    return statements
+    for replacement_text_number = previous_num_tokens + 1, #replacement_texts.tokens do
+      local replacement_text_token_range, transformed_tokens, map_back, map_forward
+        = table.unpack(replacement_texts.tokens[replacement_text_number])
+      -- extract nested calls from the replacement text using syntactic analysis
+      local nested_calls
+        = get_calls(tokens, transformed_tokens, replacement_text_token_range, map_back, map_forward, issues, groupings)
+      table.insert(replacement_texts.calls, nested_calls)
+    end
+    assert(#replacement_texts.calls == #replacement_texts.tokens)
+    return statements, replacement_texts
   end
 
   local statements = {}
+  local replacement_texts = {}
   for part_number, part_calls in ipairs(results.calls) do
     local part_tokens = results.tokens[part_number]
     local part_groupings = results.groupings[part_number]
-    local part_statements = get_statements(part_tokens, part_groupings, part_calls)
+    local part_statements, part_replacement_texts = get_statements(part_tokens, part_groupings, part_calls)
     table.insert(statements, part_statements)
+    table.insert(replacement_texts, part_replacement_texts)
   end
 
   -- Store the intermediate results of the analysis.
   results.statements = statements
+  results.replacement_texts = replacement_texts
 end
 
 return {
