@@ -75,8 +75,8 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     num_replacement_text_calls, num_replacement_text_call_tokens = {}, {}
     num_replacement_text_calls_total = 0
     for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
-      for _, replacement_text in ipairs(part_replacement_texts) do
-        for _, call in pairs(replacement_text.calls) do
+      for _, replacement_text_calls in ipairs(part_replacement_texts.calls) do
+        for _, call in pairs(replacement_text_calls) do
           local call_type, call_tokens, _, _ = table.unpack(call)
           if num_replacement_text_calls[call_type] == nil then
             assert(num_replacement_text_call_tokens[call_type] == nil)
@@ -122,12 +122,13 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   if analysis_results.replacement_texts ~= nil then
     num_replacement_text_statements, num_replacement_text_statement_tokens = {}, {}
     num_replacement_text_statements_total, replacement_text_max_depth = 0, 0
+
     for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
-      for _, replacement_text in ipairs(part_replacement_texts) do
-        replacement_text_max_depth = math.max(replacement_text_max_depth, replacement_text.max_depth)
-        for statement_number, statement in pairs(replacement_text.statements) do
+      replacement_text_max_depth = math.max(replacement_text_max_depth, part_replacement_texts.max_depth)
+      for replacement_text_number, replacement_text_statements in ipairs(part_replacement_texts.statements) do
+        for statement_number, statement in pairs(replacement_text_statements) do
           local statement_type = table.unpack(statement)
-          local call_type, call_tokens = table.unpack(replacement_text.call[statement_number])
+          local call_type, call_tokens = table.unpack(part_replacement_texts.calls[replacement_text_number][statement_number])
           if num_replacement_text_statements[call_type] == nil then
             assert(num_replacement_text_statement_tokens[call_type] == nil)
             num_replacement_text_statements[call_type] = {}

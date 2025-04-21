@@ -1,10 +1,12 @@
 -- Formatting for the command-line interface of the static analyzer explcheck.
 
 local call_types = require("explcheck-syntactic-analysis").call_types
+local statement_types = require("explcheck-semantic-analysis").statement_types
 local get_option = require("explcheck-config")
 local utils = require("explcheck-utils")
 
 local CALL = call_types.CALL
+local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 
 local color_codes = {
   BOLD = 1,
@@ -265,6 +267,20 @@ local function print_summary(options, evaluation_results)
             local formatted_byte_ratio = format_ratio(num_expl_bytes * num_statement_tokens, num_total_bytes * num_tokens)
             io.write(string.format(
               "%s (%s of tokens, ~%s of total bytes)", formatted_statement_tokens, formatted_token_ratio, formatted_byte_ratio))
+          end
+        end
+        if statement_type == FUNCTION_DEFINITION
+            and evaluation_results.num_replacement_text_statements[call_type] ~= nil then
+          local num_nested_function_definitions = evaluation_results.num_replacement_text_statements[call_type][statement_type]
+          if num_nested_function_definitions ~= nil then
+            assert(num_nested_function_definitions > 0)
+            io.write(string.format(
+              "\n%s- %s nested %s with a maximum nesting depth of %s",
+              line_indent:rep(2),
+              titlecase(humanize(num_nested_function_definitions)),
+              pluralize(statement_type, num_nested_function_definitions),
+              humanize(evaluation_results.replacement_text_max_depth)
+            ))
           end
         end
       end
@@ -589,6 +605,20 @@ local function print_results(pathname, issues, analysis_results, options, evalua
             local formatted_byte_ratio = format_ratio(num_expl_bytes * num_statement_tokens, num_total_bytes * num_tokens)
             io.write(string.format(
               "%s (%s of tokens, ~%s of file size)", formatted_statement_tokens, formatted_token_ratio, formatted_byte_ratio))
+          end
+        end
+        if statement_type == FUNCTION_DEFINITION
+            and evaluation_results.num_replacement_text_statements[call_type] ~= nil then
+          local num_nested_function_definitions = evaluation_results.num_replacement_text_statements[call_type][statement_type]
+          if num_nested_function_definitions ~= nil then
+            assert(num_nested_function_definitions > 0)
+            io.write(string.format(
+              "\n%s- %s nested %s with a maximum nesting depth of %s",
+              line_indent:rep(2),
+              titlecase(humanize(num_nested_function_definitions)),
+              pluralize(statement_type, num_nested_function_definitions),
+              humanize(evaluation_results.replacement_text_max_depth)
+            ))
           end
         end
       end

@@ -140,7 +140,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   local function get_statements(tokens, groupings, calls)
 
     -- First, record top-level statements.
-    local replacement_texts = {tokens = nil, calls = {}, statements = {}, max_depth = 0}
+    local replacement_texts = {tokens = nil, calls = {}, statements = {}, max_depth = -1}
     local statements
     statements, replacement_texts.tokens = record_statements_and_replacement_texts(tokens, tokens, calls, identity, identity)
 
