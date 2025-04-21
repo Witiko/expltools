@@ -31,7 +31,7 @@ cas-common.sty s103,s204,s205,s206,w200,w202,w303
 cas-dc.cls s204,w200
 cas-sc.cls s204,w200
 cascade.sty s103,s204,s206,w302
-cellprops.sty s103,s204,s205,s206,w302
+cellprops.sty s103,s204,s205,w302
 cfntinst.sty s204,w100
 chemfig.tex s103,s204,w100
 chemformula.sty s103,s204,s206,w200,w202
@@ -152,16 +152,16 @@ knowledge.sty s103,s204,s205,s206,w101,w202
 kvmap.sty s103,s204
 l3benchmark.sty s103,s204,s205,w200
 l3cctab.sty s204,s206,w200
-l3color.sty s103,s206
+l3color.sty s103
 l3doc.cls s204,s206,w200
 l3docstrip.tex s204
-l3draw.sty s103,s204,s206,w200,w202
-l3galley.sty s103,s205,s206,w200,w302
+l3draw.sty s103,s204,w200,w202
+l3galley.sty s103,s205,w200,w302
 l3graphics.sty s103,w200,w202
 l3keys2e.sty s103
 l3pdf.sty s204,w202
 l3str-format.sty s103,s204
-l3sys-shell.sty s206,w200
+l3sys-shell.sty w200
 leadsheets.library.chordnames.code.tex s103,s204,w100,w202
 leadsheets.library.chords.code.tex s103,s204,w100
 leadsheets.library.external.code.tex s103,s204,w100,w200
@@ -186,7 +186,7 @@ longdivision.sty s103,s204,w202
 lt3graph.sty s103,s204,s205
 ltxmdf.cls s204,s205
 lualatex-math.sty s204,s206,w200
-luatexja-fontspec-27c.sty s103,s204,s205,s206,w202
+luatexja-fontspec-27c.sty s103,s204,s205,w202
 luatexja-fontspec.sty s204,s206,w202
 luatexja-preset.sty s103,s204,s205,s206
 luatexko.sty s103,s204,s205,w302
@@ -216,7 +216,7 @@ modiagram.sty s103,s204
 morewrites.sty s103,s204,s205,s206,w200
 mucproc.cls s103,s204,s206
 multicolrule.sty s204,w200,w202
-nicematrix.sty s103,s204,s205,s206,w200,w202,w302
+nicematrix.sty s103,s204,s205,w200,w202,w302
 notes2bib.sty s103,s204,w200,w302
 novel-Footnotes.sty s204
 novel-TextMacros.sty s204
@@ -277,7 +277,7 @@ scontents.tex s204,w200,w202
 sdapsarray.sty s103,s204,s205,s206,w200,w202
 sdapsbase.sty s103,s204,s205,w200,w202,w302
 sdapsclassic.cls s103,s204,s205,s206,w200,w202
-sdapslayout.sty s103,s204,s205,s206,w200
+sdapslayout.sty s103,s204,s205,w200
 sdapspdf.sty s103,s204,s205,w302
 secnum.sty s204,w302
 sidenotes.sty s204,w101,w302
@@ -302,7 +302,7 @@ sseqforeach.code.tex s103,s204
 sseqmacromakers.code.tex s103,s204,s205
 sseqmessages.code.tex s103,s204,w302
 sseqparsers.code.tex s103,s204
-statistics.sty s204,s206,w302
+statistics.sty s204,w302
 stex.sty s204
 substances.sty s204
 tagpdf-attr-code.sty s204
@@ -328,7 +328,7 @@ tikzlibrarypenrose.code.tex s204,w200
 tikzlibrarytikzmark.code.tex s103,s204,s206
 tikzscale.sty s204
 tikzsymbols.sty s103,s204,s206,w202
-topiclongtable.sty s103,s204,s206,w303
+topiclongtable.sty s103,s204,w303
 tuda-pgfplots.sty s103,s204
 tudabeamer.cls s103,s204,s206,w202
 tudacolors.sty s103,s204
@@ -346,7 +346,7 @@ unicode-math.sty s204
 unravel.sty s204,s205,s206,w200,w202
 widows-and-orphans.sty s204
 withargs.sty s204,s205
-witharrows.sty s103,s204,s205,s206,w200,w202,w302
+witharrows.sty s103,s204,s205,w200,w202,w302
 xCJK2uni.sty s103,s204
 xassoccnt.sty e300,s103,s204,s205,s206,w202,w303
 xcntperchap.sty s103,s204,s205,s206

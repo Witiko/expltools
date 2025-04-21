@@ -65,7 +65,7 @@ l3flag.sty s206,w200
 l3fp.sty s204,s205,s206,w200
 l3galley.sty s103,s204,s205,s206,w200,w302
 l3int.sty s204,s206,w200
-l3keys.sty s204,s206,w202
+l3keys.sty s204,w202
 l3keys2e.sty w202
 l3keysdemo.sty s204,s206
 l3luatex.sty s204,s205,s206,w200
@@ -180,7 +180,7 @@ xfntinst.sty s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200,w302
 xltxtra.sty s204
-xparse.sty s204,s205,s206,w200
+xparse.sty s204,s205,w200
 xpatch.sty s103,s204,s206,w200
 xpeek.sty s206
 xpinyin.sty e209,s103,s204,w200
