@@ -1,7 +1,7 @@
 GS1.sty s204,w302,w303
 URbeamer.cls s204
 URcolors.sty s204
-URletter.cls s103,s204,w202
+URletter.cls s103,s204,s206,w202
 URoptions.sty s204,s205,s206
 URpagestyles.sty s103,s204
 URrules.sty s103,s204,s206,w101
@@ -119,14 +119,14 @@ l3box.sty s204
 l3candidates.sty s204
 l3clist.sty s204
 l3coffins.sty s204
-l3color.sty s103,s206
+l3color.sty s103
 l3doc.cls s204,s205,s206,w200
 l3docstrip.tex s204
 l3draw.sty s204,w302
 l3expan.sty s204
 l3file.sty s204
 l3fp.sty s204
-l3galley.sty s103,s205,s206,w200,w302
+l3galley.sty s103,s205,w200,w302
 l3int.sty s204
 l3keys.sty s204
 l3keys2e.sty s103,w202
@@ -170,7 +170,7 @@ lualatex-math.sty s204,s206,w200
 luatexja-fontspec-25c.sty s103,s204,s205,w202,w302,w303
 luatexja-fontspec.sty s204,s206,w202
 luatexja-preset.sty s103,s204,s206
-luatexko.sty s103,s204,s206,w302
+luatexko.sty s103,s204,w302
 lwarp-acro.sty s204
 lwarp-scrextend.sty s204
 lwarp-sidecap.sty s204
@@ -187,7 +187,7 @@ mkpatter.tex s103,s204,w100,w200
 modiagram.sty s103,s204
 morewrites.sty s103,s204,s205,s206,w200,w302
 mucproc.cls s103,s204,s206
-nicematrix.sty s103,s204,s205,s206,w302
+nicematrix.sty s103,s204,s205,w302
 notes2bib.sty s103,s204,w302
 novel-ChapterScene.sty s204
 novel-Images.sty s103,s204
@@ -272,7 +272,7 @@ xeCJK.sty s204,s205,s206,w200,w202,w302
 xeCJKfntef.sty s204,s205,s206,w200,w302
 xepersian-mathsdigitspec.sty s103,s204
 xepersian.sty s103,s204
-xetexko-font.sty s204,s206,w302
+xetexko-font.sty s204,w302
 xfntinst.sty s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200,w302

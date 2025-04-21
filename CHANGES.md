@@ -1,5 +1,14 @@
 # Changes
 
+## expltools 2025-04-XX
+
+### explcheck v0.9.0
+
+#### Fixes
+
+- Exclude global scratch variables from issue S206 (Malformed variable or
+  constant name). (reported by @fpantigny in #76, fixed in #77)
+
 ## expltools 2025-04-01
 
 ### explcheck v0.8.1

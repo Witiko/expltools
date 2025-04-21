@@ -113,7 +113,7 @@ l3expan.sty s204
 l3file.sty s204
 l3flag.sty w200
 l3fp.sty s204
-l3galley.sty s103,s204,s205,s206,w200,w302
+l3galley.sty s103,s204,s205,w200,w302
 l3int.sty s204
 l3keys.sty s204
 l3keys2e-demo.tex e104
@@ -161,7 +161,7 @@ lualatex-math.sty s204,s206,w200
 luatexja-fontspec-24.sty s103,s204,s205,w202,w302,w303
 luatexja-fontspec.sty s204,s206,w202
 luatexja-preset.sty s103,s204,s206,w202
-luatexko.sty s103,s204,s206,w302
+luatexko.sty s103,s204,w302
 mandi.sty s204
 media9.sty s204,s206,w200,w202,w302
 media9.tex s103,s204
@@ -247,7 +247,7 @@ xeCJK.sty s204,s205,s206,w200,w202,w302,w303
 xeCJKfntef.sty s204,s205,s206,w200,w302
 xepersian-mathsdigitspec.sty s103,s204,w302
 xepersian.sty s103,s204,w302
-xetexko-font.sty s204,s206,w302
+xetexko-font.sty s204,w302
 xfntinst.sty s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200,w302

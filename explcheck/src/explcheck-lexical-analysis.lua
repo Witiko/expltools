@@ -298,6 +298,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
             if (
                   lpeg.match(parsers.expl3_function_definition_or_assignment_csname, csname) ~= nil
                   and lpeg.match(parsers.expl3like_csname, next_csname) ~= nil
+                  and lpeg.match(parsers.expl3_expansion_csname, next_csname) == nil
                   and lpeg.match(parsers.expl3_function_csname, next_csname) == nil
                 ) then
               issues:add('s205', 'malformed function name', next_range)
@@ -305,6 +306,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
             if (
                   lpeg.match(parsers.expl3_variable_or_constant_use_csname, csname) ~= nil
                   and lpeg.match(parsers.expl3like_csname, next_csname) ~= nil
+                  and lpeg.match(parsers.expl3_expansion_csname, next_csname) == nil
                   and lpeg.match(parsers.expl3_scratch_variable_csname, next_csname) == nil
                   and lpeg.match(parsers.expl3_variable_or_constant_csname, next_csname) == nil
                 ) then
@@ -313,6 +315,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
             if (
                   lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, csname) ~= nil
                   and lpeg.match(parsers.expl3_quark_or_scan_mark_csname, next_csname) == nil
+                  and lpeg.match(parsers.expl3_expansion_csname, next_csname) == nil
                 ) then
               issues:add('s207', 'malformed quark or scan mark name', next_range)
             end

@@ -7,7 +7,7 @@ GS_set_EAN_control_digit.tex s204,s206,w303
 GS_set_code_digit_seq.tex s204,s206
 URbeamer.cls s204
 URcolors.sty s204
-URletter.cls s103,s204,w202
+URletter.cls s103,s204,s206,w202
 URoptions.sty s204,s205,s206
 URpagestyles.sty s103,s204
 URrules.sty s103,s204,s206,w101
@@ -132,7 +132,7 @@ l3docstrip.tex s204
 l3expan.sty s204
 l3file.sty s204
 l3fp.sty s204
-l3galley.sty s103,s205,s206,w200,w302
+l3galley.sty s103,s205,w200,w302
 l3int.sty s204
 l3keys.sty s204
 l3keys2e-demo.tex e104
@@ -184,7 +184,7 @@ luatexja-fontspec-24.sty s103,s204,s205,w202,w302,w303
 luatexja-fontspec-25c.sty s103,s204,s205,w202,w302,w303
 luatexja-fontspec.sty s204,s206,w202
 luatexja-preset.sty s103,s204,s206,w202
-luatexko.sty s103,s204,s206,w302
+luatexko.sty s103,s204,w302
 lwarp-sidecap.sty s204
 mandi.sty s204
 mathspec.sty s204
@@ -284,7 +284,7 @@ xeCJK.sty s204,s205,s206,w200,w202,w302,w303
 xeCJKfntef.sty s204,s205,s206,w200,w302
 xepersian-mathsdigitspec.sty s103,s204
 xepersian.sty s103,s204
-xetexko-font.sty s204,s206,w302
+xetexko-font.sty s204,w302
 xfntinst.sty s204,w100
 xfrac.sty s204,w200
 xgalley.sty s204,s205,s206,w200,w302

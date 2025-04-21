@@ -264,7 +264,7 @@ local expl3_variable_or_constant_csname = (
   * eof
 )
 local expl3_scratch_variable_csname = (
-  P("l")
+  S("gl")
   * underscore
   * P("tmp") * S("ab")
   * underscore
@@ -500,6 +500,14 @@ local latex_style_file_content = (
   * latex_style_file_csname
 )
 
+---- Argument expansion functions from the module l3expan
+local expl3_expansion_csname = (
+  P("exp")
+  * underscore
+  * letter * (letter + underscore)^0
+  * colon
+)
+
 ---- Assigning functions
 local expl3_function_definition_csname = Ct(
   P("cs_new")
@@ -508,7 +516,8 @@ local expl3_function_definition_csname = Ct(
   * P(":N")
 )
 local expl3_function_definition_or_assignment_csname = (
-  P("cs_")
+  P("cs")
+  * underscore
   * (
     (
       P("new")
@@ -528,14 +537,22 @@ local expl3_function_definition_or_assignment_csname = (
 ---- Using variables/constants
 local expl3_variable_or_constant_use_csname = (
   expl3_variable_or_constant_type
-  * P("_")
+  * underscore
   * (
     P("const")
     + P("new")
     + P("g")^-1
     * P("set")
-    * P("_eq")^-1
+    * (
+      underscore
+      * (
+        P("eq")
+        + P("true")
+        + P("false")
+      )
+    )^-1
     + P("use")
+    + P("show")
   )
   * P(":N")
 )
@@ -549,7 +566,10 @@ local expl3_quark_or_scan_mark_definition_csname = (
   * P("_new:N")
   * eof
 )
-local expl3_quark_or_scan_mark_csname = S("qs") * P("_")
+local expl3_quark_or_scan_mark_csname = (
+  S("qs")
+  * underscore
+)
 
 return {
   any = any,
@@ -564,6 +584,7 @@ return {
   eof = eof,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
+  expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_csname = expl3_function_csname,
