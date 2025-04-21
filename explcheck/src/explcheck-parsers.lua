@@ -253,7 +253,7 @@ local expl3_variable_or_constant_csname = (
   * eof
 )
 local expl3_scratch_variable_csname = (
-  P("l")
+  S("gl")
   * underscore
   * P("tmp") * S("ab")
   * underscore
@@ -511,14 +511,22 @@ local expl3_function_assignment_csname = (
 ---- Using variables/constants
 local expl3_variable_or_constant_use_csname = (
   expl3_variable_or_constant_type
-  * P("_")
+  * underscore
   * (
     P("const")
     + P("new")
     + P("g")^-1
     * P("set")
-    * P("_eq")^-1
+    * (
+      underscore
+      * (
+        P("eq")
+        + P("true")
+        + P("false")
+      )
+    )^-1
     + P("use")
+    + P("show")
   )
   * P(":N")
 )
