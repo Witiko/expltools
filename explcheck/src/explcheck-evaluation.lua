@@ -69,6 +69,27 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
       end
     end
   end
+  local num_replacement_text_calls, num_replacement_text_call_tokens
+  local num_replacement_text_calls_total
+  if analysis_results.replacement_texts ~= nil then
+    num_replacement_text_calls, num_replacement_text_call_tokens = {}, {}
+    num_replacement_text_calls_total = 0
+    for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
+      for _, replacement_text in ipairs(part_replacement_texts) do
+        for _, call in pairs(replacement_text.calls) do
+          local call_type, call_tokens, _, _ = table.unpack(call)
+          if num_replacement_text_calls[call_type] == nil then
+            assert(num_replacement_text_call_tokens[call_type] == nil)
+            num_replacement_text_calls[call_type] = 0
+            num_replacement_text_call_tokens[call_type] = 0
+          end
+          num_replacement_text_calls[call_type] = num_replacement_text_calls[call_type] + 1
+          num_replacement_text_call_tokens[call_type] = num_replacement_text_call_tokens[call_type] + #call_tokens
+          num_replacement_text_calls_total = num_replacement_text_calls_total + 1
+        end
+      end
+    end
+  end
   -- Evaluate the results of the semantic analysis.
   local num_statements, num_statement_tokens
   local num_statements_total
@@ -96,6 +117,36 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
       end
     end
   end
+  local num_replacement_text_statements, num_replacement_text_statement_tokens
+  local num_replacement_text_statements_total, replacement_text_max_depth
+  if analysis_results.replacement_texts ~= nil then
+    num_replacement_text_statements, num_replacement_text_statement_tokens = {}, {}
+    num_replacement_text_statements_total, replacement_text_max_depth = 0, 0
+    for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
+      for _, replacement_text in ipairs(part_replacement_texts) do
+        replacement_text_max_depth = math.max(replacement_text_max_depth, replacement_text.max_depth)
+        for statement_number, statement in pairs(replacement_text.statements) do
+          local statement_type = table.unpack(statement)
+          local call_type, call_tokens = table.unpack(replacement_text.call[statement_number])
+          if num_replacement_text_statements[call_type] == nil then
+            assert(num_replacement_text_statement_tokens[call_type] == nil)
+            num_replacement_text_statements[call_type] = {}
+            num_replacement_text_statement_tokens[call_type] = {}
+          end
+          if num_replacement_text_statements[call_type][statement_type] == nil then
+            assert(num_replacement_text_statement_tokens[call_type][statement_type] == nil)
+            num_replacement_text_statements[call_type][statement_type] = 0
+            num_replacement_text_statement_tokens[call_type][statement_type] = 0
+          end
+          num_replacement_text_statements[call_type][statement_type]
+            = num_replacement_text_statements[call_type][statement_type] + 1
+          num_replacement_text_statement_tokens[call_type][statement_type]
+            = num_replacement_text_statement_tokens[call_type][statement_type] + #call_tokens
+          num_replacement_text_statements_total = num_replacement_text_statements_total + 1
+        end
+      end
+    end
+  end
   -- Initialize the class.
   self.num_total_bytes = num_total_bytes
   self.num_warnings = num_warnings
@@ -107,9 +158,16 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   self.num_calls = num_calls
   self.num_call_tokens = num_call_tokens
   self.num_calls_total = num_calls_total
+  self.num_replacement_text_calls = num_replacement_text_calls
+  self.num_replacement_text_call_tokens = num_replacement_text_call_tokens
+  self.num_replacement_text_calls_total = num_replacement_text_calls_total
   self.num_statements = num_statements
   self.num_statement_tokens = num_statement_tokens
   self.num_statements_total = num_statements_total
+  self.num_replacement_text_statements = num_replacement_text_statements
+  self.num_replacement_text_statement_tokens = num_replacement_text_statement_tokens
+  self.num_replacement_text_statements_total = num_replacement_text_statements_total
+  self.replacement_text_max_depth = replacement_text_max_depth
   return self
 end
 
@@ -131,9 +189,16 @@ function AggregateEvaluationResults.new(cls)
   self.num_calls = {}
   self.num_call_tokens = {}
   self.num_calls_total = 0
+  self.num_replacement_text_calls = {}
+  self.num_replacement_text_call_tokens = {}
+  self.num_replacement_text_calls_total = 0
   self.num_statements = {}
   self.num_statement_tokens = {}
   self.num_statements_total = 0
+  self.num_replacement_text_statements = {}
+  self.num_replacement_text_statement_tokens = {}
+  self.num_replacement_text_statements_total = 0
+  self.replacement_text_max_depth = 0
   return self
 end
 
@@ -145,7 +210,11 @@ function AggregateEvaluationResults:add(evaluation_results)
         if self_table[key] == nil then
           self_table[key] = 0
         end
-        self_table[key] = self_table[key] + value
+        if key == "replacement_text_max_depth" then
+          self_table[key] = math.max(self_table[key], value)
+        else
+          self_table[key] = self_table[key] + value
+        end
       elseif type(value) == "table" then  -- a table of counts
         if self_table[key] == nil then
           self_table[key] = {}

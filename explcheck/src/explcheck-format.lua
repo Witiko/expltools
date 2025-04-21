@@ -220,7 +220,7 @@ local function print_summary(options, evaluation_results)
         io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
       end
     end
-    -- Evaluate the evalution results of the syntactic analysis.
+    -- Evaluate the evalution results of the semantic and syntactic analysis.
     for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
       local num_calls = evaluation_results.num_calls[call_type]
       assert(num_calls > 0)
