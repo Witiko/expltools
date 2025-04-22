@@ -1,9 +1,12 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
+local token_types = require("explcheck-lexical-analysis").token_types
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
+
+local ARGUMENT = token_types.ARGUMENT
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -83,7 +86,12 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           -- determine the name of the defined function
           local defined_csname_specifier, defined_csname_token_range = table.unpack(arguments[1])
           assert(defined_csname_specifier == "N" and #defined_csname_token_range == 1)
-          local defined_csname = tokens[defined_csname_token_range:start()][2]
+          local defined_csname_token_type, defined_csname
+            = table.unpack(transformed_tokens[first_map_forward(defined_csname_token_range:start())])
+          if defined_csname_token_type == ARGUMENT then  -- name is hidden behind an argument, give up
+            goto other_statement
+          end
+          assert(defined_csname ~= nil)
           -- determine the number of parameters of the defined function
           local num_parameters
           local _, _, argument_specifiers = defined_csname:find(":([^:]*)")  -- first, parse the name of the defined function
