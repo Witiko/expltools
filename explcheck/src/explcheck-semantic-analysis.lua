@@ -140,18 +140,20 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   local function get_statements(tokens, groupings, calls)
 
     -- First, record top-level statements.
-    local replacement_texts = {tokens = nil, calls = {}, statements = {}, max_depth = -1}
+    local replacement_texts = {tokens = nil, calls = {}, statements = {}, nesting_depth = {}}
     local statements
     statements, replacement_texts.tokens = record_statements_and_replacement_texts(tokens, tokens, calls, identity, identity)
 
     -- Then, process any new replacement texts until convergence.
     local previous_num_replacement_texts = 0
     local current_num_replacement_texts = #replacement_texts.tokens
+    local current_nesting_depth = 1
     while previous_num_replacement_texts < current_num_replacement_texts do
-      replacement_texts.max_depth = replacement_texts.max_depth + 1
       for replacement_text_number = previous_num_replacement_texts + 1, current_num_replacement_texts do
         local replacement_text_tokens = replacement_texts.tokens[replacement_text_number]
         local replacement_text_token_range, transformed_tokens, map_back, map_forward = table.unpack(replacement_text_tokens)
+        -- record the current nesting depth with the replacement text
+        table.insert(replacement_texts.nesting_depth, current_nesting_depth)
         -- extract nested calls from the replacement text using syntactic analysis
         local nested_calls
           = get_calls(tokens, transformed_tokens, replacement_text_token_range, map_back, map_forward, issues, groupings)
@@ -172,11 +174,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       end
       previous_num_replacement_texts = current_num_replacement_texts
       current_num_replacement_texts = #replacement_texts.tokens
+      current_nesting_depth = current_nesting_depth + 1
     end
 
     assert(#replacement_texts.tokens == current_num_replacement_texts)
     assert(#replacement_texts.calls == current_num_replacement_texts)
     assert(#replacement_texts.statements == current_num_replacement_texts)
+    assert(#replacement_texts.nesting_depth == current_num_replacement_texts)
 
     return statements, replacement_texts
   end

@@ -1,8 +1,11 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
 local token_types = require("explcheck-lexical-analysis").token_types
+local statement_types = require("explcheck-semantic-analysis").statement_types
 
 local ARGUMENT = token_types.ARGUMENT
+
+local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
@@ -100,50 +103,46 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
       local part_calls = analysis_results.calls[part_number]
       for statement_number, statement in ipairs(part_statements) do
         local statement_type = table.unpack(statement)
-        local call_type, call_tokens = table.unpack(part_calls[statement_number])
-        if num_statements[call_type] == nil then
-          assert(num_statement_tokens[call_type] == nil)
-          num_statements[call_type] = {}
-          num_statement_tokens[call_type] = {}
+        local _, call_tokens = table.unpack(part_calls[statement_number])
+        if num_statements[statement_type] == nil then
+          assert(num_statement_tokens[statement_type] == nil)
+          num_statements[statement_type] = 0
+          num_statement_tokens[statement_type] = 0
         end
-        if num_statements[call_type][statement_type] == nil then
-          assert(num_statement_tokens[call_type][statement_type] == nil)
-          num_statements[call_type][statement_type] = 0
-          num_statement_tokens[call_type][statement_type] = 0
-        end
-        num_statements[call_type][statement_type] = num_statements[call_type][statement_type] + 1
-        num_statement_tokens[call_type][statement_type] = num_statement_tokens[call_type][statement_type] + #call_tokens
+        num_statements[statement_type] = num_statements[statement_type] + 1
+        num_statement_tokens[statement_type] = num_statement_tokens[statement_type] + #call_tokens
         num_statements_total = num_statements_total + 1
       end
     end
   end
   local num_replacement_text_statements, num_replacement_text_statement_tokens
-  local num_replacement_text_statements_total, replacement_text_max_depth
+  local num_replacement_text_statements_total, replacement_text_max_nesting_depth
   if analysis_results.replacement_texts ~= nil then
     num_replacement_text_statements, num_replacement_text_statement_tokens = {}, {}
-    num_replacement_text_statements_total, replacement_text_max_depth = 0, 0
+    num_replacement_text_statements_total = 0
+    replacement_text_max_nesting_depth = {}
 
     for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
-      replacement_text_max_depth = math.max(replacement_text_max_depth, part_replacement_texts.max_depth)
       for replacement_text_number, replacement_text_statements in ipairs(part_replacement_texts.statements) do
+        local nesting_depth = part_replacement_texts.nesting_depth[replacement_text_number]
         for statement_number, statement in pairs(replacement_text_statements) do
           local statement_type = table.unpack(statement)
-          local call_type, call_tokens = table.unpack(part_replacement_texts.calls[replacement_text_number][statement_number])
-          if num_replacement_text_statements[call_type] == nil then
-            assert(num_replacement_text_statement_tokens[call_type] == nil)
-            num_replacement_text_statements[call_type] = {}
-            num_replacement_text_statement_tokens[call_type] = {}
+          local _, call_tokens = table.unpack(part_replacement_texts.calls[replacement_text_number][statement_number])
+          if num_replacement_text_statements[statement_type] == nil then
+            assert(num_replacement_text_statement_tokens[statement_type] == nil)
+            num_replacement_text_statements[statement_type] = 0
+            num_replacement_text_statement_tokens[statement_type] = 0
+            replacement_text_max_nesting_depth[statement_type] = 0
           end
-          if num_replacement_text_statements[call_type][statement_type] == nil then
-            assert(num_replacement_text_statement_tokens[call_type][statement_type] == nil)
-            num_replacement_text_statements[call_type][statement_type] = 0
-            num_replacement_text_statement_tokens[call_type][statement_type] = 0
+          num_replacement_text_statements[statement_type] = num_replacement_text_statements[statement_type] + 1
+          if statement_type ~= FUNCTION_DEFINITION or nesting_depth == 1 then
+            -- prevent counting overlapping tokens from nested function definitions several times
+            num_replacement_text_statement_tokens[statement_type]
+              = num_replacement_text_statement_tokens[statement_type] + #call_tokens
           end
-          num_replacement_text_statements[call_type][statement_type]
-            = num_replacement_text_statements[call_type][statement_type] + 1
-          num_replacement_text_statement_tokens[call_type][statement_type]
-            = num_replacement_text_statement_tokens[call_type][statement_type] + #call_tokens
           num_replacement_text_statements_total = num_replacement_text_statements_total + 1
+          replacement_text_max_nesting_depth[statement_type]
+            = math.max(replacement_text_max_nesting_depth[statement_type], nesting_depth)
         end
       end
     end
@@ -168,7 +167,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   self.num_replacement_text_statements = num_replacement_text_statements
   self.num_replacement_text_statement_tokens = num_replacement_text_statement_tokens
   self.num_replacement_text_statements_total = num_replacement_text_statements_total
-  self.replacement_text_max_depth = replacement_text_max_depth
+  self.replacement_text_max_nesting_depth = replacement_text_max_nesting_depth
   return self
 end
 
@@ -199,7 +198,7 @@ function AggregateEvaluationResults.new(cls)
   self.num_replacement_text_statements = {}
   self.num_replacement_text_statement_tokens = {}
   self.num_replacement_text_statements_total = 0
-  self.replacement_text_max_depth = 0
+  self.replacement_text_max_nesting_depth = {_how = math.max}
   return self
 end
 
@@ -211,8 +210,9 @@ function AggregateEvaluationResults:add(evaluation_results)
         if self_table[key] == nil then
           self_table[key] = 0
         end
-        if key == "replacement_text_max_depth" then
-          self_table[key] = math.max(self_table[key], value)
+        assert(key ~= "_how")
+        if self_table._how ~= nil then
+          self_table[key] = self_table._how(self_table[key], value)
         else
           self_table[key] = self_table[key] + value
         end
