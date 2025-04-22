@@ -111,7 +111,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           )
           local doubly_transformed_tokens, second_map_back, second_map_forward
             = transform_replacement_text_tokens(content, transformed_tokens, issues, num_parameters, mapped_replacement_text_token_range)
-          if transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
+          if doubly_transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
             goto other_statement
           end
           local function map_back(...) return first_map_back(second_map_back(...)) end
