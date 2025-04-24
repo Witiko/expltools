@@ -17,6 +17,8 @@ These devlog posts chronicle the latest updates and progress in the ongoing deve
 7. [Lexical analysis and a public website listing issues in current TeX Live][12] from February 24, 2025
 8. [Syntactic analysis][13] from March 27, 2025
 
+The article [Expltools: Development tools for expl3 programmers][14], forthcoming in TUGboat 46(2), is a work in progress that summarizes the blog posts above and provides a coherent overview of the current state of the tool.
+
 In the future, this repository may also contain the code of other useful development tools for expl3 programmers, such as a command-line utility similar to `grep` that will ignore whitespaces and newlines as well as other tools.
 
  [1]: https://witiko.github.io/Expl3-Linter-1/
@@ -32,6 +34,7 @@ In the future, this repository may also contain the code of other useful develop
  [11]: https://koppor.github.io/explcheck-issues/
  [12]: https://witiko.github.io/Expl3-Linter-7/
  [13]: https://witiko.github.io/Expl3-Linter-8/
+ [14]: https://github.com/Witiko/expltools-tug05-paper
 
 ## Usage
 

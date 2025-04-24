@@ -9,6 +9,10 @@
 - Exclude global scratch variables from issue S206 (Malformed variable or
   constant name). (reported by @fpantigny in #76, fixed in #77)
 
+#### Documentation
+
+- Link the work-in-progress TUG 2025 paper from `README.md`. (8d4177b)
+
 ## expltools 2025-04-01
 
 ### explcheck v0.8.1
