@@ -30,7 +30,7 @@ An N-type function call argument is braced:
 
 Depending on the specific function, this may or may not be an error.
 
-# Unexpected parameter number {.e label=e304}
+## Unexpected parameter number {.e label=e304}
 A parameter or replacement text contains parameter tokens (`#`) followed by unexpected numbers:
 
  /e304-01.tex
