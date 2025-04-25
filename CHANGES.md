@@ -11,7 +11,10 @@
 
 #### Documentation
 
-- Link the work-in-progress TUG 2025 paper from `README.md`. (8d4177b)
+- Add a link to [a work-in-progress TUG 2025 paper][expltools-tug25-paper] to
+  `README.md`. (8d4177b, 99ef3b9)
+
+ [expltools-tug25-paper]: https://github.com/witiko/expltools-tug25-paper
 
 ## expltools 2025-04-01
 
