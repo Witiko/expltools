@@ -14,6 +14,8 @@
   explcheck yet. Support for (some of) these issues will be added in the next
   minor release.
 
+ [warnings-and-errors]: https://github.com/witiko/expltools/releases/download/latest/warnings-and-errors.pdf
+
 - Add error E304 (Unexpected parameter number) for incorrect parameter tokens
   in parameter and replacement texts of function definitions. (#75)
 
