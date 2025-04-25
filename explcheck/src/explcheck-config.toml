@@ -289,3 +289,6 @@ ignored_issues = ["e304"]
 
 [package.xduts]
 ignored_issues = ["e300"]
+
+[package.semtex]
+ignored_issues = ["e300"]
