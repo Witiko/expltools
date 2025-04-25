@@ -129,18 +129,22 @@ function Range:__len()
   end
 end
 
--- Get an iterator over the range.
-function Range:iter()
+-- Get an iterator over pairs of indices and items from the original array within the range.
+function Range:enumerate(original_array)
   if #self == 0 then
     return function()  -- empty range
       return nil
     end
   else
+    assert(self:start() >= 1)
+    assert(self:start() <= #original_array)
+    assert(self:stop() >= self:start())
+    assert(self:stop() <= #original_array)
     local i = self:start() - 1
     return function()  -- non-empty range
       i = i + 1
       if i <= self:stop() then
-        return i
+        return i, original_array[i]
       else
         return nil
       end

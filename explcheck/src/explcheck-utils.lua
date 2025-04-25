@@ -35,9 +35,15 @@ local function get_parent(pathname)
   end
 end
 
+--- Return all parameters unchanged, mostly used for no-op map-back and map-forward functions.
+local function identity(...)
+  return ...
+end
+
 return {
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
   get_basename = get_basename,
   get_parent = get_parent,
   get_suffix = get_suffix,
+  identity = identity,
 }

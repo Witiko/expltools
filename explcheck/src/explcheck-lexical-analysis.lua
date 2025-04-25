@@ -16,6 +16,7 @@ local lpeg = require("lpeg")
 local token_types = {
   CONTROL_SEQUENCE = "control sequence",
   CHARACTER = "character",
+  ARGUMENT = "argument",  -- corresponds to zero or more tokens inserted by a function call, never produced by lexical analysis
 }
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
@@ -295,7 +296,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           local next_token_type, next_csname, _, next_range = table.unpack(next_token)
           if next_token_type == CONTROL_SEQUENCE then
             if (
-                  lpeg.match(parsers.expl3_function_assignment_csname, csname) ~= nil
+                  lpeg.match(parsers.expl3_function_definition_or_assignment_csname, csname) ~= nil
                   and lpeg.match(parsers.expl3like_csname, next_csname) ~= nil
                   and lpeg.match(parsers.expl3_expansion_csname, next_csname) == nil
                   and lpeg.match(parsers.expl3_function_csname, next_csname) == nil
