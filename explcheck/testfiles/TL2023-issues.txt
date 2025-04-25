@@ -110,7 +110,7 @@ citation-style-language-bib.sty s103,s204,w100,w302
 citation-style-language-cite.sty s103,s204,s206,w100,w302,w303
 citation-style-language-compatible.sty s204,w100
 citation-style-language-data.sty w100
-citation-style-language-init.sty s103,s204,w100
+citation-style-language-init.sty s103,w100
 citation-style-language.sty s103,s204
 citeall.sty s103,s204,w200
 classics.sty s103,s204,w302

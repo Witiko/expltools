@@ -88,7 +88,7 @@ chemmacros.sty s204,s206,w200,w202,w302,w303
 chemnum.sty s103,s204,w200,w202,w303
 chinesechess.sty s103,s204,s206,w200,w202,w302
 circledtext.sty s103,s204,w200,w202,w302
-citation-style-language.sty s103,s204,w302,w303
+citation-style-language.sty s103,w302,w303
 citeall.sty s103,s204,w200
 classics.sty s103,s204,w302
 clistmap.sty s103,s204,s205,s206,w302
