@@ -292,3 +292,6 @@ ignored_issues = ["e300"]
 
 [package.semtex]
 ignored_issues = ["e300"]
+
+[filename."siunitx-v2.sty"]
+ignored_issues = ["e300"]
