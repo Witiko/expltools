@@ -468,7 +468,7 @@ sdapslayout.sty s103,s204,s205,w200,w302
 sdapspdf.sty s103,s204,s205,w302
 secnum.sty s204,s206,w302
 semantex.sty e300,s103,s204,s205,s206
-semtex.sty e300,s103,s204
+semtex.sty s103,s204
 shtthesis.cls s204
 sidenotes.sty s204,w101,w302
 sillypage.sty s204,w202
@@ -476,7 +476,7 @@ simplebnf.sty s204,s206
 simplivre.cls s103,s204
 simurgh-fonts.sty s103,s204
 simurgh-mathdigitspec.sty s204
-siunitx-v2.sty e300,s103,s204,s205,s206,w200,w202,w302
+siunitx-v2.sty s103,s204,s205,s206,w200,w202,w302
 siunitx.sty s103,s204,s205,w200,w202,w302,w303
 skdoc.cls s103,s204,s206
 skeldoc.sty s204,w302

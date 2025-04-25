@@ -357,7 +357,7 @@ sdapslayout.sty s103,s204,s205,w200,w302
 sdapspdf.sty s103,s204,s205,w302,w303
 secnum.sty s204,w302
 semantex.sty e300,s103,s204,s205,s206
-semtex.sty e300,s103,s204
+semtex.sty s103,s204
 shtthesis.cls s204
 sidenotes.sty s204,w101,w302
 simplebnf.sty s204,s206
