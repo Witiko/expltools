@@ -4,6 +4,19 @@
 
 ### explcheck v0.9.0
 
+#### Development
+
+- Add basic support for semantic analysis and reading (nested) function
+  definitions. (#75)
+
+  None of the issues from Section 4 of the document titled [_Warnings and errors
+  for the expl3 analysis tool_][warnings-and-errors] are recognized by
+  explcheck yet. Support for (some of) these issues will be added in the next
+  minor release.
+
+- Add error E304 (Unexpected parameter number) for incorrect parameter tokens
+  in parameter and replacement texts of function definitions. (#75)
+
 #### Fixes
 
 - Exclude global scratch variables from issue S206 (Malformed variable or
