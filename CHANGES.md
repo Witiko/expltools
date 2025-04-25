@@ -24,6 +24,9 @@
 - Exclude global scratch variables from issue S206 (Malformed variable or
   constant name). (reported by @fpantigny in #76, fixed in #77)
 
+- Do not produce warning S204 (Missing stylistic whitespaces) in Lua code.
+  (reported by @zepinglee in #29, fixed in #75)
+
 #### Documentation
 
 - Add a link to [a work-in-progress TUG 2025 paper][expltools-tug25-paper] to

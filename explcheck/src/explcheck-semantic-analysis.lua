@@ -74,7 +74,20 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       local call_type, token_range = table.unpack(call)
       local statement
       if call_type == CALL then  -- a function call
-        local _, _, csname, arguments = table.unpack(call)  -- luacheck: ignore arguments
+        local _, _, csname, arguments = table.unpack(call)
+        -- ignore error S204 (Missing stylistic whitespaces) in Lua code
+        for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, csname)) do
+          local _, lua_code_token_range = table.unpack(arguments[arguments_number])
+          if #lua_code_token_range > 0 then
+            local lua_code_byte_range = new_range(
+              tokens[lua_code_token_range:start()][4]:start(),
+              tokens[lua_code_token_range:stop()][4]:stop(),
+              INCLUSIVE,
+              #content
+            )
+            issues:ignore('s204', lua_code_byte_range)
+          end
+        end
         local function_definition = lpeg.match(parsers.expl3_function_definition_csname, csname)
         if function_definition ~= nil then  -- function definition
           local protected, nopar = table.unpack(function_definition)  -- determine properties of the defined function

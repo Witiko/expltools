@@ -534,6 +534,21 @@ local expl3_function_definition_or_assignment_csname = (
   * P(":N")
 )
 
+---- Function calls with Lua arguments
+local expl3_function_call_with_lua_code_argument_csname = Ct(
+  P("lua")
+  * underscore
+  * (
+    P("now")
+    + P("shipout")
+  )
+  * colon
+  * S("noex")
+  * eof
+  * Cc(1)
+  + success
+)
+
 ---- Using variables/constants
 local expl3_variable_or_constant_use_csname = (
   expl3_variable_or_constant_type
@@ -587,6 +602,7 @@ return {
   expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
+  expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,

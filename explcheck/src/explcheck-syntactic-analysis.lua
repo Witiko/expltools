@@ -171,7 +171,9 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
     local normalized_csname = csname
     local ignored_token_number
 
-    if csname == "let" then  -- \let
+    if csname == "directlua" then  -- \directlua
+      normalized_csname = "lua_now:e"
+    elseif csname == "let" then  -- \let
       if token_number + 1 <= token_range:stop() then
         if transformed_tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- followed by a control sequence
           if token_number + 2 <= token_range:stop() then
