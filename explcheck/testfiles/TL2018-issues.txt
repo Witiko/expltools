@@ -131,7 +131,7 @@ kalendarium.sty s103,s204,w101
 kantlipsum.sty s103,s204,w200
 knowledge.sty s103,s204,s205,s206,w101,w202
 kvmap.sty s103,s204
-l3benchmark.sty s103,s204,s205,w200,w302
+l3benchmark.sty s103,s204,s205,w200,w202,w302
 l3cctab.sty s206,w200
 l3color.sty s103
 l3doc.cls s204,s206,w200,w303

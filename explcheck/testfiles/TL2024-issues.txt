@@ -387,7 +387,7 @@ kfupm-math-exam.cls s204,s206
 knowledge.sty s103,s204,s205,s206,w101,w202
 koma-script-source-doc.cls s204
 kvmap.sty s103,s204
-l3benchmark.sty s103,s204,s205,w302
+l3benchmark.sty s103,s204,s205,w202,w302
 l3doc.cls s204,s206,w200
 l3draw.sty s103,s204,w302
 l3galley.sty s103,s205,w200,w302
