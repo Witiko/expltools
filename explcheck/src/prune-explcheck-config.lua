@@ -19,6 +19,7 @@ end
 
 -- Read regression test results and use KPathSea to find the files in the results.
 local function read_results(results_pathname, kpse)
+  local num_skipped = 0
   local results = {
     filenames = {},
     pathnames = {},
@@ -31,6 +32,7 @@ local function read_results(results_pathname, kpse)
     local line_pathname = kpse.find_file(line_filename)
     if line_pathname == nil then
       print(string.format('Could not determine the pathname of "%s" with KPathSea, skipping it.', line_filename))
+      num_skipped = num_skipped + 1
       goto continue
     end
     table.insert(results.filenames, line_filename)
@@ -40,6 +42,9 @@ local function read_results(results_pathname, kpse)
       results.issues[line_filename]:add(issue)
     end
     ::continue::
+  end
+  if num_skipped > 0 then
+    print()
   end
   return results
 end
@@ -133,13 +138,11 @@ local function main(results_pathname)
   if num_possible_removals > 0 then
     print()
   end
-  print(string.format(
-    'Checked %d different options for %d files, out of which %d can be removed without affecting correctness on file %s.',
-    num_options,
-    num_filenames,
-    num_possible_removals,
-    results_pathname
-  ))
+  io.write(string.format("Checked %d different options for %d files", num_options, num_filenames))
+  if num_possible_removals > 0 then
+    io.write(string.format(', out of which %d can be removed without affecting file "%s"', num_possible_removals, results_pathname))
+  end
+  print(".")
 end
 
 local function print_usage()
