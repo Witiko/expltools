@@ -4,6 +4,20 @@
 
 ### explcheck v0.10.0
 
+#### Continuous integration
+
+- Continuously prune file `explcheck-config.toml`. (#78)
+
+  The default configuration file `explcheck-config.toml` preconfigures many
+  packages to prevent false positive detections of issues. However, as the
+  capabilities of explcheck grow, many of these configurations are outdated
+  and no longer necessary.
+
+  This change adds a script `prune-explcheck-config.lua` that reads the default
+  configuration and regression test results and then tests which parts of the
+  configuration can be removed without affecting the results of the static
+  analysis. This allows the maintainer to remove the outdated configurations.
+
 ## expltools 2025-04-25
 
 ### explcheck v0.9.0
