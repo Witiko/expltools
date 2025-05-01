@@ -1,6 +1,6 @@
 -- The lexical analysis step of static analysis converts expl3 parts of the input files into TeX tokens.
 
-local get_option = require("explcheck-config")
+local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local obsolete = require("explcheck-obsolete")
 local parsers = require("explcheck-parsers")

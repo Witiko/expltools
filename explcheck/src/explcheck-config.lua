@@ -21,6 +21,16 @@ local default_config = read_config_file(default_config_pathname)
 -- Load the user-defined configuration from the config file .explcheckrc (if it exists).
 local user_config = read_config_file(".explcheckrc")
 
+-- Get the filename of a file.
+local function get_filename(pathname)
+  return utils.get_basename(pathname)
+end
+
+-- Get the package name of a file.
+local function get_package(pathname)
+  return utils.get_basename(utils.get_parent(pathname))
+end
+
 -- Get the value of an option.
 local function get_option(key, options, pathname)
   -- If a table of options is provided and the option is specified there, use it.
@@ -31,12 +41,12 @@ local function get_option(key, options, pathname)
   for _, config in ipairs({user_config, default_config}) do
     if pathname ~= nil then
       -- If a pathname is provided and the current configuration specifies the option for this filename, use it.
-      local filename = utils.get_basename(pathname)
+      local filename = get_filename(pathname)
       if config.filename and config.filename[filename] ~= nil and config.filename[filename][key] ~= nil then
         return config.filename[filename][key]
       end
       -- If a pathname is provided and the current configuration specifies the option for this package, use it.
-      local package = utils.get_basename(utils.get_parent(pathname))
+      local package = get_package(pathname)
       if config.package and config.package[package] ~= nil and config.package[package][key] ~= nil then
         return config.package[package][key]
       end
@@ -51,4 +61,11 @@ local function get_option(key, options, pathname)
   error('Failed to get a value for option "' .. key .. '"')
 end
 
-return get_option
+return {
+  default_config = default_config,
+  default_config_pathname = default_config_pathname,
+  get_filename = get_filename,
+  get_option = get_option,
+  get_package = get_package,
+  user_config = user_config,
+}

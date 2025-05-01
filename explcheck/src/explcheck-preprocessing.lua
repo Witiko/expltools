@@ -1,6 +1,6 @@
 -- The preprocessing step of static analysis determines which parts of the input files contain expl3 code.
 
-local get_option = require("explcheck-config")
+local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")

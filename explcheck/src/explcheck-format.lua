@@ -1,7 +1,7 @@
 -- Formatting for the command-line interface of the static analyzer explcheck.
 
 local statement_types = require("explcheck-semantic-analysis").statement_types
-local get_option = require("explcheck-config")
+local get_option = require("explcheck-config").get_option
 local utils = require("explcheck-utils")
 
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION

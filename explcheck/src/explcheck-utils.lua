@@ -35,9 +35,25 @@ local function get_parent(pathname)
   end
 end
 
---- Return all parameters unchanged, mostly used for no-op map-back and map-forward functions.
+-- Return all parameters unchanged, mostly used for no-op map-back and map-forward functions.
 local function identity(...)
   return ...
+end
+
+-- Run all processing steps.
+local function process_with_all_steps(pathname, content, issues, analysis_results, options)
+  local preprocessing = require("explcheck-preprocessing")
+  local lexical_analysis = require("explcheck-lexical-analysis")
+  local syntactic_analysis = require("explcheck-syntactic-analysis")
+  local semantic_analysis = require("explcheck-semantic-analysis")
+  local steps = {preprocessing, lexical_analysis, syntactic_analysis, semantic_analysis}
+  for _, step in ipairs(steps) do
+    step.process(pathname, content, issues, analysis_results, options)
+    -- If a processing step ended with error, skip all following steps.
+    if #issues.errors > 0 then
+      return
+    end
+  end
 end
 
 return {
@@ -46,4 +62,5 @@ return {
   get_parent = get_parent,
   get_suffix = get_suffix,
   identity = identity,
+  process_with_all_steps = process_with_all_steps,
 }

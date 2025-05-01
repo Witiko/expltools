@@ -123,6 +123,34 @@ function Issues:ignore(identifier, range)
   table.insert(self.ignored_issues, ignore_issue)
 end
 
+-- Check whether two registries only contain issues with the same codes.
+function Issues:has_same_codes_as(other)
+  -- Collect codes of all issues.
+  local self_codes, other_codes = {}, {}
+  for _, table_name in ipairs({'warnings', 'errors'}) do
+    for _, tables in ipairs({{self[table_name], self_codes}, {other[table_name], other_codes}}) do
+      local issue_table, codes = table.unpack(tables)
+      for _, issue in ipairs(issue_table) do
+        local code = issue[1]
+        codes[code] = true
+      end
+    end
+  end
+  -- Check whether this registry has any extra codes.
+  for code, _ in pairs(self_codes) do
+    if other_codes[code] == nil then
+      return false
+    end
+  end
+  -- Check whether the other registry has any extra codes.
+  for code, _ in pairs(other_codes) do
+    if self_codes[code] == nil then
+      return false
+    end
+  end
+  return true
+end
+
 -- Sort the warnings/errors using location as the primary key.
 function Issues.sort(warnings_and_errors)
   local sorted_warnings_and_errors = {}
