@@ -160,6 +160,11 @@ jobs:
             issues.txt
       - name: Compare issues
         run: git diff --no-index --word-diff-regex=. --color=always explcheck/testfiles/${{ matrix.release }}-issues.txt issues.txt
+      - name: Check if the configuration is minimal
+        run: |
+          set -e
+          export LUAINPUTS=explcheck/src
+          explcheck/src/prune-explcheck-config.lua explcheck/testfiles/${{ matrix.release }}-issues.txt
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, shellcheck, unit-tests, regression-tests]
