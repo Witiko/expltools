@@ -138,7 +138,7 @@ local function main(results_pathname)
     num_options,
     num_filenames,
     num_possible_removals,
-    results_pathname,
+    results_pathname
   ))
 end
 
