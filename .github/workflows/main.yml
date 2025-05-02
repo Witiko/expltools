@@ -5,6 +5,8 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '30 4 * * MON'
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
@@ -103,14 +105,16 @@ jobs:
           - TL2022
           - TL2023
           - TL2024
+          - latest
     container:
-      image: texlive/texlive:${{ matrix.release }}-historic
+      image: texlive/texlive:${{ matrix.release == 'latest' && 'latest' || format('{0}-historic', matrix.release) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install TeX Live
+        if: matrix.release != 'latest'
         uses: teatimeguest/setup-texlive-action@v3
         with:
           packages: |
@@ -153,13 +157,21 @@ jobs:
             }
           }' > issues.txt
       - name: Upload issues
+        if: matrix.release != 'latest'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.release }} issues
           path: |
             issues.txt
-      - name: Compare issues
+      - name: Compare issues against the baselines
+        if: matrix.release != 'latest'
         run: git diff --no-index --word-diff-regex=. --color=always explcheck/testfiles/${{ matrix.release }}-issues.txt issues.txt
+      - name: Check if the configuration is minimal
+        if: matrix.release == 'latest'
+        run: |
+          set -e
+          export LUAINPUTS=explcheck/src
+          texlua explcheck/src/prune-explcheck-config.lua issues.txt
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, shellcheck, unit-tests, regression-tests]

@@ -17,18 +17,12 @@ max_line_length = 140
 [filename."tex4ht.sty"]
 expl3_detection_strategy = "precision"
 
-[filename."nicematrix.sty"]
-expl3_detection_strategy = "always"
-
 [package.xint]
 expl3_detection_strategy = "precision"
 
 [filename."xCJK2uni.sty"]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
-
-[filename."spath3.sty"]
-expl3_detection_strategy = "always"
 
 [package.xparse]
 expl3_detection_strategy = "always"
@@ -39,20 +33,7 @@ max_line_length = 90
 expl3_detection_strategy = "always"
 max_line_length = 90
 
-[filename."hobby.code.tex"]
-expl3_detection_strategy = "always"
-max_line_length = 90
-
-[filename."gtl.sty"]
-expl3_detection_strategy = "always"
-
-[filename."piton.sty"]
-expl3_detection_strategy = "always"
-ignored_issues = ["e208"]
-max_line_length = 90
-
 [filename."statistics.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 100
 
 [filename."chemmacros.sty"]
@@ -65,12 +46,6 @@ expl3_detection_strategy = "precision"
 expl3_detection_strategy = "always"
 max_line_length = 150
 ignored_issues = ["e300"]
-
-[filename."namedef.sty"]
-expl3_detection_strategy = "always"
-
-[filename."tikzlibrarytikzmark.code.tex"]
-expl3_detection_strategy = "always"
 
 [package.ctex]
 expl3_detection_strategy = "always"
@@ -93,11 +68,9 @@ expl3_detection_strategy = "always"
 max_line_length = 110
 
 [filename."qrbill.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 180
 
 [filename."cleveref-forward.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 160
 
 [filename."latexrelease.sty"]
@@ -122,7 +95,6 @@ expl3_detection_strategy = "precision"
 ignored_issues = ["e201"]
 
 [filename."csvsimple-l3.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 110
 
 [package.unicode-math]
@@ -149,9 +121,6 @@ expl3_detection_strategy = "precision"
 [package.exam-zh]
 ignored_issues = ["e209", "e301"]
 max_line_length = 150
-
-[filename."lwarp-statistics.sty"]
-expl3_detection_strategy = "always"
 
 [filename."platexrelease.sty"]
 expl3_detection_strategy = "always"
@@ -195,7 +164,6 @@ ignored_issues = ["e209"]
 ignored_issues = ["e209"]
 
 [filename."beamerouterthemeUR.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 140
 
 [filename."denisbdoc.sty"]
@@ -205,22 +173,13 @@ ignored_issues = ["e201"]
 [package.whatsnote]
 expl3_detection_strategy = "always"
 
-[filename."robust-externalize.sty"]
-expl3_detection_strategy = "always"
-
 [filename."multicolrule.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 100
-
-[package.minimalist]
-expl3_detection_strategy = "always"
 
 [filename."xtemplate.sty"]
 expl3_detection_strategy = "always"
-max_line_length = 100
 
 [package.ocgx2]
-expl3_detection_strategy = "always"
 max_line_length = 100
 
 [package.tuda-ci]
@@ -230,7 +189,6 @@ expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
 
 [package.media9]
-expl3_detection_strategy = "always"
 max_line_length = 140
 
 [filename."nwejm.cls"]
@@ -241,11 +199,7 @@ expl3_detection_strategy = "always"
 max_line_length = 120
 
 [filename."letterswitharrows.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 110
-
-[filename."ufrgscca.cls"]
-expl3_detection_strategy = "always"
 
 [filename."keythms-amsart-support.tex"]
 expl3_detection_strategy = "always"

@@ -166,7 +166,7 @@ gtrcore.symbols.code.tex s204
 gtrlib.fanchart.code.tex s103,s204,s206
 gzt.cls e300,s103,s204,s205,s206,w202,w302,w303
 gztarticle.cls e300,s103,s204,s205,s206,w202,w302,w303
-hobby.code.tex s204,s206,w303
+hobby.code.tex s103,s204,s206,w303
 hobete.sty s103,s204,s205,s206
 hvarabic.sty s204
 hvfloat.sty s204,s206
@@ -182,7 +182,7 @@ kalendarium.sty s103,s204,w101
 kantlipsum.sty s204,w200,w202
 knowledge.sty s103,s204,s205,s206,w101,w202
 kvmap.sty s103,s204
-l3benchmark.sty s103,s204,s205,w200,w302
+l3benchmark.sty s103,s204,s205,w200,w202,w302
 l3bitset.sty s103,w200
 l3doc.cls s204,s206,w200,w303
 l3docstrip.tex s204
@@ -264,9 +264,6 @@ mercatormap.sty s103,s204,s205,s206,w200,w302
 metrix.sty s103,s204,s205,w202
 mhchem.sty s103,s204,s205,s206,w302,w303
 minibox.sty s204
-minimalist.sty s204
-minimart.cls s103,s204
-minimbook.cls s103,s204
 mkpatter.tex s103,s204,w100,w200
 moderncv.cls s204,s206
 modiagram.sty s103,s204
@@ -482,7 +479,7 @@ xsim-manual.cls s103,s204
 xsim.sty s103,s204,s206,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
 xsimverb.sty s103,s204
-xtemplate.sty s204,s206,w302
+xtemplate.sty s103,s204,s206,w302
 xunicode-addon.sty s204,w200,w302,w303
 zhlipsum.sty s204,s205,s206,w202,w302
 zhnumber.sty s103,s204,w200,w202,w302

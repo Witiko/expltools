@@ -191,7 +191,7 @@ handoutWithNotes.sty s103,s204
 hanzibox.sty s103,s204,w200,w202,w302
 hep-bibliography.sty s204
 hep-math.sty s204
-hobby.code.tex s204,s206,w303
+hobby.code.tex s103,s204,s206,w303
 hobete.sty s103,s204,s205,s206
 hpstatement-bg.inc.sty s103,s204
 hpstatement-cs.inc.sty s103,s204
@@ -242,7 +242,7 @@ kantlipsum.sty s204,w200,w202
 keyparse.sty s204,w101
 knowledge.sty s103,s204,s205,s206,w101,w202
 kvmap.sty s103,s204
-l3benchmark.sty s103,s204,s205,w302
+l3benchmark.sty s103,s204,s205,w202,w302
 l3bitset.sty s103,w200
 l3doc.cls s204,s206,w200,w303
 l3draw.sty s103,s204,w202,w302
@@ -344,7 +344,7 @@ mhchem.sty s103,s204,s205,s206,w302,w303
 minibox.sty s204
 minimalist-classical.sty s103,s204,s206
 minimalist-plain.sty s103,s204,s206,w303
-minimalist.sty s103,s204
+minimalist.sty s103
 minimart.cls s103,s204
 minimbook.cls s103,s204
 mkpatter.tex s103,s204,w100,w200
@@ -613,7 +613,7 @@ xsim-manual.cls s103,s204
 xsim.sty s103,s204,s206,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
 xsimverb.sty s103,s204
-xtemplate.sty s204,s206,w302
+xtemplate.sty s103,s204,s206,w302
 xunicode-addon.sty s204,w200,w302,w303
 zhlipsum.sty s204,s205,s206,w202,w302
 zhnumber.sty s103,s204,w200,w202,w302

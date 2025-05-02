@@ -4,6 +4,28 @@
 
 ### explcheck v0.10.0
 
+#### Continuous integration
+
+- Continuously prune the default config file `explcheck-config.toml`. (#78)
+
+  The default config file `explcheck-config.toml` preconfigures many
+  packages to prevent false positive detections of issues. However, as the
+  capabilities of explcheck grow, many of these configurations are outdated
+  and no longer necessary.
+
+  This change adds a script `prune-explcheck-config.lua` that reads the default
+  configuration and regression test results and then tests which parts of the
+  configuration can be removed without affecting the results of the static
+  analysis. Then, the script reminds the maintainer to remove these parts.
+
+- Run CI every Monday morning, after the weekly TeX Live Docker image has
+  released. (#78)
+
+#### Documentation
+
+- Include the date of generation and the latest obsolete entry in the generated
+  file `explcheck-obsolete.lua`. (#78)
+
 ## expltools 2025-04-25
 
 ### explcheck v0.9.0
