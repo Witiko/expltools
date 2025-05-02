@@ -2,12 +2,9 @@
 -- A checker that reads the default configuration of the static analyzer explcheck and regression test results
 -- and then tests which parts of the configuration can be removed without affecting the results of the static analysis.
 
--- Initialize KPathSea.
 local kpse = require("kpse")
+kpse.set_program_name("texlua", "prune-explcheck-config")
 
-kpse.set_program_name("texlua", "explcheck")
-
--- Load modules.
 local config = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local process_with_all_steps = require("explcheck-utils").process_with_all_steps
