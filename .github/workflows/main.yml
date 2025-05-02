@@ -5,8 +5,8 @@ on:
       - main
   pull_request:
   workflow_dispatch:
-schedule:
-  - cron: '30 4 * * MON'
+  schedule:
+    - cron: '30 4 * * MON'
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
@@ -107,7 +107,7 @@ jobs:
           - TL2024
           - latest
     container:
-      image: texlive/texlive:${{ matrix.release == "latest" && "latest" || matrix.release + "-historic" }}
+      image: texlive/texlive:${{ matrix.release == 'latest' && 'latest' || format('{0}-historic', matrix.release) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -156,17 +156,17 @@ jobs:
             }
           }' > issues.txt
       - name: Upload issues
-        if: matrix.release != "latest"
+        if: matrix.release != 'latest'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.release }} issues
           path: |
             issues.txt
       - name: Compare issues against the baselines
-        if: matrix.release != "latest"
+        if: matrix.release != 'latest'
         run: git diff --no-index --word-diff-regex=. --color=always explcheck/testfiles/${{ matrix.release }}-issues.txt issues.txt
       - name: Check if the configuration is minimal
-        if: matrix.release == "latest"
+        if: matrix.release == 'latest'
         run: |
           set -e
           export LUAINPUTS=explcheck/src
