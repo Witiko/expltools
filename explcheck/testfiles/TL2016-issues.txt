@@ -112,7 +112,7 @@ gtl.sty s204,s205,s206,w302
 gzt-fr.tex s103,s204
 gzt.cls e300,s103,s204,s205,s206,w302,w303
 gztarticle.cls e300,s103,s204,s205,s206,w302,w303
-hobby.code.tex s204,s206,w303
+hobby.code.tex s103,s204,s206,w303
 hobby_doc.tex s103,s204,w100
 hobete.sty s103,s204,s205,s206
 int_set_to_EAN_control_digit.tex s204,s206,w303
@@ -189,7 +189,6 @@ lwarp-sidecap.sty s204
 mandi.sty s204
 mathspec.sty s204
 media9.sty s204,s206,w200,w202,w302
-media9.tex s103,s204
 memhangul-common.sty s204
 memhangul-ucs.sty s206
 metrix.sty s103,s204,s205
@@ -264,7 +263,6 @@ texapi.tex s103,s204
 tikzlibrarycalligraphy.code.tex s103,s204,w202
 tikzlibraryceltic.code.tex s103,s204,s206,w202
 tikzlibraryknots.code.tex s103,s204,w202
-tikzlibrarytikzmark.code.tex s103,s204
 tikzscale.sty s204
 tikzsymbols.sty s103,s204,s206
 unicode-math-doc.tex s103,s204,w302
@@ -296,7 +294,7 @@ xpeek.sty s206
 xpiano.sty s103,s204,w200
 xpinyin.sty s103,s204,w200,w302
 xsavebox.sty s204,s206,w200,w202,w302
-xtemplate.sty s204,s206,w302
+xtemplate.sty s103,s204,s206,w302
 xunicode-addon.sty s204,w200,w302,w303
 xunicode-combine-marks.tex s204
 xunicode-commands.tex s103,s204

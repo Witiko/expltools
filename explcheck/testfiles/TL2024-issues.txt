@@ -679,7 +679,7 @@ regexpatch.sty s103,s204,w200,w202,w302
 rescansync.sty s103,s204,s205,s206
 responsive.sty e300,s103,s204,s205,s206,w302
 returntogrid.sty s103,s204,w303
-robust-externalize.sty s103,s204,s205,s206,w202,w303
+robust-externalize.sty e102,s103
 romande.sty s204
 rpgicons-l3.sty s103,s204,w303
 rpgicons-pgf.sty s204

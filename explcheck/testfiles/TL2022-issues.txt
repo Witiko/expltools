@@ -232,7 +232,7 @@ hanzibox.sty s103,s204,w200,w202,w302
 hep-bibliography.sty s204
 hep-math.sty s204
 hfutexam.cls s204
-hobby.code.tex s204,s206,w303
+hobby.code.tex s103,s204,s206,w303
 hobete.sty s103,s204,s205,s206
 hpstatement-bg.inc.sty s103,s204
 hpstatement-cs.inc.sty s103,s204
@@ -467,7 +467,7 @@ pgfmath-xfp.sty s103,s204,w302
 phonenumbers.sty s103,s204
 phy-diagmat.sty s103,s204
 phy-xmat.sty s204
-piton.sty s204,s205,w302
+piton.sty e102,s103
 pkgloader-error.sty s204
 pkgloader.sty s103,s204,s206
 placeat.sty s204
@@ -666,7 +666,6 @@ uantwerpenletter.cls s103,s204,s206
 uantwerpenphdthesis.cls s204,s206
 uantwerpenreport.cls s204
 udes-genie-these.cls s103,s204,s205,s206,w202
-ufrgscca.cls s103,s204
 unicode-math-luatex.sty s204,s205,s206,w200,w202,w302,w303
 unicode-math-xetex.sty s204,s205,s206,w200,w202,w302,w303
 unicode-math.sty s204
@@ -725,7 +724,7 @@ xsim-manual.cls s103,s204
 xsim.sty s103,s204,s206,w200,w202
 xsim.style.schule-tabelle-kurz.code.tex s204
 xsimverb.sty s103,s204
-xtemplate.sty s204,s206,w302
+xtemplate.sty s103,s204,s206,w302
 xunicode-addon.sty s204,w200,w302,w303
 yathesis.cls s204
 zennote.sty s103,s204
