@@ -16,7 +16,7 @@
   This change adds a script `prune-explcheck-config.lua` that reads the default
   configuration and regression test results and then tests which parts of the
   configuration can be removed without affecting the results of the static
-  analysis. This reminds the maintainer to remove the outdated configurations.
+  analysis. Then, the script reminds the maintainer to remove these parts.
 
 - Run CI every Monday morning, after the weekly TeX Live Docker image has
   released. (#78)
