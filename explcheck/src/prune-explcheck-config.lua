@@ -114,11 +114,7 @@ local function main(results_pathname)
   end
 
   -- Try to remove all options for the individual files from the test results.
-  local max_previous_filename_length = 0
   for _, filename in ipairs(results.filenames) do
-    io.write(string.format('\rChecking "%s" ...%s', filename, (' '):rep(math.max(0, max_previous_filename_length - #filename))))
-    max_previous_filename_length = math.max(max_previous_filename_length, #filename)
-    io.flush()
     num_filenames = num_filenames + 1
     local pathname = results.pathnames[filename]
     local expected_issues = results.issues[filename]
@@ -136,7 +132,6 @@ local function main(results_pathname)
       try_to_remove_all_options(pathname, default_config.package[package], options_location, expected_issues)
     end
   end
-  io.write('\r')
 
   -- Print all options that can be removed without affecting any files from the test results.
   for _, key_location in ipairs(key_locations.seen) do
@@ -156,9 +151,9 @@ local function main(results_pathname)
   end
   io.write(string.format("Checked %d different options for %d files", num_options, num_filenames))
   if num_possible_removals == 0 then
-    io.write(string.format(', none of which can be removed without affecting results in file "%s"', results_pathname))
+    io.write(string.format(', none of which can be removed without affecting "%s"', results_pathname))
   else
-    io.write(string.format(', %d of which can be removed without affecting results in file "%s"', num_possible_removals, results_pathname))
+    io.write(string.format(', %d of which can be removed without affecting "%s"', num_possible_removals, results_pathname))
   end
   print(".")
   if num_possible_removals > 0 then
