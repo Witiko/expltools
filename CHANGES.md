@@ -18,6 +18,9 @@
   configuration can be removed without affecting the results of the static
   analysis. This reminds the maintainer to remove the outdated configurations.
 
+- Run CI every Monday morning, after the weekly TeX Live Docker image has
+  released. (#78)
+
 ## expltools 2025-04-25
 
 ### explcheck v0.9.0
