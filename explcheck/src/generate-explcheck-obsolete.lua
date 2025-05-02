@@ -12,12 +12,18 @@ local C, Ct, Cs, P = lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.P
 local input_filename = assert(kpse.find_file("l3obsolete.txt", "TeX system documentation"))
 local input_file = assert(io.open(input_filename, "r"), "Could not open " .. input_filename .. " for writing")
 local line, input_state, csnames = input_file:read("*line"), "preamble", {}
+local latest_date = nil
 while line ~= nil do
   if input_state == "preamble" and line == "Deprecated functions and variables" then
     input_state = "deprecated"
   elseif input_state == "deprecated" and line == "Removed functions and variables" then
     input_state = "removed"
   elseif input_state == "deprecated" and line:sub(1, 1) == [[\]] then
+    local _, _, date = line:find("(%d%d%d%d%-%d%d%-%d%d)%s*$")
+    assert(date ~= nil, string.format('Failed to parse date out of line "%s"', line))
+    if latest_date == nil or date > latest_date then
+      latest_date = date
+    end
     local _, _, csname = line:find([[\(%S*)]])
     if csnames[input_state] == nil then
       csnames[input_state] = {}
@@ -27,15 +33,15 @@ while line ~= nil do
   line = input_file:read("*line")
 end
 assert(input_file:close())
+assert(latest_date ~= nil)
 
 -- Generate the file "explcheck-obsolete.lua".
 local output_filename = "explcheck-obsolete.lua"
 local output_file = assert(io.open(output_filename, "w"), "Could not open " .. output_filename .. " for writing")
 
 ---- Generate the preamble.
-output_file:write(
-  "-- LPEG parsers for checking whether the name of a standard expl3 function/variable is obsolete.\n\n"
-)
+output_file:write("-- LPEG parsers for checking whether the name of a standard expl3 function/variable is obsolete.\n")
+output_file:write(string.format("-- Generated on %s with the latest obsolete entry from %s.\n\n", os.date("%Y-%m-%d"), latest_date))
 
 ---- Generate the LPEG parsers.
 output_file:write('local lpeg = require("lpeg")\n')
