@@ -55,14 +55,17 @@ local function main(results_pathname)
   local results = read_results(results_pathname)
 
   local num_filenames, num_options, num_possible_removals = 0, 0, 0
-  local seen_key_locations = {}
+  local key_locations = {
+    seen = {},
+    results = {},
+  }
 
   -- Try to remove a single option.
   local function try_to_remove_option(pathname, key, key_location, default_value, expected_issues)
-    if seen_key_locations[key_location] ~= nil then
-      return
+    if key_locations.results[key_location] == nil then
+      table.insert(key_locations.seen, key_location)
+      key_locations.results[key_location] = {}
     end
-    seen_key_locations[key_location] = true
 
     num_options = num_options + 1
 
@@ -76,10 +79,8 @@ local function main(results_pathname)
     process_with_all_steps(pathname, content, actual_issues, analysis_results, options)
 
     -- Compare the expected results of the static analysis with the actual results.
-    if actual_issues:has_same_codes_as(expected_issues) then
-      num_possible_removals = num_possible_removals + 1
-      print(string.format('%s can be removed.', key_location))
-    end
+    local result = actual_issues:has_same_codes_as(expected_issues)
+    table.insert(key_locations.results[key_location], result)
   end
 
   -- Try to remove all options in a section of the config file.
@@ -113,7 +114,11 @@ local function main(results_pathname)
   end
 
   -- Try to remove all options for the individual files from the test results.
+  local max_previous_filename_length = 0
   for _, filename in ipairs(results.filenames) do
+    io.write(string.format('\rChecking "%s" ...%s', filename, (' '):rep(math.max(0, max_previous_filename_length - #filename))))
+    max_previous_filename_length = math.max(max_previous_filename_length, #filename)
+    io.flush()
     num_filenames = num_filenames + 1
     local pathname = results.pathnames[filename]
     local expected_issues = results.issues[filename]
@@ -131,16 +136,34 @@ local function main(results_pathname)
       try_to_remove_all_options(pathname, default_config.package[package], options_location, expected_issues)
     end
   end
+  io.write('\r')
+
+  -- Print all options that can be removed without affecting any files from the test results.
+  for _, key_location in ipairs(key_locations.seen) do
+    for _, result in ipairs(key_locations.results[key_location]) do
+      if not result then
+        goto skip_key_location
+      end
+    end
+    num_possible_removals = num_possible_removals + 1
+    print(string.format('%s can be removed.', key_location))
+    ::skip_key_location::
+  end
 
   -- Print the results.
   if num_possible_removals > 0 then
     print()
   end
   io.write(string.format("Checked %d different options for %d files", num_options, num_filenames))
-  if num_possible_removals > 0 then
-    io.write(string.format(', out of which %d can be removed without affecting file "%s"', num_possible_removals, results_pathname))
+  if num_possible_removals == 0 then
+    io.write(string.format(', none of which can be removed without affecting results in file "%s"', results_pathname))
+  else
+    io.write(string.format(', %d of which can be removed without affecting results in file "%s"', num_possible_removals, results_pathname))
   end
   print(".")
+  if num_possible_removals > 0 then
+    os.exit(1)
+  end
 end
 
 local function print_usage()
