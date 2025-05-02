@@ -2,6 +2,12 @@
 -- A checker that reads the default configuration of the static analyzer explcheck and regression test results
 -- and then tests which parts of the configuration can be removed without affecting the results of the static analysis.
 
+-- Initialize KPathSea.
+local kpse = require("kpse")
+
+kpse.set_program_name("texlua", "explcheck")
+
+-- Load modules.
 local config = require("explcheck-config")
 local new_issues = require("explcheck-issues")
 local process_with_all_steps = require("explcheck-utils").process_with_all_steps
@@ -10,15 +16,8 @@ local default_config = config.default_config
 local default_config_pathname = config.default_config_pathname
 local get_package = config.get_package
 
--- Initialize and return a handle for KPathSea.
-local function initialize_kpse()
-  local kpse = require("kpse")
-  kpse.set_program_name("texlua", "explcheck")
-  return kpse
-end
-
 -- Read regression test results and use KPathSea to find the files in the results.
-local function read_results(results_pathname, kpse)
+local function read_results(results_pathname)
   local num_skipped = 0
   local results = {
     filenames = {},
@@ -53,8 +52,7 @@ end
 -- whether this affects the results of the static analysis or not.
 local function main(results_pathname)
   -- Read the results.
-  local kpse = initialize_kpse()
-  local results = read_results(results_pathname, kpse)
+  local results = read_results(results_pathname)
 
   local num_filenames, num_options, num_possible_removals = 0, 0, 0
   local seen_key_locations = {}
