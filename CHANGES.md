@@ -21,6 +21,11 @@
 - Run CI every Monday morning, after the weekly TeX Live Docker image has
   released. (#78)
 
+#### Documentation
+
+- Include the date of generation and the latest obsolete entry in the generated
+  file `explcheck-obsolete.lua`. (#78)
+
 ## expltools 2025-04-25
 
 ### explcheck v0.9.0
