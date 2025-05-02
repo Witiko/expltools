@@ -21,14 +21,12 @@ local function read_results(results_pathname)
     pathnames = {},
     issues = {},
   }
-  print(string.format('Reading regression test results from file "%s" ...', results_pathname))
   for line in io.lines(results_pathname) do
     local line_filename, issues = line:match("^(%S+)%s+(%S+)$")
     assert(line_filename ~= nil)
     assert(issues ~= nil)
     local line_pathname = kpse.find_file(line_filename)
     if line_pathname == nil then
-      print(string.format('Could not determine the pathname of "%s" with KPathSea, skipping it.', line_filename))
       num_skipped = num_skipped + 1
       goto continue
     end
@@ -40,9 +38,11 @@ local function read_results(results_pathname)
     end
     ::continue::
   end
+  io.write(string.format('Read %d files', #results.filenames))
   if num_skipped > 0 then
-    print()
+    io.write(string.format(', skipped %d files', num_skipped))
   end
+  print(string.format(' from file "%s".', results_pathname))
   return results
 end
 
@@ -52,10 +52,11 @@ local function main(results_pathname)
   -- Read the results.
   local results = read_results(results_pathname)
 
-  local num_options, num_possible_removals = 0, 0
+  local num_options = 0
   local key_locations = {
     seen = {},
     results = {},
+    to_remove = {},
   }
 
   -- Try to remove a single option.
@@ -112,7 +113,6 @@ local function main(results_pathname)
   end
 
   -- Try to remove all options for the individual files from the test results.
-  print(string.format('Checking all options for %d files in the default config file "%s" ...', #results.filenames, default_config_pathname))
   for _, filename in ipairs(results.filenames) do
     local pathname = results.pathnames[filename]
     local expected_issues = results.issues[filename]
@@ -131,30 +131,29 @@ local function main(results_pathname)
     end
   end
 
-  -- Print all options that can be removed without affecting any files from the test results.
+  -- Collect all options that can be removed without affecting any files from the test results.
   for _, key_location in ipairs(key_locations.seen) do
     for _, result in ipairs(key_locations.results[key_location]) do
       if not result then
         goto skip_key_location
       end
     end
-    num_possible_removals = num_possible_removals + 1
-    print(string.format('%s can be removed.', key_location))
+    table.insert(key_locations.to_remove, key_location)
     ::skip_key_location::
   end
 
   -- Print the results.
-  if num_possible_removals > 0 then
-    print()
-  end
-  io.write(string.format("Checked %d different options", num_options))
-  if num_possible_removals == 0 then
-    io.write(string.format(', none of which can be removed without affecting "%s"', results_pathname))
+  io.write(string.format('Checked %d different options in file "%s"', num_options, default_config_pathname))
+  if #key_locations.to_remove == 0 then
+    print(string.format(', none of which can be removed without affecting file "%s".', results_pathname))
   else
-    io.write(string.format(', %d of which can be removed without affecting "%s"', num_possible_removals, results_pathname))
+    print(string.format(', %d of which can be removed without affecting file "%s":', #key_locations.to_remove, results_pathname))
+    for _, key_location in ipairs(key_locations.to_remove) do
+      print(string.format('- %s', key_location))
+    end
   end
-  print(".")
-  if num_possible_removals > 0 then
+
+  if #key_locations.to_remove > 0 then
     os.exit(1)
   end
 end
