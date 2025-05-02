@@ -21,6 +21,7 @@ local function read_results(results_pathname)
     pathnames = {},
     issues = {},
   }
+  print(string.format('Reading regression test results from file "%s" ...', results_pathname))
   for line in io.lines(results_pathname) do
     local line_filename, issues = line:match("^(%S+)%s+(%S+)$")
     assert(line_filename ~= nil)
@@ -51,7 +52,7 @@ local function main(results_pathname)
   -- Read the results.
   local results = read_results(results_pathname)
 
-  local num_filenames, num_options, num_possible_removals = 0, 0, 0
+  local num_options, num_possible_removals = 0, 0
   local key_locations = {
     seen = {},
     results = {},
@@ -111,21 +112,21 @@ local function main(results_pathname)
   end
 
   -- Try to remove all options for the individual files from the test results.
+  print(string.format('Checking all options for %d files in the default config file "%s" ...', #results.filenames, default_config_pathname))
   for _, filename in ipairs(results.filenames) do
-    num_filenames = num_filenames + 1
     local pathname = results.pathnames[filename]
     local expected_issues = results.issues[filename]
     assert(pathname ~= nil)
     assert(expected_issues ~= nil)
     -- If the configuration specifies options for this filename, check them.
     if default_config.filename and default_config.filename[filename] ~= nil then
-      local options_location = string.format('section [filename."%s"] of file "%s"', filename, default_config_pathname)
+      local options_location = string.format('section [filename."%s"]', filename)
       try_to_remove_all_options(pathname, default_config.filename[filename], options_location, expected_issues)
     end
     -- If the configuration specifies options for this package, check them.
     local package = get_package(pathname)
     if default_config.package and default_config.package[package] ~= nil then
-      local options_location = string.format('section [package."%s"] of file "%s"', package, default_config_pathname)
+      local options_location = string.format('section [package."%s"]', package)
       try_to_remove_all_options(pathname, default_config.package[package], options_location, expected_issues)
     end
   end
@@ -146,7 +147,7 @@ local function main(results_pathname)
   if num_possible_removals > 0 then
     print()
   end
-  io.write(string.format("Checked %d different options for %d files", num_options, num_filenames))
+  io.write(string.format("Checked %d different options", num_options))
   if num_possible_removals == 0 then
     io.write(string.format(', none of which can be removed without affecting "%s"', results_pathname))
   else
