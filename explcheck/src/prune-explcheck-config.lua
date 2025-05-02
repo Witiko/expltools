@@ -82,7 +82,7 @@ local function main(results_pathname)
     end
   end
 
-  -- Try to remove all options in a section of the configuration file.
+  -- Try to remove all options in a section of the config file.
   local function try_to_remove_all_options(pathname, options, options_location, expected_issues)
     local keys = {}
     for key, _ in pairs(options) do
