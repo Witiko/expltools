@@ -114,6 +114,7 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
+        if: matrix.release != 'latest'
         uses: teatimeguest/setup-texlive-action@v3
         with:
           packages: |
