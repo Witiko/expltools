@@ -79,7 +79,7 @@ local function main(pathnames, options)
       end
 
       -- Load an input file.
-      local file = assert(io.open(pathname, "r"), "Could not open " .. pathname .. " for reading")
+      local file = assert(io.open(pathname, "r"))
       local content = assert(file:read("*a"))
       assert(file:close())
 
