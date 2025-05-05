@@ -4,6 +4,14 @@
 
 ### explcheck v0.10.0
 
+#### Fixes
+
+- Do not crash when `% noqa` is used.
+  (reported by @muzimuzhi in #79, fixed in #81)
+
+- Allow any number of spaces and percent signs before `noqa`.
+  (reported by @muzimuzhi in #80, fixed in #81)
+
 #### Continuous integration
 
 - Continuously prune the default config file `explcheck-config.toml`. (#78)
@@ -20,6 +28,8 @@
 
 - Run CI every Monday morning, after the weekly TeX Live Docker image has
   released. (#78)
+
+- Support simple `.tex` test files without associated `.lua` files. (#81)
 
 #### Documentation
 
