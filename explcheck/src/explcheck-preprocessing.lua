@@ -47,7 +47,7 @@ local function preprocessing(pathname, content, issues, results, options)
         if index % 2 == 1 then  -- chunk of text
           table.insert(transformed_text_table, content:sub(transformed_index + 1, text_position - 1))
         else  -- comment
-          local comment_text = content:sub(transformed_index + 2, text_position - 1)
+          local comment_text = content:sub(transformed_index + 1, text_position - 1)
           local ignored_issues = lpeg.match(parsers.ignored_issues, comment_text)
           -- If a comment specifies ignored issues, register them.
           if ignored_issues ~= nil then
