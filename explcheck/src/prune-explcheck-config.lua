@@ -71,7 +71,7 @@ local function main(results_pathname)
     -- Run all steps of the static analysis.
     local actual_issues = new_issues()
     local options = {[key] = default_value}
-    local file = io.open(pathname, "r")
+    local file = assert(io.open(pathname, "r"))
     local content = assert(file:read("*a"))
     assert(file:close())
     local analysis_results = {}

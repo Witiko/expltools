@@ -53,7 +53,9 @@ end
 
 -- Prevent issues from being present in the table of issues.
 function Issues:ignore(identifier, range)
-  identifier = self._normalize_identifier(identifier)
+  if identifier ~= nil then
+    identifier = self._normalize_identifier(identifier)
+  end
 
   -- Determine which issues should be ignored.
   local function match_issue_range(issue_range)
