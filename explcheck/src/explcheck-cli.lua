@@ -204,8 +204,8 @@ else
       options.verbose = true
     elseif argument == "--warnings-are-errors" then
       options.warnings_are_errors = true
-    elseif argument:sub(1, 2) == "--" then
-      -- An unknown argument
+    elseif argument:sub(1, 1) == "-" then
+      print(string.format('Unrecognized argument: %s\n', argument))
       print_usage()
       os.exit(1)
     else
