@@ -2,6 +2,11 @@
 
 ## expltools 2025-05-XX
 
+#### Fixes
+
+- In the command-line interface, do not consider arguments starting with `-`
+  filenames. (reported by @muzimuzhi in #83, fixed in #84)
+
 #### Continuous integration
 
 - Switch to the GitHub Action `softprops/action-gh-release` for automatic
