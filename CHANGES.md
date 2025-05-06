@@ -5,7 +5,7 @@
 #### Fixes
 
 - In the command-line interface, do not consider arguments starting with `-`
-  filenames. (reported by @muzimuzhi in #83, fixed in #84)
+  filenames. (contributed by @muzimuzhi in #83, fixed in #84)
 
 #### Continuous integration
 
