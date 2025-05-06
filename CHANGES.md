@@ -2,6 +2,11 @@
 
 ## expltools 2025-05-XX
 
+#### Continuous integration
+
+- Switch to the GitHub Action `softprops/action-gh-release` for automatic
+  pre-releases. (added by @muzimuzhi in #82)
+
 ### explcheck v0.10.0
 
 ## expltools 2025-05-05
