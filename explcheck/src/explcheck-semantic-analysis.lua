@@ -7,6 +7,7 @@ local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
 
 local ARGUMENT = token_types.ARGUMENT
+local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -138,7 +139,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local function map_back(...) return first_map_back(second_map_back(...)) end
           local function map_forward(...) return second_map_forward(first_map_forward(...)) end
           table.insert(replacement_text_tokens, {replacement_text_token_range, doubly_transformed_tokens, map_back, map_forward})
-          statement = {FUNCTION_DEFINITION, protected, nopar, #replacement_text_tokens}
+          statement = {FUNCTION_DEFINITION, protected, nopar, defined_csname, #replacement_text_tokens}
           goto continue
         end
         ::other_statement::
@@ -206,6 +207,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     return statements, replacement_texts
   end
 
+  -- Extract statements from function calls.
   local statements = {}
   local replacement_texts = {}
   for part_number, part_calls in ipairs(results.calls) do
@@ -215,6 +217,67 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     table.insert(statements, part_statements)
     table.insert(replacement_texts, part_replacement_texts)
   end
+
+  assert(#statements == #results.calls)
+  assert(#statements == #replacement_texts)
+
+  -- Report issues that are apparent after the semantic analysis.
+  --- Collect all segments of top-level and nested tokens, calls, and statements.
+  local token_segments, call_segments, statement_segments = {}, {}, {}
+  for part_number, part_calls in ipairs(results.calls) do
+    local part_statements = statements[part_number]
+    assert(#part_calls == #part_statements)
+    table.insert(call_segments, part_calls)
+    table.insert(statement_segments, part_statements)
+    local part_tokens = results.tokens[part_number]
+    table.insert(token_segments, part_tokens)
+    local part_replacement_texts = replacement_texts[part_number]
+    for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls) do
+      local nested_statements = part_replacement_texts.statements[replacement_text_number]
+      assert(#nested_calls == #nested_statements)
+      table.insert(call_segments, nested_calls)
+      table.insert(statement_segments, nested_statements)
+      table.insert(token_segments, part_tokens)
+    end
+  end
+
+  --- Make a pass over the segments, building up information.
+  local defined_private_function_csnames = {}  -- luacheck: ignore defined_private_function_csnames
+  local potentially_used_csnames = {}
+  for segment_number, segment_calls in ipairs(call_segments) do
+    local segment_statements = statement_segments[segment_number]
+    local segment_tokens = token_segments[segment_number]
+    for call_number, call in ipairs(segment_calls) do
+      local call_token_range = call[2]
+      local statement = segment_statements[call_number]
+      local statement_type = table.unpack(statement)
+      if statement_type == FUNCTION_DEFINITION then
+        -- Record private function defitions.
+        local defined_csname = statement[4]
+        if defined_csname:sub(1, 2) == "__" then
+          defined_private_function_csnames[defined_csname] = true
+        end
+      elseif statement_type == OTHER_STATEMENT then
+        -- TODO: 1. Look for csnames in all types of arguments except v and c.
+        -- TODO: 2. Look for exact sequences of characters in v- and c-type arguments, using `segment_tokens`.
+        -- TODO: 3. Look for fuzzy sequences of characters in v- and c-type arguments, using `part_tokens` for top-level content and
+        --         `transformed_tokens` for nested content. A fuzzy match considers ARGUMENT and CONTROL_SEQUENCE tokens wildcards.
+      elseif statement_type == OTHER_TOKENS_SIMPLE or statement_type == OTHER_TOKENS_COMPLEX then
+        -- Record control sequence names in blocks of other unrecognized tokens.
+        for token_number, token in call_token_range:enumerate(segment_tokens) do
+          local token_type = token[1]
+          if token_type == CONTROL_SEQUENCE then
+            table.insert(potentially_used_csnames, {segment_number, token_number})
+          end
+        end
+      else
+        error('Unexpected statement type "' .. statement_type .. '"')
+      end
+    end
+  end
+
+  --- Report issues.
+  -- TODO
 
   -- Store the intermediate results of the analysis.
   results.statements = statements
