@@ -96,6 +96,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   -- Evaluate the results of the semantic analysis.
   local num_statements, num_statement_tokens
   local num_statements_total
+  local seen_call_numbers = {}
   if analysis_results.statements ~= nil then
     num_statements, num_statement_tokens = {}, {}
     num_statements_total = 0
@@ -109,9 +110,12 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
           num_statement_tokens[statement_type] = 0
         end
         num_statements[statement_type] = num_statements[statement_type] + 1
-        for _, call in call_range:enumerate(part_calls) do
-          local _, call_tokens = table.unpack(call)
-          num_statement_tokens[statement_type] = num_statement_tokens[statement_type] + #call_tokens
+        for call_number, call in call_range:enumerate(part_calls) do
+          if seen_call_numbers[call_number] == nil then
+            seen_call_numbers[call_number] = true
+            local _, call_tokens = table.unpack(call)
+            num_statement_tokens[statement_type] = num_statement_tokens[statement_type] + #call_tokens
+          end
         end
         num_statements_total = num_statements_total + 1
       end
@@ -119,6 +123,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   end
   local num_replacement_text_statements, num_replacement_text_statement_tokens
   local num_replacement_text_statements_total, replacement_text_max_nesting_depth
+  local seen_replacement_text_call_numbers = {}
   if analysis_results.replacement_texts ~= nil then
     num_replacement_text_statements, num_replacement_text_statement_tokens = {}, {}
     num_replacement_text_statements_total = 0
@@ -126,6 +131,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
 
     for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
       for replacement_text_number, replacement_text_statements in ipairs(part_replacement_texts.statements) do
+        seen_replacement_text_call_numbers[replacement_text_number] = {}
         local nesting_depth = part_replacement_texts.nesting_depth[replacement_text_number]
         for _, statement in pairs(replacement_text_statements) do
           local statement_type, call_range = table.unpack(statement)
@@ -138,10 +144,13 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
           num_replacement_text_statements[statement_type] = num_replacement_text_statements[statement_type] + 1
           if statement_type ~= FUNCTION_DEFINITION or nesting_depth == 1 then
             -- prevent counting overlapping tokens from nested function definitions several times
-            for _, call in call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
-              local _, call_tokens = table.unpack(call)
-              num_replacement_text_statement_tokens[statement_type]
-                = num_replacement_text_statement_tokens[statement_type] + #call_tokens
+            for call_number, call in call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
+              if seen_replacement_text_call_numbers[replacement_text_number][call_number] == nil then
+                seen_replacement_text_call_numbers[replacement_text_number][call_number] = true
+                local _, call_tokens = table.unpack(call)
+                num_replacement_text_statement_tokens[statement_type]
+                  = num_replacement_text_statement_tokens[statement_type] + #call_tokens
+              end
             end
           end
           num_replacement_text_statements_total = num_replacement_text_statements_total + 1

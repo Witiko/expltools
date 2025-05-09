@@ -21,13 +21,7 @@ A function with a `V`-type argument is called with a variable or constant that d
 A private function or conditional function is defined but unused.
 
  /w401-01.tex
-
-``` tex
-\prg_new_conditional:Nnn  % warning on this line
-  \__module_foo:
-  { p, T, F, TF } 
-  { \prg_return_true: }
-```
+ /w401-02.tex
 
 ### Unused private function variant {.w #unused-private-function-variant}
 A private function or conditional function variant is defined but unused.
