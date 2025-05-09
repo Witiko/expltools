@@ -355,7 +355,7 @@ local commented_lines = Ct(
   + eof
 )
 
--- Explcheck issues
+------ Explcheck issues
 local issue_code = (
   S("EeSsTtWw")
   * decimal_digit
@@ -512,13 +512,17 @@ local expl3_expansion_csname = (
 
 ---- Assigning functions
 local expl3_function_definition_csname = Ct(
-  P("cs_new")
+  (
+    P("cs") * Cc(false)
+    + P("prg") * Cc(true)
+  )
+  * P("_new")
   * (P("_protected") * Cc(true) + Cc(false))
   * (P("_nopar") * Cc(true) + Cc(false))
   * P(":N")
 )
 local expl3_function_definition_or_assignment_csname = (
-  P("cs")
+  (P("cs") + P("prg"))
   * underscore
   * (
     (
@@ -588,10 +592,28 @@ local expl3_quark_or_scan_mark_csname = (
   * underscore
 )
 
+---- Conditions in a conditional function definition
+local condition = (
+  P("p")
+  + P("T")
+  + P("F")
+  + P("TF")
+)
+local conditions = Ct(
+  eof
+  + C(condition)
+  * (
+    P(",") * P(condition)
+  )^0
+  * P(",")^-1
+  * eof
+)
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
   commented_lines = commented_lines,
+  conditions = conditions,
   decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
   do_not_use_argument_specifier = do_not_use_argument_specifier,
@@ -602,10 +624,10 @@ return {
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
   expl3_expansion_csname = expl3_expansion_csname,
-  expl3_function_definition_csname = expl3_function_definition_csname,
-  expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
+  expl3_function_definition_csname = expl3_function_definition_csname,
+  expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
@@ -620,6 +642,7 @@ return {
   latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
+  N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,

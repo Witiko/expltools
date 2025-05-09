@@ -130,25 +130,47 @@ function Range:__len()
 end
 
 -- Get an iterator over pairs of indices and items from the original array within the range.
-function Range:enumerate(original_array)
+function Range:enumerate(original_array, map_back)
   if #self == 0 then
     return function()  -- empty range
       return nil
     end
   else
-    assert(self:start() >= 1)
-    assert(self:start() <= #original_array)
-    assert(self:stop() >= self:start())
-    assert(self:stop() <= #original_array)
-    local i = self:start() - 1
+    local start, stop = self:start(), self:stop()
+    if map_back ~= nil then
+      start = map_back(start)
+      stop = map_back(stop)
+    end
+    assert(start >= 1)
+    assert(start <= #original_array)
+    assert(stop >= start)
+    assert(stop <= #original_array)
+    local i = start - 1
     return function()  -- non-empty range
       i = i + 1
-      if i <= self:stop() then
+      if i <= stop then
         return i, original_array[i]
       else
         return nil
       end
     end
+  end
+end
+
+-- Given a range where each index maps into a list of non-decreasing sub-ranges, produce a new range that start with the start
+-- of the first sub-range and ends with the end of the last sub-range.
+function Range:new_range_from_subranges(get_subrange, subarray_size)
+  if #self == 0 then
+    return self  -- empty range
+  else
+    local first_subrange = get_subrange(self:start())
+    local last_subrange = get_subrange(self:stop())
+    return Range:new(  -- non-empty range
+      first_subrange:start(),
+      last_subrange:stop(),
+      INCLUSIVE | MAYBE_EMPTY,
+      subarray_size
+    )
   end
 end
 

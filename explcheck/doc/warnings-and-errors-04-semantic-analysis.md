@@ -17,23 +17,13 @@ A function with a `V`-type argument is called with a variable or constant that d
   \c_false_bool
 ```
 
-### Unused function {.w #unused-function}
+### Unused private function {.w label=w401 #unused-private-function}
 A private function or conditional function is defined but unused.
 
-``` tex
-\cs_new:Nn  % warning on this line
-  \__module_foo:
-  { bar }
-```
+ /w401-01.tex
+ /w401-02.tex
 
-``` tex
-\prg_new_conditional:Nnn  % warning on this line
-  \__module_foo:
-  { p, T, F, TF } 
-  { \prg_return_true: }
-```
-
-### Unused function variant {.w #unused-function-variant}
+### Unused private function variant {.w #unused-private-function-variant}
 A private function or conditional function variant is defined but unused.
 
 ``` tex

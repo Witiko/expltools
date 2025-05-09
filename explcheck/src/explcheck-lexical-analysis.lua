@@ -274,6 +274,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
     table.insert(groupings, part_groupings)
   end
 
+  -- Record issues that are apparent after the lexical analysis.
   for _, part_tokens in ipairs(tokens) do
     for token_index, token in ipairs(part_tokens) do
       local token_type, payload, catcode, range = table.unpack(token)  -- luacheck: ignore catcode
