@@ -80,10 +80,11 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, csname)) do
           local _, lua_code_token_range = table.unpack(arguments[arguments_number])
           if #lua_code_token_range > 0 then
-            local lua_code_byte_range = new_range(
-              tokens[lua_code_token_range:start()][4]:start(),
-              tokens[lua_code_token_range:stop()][4]:stop(),
-              INCLUSIVE,
+            local lua_code_byte_range = lua_code_token_range:new_range_from_subranges(
+              function(token_number)
+                local byte_range = tokens[token_number][4]
+                return byte_range
+              end,
               #content
             )
             issues:ignore('s204', lua_code_byte_range)
@@ -230,44 +231,61 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     table.insert(call_segments, part_calls)
     table.insert(statement_segments, part_statements)
     local part_tokens = results.tokens[part_number]
-    table.insert(token_segments, part_tokens)
+    table.insert(token_segments, {part_tokens, part_tokens, identity})
     local part_replacement_texts = replacement_texts[part_number]
     for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls) do
       local nested_statements = part_replacement_texts.statements[replacement_text_number]
       assert(#nested_calls == #nested_statements)
       table.insert(call_segments, nested_calls)
       table.insert(statement_segments, nested_statements)
-      table.insert(token_segments, part_tokens)
+      local _, nested_tokens, _, map_forward = table.unpack(part_replacement_texts.tokens[replacement_text_number])
+      table.insert(token_segments, {part_tokens, nested_tokens, map_forward})
     end
   end
 
   --- Make a pass over the segments, building up information.
-  local defined_private_function_csnames = {}  -- luacheck: ignore defined_private_function_csnames
-  local potentially_used_csnames = {}
+  local defined_private_functions = {}
+  local used_csnames = {}
   for segment_number, segment_calls in ipairs(call_segments) do
     local segment_statements = statement_segments[segment_number]
-    local segment_tokens = token_segments[segment_number]
+    local part_tokens, segment_tokens, map_forward = table.unpack(token_segments[segment_number])
     for call_number, call in ipairs(segment_calls) do
-      local call_token_range = call[2]
+      local _, call_token_range, call_csname, arguments = table.unpack(call)
+      local call_byte_range = call_token_range:new_range_from_subranges(
+        function(token_number)
+          local byte_range = part_tokens[token_number][4]
+          return byte_range
+        end,
+        #content
+      )
       local statement = segment_statements[call_number]
       local statement_type = table.unpack(statement)
       if statement_type == FUNCTION_DEFINITION then
         -- Record private function defitions.
         local defined_csname = statement[4]
         if defined_csname:sub(1, 2) == "__" then
-          defined_private_function_csnames[defined_csname] = true
+          table.insert(defined_private_functions, {defined_csname, call_byte_range})
         end
       elseif statement_type == OTHER_STATEMENT then
-        -- TODO: 1. Look for csnames in all types of arguments except v and c.
-        -- TODO: 2. Look for exact sequences of characters in v- and c-type arguments, using `segment_tokens`.
-        -- TODO: 3. Look for fuzzy sequences of characters in v- and c-type arguments, using `part_tokens` for top-level content and
-        --         `transformed_tokens` for nested content. A fuzzy match considers ARGUMENT and CONTROL_SEQUENCE tokens wildcards.
+        -- Record control sequences used in other statements.
+        used_csnames[call_csname] = true
+        for _, argument in ipairs(arguments) do
+          local argument_specifier, argument_token_range = table.unpack(argument)
+          if lpeg.match(parsers.N_or_n_type_argument_specifier, argument_specifier) ~= nil then
+            for _, token in argument_token_range:enumerate(segment_tokens, map_forward) do
+              local token_type, token_payload = table.unpack(token)
+              if token_type == CONTROL_SEQUENCE then
+                used_csnames[token_payload] = true
+              end
+            end
+          end
+        end
       elseif statement_type == OTHER_TOKENS_SIMPLE or statement_type == OTHER_TOKENS_COMPLEX then
         -- Record control sequence names in blocks of other unrecognized tokens.
-        for token_number, token in call_token_range:enumerate(segment_tokens) do
-          local token_type = token[1]
+        for _, token in call_token_range:enumerate(segment_tokens, map_forward) do
+          local token_type, token_payload = table.unpack(token)
           if token_type == CONTROL_SEQUENCE then
-            table.insert(potentially_used_csnames, {segment_number, token_number})
+            used_csnames[token_payload] = true
           end
         end
       else
@@ -276,8 +294,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     end
   end
 
-  --- Report issues.
-  -- TODO
+  --- Report issues apparent from the collected information.
+  for _, defined_private_function in ipairs(defined_private_functions) do
+    local defined_csname, call_byte_range = table.unpack(defined_private_function)
+    if used_csnames[defined_csname] == nil then
+      issues:add('w401', 'unused private function', call_byte_range)
+    end
+  end
 
   -- Store the intermediate results of the analysis.
   results.statements = statements
