@@ -12,6 +12,13 @@
 - Switch to the GitHub Action `softprops/action-gh-release` for automatic
   pre-releases. (added by @muzimuzhi in #82)
 
+- Improve workflows for forked repositories.
+  (reported by @muzimuzhi in #85, fixed in #87)
+
+  Specifically, the name of the built docker image is now parametrized with
+  `${{ github.repository }}` and the primary workflow now runs on push to any
+  Git branch, not just the main branch.
+
 ### explcheck v0.10.0
 
 ## expltools 2025-05-05
