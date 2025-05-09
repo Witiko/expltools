@@ -71,7 +71,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   local function record_statements_and_replacement_texts(tokens, transformed_tokens, calls, first_map_back, first_map_forward)
     local statements = {}
     local replacement_text_tokens = {}
-    for _, call in ipairs(calls) do
+    for call_number, call in ipairs(calls) do
+      local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
       local call_type, token_range = table.unpack(call)
       local statement
       if call_type == CALL then  -- a function call
@@ -140,15 +141,15 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local function map_back(...) return first_map_back(second_map_back(...)) end
           local function map_forward(...) return second_map_forward(first_map_forward(...)) end
           table.insert(replacement_text_tokens, {replacement_text_token_range, doubly_transformed_tokens, map_back, map_forward})
-          statement = {FUNCTION_DEFINITION, protected, nopar, defined_csname, #replacement_text_tokens}
+          statement = {FUNCTION_DEFINITION, call_range, protected, nopar, defined_csname, #replacement_text_tokens}
           goto continue
         end
         ::other_statement::
-        statement = {OTHER_STATEMENT}
+        statement = {OTHER_STATEMENT, call_range}
         ::continue::
       elseif call_type == OTHER_TOKENS then  -- other tokens
         local statement_type = classify_tokens(tokens, token_range)
-        statement = {statement_type}
+        statement = {statement_type, call_range}
       else
         error('Unexpected call type "' .. call_type .. '"')
       end
@@ -246,50 +247,51 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   --- Make a pass over the segments, building up information.
   local defined_private_functions = {}
   local used_csnames = {}
-  for segment_number, segment_calls in ipairs(call_segments) do
-    local segment_statements = statement_segments[segment_number]
+  for segment_number, segment_statements in ipairs(statement_segments) do
+    local segment_calls = call_segments[segment_number]
     local part_tokens, segment_tokens, map_forward = table.unpack(token_segments[segment_number])
-    for call_number, call in ipairs(segment_calls) do
-      local _, call_token_range, call_csname, arguments = table.unpack(call)
-      local call_byte_range = call_token_range:new_range_from_subranges(
-        function(token_number)
-          local byte_range = part_tokens[token_number][4]
-          return byte_range
-        end,
-        #content
-      )
-      local statement = segment_statements[call_number]
-      local statement_type = table.unpack(statement)
-      if statement_type == FUNCTION_DEFINITION then
-        -- Record private function defitions.
-        local defined_csname = statement[4]
-        if defined_csname:sub(1, 2) == "__" then
-          table.insert(defined_private_functions, {defined_csname, call_byte_range})
-        end
-      elseif statement_type == OTHER_STATEMENT then
-        -- Record control sequences used in other statements.
-        used_csnames[call_csname] = true
-        for _, argument in ipairs(arguments) do
-          local argument_specifier, argument_token_range = table.unpack(argument)
-          if lpeg.match(parsers.N_or_n_type_argument_specifier, argument_specifier) ~= nil then
-            for _, token in argument_token_range:enumerate(segment_tokens, map_forward) do
-              local token_type, token_payload = table.unpack(token)
-              if token_type == CONTROL_SEQUENCE then
-                used_csnames[token_payload] = true
+    for _, statement in ipairs(segment_statements) do
+      local statement_type, call_range = table.unpack(statement)
+      for _, call in call_range:enumerate(segment_calls) do
+        local _, call_token_range, call_csname, arguments = table.unpack(call)
+        local call_byte_range = call_token_range:new_range_from_subranges(
+          function(token_number)
+            local byte_range = part_tokens[token_number][4]
+            return byte_range
+          end,
+          #content
+        )
+        if statement_type == FUNCTION_DEFINITION then
+          -- Record private function defitions.
+          local defined_csname = statement[5]
+          if defined_csname:sub(1, 2) == "__" then
+            table.insert(defined_private_functions, {defined_csname, call_byte_range})
+          end
+        elseif statement_type == OTHER_STATEMENT then
+          -- Record control sequences used in other statements.
+          used_csnames[call_csname] = true
+          for _, argument in ipairs(arguments) do
+            local argument_specifier, argument_token_range = table.unpack(argument)
+            if lpeg.match(parsers.N_or_n_type_argument_specifier, argument_specifier) ~= nil then
+              for _, token in argument_token_range:enumerate(segment_tokens, map_forward) do
+                local token_type, token_payload = table.unpack(token)
+                if token_type == CONTROL_SEQUENCE then
+                  used_csnames[token_payload] = true
+                end
               end
             end
           end
-        end
-      elseif statement_type == OTHER_TOKENS_SIMPLE or statement_type == OTHER_TOKENS_COMPLEX then
-        -- Record control sequence names in blocks of other unrecognized tokens.
-        for _, token in call_token_range:enumerate(segment_tokens, map_forward) do
-          local token_type, token_payload = table.unpack(token)
-          if token_type == CONTROL_SEQUENCE then
-            used_csnames[token_payload] = true
+        elseif statement_type == OTHER_TOKENS_SIMPLE or statement_type == OTHER_TOKENS_COMPLEX then
+          -- Record control sequence names in blocks of other unrecognized tokens.
+          for _, token in call_token_range:enumerate(segment_tokens, map_forward) do
+            local token_type, token_payload = table.unpack(token)
+            if token_type == CONTROL_SEQUENCE then
+              used_csnames[token_payload] = true
+            end
           end
+        else
+          error('Unexpected statement type "' .. statement_type .. '"')
         end
-      else
-        error('Unexpected statement type "' .. statement_type .. '"')
       end
     end
   end
