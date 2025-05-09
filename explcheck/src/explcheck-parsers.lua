@@ -518,7 +518,7 @@ local expl3_function_definition_csname = Ct(
   * P(":N")
 )
 local expl3_function_definition_or_assignment_csname = (
-  P("cs")
+  (P("cs") + P("prg"))
   * underscore
   * (
     (
