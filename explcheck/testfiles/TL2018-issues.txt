@@ -262,7 +262,7 @@ tagpdf-attr-code.sty s204
 tagpdf-checks-code.sty s103,s204
 tagpdf-mc-code-generic.sty s103,s204
 tagpdf-mc-code-lua.sty s103,s204,w200
-tagpdf-mc-code-shared.sty s103,s204
+tagpdf-mc-code-shared.sty s103,s204,s205
 tagpdf-roles-code.sty s204
 tagpdf-space-code.sty s103,s204
 tagpdf-struct-code.sty s103,s204,w303
