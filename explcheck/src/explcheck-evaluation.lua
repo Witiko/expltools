@@ -96,11 +96,11 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
   -- Evaluate the results of the semantic analysis.
   local num_statements, num_statement_tokens
   local num_statements_total
-  local seen_call_numbers = {}
   if analysis_results.statements ~= nil then
     num_statements, num_statement_tokens = {}, {}
     num_statements_total = 0
     for part_number, part_statements in ipairs(analysis_results.statements) do
+      local seen_call_numbers = {}
       local part_calls = analysis_results.calls[part_number]
       for _, statement in ipairs(part_statements) do
         local statement_type, call_range = table.unpack(statement)
