@@ -135,6 +135,7 @@ issues:ignore("S204")
 preprocessing.process(filename, content, issues, results, options)
 lexical_analysis.process(filename, content, issues, results, options)
 syntactic_analysis.process(filename, content, issues, results, options)
+semantic_analysis.process(filename, content, issues, results, options)
 ```
 
 Command-line options, configuration files, and Lua code allow you to ignore certain warnings and errors everywhere.
