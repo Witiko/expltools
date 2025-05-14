@@ -67,15 +67,10 @@ A function variant is generated from an incompatible argument type [@latexteam20
   { NN }
 ```
 
-### Protected predicate function {.e}
+### Protected predicate function {.e label=e404}
 A protected predicate function is defined.
 
-``` tex
-\prg_new_protected_conditional:Nnn
-  \module_foo:
-  { p }
-  { \prg_return_true: }
-```
+ /e404.txt
 
 ### Function variant for an undefined conditional function {.e}
 A variant is defined for an undefined conditional function.
