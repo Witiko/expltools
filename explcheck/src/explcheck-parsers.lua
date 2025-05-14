@@ -601,15 +601,14 @@ local expl3_quark_or_scan_mark_csname = (
 ---- Conditions in a conditional function definition
 local condition = (
   P("p")
-  + P("T")
+  + P("T") * P("F")^-1
   + P("F")
-  + P("TF")
 )
 local conditions = Ct(
   eof
   + C(condition)
   * (
-    P(",") * P(condition)
+    P(",") * C(condition)
   )^0
   * P(",")^-1
   * eof
