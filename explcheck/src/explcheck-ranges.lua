@@ -168,7 +168,7 @@ function Range:new_range_from_subranges(get_subrange, subarray_size)
     return Range:new(  -- non-empty range
       first_subrange:start(),
       last_subrange:stop(),
-      INCLUSIVE | MAYBE_EMPTY,
+      INCLUSIVE + MAYBE_EMPTY,
       subarray_size
     )
   end
