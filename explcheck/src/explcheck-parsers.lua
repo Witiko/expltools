@@ -528,20 +528,38 @@ local expl3_function_definition_csname = Ct(
   * P(":N")
 )
 local expl3_function_definition_or_assignment_csname = (
-  (P("cs") + P("prg"))
-  * underscore
-  * (
-    (
-      P("new")
-      + P("g")^-1
-      * P("set")
-    )
+  (
+    -- A non-conditional function
+    P("cs")
+    * underscore
     * (
-      P("_eq")
-      + P("_protected")^-1
-      * P("_nopar")^-1
+      (
+        P("new")
+        + P("g")^-1
+        * P("set")
+      )
+      * (
+        P("_eq")
+        + P("_protected")^-1
+        * P("_nopar")^-1
+      )
+      + P("generate_from_arg_count")
     )
-    + P("generate_from_arg_count")
+    -- A conditional function
+    + P("prg")
+    * underscore
+    * (
+      (
+        P("new")
+        + P("g")^-1
+        * P("set")
+      )
+      * (
+        P("_eq")
+        + P("_protected")^-1
+      )
+    )
+    * P("_conditional")
   )
   * P(":N")
 )
