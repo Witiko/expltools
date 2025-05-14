@@ -513,12 +513,18 @@ local expl3_expansion_csname = (
 ---- Assigning functions
 local expl3_function_definition_csname = Ct(
   (
+    -- A non-conditional function
     P("cs") * Cc(false)
+    * P("_new")
+    * (P("_protected") * Cc(true) + Cc(false))
+    * (P("_nopar") * Cc(true) + Cc(false))
+    -- A conditional function
     + P("prg") * Cc(true)
+    * P("_new")
+    * (P("_protected") * Cc(true) + Cc(false))
+    * Cc(false)  -- Conditional functions cannot be "nopar".
+    * P("_conditional")
   )
-  * P("_new")
-  * (P("_protected") * Cc(true) + Cc(false))
-  * (P("_nopar") * Cc(true) + Cc(false))
   * P(":N")
 )
 local expl3_function_definition_or_assignment_csname = (
