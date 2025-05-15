@@ -122,6 +122,9 @@ jobs:
           packages: |
             l3build
             luatex
+      - name: Update the TeX Live Package Manager
+        if: matrix.release == 'latest'  # otherwise, this would have been taken care of by the previous step
+        run: tlmgr update --self
       - name: Install file "l3obsolete.txt"
         run: tlmgr install --reinstall --with-doc l3kernel
       - name: Generate file "explcheck-obsolete.lua"
