@@ -24,6 +24,7 @@ jobs:
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
+          cache: false
           packages: |
             l3build
       - name: Install file "l3obsolete.txt"
@@ -45,6 +46,7 @@ jobs:
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
+          cache: false
           packages: |
             l3build
             luatex
@@ -77,6 +79,7 @@ jobs:
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
+          cache: false
           packages: |
             l3build
       - name: Install file "l3obsolete.txt"
@@ -115,6 +118,7 @@ jobs:
         if: matrix.release != 'latest'
         uses: teatimeguest/setup-texlive-action@v3
         with:
+          cache: false
           packages: |
             l3build
             luatex
@@ -187,6 +191,7 @@ jobs:
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
+          cache: false
           packages: |
             scheme-basic
             l3build
@@ -225,6 +230,7 @@ jobs:
       - name: Install TeX Live
         uses: teatimeguest/setup-texlive-action@v3
         with:
+          cache: false
           packages: |
             l3build
       - name: Install file "l3obsolete.txt"
