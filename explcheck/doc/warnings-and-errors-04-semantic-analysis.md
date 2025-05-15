@@ -70,7 +70,7 @@ A function variant is generated from an incompatible argument type [@latexteam20
 ### Protected predicate function {.e label=e404}
 A protected predicate function is defined.
 
- /e404.txt
+ /e404.tex
 
 ### Function variant for an undefined conditional function {.e}
 A variant is defined for an undefined conditional function.
