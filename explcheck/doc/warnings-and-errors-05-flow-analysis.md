@@ -70,7 +70,7 @@ A private function or conditional function is defined but all its calls are unre
   { \__module_foo: }
 ```
 
-This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-function> has not previously been emitted for this function.
+This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
 ### Unreachable function variant {.w}
 A private function or conditional function variant is defined but all its calls are unreachable.
@@ -95,7 +95,7 @@ A private function or conditional function variant is defined but all its calls 
   { baz }
 ```
 
-This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-function-variant> has not previously been emitted for this function variant.
+This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
 ### Calling a function before definition {.e}
 A function is used before it has been defined or after it has been undefined.
