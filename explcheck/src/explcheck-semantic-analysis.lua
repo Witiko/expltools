@@ -164,7 +164,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             else
               -- try to determine the list of conditions
               local conditions_token_texts = {}
-              for _, token in conditions_token_range:enumerate(tokens, first_map_forward) do
+              for _, token in conditions_token_range:enumerate(transformed_tokens, first_map_forward) do
                 local token_type, token_payload = table.unpack(token)
                 if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material containing arguments and csnames
                   goto unknown_conditions  -- assume all conditions with lower confidence
