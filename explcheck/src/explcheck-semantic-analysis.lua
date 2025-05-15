@@ -89,6 +89,48 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         return byte_range
       end
 
+      -- Split an expl3 control sequence name to a stem and the argument specifiers.
+      local function parse_expl3_csname(csname)
+        local _, _, csname_stem, argument_specifiers = csname:find("([^:]*):([^:]*)")
+        return csname_stem, argument_specifiers
+      end
+
+      -- Try and extract a list of conditions in a conditional function (variant) definition.
+      local function parse_conditions(argument)
+        local confidence = DEFINITELY
+        local conditions_specifier, conditions_token_range = table.unpack(argument)
+        local conditions
+        if conditions_specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
+          goto unknown_conditions
+        else
+          -- try to determine the list of conditions
+          local conditions_token_texts = {}
+          for _, token in conditions_token_range:enumerate(transformed_tokens, first_map_forward) do
+            local token_type, token_payload = table.unpack(token)
+            if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material containing arguments and csnames
+              goto unknown_conditions  -- assume all conditions with lower confidence
+            else
+              table.insert(conditions_token_texts, token_payload)
+            end
+          end
+          local conditions_text = table.concat(conditions_token_texts)
+          local condition_list = lpeg.match(parsers.conditions, conditions_text)
+          if condition_list == nil then  -- cound not parse the conditions, assume all conditions with lower confidence
+            goto unknown_conditions
+          end
+          conditions = {}
+          for _, condition in ipairs(condition_list) do
+            conditions[condition] = true
+          end
+          goto done_reading_conditions
+        end
+        ::unknown_conditions::
+        confidence = MAYBE
+        conditions = {p = true, T = true, F = true, TF = true}
+        ::done_reading_conditions::
+        return confidence, conditions
+      end
+
       if call_type == CALL then  -- a function call
         local _, _, csname, arguments = table.unpack(call)
 
@@ -110,7 +152,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           if replacement_text_specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
             goto other_statement
           end
-          -- determine the name(s) of the defined function
+          -- determine the name of the defined function
           local defined_csname_specifier, defined_csname_token_range = table.unpack(arguments[1])
           assert(defined_csname_specifier == "N" and #defined_csname_token_range == 1)
           local defined_csname_token_type, defined_csname
@@ -119,10 +161,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             goto other_statement
           end
           assert(defined_csname ~= nil)
+          local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
           -- determine the number of parameters of the defined function
           local num_parameters
-          local _, _, defined_csname_stem, argument_specifiers  -- first, parse the name of the defined function
-            = defined_csname:find("([^:]*):([^:]*)")
           if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
             num_parameters = #argument_specifiers
           end
@@ -155,38 +196,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           table.insert(replacement_text_tokens, {replacement_text_token_range, doubly_transformed_tokens, map_back, map_forward})
           -- determine all effectively defined csnames
           local effectively_defined_csnames
-          local confidence = DEFINITELY
+          local confidence
           if is_function_conditional then  -- conditional function
-            local conditions_specifier, conditions_token_range = table.unpack(arguments[#arguments - 1])
             local conditions
-            if conditions_specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
-              goto unknown_conditions
-            else
-              -- try to determine the list of conditions
-              local conditions_token_texts = {}
-              for _, token in conditions_token_range:enumerate(transformed_tokens, first_map_forward) do
-                local token_type, token_payload = table.unpack(token)
-                if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material containing arguments and csnames
-                  goto unknown_conditions  -- assume all conditions with lower confidence
-                else
-                  table.insert(conditions_token_texts, token_payload)
-                end
-              end
-              local conditions_text = table.concat(conditions_token_texts)
-              local condition_list = lpeg.match(parsers.conditions, conditions_text)
-              if condition_list == nil then  -- cound not parse the conditions, assume all conditions with lower confidence
-                goto unknown_conditions
-              end
-              conditions = {}
-              for _, condition in ipairs(condition_list) do
-                conditions[condition] = true
-              end
-              goto done_reading_conditions
-            end
-            ::unknown_conditions::
-            confidence = math.min(confidence, MAYBE)
-            conditions = {p = true, T = true, F = true, TF = true}
-            ::done_reading_conditions::
+            confidence, conditions = parse_conditions(arguments[#arguments - 1])
             -- determine the defined csnames
             if defined_csname_stem == nil or argument_specifiers == nil then  -- we couldn't parse the defined csname, give up
               goto other_statement
@@ -209,6 +222,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               table.insert(effectively_defined_csnames, string.format("%s:%sTF", defined_csname_stem, argument_specifiers))
             end
           else  -- non-conditional function
+            confidence = DEFINITELY
             effectively_defined_csnames = {defined_csname}
           end
           -- record function definition statements for all effectively defined csnames
