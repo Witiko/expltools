@@ -23,34 +23,11 @@ A private function or conditional function is defined but unused.
  /w401-01.tex
  /w401-02.tex
 
-### Unused private function variant {.w #unused-private-function-variant}
+### Unused private function variant {.w label=w402 #unused-private-function-variant}
 A private function or conditional function variant is defined but unused.
 
-``` tex
-\cs_new:Nn
-  \__module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn  % warning on this line
-  \__module_foo:n
-  { V }
-\__module_foo:n
-  { baz }
-```
-
-``` tex
-\prg_new_conditional:Nnn
-  \__module_foo:n
-  { p, T, F, TF } 
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \__module_foo:n
-  { TF } 
-  { V }
-\__module_foo:nTF
-  { foo }
-  { bar }
-  { baz }
-```
+ /w402-01.tex
+ /w402-02.tex
 
 ### Function variant of incompatible type {.t}
 A function variant is generated from an incompatible argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].

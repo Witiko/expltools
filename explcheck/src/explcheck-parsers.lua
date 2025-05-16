@@ -41,6 +41,19 @@ local linechar = any - newline
 local space = S(" ")
 local tab = S("\t")
 
+---- Comma-lists
+local function comma_list(item_parser)
+  return Ct(
+    eof
+    + C(item_parser)
+    * (
+      P(",") * C(item_parser)
+    )^0
+    * P(",")^-1
+    * eof
+  )
+end
+
 -- Intermediate parsers
 ---- Default expl3 category code table, corresponds to `\c_code_cctab` in expl3
 local expl3_endlinechar = ' '  -- luacheck: ignore expl3_endlinechar
@@ -163,6 +176,11 @@ local argument = (
   * expl3_catcodes[2]
 )
 
+local no_manipulation_argument_specifier = S("Nn")
+local no_manipulation_argument_specifiers = (
+  no_manipulation_argument_specifier^0
+  * eof
+)
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
 local parameter_argument_specifier = S("p")
@@ -187,6 +205,7 @@ local argument_specifiers = (
   argument_specifier^0
   * eof
 )
+local variant_argument_specifiers = comma_list(argument_specifier^0)
 local do_not_use_argument_specifiers = (
   (
     argument_specifier
@@ -564,6 +583,17 @@ local expl3_function_definition_or_assignment_csname = (
   * P(":N")
 )
 
+---- Generating function variants
+local expl3_function_variant_definition_csname = Ct(
+  (
+    -- A non-conditional function
+    P("cs_generate_variant") * Cc(false)
+    -- A conditional function
+    + P("prg_generate_conditional_variant") * Cc(true)
+  )
+  * P(":N")
+)
+
 ---- Function calls with Lua arguments
 local expl3_function_call_with_lua_code_argument_csname = Ct(
   P("lua")
@@ -622,20 +652,13 @@ local condition = (
   + P("T") * P("F")^-1
   + P("F")
 )
-local conditions = Ct(
-  eof
-  + C(condition)
-  * (
-    P(",") * C(condition)
-  )^0
-  * P(",")^-1
-  * eof
-)
+local conditions = comma_list(condition)
 
 return {
   any = any,
   argument_specifiers = argument_specifiers,
   commented_lines = commented_lines,
+  condition = condition,
   conditions = conditions,
   decimal_digit = decimal_digit,
   determine_expl3_catcode = determine_expl3_catcode,
@@ -651,6 +674,7 @@ return {
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
+  expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
@@ -665,6 +689,7 @@ return {
   latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
+  no_manipulation_argument_specifiers = no_manipulation_argument_specifiers,
   N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
   n_type_argument_specifier = n_type_argument_specifier,
@@ -675,5 +700,6 @@ return {
   success = success,
   tab = tab,
   tex_lines = tex_lines,
+  variant_argument_specifiers = variant_argument_specifiers,
   weird_argument_specifier = weird_argument_specifier,
 }

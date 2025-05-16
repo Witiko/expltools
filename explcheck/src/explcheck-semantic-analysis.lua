@@ -26,12 +26,14 @@ local lpeg = require("lpeg")
 
 local statement_types = {
   FUNCTION_DEFINITION = "function definition",
+  FUNCTION_VARIANT_DEFINITION = "function variant definition",
   OTHER_STATEMENT = "other statement",
   OTHER_TOKENS_SIMPLE = "block of other simple tokens",
   OTHER_TOKENS_COMPLEX = "block of other complex tokens",
 }
 
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
+local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
 local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
@@ -93,11 +95,21 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         return csname_stem, argument_specifiers
       end
 
+      -- Replace the argument specifiers in an expl3 control sequence name.
+      local function replace_argument_specifiers(csname, argument_specifiers)
+        local csname_stem, base_argument_specifiers = parse_expl3_csname(csname)
+        if csname_stem == nil or base_argument_specifiers == nil then
+          return nil  -- we couldn't parse the csname, give up
+        end
+        return string.format("%s:%s", csname_stem, argument_specifiers)
+      end
+
       -- Determine the control sequence name of a conditional function given a base control sequence name and a condition.
-      local function get_conditional_function_csname(base_csname, condition)
-        local csname_stem, argument_specifiers = parse_expl3_csname(base_csname)
-        assert(csname_stem ~= nil)
-        assert(argument_specifiers ~= nil)
+      local function get_conditional_function_csname(csname, condition)
+        local csname_stem, argument_specifiers = parse_expl3_csname(csname)
+        if csname_stem == nil or argument_specifiers == nil then
+          return nil  -- we couldn't parse the csname, give up
+        end
         if condition == "p" then  -- predicate function
           return string.format("%s_p:%s", csname_stem, argument_specifiers)
         elseif condition == "T" then  -- true-branch conditional function
@@ -128,30 +140,147 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       -- Try and extract a list of conditions in a conditional function (variant) definition.
       -- Together with the conditions, include a measurement of confidence about the correctness of the extracted information.
       local function parse_conditions(argument)
-        local conditions_specifier, conditions_token_range = table.unpack(argument)
         local conditions
-        if conditions_specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
+
+        -- try to determine the list of conditions
+        local argument_specifier, argument_token_range = table.unpack(argument)
+        local conditions_text, condition_list
+        if argument_specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
           goto unknown_conditions
-        else
-          -- try to determine the list of conditions
-          local conditions_text = extract_string_from_tokens(conditions_token_range)
-          if conditions_text == nil then  -- failed to read the conditions
-            goto unknown_conditions  -- assume all conditions with lower confidence
-          end
-          local condition_list = lpeg.match(parsers.conditions, conditions_text)
-          if condition_list == nil then  -- cound not parse the conditions, assume all conditions with lower confidence
-            goto unknown_conditions
-          end
-          conditions = {}
-          for _, condition in ipairs(condition_list) do
-            table.insert(conditions, {condition, DEFINITELY})
-          end
-          goto done_reading_conditions
         end
+        conditions_text = extract_string_from_tokens(argument_token_range)
+        if conditions_text == nil then  -- failed to read conditions
+          goto unknown_conditions  -- assume all conditions with lower confidence
+        end
+        condition_list = lpeg.match(parsers.conditions, conditions_text)
+        if condition_list == nil then  -- cound not parse conditions, give up
+          return nil
+        end
+        conditions = {}
+        for _, condition in ipairs(condition_list) do
+          table.insert(conditions, {condition, DEFINITELY})
+        end
+        goto done_parsing
+
         ::unknown_conditions::
+        -- assume all possible conditions with lower confidence
         conditions = {{"p", MAYBE}, {"T", MAYBE}, {"F", MAYBE}, {"TF", MAYBE}}
-        ::done_reading_conditions::
+
+        ::done_parsing::
         return conditions
+      end
+
+      -- Try and extract a list of variant argument specifiers in a (conditional) function variant definition.
+      -- Together with the argument specifiers, include a measurement of confidence about the correctness of the extracted information.
+      local function parse_variant_argument_specifiers(csname, argument)
+
+        -- Get all compatible variant argument specifiers for a base argument specifier.
+        --
+        -- See also the definition of function `\cs_generate_variant:Nn` in Section 5.2 of The LaTeX Project (2025) [1].
+        --
+        --  [1]: The LaTeX Project. 2025-04-29. The LaTeX3 Interfaces.
+        --       <http://mirrors.ctan.org/macros/latex/required/l3kernel/interface3.pdf>
+        local function get_compatible_variant_argument_specifier(base_argument_specifier)
+          if base_argument_specifier == "N" then
+            return "N", "c"
+          elseif base_argument_specifier == "n" then
+            return "n", "o", "V", "v", "f", "e", "x"
+          elseif base_argument_specifier == "T" then
+            return "T"
+          elseif base_argument_specifier == "F" then
+            return "F"
+          elseif base_argument_specifier == "p" then
+            return "p"
+          else
+            error('Unexpected base argument specifier "' .. base_argument_specifier .. '"')
+          end
+        end
+
+        -- extract the argument specifiers from the csname
+        local _, base_argument_specifiers = parse_expl3_csname(csname)
+        if base_argument_specifiers == nil then
+          return nil  -- we couldn't parse the csname, give up
+        end
+
+        -- check that the base argument specifiers are only N and n
+        if lpeg.match(parsers.no_manipulation_argument_specifiers, base_argument_specifiers) == nil then
+          return nil  -- cannot generate variants from base argument specifiers other than N and n, give up
+        end
+
+        local variant_argument_specifiers
+
+        -- try to determine all sets of variant argument specifiers
+        local argument_specifier, argument_token_range = table.unpack(argument)
+        local variant_argument_specifiers_text, variant_argument_specifiers_list
+        if argument_specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
+          goto unknown_argument_specifiers
+        end
+        variant_argument_specifiers_text = extract_string_from_tokens(argument_token_range)
+        if variant_argument_specifiers_text == nil then  -- failed to read specifiers
+          goto unknown_argument_specifiers  -- assume all specifiers with lower confidence
+        end
+        variant_argument_specifiers_list = lpeg.match(parsers.variant_argument_specifiers, variant_argument_specifiers_text)
+        if variant_argument_specifiers_list == nil then  -- cound not parse specifiers, assume all possibilities with lower confidence
+          goto unknown_argument_specifiers
+        end
+        variant_argument_specifiers = {}
+        for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
+          if #argument_specifiers ~= #base_argument_specifiers then
+            return nil  -- variant argument specifiers are different arity than base argument specifiers, give up
+          end
+          local any_specifiers_changed = false
+          for i = 1, #argument_specifiers do
+            local base_argument_specifier = base_argument_specifiers:sub(i, i)
+            argument_specifier = argument_specifiers:sub(i, i)
+            if base_argument_specifier == argument_specifier then  -- variant argument specifier is same as base argument specifier
+              goto continue  -- skip further checks
+            end
+            any_specifiers_changed = true
+            local any_compatible_specifier = false
+            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifier(base_argument_specifier))) do
+              if argument_specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
+                any_compatible_specifier = true
+                break  -- skip further checks
+              end
+            end
+            if not any_compatible_specifier then
+              return nil  -- variant argument specifier is incompatible with base argument specifier, give up
+            end
+            ::continue::
+          end
+          if not any_specifiers_changed then
+            return nil  -- variant argument specifiers are the same as base argument specifiers, give up
+          end
+          table.insert(variant_argument_specifiers, {argument_specifiers, DEFINITELY})
+        end
+        goto done_parsing
+
+        ::unknown_argument_specifiers::
+        -- assume all possible sets of variant argument specifiers with lower confidence
+        variant_argument_specifiers_list = {""}
+        for i = 1, #base_argument_specifiers do
+          local base_argument_specifier = base_argument_specifiers:sub(i, i)
+          local intermediate_result = {}
+          for _, prefix in ipairs(variant_argument_specifiers_list) do
+            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifier(base_argument_specifier))) do
+              table.insert(intermediate_result, prefix .. compatible_specifier)
+            end
+          end
+          variant_argument_specifiers_list = intermediate_result
+          if #intermediate_result > 10000 then  -- if there are too many possible variant argument specifiers
+            return nil  -- give up to prevent a combinatorial explosion
+            -- TODO: produce a special "wildcard" return value instead; this will complicate processing but should remain O(1)
+          end
+        end
+        variant_argument_specifiers = {}
+        for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
+          if base_argument_specifiers ~= argument_specifiers then
+            table.insert(variant_argument_specifiers, {argument_specifiers, MAYBE})
+          end
+        end
+
+        ::done_parsing::
+        return variant_argument_specifiers
       end
 
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
@@ -169,8 +298,65 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end
         end
 
-        -- Process a function definition.
+        local function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, csname)
         local function_definition = lpeg.match(parsers.expl3_function_definition_csname, csname)
+
+        -- Process a function variant definition.
+        if function_variant_definition ~= nil then
+          local is_function_conditional = table.unpack(function_variant_definition)
+          -- determine the name of the defined function
+          local base_csname_specifier, base_csname_token_range = table.unpack(arguments[1])
+          assert(base_csname_specifier == "N" and #base_csname_token_range == 1)
+          local base_csname_token_type, base_csname
+            = table.unpack(transformed_tokens[first_map_forward(base_csname_token_range:start())])
+          if base_csname_token_type == ARGUMENT then  -- name is hidden behind an argument, give up
+            goto other_statement
+          end
+          assert(base_csname ~= nil)
+          -- determine the variant argument specifiers
+          local variant_argument_specifiers = parse_variant_argument_specifiers(base_csname, arguments[2])
+          if variant_argument_specifiers == nil then  -- we couldn't parse the variant argument specifiers, give up
+            goto other_statement
+          end
+          -- determine all defined csnames
+          local defined_csnames = {}
+          for _, argument_specifier_table in ipairs(variant_argument_specifiers) do
+            local argument_specifiers, argument_specifier_confidence = table.unpack(argument_specifier_table)
+            local defined_csname = replace_argument_specifiers(base_csname, argument_specifiers)
+            if defined_csname == nil then  -- we couldn't determine the defined csname, give up
+              goto other_statement
+            end
+            if is_function_conditional then  -- conditional function
+              -- determine the conditions
+              local conditions = parse_conditions(arguments[#arguments])
+              if conditions == nil then  -- we couldn't determine the conditions, give up
+                goto other_statement
+              end
+              -- determine the defined csnames
+              for _, condition_table in ipairs(conditions) do
+                local condition, condition_confidence = table.unpack(condition_table)
+                local defined_conditional_csname = get_conditional_function_csname(defined_csname, condition)
+                if defined_conditional_csname == nil then  -- we couldn't determine the defined csname, give up
+                  goto other_statement
+                end
+                local confidence = math.min(argument_specifier_confidence, condition_confidence)
+                table.insert(defined_csnames, {defined_conditional_csname, confidence})
+              end
+            else  -- non-conditional function
+              table.insert(defined_csnames, {defined_csname, argument_specifier_confidence})
+            end
+          end
+          -- record function variant definition statements for all effectively defined csnames
+          for _, defined_csname_table in ipairs(defined_csnames) do  -- lua
+            local defined_csname, confidence = table.unpack(defined_csname_table)
+            local statement
+              = {FUNCTION_VARIANT_DEFINITION, call_range, confidence, base_csname, defined_csname, function_variant_definition}
+            table.insert(statements, statement)
+          end
+          goto continue
+        end
+
+        -- Process a function definition.
         if function_definition ~= nil then
           local is_function_conditional, is_protected = table.unpack(function_definition)
           -- determine the replacement text
@@ -187,7 +373,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             goto other_statement
           end
           assert(defined_csname ~= nil)
-          local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
+          local _, argument_specifiers = parse_expl3_csname(defined_csname)
           -- determine the number of parameters of the defined function
           local num_parameters
           if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
@@ -223,11 +409,12 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           -- determine all effectively defined csnames
           local effectively_defined_csnames = {}
           if is_function_conditional then  -- conditional function
+            -- determine the conditions
             local conditions = parse_conditions(arguments[#arguments - 1])
-            -- determine the defined csnames
-            if defined_csname_stem == nil or argument_specifiers == nil then  -- we couldn't parse the defined csname, give up
+            if conditions == nil then  -- we couldn't determine the conditions, give up
               goto other_statement
             end
+            -- determine the defined csnames
             for _, condition_table in ipairs(conditions) do
               local condition, confidence = table.unpack(condition_table)
               if condition == "p" and is_protected then
@@ -235,6 +422,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
                 issues:add("e404", "protected predicate function", byte_range)
               end
               local effectively_defined_csname = get_conditional_function_csname(defined_csname, condition)
+              if effectively_defined_csname == nil then  -- we couldn't determine the defined csname, give up
+                goto other_statement
+              end
               table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
             end
           else  -- non-conditional function
@@ -348,9 +538,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     end
   end
 
+  -- Determine whether a function is private or public based on its name.
+  local function is_function_private(csname)
+    return csname:sub(1, 2) == "__"
+  end
+
   --- Make a pass over the segments, building up information.
-  local defined_private_functions = {}
-  local used_csnames = {}
+  local defined_private_functions, defined_private_function_variants, used_csnames = {}, {}, {}
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
     local part_tokens, segment_tokens, map_forward = table.unpack(token_segments[segment_number])
@@ -365,14 +559,25 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end,
           #content
         )
-        if statement_type == FUNCTION_DEFINITION then
+        if statement_type == FUNCTION_VARIANT_DEFINITION then
+          -- Record private function variant defitions.
+          local _, _, confidence, base_csname, defined_csname = table.unpack(statement)
+          used_csnames[base_csname] = true
+          if confidence == DEFINITELY and is_function_private(defined_csname) then
+            table.insert(defined_private_function_variants, {defined_csname, call_byte_range})
+          end
+        elseif statement_type == FUNCTION_DEFINITION then
           -- Record private function defitions.
           local _, _, confidence, defined_csname = table.unpack(statement)
-          if confidence == DEFINITELY and defined_csname:sub(1, 2) == "__" then
+          if confidence == DEFINITELY and is_function_private(defined_csname) then
             table.insert(defined_private_functions, {defined_csname, call_byte_range})
           end
         elseif statement_type == OTHER_STATEMENT then
           -- Record control sequences used in other statements.
+          -- TODO: Also record partially-understood control sequences like `\use:c{__ccool_aux_prop:\g__ccool_option_expans_tl}` from line
+          --       55 of file `ccool.sty` in TeX Live 2024, which, if understood as the wildcard `__ccool_aux_prop:*` should silence issue
+          --       W401 on line 50 of the same file. There should likely be some minimum number of understood tokens to prevent statements
+          --       like `\use:c{\foo}` from silencing all issues of this type.
           used_csnames[call_csname] = true
           for _, argument in ipairs(arguments) do
             local argument_specifier, argument_token_range = table.unpack(argument)
@@ -405,6 +610,12 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     local defined_csname, call_byte_range = table.unpack(defined_private_function)
     if used_csnames[defined_csname] == nil then
       issues:add('w401', 'unused private function', call_byte_range)
+    end
+  end
+  for _, defined_private_function_variant in ipairs(defined_private_function_variants) do
+    local defined_csname, call_byte_range = table.unpack(defined_private_function_variant)
+    if used_csnames[defined_csname] == nil then
+      issues:add('w402', 'unused private function variant', call_byte_range)
     end
   end
 

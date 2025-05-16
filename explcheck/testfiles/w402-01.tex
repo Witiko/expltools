@@ -1,0 +1,8 @@
+\cs_new:Nn
+  \__module_foo:n
+  { bar~#1 }
+\cs_generate_variant:Nn  % warning on this line
+  \__module_foo:n
+  { V }
+\__module_foo:n
+  { baz }

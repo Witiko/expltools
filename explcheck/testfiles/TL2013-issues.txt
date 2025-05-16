@@ -9,7 +9,7 @@ acro.sty s103,s204,s206,w200,w202,w302
 asts.tex s204
 breqn.sty s204
 cfntinst.sty s204,w100
-chemformula.sty s103,s204,s206,w200
+chemformula.sty s103,s204,s206,w200,w402
 chemgreek.sty s103,s204,w200
 chemmacros.sty s204,s206,w200,w302
 chemnum.sty s103,s204,w200,w202,w303
@@ -56,11 +56,11 @@ l3candidates.sty s204,s206,w200
 l3clist.sty s204,s205,s206
 l3coffins.sty s204,s206,w200,w401
 l3color.sty s204,w200
-l3doc.cls s204,s206,w200
+l3doc.cls s204,s206,w200,w402
 l3docstrip.tex s204
 l3dt.sty s206,w302
 l3expan.sty s204,s205,w200,w303
-l3file.sty s204,s205,s206,w200,w202,w303,w401
+l3file.sty s204,s205,s206,w200,w202,w303,w401,w402
 l3flag.sty s206,w200
 l3fp.sty s204,s205,s206,w200,w303,w401
 l3galley.sty s103,s204,s205,s206,w200,w302,w401
@@ -69,7 +69,7 @@ l3keys.sty s204,w202
 l3keys2e.sty w202
 l3keysdemo.sty s204,s206
 l3luatex.sty s204,s205,s206,w200
-l3msg.sty s204,s206,w200,w202,w401
+l3msg.sty s204,s206,w200,w202,w401,w402
 l3names.sty s204,w200
 l3prg.sty s204,s205,s206,w200,w401
 l3prop.sty s204,s206,w202
@@ -111,7 +111,7 @@ mhsetup.sty e201,s204,w100
 minibox.sty s204
 minibox.tex s204
 mkpatter.tex s103,s204,w100,w200
-modiagram.sty s103,s204,w200
+modiagram.sty s103,s204,w200,w402
 morewrites.sty s103,s204,s205,s206,w200,w401
 notes2bib.sty s103,s204,w302
 pkgloader-error.sty s204
@@ -144,7 +144,7 @@ skrapport.cls s204,s205,s206
 skrapport.tex e300,s103,s204,s205,s206
 source3.tex s204
 source3body.tex s204,s206
-spath3.sty s103,s204,s206,w302
+spath3.sty s103,s204,s206,w302,w402
 stex-logo.sty s103,s204
 stex.sty s204
 stex.tex s103,s204
@@ -163,7 +163,7 @@ ufntinst.sty s103,s204,w100
 unicode-math-luatex.sty s204,s205,s206,w200,w302,w303
 unicode-math-xetex.sty s204,s205,s206,w200,w302,w303
 unicode-math.sty s204,s206,w200,w302
-unravel.sty s204,s205,s206,w200,w202,w302,w401
+unravel.sty s204,s205,s206,w200,w202,w302,w401,w402
 with.sty s204,s205
 withargs.sty s204,s205
 withargs.tex s204
