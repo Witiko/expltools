@@ -80,8 +80,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     local statements = {}
     local replacement_text_tokens = {}
     for call_number, call in ipairs(calls) do
-      local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
-      local call_type, token_range = table.unpack(call)
 
       -- Get the byte range for a given token.
       local function get_token_byte_range(token_number)
@@ -113,6 +111,20 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         end
       end
 
+      -- Try and convert tokens from a range into a string.
+      local function extract_string_from_tokens(token_range)
+        local token_texts = {}
+        for _, token in token_range:enumerate(transformed_tokens, first_map_forward) do
+          local token_type, token_payload = table.unpack(token)
+          if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material, give up
+            return nil
+          else
+            table.insert(token_texts, token_payload)
+          end
+        end
+        return table.concat(token_texts)
+      end
+
       -- Try and extract a list of conditions in a conditional function (variant) definition.
       -- Together with the conditions, include a measurement of confidence about the correctness of the extracted information.
       local function parse_conditions(argument)
@@ -122,16 +134,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           goto unknown_conditions
         else
           -- try to determine the list of conditions
-          local conditions_token_texts = {}
-          for _, token in conditions_token_range:enumerate(transformed_tokens, first_map_forward) do
-            local token_type, token_payload = table.unpack(token)
-            if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material containing arguments and csnames
-              goto unknown_conditions  -- assume all conditions with lower confidence
-            else
-              table.insert(conditions_token_texts, token_payload)
-            end
+          local conditions_text = extract_string_from_tokens(conditions_token_range)
+          if conditions_text == nil then  -- failed to read the conditions
+            goto unknown_conditions  -- assume all conditions with lower confidence
           end
-          local conditions_text = table.concat(conditions_token_texts)
           local condition_list = lpeg.match(parsers.conditions, conditions_text)
           if condition_list == nil then  -- cound not parse the conditions, assume all conditions with lower confidence
             goto unknown_conditions
@@ -147,6 +153,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         ::done_reading_conditions::
         return conditions
       end
+
+      local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
+      local call_type, token_range = table.unpack(call)
 
       if call_type == CALL then  -- a function call
         local _, _, csname, arguments = table.unpack(call)
