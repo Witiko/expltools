@@ -95,9 +95,27 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         return csname_stem, argument_specifiers
       end
 
+      -- Determine the control sequence name of a conditional function given a base control sequence name and a condition.
+      local function get_conditional_function_csname(base_csname, condition)
+        local csname_stem, argument_specifiers = parse_expl3_csname(base_csname)
+        assert(csname_stem ~= nil)
+        assert(argument_specifiers ~= nil)
+        if condition == "p" then  -- predicate function
+          return string.format("%s_p:%s", csname_stem, argument_specifiers)
+        elseif condition == "T" then  -- true-branch conditional function
+          return string.format("%s:%sT", csname_stem, argument_specifiers)
+        elseif condition == "F" then  -- false-branch conditional function
+          return string.format("%s:%sF", csname_stem, argument_specifiers)
+        elseif condition == "TF" then  -- true-and-false-branch conditional function
+          return string.format("%s:%sTF", csname_stem, argument_specifiers)
+        else
+          error('Unexpected condition "' .. condition .. '"')
+        end
+      end
+
       -- Try and extract a list of conditions in a conditional function (variant) definition.
+      -- Together with the conditions, include a measurement of confidence about the correctness of the extracted information.
       local function parse_conditions(argument)
-        local confidence = DEFINITELY
         local conditions_specifier, conditions_token_range = table.unpack(argument)
         local conditions
         if conditions_specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
@@ -120,15 +138,14 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end
           conditions = {}
           for _, condition in ipairs(condition_list) do
-            conditions[condition] = true
+            table.insert(conditions, {condition, DEFINITELY})
           end
           goto done_reading_conditions
         end
         ::unknown_conditions::
-        confidence = MAYBE
-        conditions = {p = true, T = true, F = true, TF = true}
+        conditions = {{"p", MAYBE}, {"T", MAYBE}, {"F", MAYBE}, {"TF", MAYBE}}
         ::done_reading_conditions::
-        return confidence, conditions
+        return conditions
       end
 
       if call_type == CALL then  -- a function call
@@ -195,38 +212,28 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local function map_forward(...) return second_map_forward(first_map_forward(...)) end
           table.insert(replacement_text_tokens, {replacement_text_token_range, doubly_transformed_tokens, map_back, map_forward})
           -- determine all effectively defined csnames
-          local effectively_defined_csnames
-          local confidence
+          local effectively_defined_csnames = {}
           if is_function_conditional then  -- conditional function
-            local conditions
-            confidence, conditions = parse_conditions(arguments[#arguments - 1])
+            local conditions = parse_conditions(arguments[#arguments - 1])
             -- determine the defined csnames
             if defined_csname_stem == nil or argument_specifiers == nil then  -- we couldn't parse the defined csname, give up
               goto other_statement
             end
-            effectively_defined_csnames = {}
-            if conditions.p ~= nil then  -- predicate function
-              if is_protected then
+            for _, condition_table in ipairs(conditions) do
+              local condition, confidence = table.unpack(condition_table)
+              if condition == "p" and is_protected then
                 local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
                 issues:add("e404", "protected predicate function", byte_range)
               end
-              table.insert(effectively_defined_csnames, string.format("%s_p:%s", defined_csname_stem, argument_specifiers))
-            end
-            if conditions.T ~= nil then  -- true-branch conditional function
-              table.insert(effectively_defined_csnames, string.format("%s:%sT", defined_csname_stem, argument_specifiers))
-            end
-            if conditions.F ~= nil then  -- false-branch conditional function
-              table.insert(effectively_defined_csnames, string.format("%s:%sF", defined_csname_stem, argument_specifiers))
-            end
-            if conditions.TF ~= nil then  -- true-and-false-branch conditional function
-              table.insert(effectively_defined_csnames, string.format("%s:%sTF", defined_csname_stem, argument_specifiers))
+              local effectively_defined_csname = get_conditional_function_csname(defined_csname, condition)
+              table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
             end
           else  -- non-conditional function
-            confidence = DEFINITELY
-            effectively_defined_csnames = {defined_csname}
+            effectively_defined_csnames = {{defined_csname, DEFINITELY}}
           end
           -- record function definition statements for all effectively defined csnames
-          for _, effectively_defined_csname in ipairs(effectively_defined_csnames) do  -- lua
+          for _, effectively_defined_csname_table in ipairs(effectively_defined_csnames) do  -- lua
+            local effectively_defined_csname, confidence = table.unpack(effectively_defined_csname_table)
             local statement
               = {FUNCTION_DEFINITION, call_range, confidence, effectively_defined_csname, function_definition, #replacement_text_tokens}
             table.insert(statements, statement)
