@@ -205,7 +205,7 @@ local argument_specifiers = (
   argument_specifier^0
   * eof
 )
-local variant_argument_specifiers = comma_list(argument_specifiers)
+local variant_argument_specifiers = comma_list(argument_specifier^0)
 local do_not_use_argument_specifiers = (
   (
     argument_specifier

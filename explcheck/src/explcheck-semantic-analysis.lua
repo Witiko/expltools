@@ -224,7 +224,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           goto unknown_argument_specifiers
         end
         variant_argument_specifiers = {}
-        for _, argument_specifiers in ipairs(variant_argument_specifiers) do
+        for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
           if #argument_specifiers ~= #base_argument_specifiers then
             return nil  -- variant argument specifiers are different arity than base argument specifiers, give up
           end
@@ -267,6 +267,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             end
           end
           variant_argument_specifiers_list = intermediate_result
+          if #intermediate_result > 10000 then  -- if there are too many possible variant argument specifiers
+            return nil  -- give up to prevent a combinatorial explosion
+            -- TODO: produce a special "wildcard" return value instead; this will complicate processing but should remain O(1)
+          end
         end
         variant_argument_specifiers = {}
         for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
@@ -318,13 +322,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local effectively_defined_csnames = {}
           for _, argument_specifier_table in ipairs(variant_argument_specifiers) do
             local argument_specifiers, argument_specifier_confidence = table.unpack(argument_specifier_table)
-            local effectively_defined_csname = replace_argument_specifiers(csname, argument_specifiers)
+            local effectively_defined_csname = replace_argument_specifiers(defined_csname, argument_specifiers)
             if effectively_defined_csname == nil then  -- we couldn't determine the defined csname, give up
               goto other_statement
             end
             if is_function_conditional then  -- conditional function
               -- determine the conditions
-              local conditions = parse_conditions(arguments[#arguments - 1])
+              local conditions = parse_conditions(arguments[#arguments])
               if conditions == nil then  -- we couldn't determine the conditions, give up
                 goto other_statement
               end
