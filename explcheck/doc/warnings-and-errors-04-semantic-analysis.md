@@ -17,50 +17,17 @@ A function with a `V`-type argument is called with a variable or constant that d
   \c_false_bool
 ```
 
-### Unused function {.w #unused-function}
+### Unused private function {.w label=w401 #unused-private-function}
 A private function or conditional function is defined but unused.
 
-``` tex
-\cs_new:Nn  % warning on this line
-  \__module_foo:
-  { bar }
-```
+ /w401-01.tex
+ /w401-02.tex
 
-``` tex
-\prg_new_conditional:Nnn  % warning on this line
-  \__module_foo:
-  { p, T, F, TF } 
-  { \prg_return_true: }
-```
-
-### Unused function variant {.w #unused-function-variant}
+### Unused private function variant {.w label=w402 #unused-private-function-variant}
 A private function or conditional function variant is defined but unused.
 
-``` tex
-\cs_new:Nn
-  \__module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn  % warning on this line
-  \__module_foo:n
-  { V }
-\__module_foo:n
-  { baz }
-```
-
-``` tex
-\prg_new_conditional:Nnn
-  \__module_foo:n
-  { p, T, F, TF } 
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \__module_foo:n
-  { TF } 
-  { V }
-\__module_foo:nTF
-  { foo }
-  { bar }
-  { baz }
-```
+ /w402-01.tex
+ /w402-02.tex
 
 ### Function variant of incompatible type {.t}
 A function variant is generated from an incompatible argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].
@@ -77,15 +44,10 @@ A function variant is generated from an incompatible argument type [@latexteam20
   { NN }
 ```
 
-### Protected predicate function {.e}
+### Protected predicate function {.e label=e404}
 A protected predicate function is defined.
 
-``` tex
-\prg_new_protected_conditional:Nnn
-  \module_foo:
-  { p }
-  { \prg_return_true: }
-```
+ /e404.tex
 
 ### Function variant for an undefined conditional function {.e}
 A variant is defined for an undefined conditional function.

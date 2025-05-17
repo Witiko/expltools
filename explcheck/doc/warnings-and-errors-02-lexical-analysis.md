@@ -36,6 +36,12 @@ Some function have names that are not in the format `\texttt{\textbackslash\meta
  /s205-03.tex
  /s205-04.tex
 
+This also extends to conditional functions:
+
+ /s205-05.tex
+ /s205-06.tex
+ /s205-07.tex
+
 ## Malformed variable or constant name {.s label=s206}
 Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
 

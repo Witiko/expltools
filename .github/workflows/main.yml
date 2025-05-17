@@ -203,6 +203,7 @@ jobs:
       - name: Install file "l3obsolete.txt"
         run: tlmgr install --reinstall --with-doc l3kernel
       - name: Build CTAN archive and documentation
+        timeout-minutes: 5
         run: |
           set -e
           l3build tag
