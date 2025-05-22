@@ -83,11 +83,30 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     local replacement_text_tokens = {}
     for call_number, call in ipairs(calls) do
 
+      -- Try and convert tokens from a range into a string.
+      local function extract_string_from_tokens(token_range)
+        local token_texts = {}
+        for _, token in token_range:enumerate(transformed_tokens, first_map_forward) do
+          local token_type, token_payload = table.unpack(token)
+          if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material, give up
+            return nil
+          else
+            table.insert(token_texts, token_payload)
+          end
+        end
+        return table.concat(token_texts)
+      end
+
       -- Get the byte range for a given token.
       local function get_token_byte_range(token_number)
         local byte_range = tokens[token_number][4]
         return byte_range
       end
+
+      local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
+      local call_type, token_range = table.unpack(call)
+
+      local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
 
       -- Split an expl3 control sequence name to a stem and the argument specifiers.
       local function parse_expl3_csname(csname)
@@ -121,20 +140,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         else
           error('Unexpected condition "' .. condition .. '"')
         end
-      end
-
-      -- Try and convert tokens from a range into a string.
-      local function extract_string_from_tokens(token_range)
-        local token_texts = {}
-        for _, token in token_range:enumerate(transformed_tokens, first_map_forward) do
-          local token_type, token_payload = table.unpack(token)
-          if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material, give up
-            return nil
-          else
-            table.insert(token_texts, token_payload)
-          end
-        end
-        return table.concat(token_texts)
       end
 
       -- Try and extract a list of conditions in a conditional function (variant) definition.
@@ -204,6 +209,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
         -- check that the base argument specifiers are only N and n
         if lpeg.match(parsers.basic_argument_specifiers, base_argument_specifiers) == nil then
+          issues:add("t403", "function variant of incompatible type", byte_range)
           return nil  -- cannot generate variants from non-basic argument specifiers, give up
         end
 
@@ -226,6 +232,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         variant_argument_specifiers = {}
         for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
           if #argument_specifiers ~= #base_argument_specifiers then
+            issues:add("t403", "function variant of incompatible type", byte_range)
             return nil  -- variant argument specifiers are different arity than base argument specifiers, give up
           end
           local any_specifiers_changed = false
@@ -244,11 +251,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               end
             end
             if not any_compatible_specifier then
+              issues:add("t403", "function variant of incompatible type", byte_range)
               return nil  -- variant argument specifier is incompatible with base argument specifier, give up
             end
             ::continue::
           end
           if not any_specifiers_changed then
+            issues:add("w407", "multiply defined function variant", byte_range)
             return nil  -- variant argument specifiers are the same as base argument specifiers, give up
           end
           table.insert(variant_argument_specifiers, {argument_specifiers, DEFINITELY})
@@ -282,9 +291,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         ::done_parsing::
         return variant_argument_specifiers
       end
-
-      local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
-      local call_type, token_range = table.unpack(call)
 
       if call_type == CALL then  -- a function call
         local _, _, csname, arguments = table.unpack(call)
@@ -419,7 +425,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             for _, condition_table in ipairs(conditions) do
               local condition, confidence = table.unpack(condition_table)
               if condition == "p" and is_protected then
-                local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
                 issues:add("e404", "protected predicate function", byte_range)
               end
               local effectively_defined_csname = get_conditional_function_csname(defined_csname, condition)
@@ -545,7 +550,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   end
 
   --- Make a pass over the segments, building up information.
-  local defined_private_functions, defined_private_function_variants, used_csnames = {}, {}, {}
+  local defined_private_functions, defined_private_function_variants = {}, {}
+  local defined_function_variant_csnames, variant_base_csnames = {}, {}
+  local maybe_defined_csnames, maybe_used_csnames = {}, {}
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
     local part_tokens, segment_tokens, map_forward = table.unpack(token_segments[segment_number])
@@ -563,13 +570,22 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if statement_type == FUNCTION_VARIANT_DEFINITION then
           -- Record private function variant defitions.
           local _, _, confidence, base_csname, defined_csname = table.unpack(statement)
-          used_csnames[base_csname] = true
-          if confidence == DEFINITELY and is_function_private(defined_csname) then
-            table.insert(defined_private_function_variants, {defined_csname, call_byte_range})
+          maybe_used_csnames[base_csname] = true
+          maybe_defined_csnames[defined_csname] = true
+          table.insert(variant_base_csnames, {base_csname, call_byte_range})
+          if confidence == DEFINITELY then
+            if defined_function_variant_csnames[defined_csname] then
+              issues:add("w407", "multiply defined function variant", call_byte_range)
+            end
+            defined_function_variant_csnames[defined_csname] = true
+            if is_function_private(defined_csname) then
+              table.insert(defined_private_function_variants, {defined_csname, call_byte_range})
+            end
           end
         elseif statement_type == FUNCTION_DEFINITION then
           -- Record private function defitions.
           local _, _, confidence, defined_csname = table.unpack(statement)
+          maybe_defined_csnames[defined_csname] = true
           if confidence == DEFINITELY and is_function_private(defined_csname) then
             table.insert(defined_private_functions, {defined_csname, call_byte_range})
           end
@@ -579,14 +595,14 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           --       55 of file `ccool.sty` in TeX Live 2024, which, if understood as the wildcard `__ccool_aux_prop:*` should silence issue
           --       W401 on line 50 of the same file. There should likely be some minimum number of understood tokens to prevent statements
           --       like `\use:c{\foo}` from silencing all issues of this type.
-          used_csnames[call_csname] = true
+          maybe_used_csnames[call_csname] = true
           for _, argument in ipairs(arguments) do
             local argument_specifier, argument_token_range = table.unpack(argument)
             if lpeg.match(parsers.N_or_n_type_argument_specifier, argument_specifier) ~= nil then
               for _, token in argument_token_range:enumerate(segment_tokens, map_forward) do
                 local token_type, token_payload = table.unpack(token)
                 if token_type == CONTROL_SEQUENCE then
-                  used_csnames[token_payload] = true
+                  maybe_used_csnames[token_payload] = true
                 end
               end
             end
@@ -596,7 +612,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           for _, token in call_token_range:enumerate(segment_tokens, map_forward) do
             local token_type, token_payload = table.unpack(token)
             if token_type == CONTROL_SEQUENCE then
-              used_csnames[token_payload] = true
+              maybe_used_csnames[token_payload] = true
             end
           end
         else
@@ -609,14 +625,20 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   --- Report issues apparent from the collected information.
   for _, defined_private_function in ipairs(defined_private_functions) do
     local defined_csname, call_byte_range = table.unpack(defined_private_function)
-    if used_csnames[defined_csname] == nil then
+    if not maybe_used_csnames[defined_csname] then
       issues:add('w401', 'unused private function', call_byte_range)
     end
   end
   for _, defined_private_function_variant in ipairs(defined_private_function_variants) do
     local defined_csname, call_byte_range = table.unpack(defined_private_function_variant)
-    if used_csnames[defined_csname] == nil then
+    if not maybe_used_csnames[defined_csname] then
       issues:add('w402', 'unused private function variant', call_byte_range)
+    end
+  end
+  for _, variant_base_csname in ipairs(variant_base_csnames) do
+    local base_csname, call_byte_range = table.unpack(variant_base_csname)
+    if not maybe_defined_csnames[base_csname] then
+      issues:add('e405', 'function variant for an undefined function', call_byte_range)
     end
   end
 

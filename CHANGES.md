@@ -13,9 +13,12 @@
 
   1. W401 (Unused function)
   2. W402 (Unused function variant)
-  3. E404 (Protected predicate function)
+  3. T403 (Function variant of incompatible type)
+  4. E404 (Protected predicate function)
+  5. E405 (Function variant for an undefined function)
+  6. W407 (Multiply defined function variant)
 
-  After these changes, three out of twelve (12%) issues from this section are
+  After these changes, 6 out of 24 (25%) issues from this section are
   supported. Support for the remaining issues will be added in upcoming releases.
 
 #### Fixes

@@ -1,0 +1,9 @@
+\cs_new:Nn
+  \module_foo:Nn
+  { bar }
+\cs_generate_variant:Nn
+  \module_foo:Nn
+  { cx }
+\cs_generate_variant:Nn  % error on this line
+  \module_foo:cx
+  { Ne }
