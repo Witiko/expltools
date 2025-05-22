@@ -98,8 +98,8 @@ biditools.sty s103,s204,s205,w401
 bitbeamer.cls s204,s205
 bithesis.cls e300,s103,s204,s205,w302
 bitreport.cls s103,s204,s205
-blx-case-expl3-ms.sty s103,s204,w401
-blx-case-expl3.sty s103,s204,w401
+blx-case-expl3-ms.sty s103,s204
+blx-case-expl3.sty s103,s204
 bookmark.sty s204
 bookshelf.cls s204,s206,w200,w302,w401
 breqn.sty s204
@@ -111,7 +111,7 @@ cas-dc.cls s204,w200
 cas-sc.cls s204,w200
 cascade.sty s103,s204,s206,w302
 ccool.sty s103,s204,s205,w101,w302,w303,w402
-cdcmd.sty s103,s204,s206,w200,w302,w401,w402
+cdcmd.sty s103,s204,s206,w200,w302,w402
 cellprops.sty s103,s204,s205,w302
 cfntinst.sty s204,w100
 cfr-lm.sty s103,s204
@@ -513,7 +513,7 @@ lwarp-unicode-math.sty s103,s204
 lwarp-xpiano.sty s204
 lwarp-xpinyin.sty s204
 lwarp.sty s204,w202
-magicwatermark.sty s103,s204,w401,w402
+magicwatermark.sty s103,s204,w402
 mahjong.sty s103,s204,s205,s206,w402
 mandi.sty s103,s204
 mandistudent.sty s204

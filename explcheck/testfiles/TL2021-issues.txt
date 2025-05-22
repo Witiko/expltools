@@ -53,7 +53,7 @@ biblatex-cv.sty s204
 biblatex-ext-oasymb-l3draw.sty s204
 bidi-atbegshi.sty s103,s204,w200
 bidi-media9.sty s204,s206,w202
-blx-case-expl3.sty s103,s204,w401
+blx-case-expl3.sty s103,s204
 breqn.sty s204
 bxjaholiday.sty s103,s204,w200
 caesar_book.cls s204
@@ -62,7 +62,7 @@ cas-dc.cls s204,w200
 cas-sc.cls s204,w200
 cascade.sty s103,s204,s206,w302
 ccool.sty s103,s204,s205,w101,w302,w303,w402
-cdcmd.sty s103,s204,s206,w200,w302,w401,w402
+cdcmd.sty s103,s204,s206,w200,w302,w402
 cellprops.sty s103,s204,s205,w302
 cfntinst.sty s204,w100
 chemformula.sty s103,s204,s205,s206,w200,w202,w401,w402

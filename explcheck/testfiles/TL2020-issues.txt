@@ -34,7 +34,7 @@ bearwear.sty s103,s204
 beuron.sty s103,s204
 biblatex-ext-oasymb-l3draw.sty s204
 bidi-media9.sty s204,s206,w202
-blx-case-expl3.sty s103,s204,w401
+blx-case-expl3.sty s103,s204
 breqn.sty s204
 bxjaholiday.sty s103,s204,w200
 caesar_book.cls s204

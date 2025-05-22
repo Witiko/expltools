@@ -335,22 +335,23 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               -- determine the defined csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, condition_confidence = table.unpack(condition_table)
+                local base_conditional_csname = get_conditional_function_csname(base_csname, condition)
                 local defined_conditional_csname = get_conditional_function_csname(defined_csname, condition)
                 if defined_conditional_csname == nil then  -- we couldn't determine the defined csname, give up
                   goto other_statement
                 end
                 local confidence = math.min(argument_specifier_confidence, condition_confidence)
-                table.insert(defined_csnames, {defined_conditional_csname, confidence})
+                table.insert(defined_csnames, {base_conditional_csname, defined_conditional_csname, confidence})
               end
             else  -- non-conditional function
-              table.insert(defined_csnames, {defined_csname, argument_specifier_confidence})
+              table.insert(defined_csnames, {base_csname, defined_csname, argument_specifier_confidence})
             end
           end
           -- record function variant definition statements for all effectively defined csnames
           for _, defined_csname_table in ipairs(defined_csnames) do  -- lua
-            local defined_csname, confidence = table.unpack(defined_csname_table)
+            local effective_base_csname, defined_csname, confidence = table.unpack(defined_csname_table)
             local statement
-              = {FUNCTION_VARIANT_DEFINITION, call_range, confidence, base_csname, defined_csname, function_variant_definition}
+              = {FUNCTION_VARIANT_DEFINITION, call_range, confidence, effective_base_csname, defined_csname, function_variant_definition}
             table.insert(statements, statement)
           end
           goto continue
