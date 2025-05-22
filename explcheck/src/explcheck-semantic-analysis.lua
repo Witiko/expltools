@@ -203,8 +203,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         end
 
         -- check that the base argument specifiers are only N and n
-        if lpeg.match(parsers.no_manipulation_argument_specifiers, base_argument_specifiers) == nil then
-          return nil  -- cannot generate variants from base argument specifiers other than N and n, give up
+        if lpeg.match(parsers.basic_argument_specifiers, base_argument_specifiers) == nil then
+          return nil  -- cannot generate variants from non-basic argument specifiers, give up
         end
 
         local variant_argument_specifiers

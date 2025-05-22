@@ -176,9 +176,9 @@ local argument = (
   * expl3_catcodes[2]
 )
 
-local no_manipulation_argument_specifier = S("Nn")
-local no_manipulation_argument_specifiers = (
-  no_manipulation_argument_specifier^0
+local basic_argument_specifier = S("NnTFp")
+local basic_argument_specifiers = (
+  basic_argument_specifier^0
   * eof
 )
 local N_type_argument_specifier = S("NV")
@@ -657,6 +657,7 @@ local conditions = comma_list(condition)
 return {
   any = any,
   argument_specifiers = argument_specifiers,
+  basic_argument_specifiers = basic_argument_specifiers,
   commented_lines = commented_lines,
   condition = condition,
   conditions = conditions,
@@ -689,7 +690,6 @@ return {
   latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
-  no_manipulation_argument_specifiers = no_manipulation_argument_specifiers,
   N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
   n_type_argument_specifier = n_type_argument_specifier,
