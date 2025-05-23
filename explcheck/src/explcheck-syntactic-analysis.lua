@@ -36,35 +36,43 @@ local function transform_replacement_text_tokens(content, tokens, issues, num_pa
   local token_number = replacement_text_token_range:start()
   while token_number <= replacement_text_token_range:stop() do
     local token = tokens[token_number]
-    local token_type, _, catcode, byte_range = table.unpack(token)
     local next_token_number = token_number + 1
-    if token_type == CHARACTER and catcode == 6 then  -- parameter
+    if token.type == CHARACTER and token.catcode == 6 then  -- parameter
       if next_token_number > replacement_text_token_range:stop() then  -- not followed by anything, the replacement text is invalid
         return nil
       end
       local next_token = tokens[next_token_number]
-      local next_token_type, next_payload, next_catcode, next_byte_range
-        = table.unpack(next_token)
-      if next_token_type == CHARACTER and next_catcode == 6 then  -- followed by another parameter, remove one of the tokens
-        local transformed_token = {CHARACTER, next_payload, 6, new_range(byte_range:start(), next_byte_range:stop(), INCLUSIVE, #content)}
+      if next_token.type == CHARACTER and next_token.catcode == 6 then  -- followed by another parameter, remove one of the tokens
+        local transformed_token = {
+          type = CHARACTER,
+          payload = next_token.payload,
+          catcode = 6,
+          byte_range = new_range(token.byte_range:start(), next_token.byte_range:stop(), INCLUSIVE, #content),
+        }
         table.insert(transformed_tokens, transformed_token)
         table.insert(deleted_token_numbers, next_token_number)
         next_token_number = next_token_number + 1
-      elseif next_token_type == CHARACTER and lpeg.match(parsers.decimal_digit, next_payload) then  -- followed by a digit
-        local next_digit = tonumber(next_payload)
+      elseif next_token.type == CHARACTER and lpeg.match(parsers.decimal_digit, next_token.payload) then  -- followed by a digit
+        local next_digit = tonumber(next_token.payload)
         assert(next_digit ~= nil)
         if next_digit <= num_parameters then  -- a correct digit, remove it and replace the parameter with a function call argument
-          local transformed_token = {ARGUMENT, nil, nil, new_range(byte_range:start(), next_byte_range:stop(), INCLUSIVE, #content)}
+          local transformed_token = {
+            type = ARGUMENT,
+            byte_range = new_range(token.byte_range:start(), next_token.byte_range:stop(), INCLUSIVE, #content),
+          }
           table.insert(transformed_tokens, transformed_token)
           table.insert(deleted_token_numbers, next_token_number)
           next_token_number = next_token_number + 1
         else  -- an incorrect digit, the replacement text is invalid
-          issues:add('e304', 'unexpected parameter number', next_byte_range)
+          issues:add('e304', 'unexpected parameter number', next_token.byte_range)
           return nil
         end
-      elseif next_token_type == ARGUMENT then  -- followed by a function call argument
+      elseif next_token.type == ARGUMENT then  -- followed by a function call argument
         -- the argument could be a correct digit, so let's remove it and replace it with another function call argument
-        local transformed_token = {ARGUMENT, nil, nil, new_range(byte_range:start(), next_byte_range:stop(), INCLUSIVE, #content)}
+        local transformed_token = {
+          type = ARGUMENT,
+          byte_range = new_range(token.byte_range:start(), next_token.byte_range:stop(), INCLUSIVE, #content),
+        }
         table.insert(transformed_tokens, transformed_token)
         table.insert(deleted_token_numbers, next_token_number)
         next_token_number = next_token_number + 1
@@ -138,26 +146,24 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
   local function count_parameters_in_parameter_text(parameter_text_token_range)  -- the range is in transformed_tokens, not tokens
     local num_parameters = 0
     for token_number, token in parameter_text_token_range:enumerate(transformed_tokens) do  -- luacheck: ignore token_number
-      local token_type, _, catcode = table.unpack(token)
-      if token_type == CHARACTER and catcode == 6 then  -- parameter
+      if token.type == CHARACTER and token.catcode == 6 then  -- parameter
         local next_token_number = token_number + 1
         if next_token_number > parameter_text_token_range:stop() then  -- not followed by anything, the parameter text is invalid
           return nil
         end
         local next_token = transformed_tokens[next_token_number]
-        local next_token_type, next_payload, next_catcode, next_byte_range = table.unpack(next_token)
-        if next_token_type == CHARACTER and next_catcode == 6 then  -- followed by another parameter (unrecognized nesting?)
+        if next_token.type == CHARACTER and next_token.catcode == 6 then  -- followed by another parameter (unrecognized nesting?)
           return nil  -- the text is invalid
-        elseif next_token_type == CHARACTER and lpeg.match(parsers.decimal_digit, next_payload) then  -- followed by a digit
-          local next_digit = tonumber(next_payload)
+        elseif next_token.type == CHARACTER and lpeg.match(parsers.decimal_digit, next_token.payload) then  -- followed by a digit
+          local next_digit = tonumber(next_token.payload)
           assert(next_digit ~= nil)
           if next_digit == num_parameters + 1 then  -- a correct digit, increment the number of parameters
             num_parameters = num_parameters + 1
           else  -- an incorrect digit, the parameter text is invalid
-            issues:add('e304', 'unexpected parameter number', next_byte_range)
+            issues:add('e304', 'unexpected parameter number', next_token.byte_range)
             return nil
           end
-        elseif next_token_type == ARGUMENT then  -- followed by a function call argument
+        elseif next_token.type == ARGUMENT then  -- followed by a function call argument
           -- the argument could be a correct digit, so let's increment the number of parameters
           num_parameters = num_parameters + 1
         else  -- followed by some other token, the parameter text is invalid
@@ -267,16 +273,14 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
 
   while token_number <= transformed_token_range_end do
     local token = transformed_tokens[token_number]
-    local token_type, payload, _, byte_range = table.unpack(token)
     local next_token, next_next_token, next_token_range
-    if token_type == CONTROL_SEQUENCE then  -- a control sequence
-      local original_csname = payload
+    if token.type == CONTROL_SEQUENCE then  -- a control sequence
+      local original_csname = token.payload
       local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
       ::retry_control_sequence::
       local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
       if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
         local arguments = {}
-        local next_token_type, _, next_catcode, next_byte_range
         local next_grouping, parameter_text_start_token_number
         local num_parameters
         local are_parameter_texts_valid = true
@@ -293,7 +297,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                 goto retry_control_sequence
               else
-                issues:add('e301', 'end of expl3 part within function call', byte_range)
+                issues:add('e301', 'end of expl3 part within function call', token.byte_range)
               end
             end
             next_token_range = new_range(token_number, transformed_token_range_end, INCLUSIVE, #transformed_tokens, map_back, #tokens)
@@ -302,7 +306,6 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             goto continue
           end
           next_token = transformed_tokens[next_token_number]
-          next_token_type, _, next_catcode, next_byte_range = table.unpack(next_token)
           if ignored_token_number ~= nil and next_token_number == ignored_token_number then
             next_token_number = next_token_number + 1
             goto check_token
@@ -311,16 +314,15 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             parameter_text_start_token_number = next_token_number  -- a "TeX parameter" argument specifier, try to collect parameter text
             while next_token_number <= transformed_token_range_end do
               next_token = transformed_tokens[next_token_number]
-              next_token_type, _, next_catcode, next_byte_range = table.unpack(next_token)
-              if next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping, skip the control sequence
+              if next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping, skip the control sequence
                 if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
                   csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                   goto retry_control_sequence
                 else
-                  issues:add('e300', 'unexpected function call argument', next_byte_range)
+                  issues:add('e300', 'unexpected function call argument', next_token.byte_range)
                   goto skip_other_token
                 end
-              elseif next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, validate and record the parameter text
+              elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, validate and record parameter text
                 next_token_number = next_token_number - 1
                 next_token_range
                   = new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE + MAYBE_EMPTY, #transformed_tokens)
@@ -339,7 +341,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                   goto retry_control_sequence
                 else
-                  issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                  issues:add('e301', 'end of expl3 part within function call', next_token.byte_range)
                 end
               end
               next_token_range = new_range(token_number, transformed_token_range_end, INCLUSIVE, #transformed_tokens, map_back, #tokens)
@@ -348,7 +350,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               goto continue
             end
           elseif lpeg.match(parsers.N_type_argument_specifier, argument_specifier) then  -- an N-type argument specifier
-            if next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, try to collect the balanced text
+            if next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the balanced text
               next_grouping = groupings[map_back(next_token_number)]
               assert(next_grouping ~= nil)
               assert(map_forward(next_grouping.start) == next_token_number)
@@ -358,7 +360,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                     csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                     goto retry_control_sequence
                   else
-                    issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                    issues:add('e301', 'end of expl3 part within function call', next_token.byte_range)
                   end
                 end
                 goto skip_other_token
@@ -372,7 +374,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   #tokens
                 )
                 if #next_token_range == 1 then  -- a single token, record it
-                    issues:add('w303', 'braced N-type function call argument', next_byte_range)
+                    issues:add('w303', 'braced N-type function call argument', next_token.byte_range)
                     table.insert(arguments, {argument_specifier, next_token_range})
                     next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
@@ -390,23 +392,23 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                     csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                     goto retry_control_sequence
                   else
-                    issues:add('e300', 'unexpected function call argument', next_byte_range)
+                    issues:add('e300', 'unexpected function call argument', next_token.byte_range)
                     goto skip_other_token
                   end
                 end
               end
-            elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
+            elseif next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping (partial application?), skip all tokens
               next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
               record_other_tokens(next_token_range)
               token_number = next_token_number
               goto continue
             else
-              if next_token_type == CHARACTER and next_catcode == 6 then  -- a parameter
+              if next_token.type == CHARACTER and next_token.catcode == 6 then  -- a parameter
                 if next_token_number + 1 <= transformed_token_range_end then  -- followed by one other token
                   next_next_token = transformed_tokens[next_token_number + 1]
-                  if next_next_token[1] == ARGUMENT or  -- that is either a function call argument (could be a digit)
-                      next_next_token[1] == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
-                      lpeg.match(parsers.decimal_digit, next_next_token[2]) then  -- skip all tokens
+                  if next_next_token.type == ARGUMENT or  -- that is either a function call argument (could be a digit)
+                      next_next_token.type == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
+                      lpeg.match(parsers.decimal_digit, next_next_token.payload) then  -- skip all tokens
                     next_token_range = new_range(token_number, next_token_number + 1, INCLUSIVE, #transformed_tokens, map_back, #tokens)
                     record_other_tokens(next_token_range)
                     token_number = next_token_number + 2
@@ -419,7 +421,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               table.insert(arguments, {argument_specifier, next_token_range})
             end
           elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
-            if next_token_type == CHARACTER and next_catcode == 1 then  -- begin grouping, try to collect the balanced text
+            if next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the balanced text
               next_grouping = groupings[map_back(next_token_number)]
               assert(next_grouping ~= nil)
               assert(map_forward(next_grouping.start) == next_token_number)
@@ -429,7 +431,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                     csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                     goto retry_control_sequence
                   else
-                    issues:add('e301', 'end of expl3 part within function call', next_byte_range)
+                    issues:add('e301', 'end of expl3 part within function call', next_token.byte_range)
                   end
                 end
                 goto skip_other_token
@@ -445,18 +447,18 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 table.insert(arguments, {argument_specifier, next_token_range})
                 next_token_number = map_forward(next_grouping.stop)
               end
-            elseif next_token_type == CHARACTER and next_catcode == 2 then  -- end grouping (partial application?), skip all tokens
+            elseif next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping (partial application?), skip all tokens
               next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
               record_other_tokens(next_token_range)
               token_number = next_token_number
               goto continue
             else  -- not begin grouping
-              if next_token_type == CHARACTER and next_catcode == 6 then  -- a parameter
+              if next_token.type == CHARACTER and next_token.catcode == 6 then  -- a parameter
                 if next_token_number + 1 <= transformed_token_range_end then  -- followed by one other token
                   next_next_token = transformed_tokens[next_token_number + 1]
-                  if next_next_token[1] == ARGUMENT or  -- that is either a function call argument (could be a digit)
-                      next_next_token[1] == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
-                      lpeg.match(parsers.decimal_digit, next_next_token[2]) then  -- skip all tokens
+                  if next_next_token.type == ARGUMENT or  -- that is either a function call argument (could be a digit)
+                      next_next_token.type == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
+                      lpeg.match(parsers.decimal_digit, next_next_token.payload) then  -- skip all tokens
                     next_token_range = new_range(token_number, next_token_number + 1, INCLUSIVE, #transformed_tokens, map_back, #tokens)
                     record_other_tokens(next_token_range)
                     token_number = next_token_number + 2
@@ -465,7 +467,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 end
               end
               -- an unbraced n-type argument, record it
-              issues:add('w302', 'unbraced n-type function call argument', next_byte_range)
+              issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range)
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               table.insert(arguments, {argument_specifier, next_token_range})
             end
@@ -490,13 +492,13 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
       else  -- a non-expl3 control sequence, skip it
         goto skip_other_token
       end
-    elseif token_type == CHARACTER then  -- an ordinary character
-      if payload == "=" then  -- an equal sign
+    elseif token.type == CHARACTER then  -- an ordinary character
+      if token.payload == "=" then  -- an equal sign
         if token_number + 2 <= transformed_token_range_end then  -- followed by two other tokens
           next_token = transformed_tokens[token_number + 1]
-          if next_token[1] == CONTROL_SEQUENCE then  -- the first being a control sequence
+          if next_token.type == CONTROL_SEQUENCE then  -- the first being a control sequence
             next_next_token = transformed_tokens[token_number + 2]
-            if next_next_token[1] == CHARACTER and next_next_token[2] == "," then  -- and the second being a comma
+            if next_next_token.type == CHARACTER and next_next_token.payload == "," then  -- and the second being a comma
               -- (probably l3keys definition?), skip all three tokens
               next_token_range = new_range(token_number, token_number + 2, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               record_other_tokens(next_token_range)
@@ -508,10 +510,10 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
       end
       -- an ordinary character, skip it
       goto skip_other_token
-    elseif token_type == ARGUMENT then  -- a function call argument, skip it
+    elseif token.type == ARGUMENT then  -- a function call argument, skip it
       goto skip_other_token
     else
-      error('Unexpected token type "' .. token_type .. '"')
+      error('Unexpected token type "' .. token.type .. '"')
     end
     ::skip_other_token::
     next_token_range = new_range(token_number, token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)

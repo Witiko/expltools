@@ -35,7 +35,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     num_tokens = 0
     for _, part_tokens in ipairs(analysis_results.tokens) do
       for _, token in ipairs(part_tokens) do
-        assert(token[1] ~= ARGUMENT)
+        assert(token.type ~= ARGUMENT)
         num_tokens = num_tokens + 1
       end
     end

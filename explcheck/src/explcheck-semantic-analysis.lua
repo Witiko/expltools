@@ -69,8 +69,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   --
   local function classify_tokens(tokens, token_range)
     for _, token in token_range:enumerate(tokens) do
-      local catcode = token[3]
-      if simple_text_catcodes[catcode] == nil then
+      if simple_text_catcodes[token.catcode] == nil then
         return OTHER_TOKENS_COMPLEX
       end
     end
@@ -87,11 +86,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       local function extract_string_from_tokens(token_range)
         local token_texts = {}
         for _, token in token_range:enumerate(transformed_tokens, first_map_forward) do
-          local token_type, token_payload = table.unpack(token)
-          if token_type == CONTROL_SEQUENCE or token_type == ARGUMENT then  -- complex material, give up
+          if token.type == CONTROL_SEQUENCE or token.type == ARGUMENT then  -- complex material, give up
             return nil
           else
-            table.insert(token_texts, token_payload)
+            table.insert(token_texts, token.payload)
           end
         end
         return table.concat(token_texts)
@@ -99,7 +97,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
       -- Get the byte range for a given token.
       local function get_token_byte_range(token_number)
-        local byte_range = tokens[token_number][4]
+        local byte_range = tokens[token_number].byte_range
         return byte_range
       end
 
@@ -300,9 +298,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           -- determine the name of the defined function
           local base_csname_specifier, base_csname_token_range = table.unpack(call.arguments[1])
           assert(base_csname_specifier == "N" and #base_csname_token_range == 1)
-          local base_csname_token_type, base_csname
-            = table.unpack(transformed_tokens[first_map_forward(base_csname_token_range:start())])
-          if base_csname_token_type == ARGUMENT then  -- name is hidden behind an argument, give up
+          local base_csname_token = transformed_tokens[first_map_forward(base_csname_token_range:start())]
+          local base_csname = base_csname_token.payload
+          if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
             goto other_statement
           end
           assert(base_csname ~= nil)
@@ -368,9 +366,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           -- determine the name of the defined function
           local defined_csname_specifier, defined_csname_token_range = table.unpack(call.arguments[1])
           assert(defined_csname_specifier == "N" and #defined_csname_token_range == 1)
-          local defined_csname_token_type, defined_csname
-            = table.unpack(transformed_tokens[first_map_forward(defined_csname_token_range:start())])
-          if defined_csname_token_type == ARGUMENT then  -- name is hidden behind an argument, give up
+          local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_token_range:start())]
+          local defined_csname = defined_csname_token.payload
+          if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
             goto other_statement
           end
           assert(defined_csname ~= nil)
@@ -603,9 +601,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             local argument_specifier, argument_token_range = table.unpack(argument)
             if lpeg.match(parsers.N_or_n_type_argument_specifier, argument_specifier) ~= nil then
               for _, token in argument_token_range:enumerate(segment_tokens, map_forward) do
-                local token_type, token_payload = table.unpack(token)
-                if token_type == CONTROL_SEQUENCE then
-                  maybe_used_csnames[token_payload] = true
+                if token.type == CONTROL_SEQUENCE then
+                  maybe_used_csnames[token.payload] = true
                 end
               end
             end
@@ -614,9 +611,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       elseif statement.type == OTHER_TOKENS_SIMPLE or statement.type == OTHER_TOKENS_COMPLEX then
         -- Record control sequence names in blocks of other unrecognized tokens.
         for _, token in statement.token_range:enumerate(segment_tokens, map_forward) do
-          local token_type, token_payload = table.unpack(token)
-          if token_type == CONTROL_SEQUENCE then
-            maybe_used_csnames[token_payload] = true
+          if token.type == CONTROL_SEQUENCE then
+            maybe_used_csnames[token.payload] = true
           end
         end
       else

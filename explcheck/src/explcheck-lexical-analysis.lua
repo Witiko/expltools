@@ -174,7 +174,12 @@ local function lexical_analysis(pathname, content, issues, results, options)
           end
           local csname = table.concat(csname_table)
           range = new_range(character_index, previous_csname_index, INCLUSIVE, #line_text, map_back, #content)
-          table.insert(tokens, {CONTROL_SEQUENCE, csname, 0, range})
+          table.insert(tokens, {
+            type = CONTROL_SEQUENCE,
+            payload = csname,
+            catcode = 0,
+            byte_range = range,
+          })
           if (
                 previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
                 -- do not require whitespace before non-expl3 control sequences or control sequences with empty or one-character names
@@ -186,9 +191,19 @@ local function lexical_analysis(pathname, content, issues, results, options)
           character_index = csname_index
         elseif catcode == 5 then  -- end of line
           if state == "N" then
-            table.insert(tokens, {CONTROL_SEQUENCE, "par", 0, range})
+            table.insert(tokens, {
+              type = CONTROL_SEQUENCE,
+              payload = "par",
+              catcode = 0,
+              byte_range = range,
+            })
           elseif state == "M" then
-            table.insert(tokens, {CHARACTER, " ", 10, range})
+            table.insert(tokens, {
+              type = CHARACTER,
+              payload = " ",
+              catcode = 10,
+              byte_range = range,
+            })
           end
           character_index = character_index + character_index_increment
         elseif catcode == 9 then  -- ignored character
@@ -196,7 +211,12 @@ local function lexical_analysis(pathname, content, issues, results, options)
           character_index = character_index + character_index_increment
         elseif catcode == 10 then  -- space
           if state == "M" then
-            table.insert(tokens, {CHARACTER, " ", 10, range})
+            table.insert(tokens, {
+              type = CHARACTER,
+              payload = " ",
+              catcode = 10,
+              byte_range = range,
+            })
           end
           previous_catcode = catcode
           character_index = character_index + character_index_increment
@@ -242,7 +262,12 @@ local function lexical_analysis(pathname, content, issues, results, options)
           else  -- some other character
             previous_catcode = catcode
           end
-          table.insert(tokens, {CHARACTER, character, catcode, range})
+          table.insert(tokens, {
+            type = CHARACTER,
+            payload = character,
+            catcode = catcode,
+            byte_range = range,
+          })
           state = "M"
           character_index = character_index + character_index_increment
         end
@@ -277,48 +302,45 @@ local function lexical_analysis(pathname, content, issues, results, options)
   -- Record issues that are apparent after the lexical analysis.
   for _, part_tokens in ipairs(tokens) do
     for token_index, token in ipairs(part_tokens) do
-      local token_type, payload, catcode, range = table.unpack(token)  -- luacheck: ignore catcode
-      if token_type == CONTROL_SEQUENCE then
-        local csname = payload
-        local _, _, argument_specifiers = csname:find(":([^:]*)")
+      if token.type == CONTROL_SEQUENCE then
+        local _, _, argument_specifiers = token.payload:find(":([^:]*)")
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
-            issues:add('w200', '"do not use" argument specifiers', range)
+            issues:add('w200', '"do not use" argument specifiers', token.byte_range)
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
-            issues:add('e201', 'unknown argument specifiers', range)
+            issues:add('e201', 'unknown argument specifiers', token.byte_range)
           end
         end
-        if lpeg.match(obsolete.deprecated_csname, csname) ~= nil then
-          issues:add('w202', 'deprecated control sequences', range)
+        if lpeg.match(obsolete.deprecated_csname, token.payload) ~= nil then
+          issues:add('w202', 'deprecated control sequences', token.byte_range)
         end
         if token_index + 1 <= #part_tokens then
           local next_token = part_tokens[token_index + 1]
-          local next_token_type, next_csname, _, next_range = table.unpack(next_token)
-          if next_token_type == CONTROL_SEQUENCE then
+          if next_token.type == CONTROL_SEQUENCE then
             if (
-                  lpeg.match(parsers.expl3_function_definition_or_assignment_csname, csname) ~= nil
-                  and lpeg.match(parsers.expl3like_csname, next_csname) ~= nil
-                  and lpeg.match(parsers.expl3_expansion_csname, next_csname) == nil
-                  and lpeg.match(parsers.expl3_function_csname, next_csname) == nil
+                  lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
+                  and lpeg.match(parsers.expl3like_csname, next_token.payload) ~= nil
+                  and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
+                  and lpeg.match(parsers.expl3_function_csname, next_token.payload) == nil
                 ) then
-              issues:add('s205', 'malformed function name', next_range)
+              issues:add('s205', 'malformed function name', next_token.byte_range)
             end
             if (
-                  lpeg.match(parsers.expl3_variable_or_constant_use_csname, csname) ~= nil
-                  and lpeg.match(parsers.expl3like_csname, next_csname) ~= nil
-                  and lpeg.match(parsers.expl3_expansion_csname, next_csname) == nil
-                  and lpeg.match(parsers.expl3_scratch_variable_csname, next_csname) == nil
-                  and lpeg.match(parsers.expl3_variable_or_constant_csname, next_csname) == nil
+                  lpeg.match(parsers.expl3_variable_or_constant_use_csname, token.payload) ~= nil
+                  and lpeg.match(parsers.expl3like_csname, next_token.payload) ~= nil
+                  and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
+                  and lpeg.match(parsers.expl3_scratch_variable_csname, next_token.payload) == nil
+                  and lpeg.match(parsers.expl3_variable_or_constant_csname, next_token.payload) == nil
                 ) then
-              issues:add('s206', 'malformed variable or constant name', next_range)
+              issues:add('s206', 'malformed variable or constant name', next_token.byte_range)
             end
             if (
-                  lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, csname) ~= nil
-                  and lpeg.match(parsers.expl3_quark_or_scan_mark_csname, next_csname) == nil
-                  and lpeg.match(parsers.expl3_expansion_csname, next_csname) == nil
+                  lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, token.payload) ~= nil
+                  and lpeg.match(parsers.expl3_quark_or_scan_mark_csname, next_token.payload) == nil
+                  and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
                 ) then
-              issues:add('s207', 'malformed quark or scan mark name', next_range)
+              issues:add('s207', 'malformed quark or scan mark name', next_token.byte_range)
             end
           end
         end
