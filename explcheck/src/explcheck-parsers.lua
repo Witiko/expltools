@@ -279,6 +279,7 @@ local expl3_maybe_standard_library_csname = (
     + P("file")
     + P("graphics")
     + P("group")
+    + P("hook")  -- part of the lthooks module
     + P("if")
     + P("keys")
     + P("keyval")
@@ -295,6 +296,7 @@ local expl3_maybe_standard_library_csname = (
     + P("scan")
     + P("sort")
     + P("sys")
+    + P("tag")  -- part of the tagpdf package
     + P("text")
     + P("token")
     + P("use")
