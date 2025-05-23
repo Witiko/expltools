@@ -299,7 +299,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
         -- Process a function variant definition.
         if function_variant_definition ~= nil then
-          local is_function_conditional = table.unpack(function_variant_definition)
+          local is_conditional = table.unpack(function_variant_definition)
           -- determine the name of the defined function
           local base_csname_specifier, base_csname_token_range = table.unpack(arguments[1])
           assert(base_csname_specifier == "N" and #base_csname_token_range == 1)
@@ -322,7 +322,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             if defined_csname == nil then  -- we couldn't determine the defined csname, give up
               goto other_statement
             end
-            if is_function_conditional then  -- conditional function
+            if is_conditional then  -- conditional function
               -- determine the conditions
               local conditions = parse_conditions(arguments[#arguments])
               if conditions == nil then  -- we couldn't determine the conditions, give up
@@ -346,8 +346,15 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           -- record function variant definition statements for all effectively defined csnames
           for _, defined_csname_table in ipairs(defined_csnames) do  -- lua
             local effective_base_csname, defined_csname, confidence = table.unpack(defined_csname_table)
-            local statement
-              = {FUNCTION_VARIANT_DEFINITION, call_range, confidence, effective_base_csname, defined_csname, function_variant_definition}
+            local statement = {
+              type = FUNCTION_VARIANT_DEFINITION,
+              call_range = call_range,
+              byte_range = byte_range,
+              confidence = confidence,
+              base_csname = effective_base_csname,
+              defined_csname = defined_csname,
+              is_conditional = is_conditional,
+            }
             table.insert(statements, statement)
           end
           goto continue
@@ -355,7 +362,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
         -- Process a function definition.
         if function_definition ~= nil then
-          local is_function_conditional, is_protected = table.unpack(function_definition)
+          local is_conditional, is_protected, is_nopar = table.unpack(function_definition)
           -- determine the replacement text
           local replacement_text_specifier, replacement_text_token_range = table.unpack(arguments[#arguments])
           if replacement_text_specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
@@ -405,7 +412,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           table.insert(replacement_text_tokens, {replacement_text_token_range, doubly_transformed_tokens, map_back, map_forward})
           -- determine all effectively defined csnames
           local effectively_defined_csnames = {}
-          if is_function_conditional then  -- conditional function
+          if is_conditional then  -- conditional function
             -- determine the conditions
             local conditions = parse_conditions(arguments[#arguments - 1])
             if conditions == nil then  -- we couldn't determine the conditions, give up
@@ -429,19 +436,39 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           -- record function definition statements for all effectively defined csnames
           for _, effectively_defined_csname_table in ipairs(effectively_defined_csnames) do  -- lua
             local effectively_defined_csname, confidence = table.unpack(effectively_defined_csname_table)
-            local statement
-              = {FUNCTION_DEFINITION, call_range, confidence, effectively_defined_csname, function_definition, #replacement_text_tokens}
+            local statement = {
+              type = FUNCTION_DEFINITION,
+              call_range = call_range,
+              token_range = token_range,
+              byte_range = byte_range,
+              confidence = confidence,
+              defined_csname = effectively_defined_csname,
+              is_conditional = is_conditional,
+              is_protected = is_protected,
+              is_nopar = is_nopar,
+              replacement_text_number = #replacement_text_tokens,
+            }
             table.insert(statements, statement)
           end
           goto continue
         end
 
         ::other_statement::
-        local statement = {OTHER_STATEMENT, call_range}
+        local statement = {
+          type = OTHER_STATEMENT,
+          call_range = call_range,
+          token_range = token_range,
+          byte_range = byte_range,
+        }
         table.insert(statements, statement)
       elseif call_type == OTHER_TOKENS then  -- other tokens
         local statement_type = classify_tokens(tokens, token_range)
-        local statement = {statement_type, call_range}
+        local statement = {
+          type = statement_type,
+          call_range = call_range,
+          token_range = token_range,
+          byte_range = byte_range,
+        }
         table.insert(statements, statement)
       else
         error('Unexpected call type "' .. call_type .. '"')
@@ -478,9 +505,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         local nested_statements, nested_replacement_text_tokens
           = record_statements_and_replacement_texts(tokens, transformed_tokens, nested_calls, map_back, map_forward)
         for _, nested_statement in ipairs(nested_statements) do
-          if nested_statement[1] == FUNCTION_DEFINITION then
+          if nested_statement.type == FUNCTION_DEFINITION then
             -- make the reference to the replacement text absolute instead of relative
-            nested_statement[#nested_statement] = nested_statement[#nested_statement] + current_num_replacement_texts
+            nested_statement.replacement_text_number = nested_statement.replacement_text_number + current_num_replacement_texts
           end
         end
         table.insert(replacement_texts.statements, nested_statements)
@@ -523,14 +550,14 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     table.insert(call_segments, part_calls)
     table.insert(statement_segments, part_statements)
     local part_tokens = results.tokens[part_number]
-    table.insert(token_segments, {part_tokens, part_tokens, identity})
+    table.insert(token_segments, {part_tokens, identity})
     local part_replacement_texts = replacement_texts[part_number]
     for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls) do
       local nested_statements = part_replacement_texts.statements[replacement_text_number]
       table.insert(call_segments, nested_calls)
       table.insert(statement_segments, nested_statements)
       local _, nested_tokens, _, map_forward = table.unpack(part_replacement_texts.tokens[replacement_text_number])
-      table.insert(token_segments, {part_tokens, nested_tokens, map_forward})
+      table.insert(token_segments, {nested_tokens, map_forward})
     end
   end
 
@@ -545,48 +572,38 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   local maybe_defined_csnames, maybe_used_csnames = {}, {}
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
-    local part_tokens, segment_tokens, map_forward = table.unpack(token_segments[segment_number])
+    local segment_tokens, map_forward = table.unpack(token_segments[segment_number])
     for _, statement in ipairs(segment_statements) do
-      local statement_type, call_range = table.unpack(statement)
-      for _, call in call_range:enumerate(segment_calls) do
-        local _, call_token_range, call_csname, arguments = table.unpack(call)
-        local call_byte_range = call_token_range:new_range_from_subranges(
-          function(token_number)
-            local byte_range = part_tokens[token_number][4]
-            return byte_range
-          end,
-          #content
-        )
-        if statement_type == FUNCTION_VARIANT_DEFINITION then
-          -- Record private function variant defitions.
-          local _, _, confidence, base_csname, defined_csname = table.unpack(statement)
-          maybe_used_csnames[base_csname] = true
-          maybe_defined_csnames[defined_csname] = true
-          table.insert(variant_base_csnames, {base_csname, call_byte_range})
-          if confidence == DEFINITELY then
-            if defined_function_variant_csnames[defined_csname] then
-              issues:add("w407", "multiply defined function variant", call_byte_range)
-            end
-            defined_function_variant_csnames[defined_csname] = true
-            if is_function_private(defined_csname) then
-              table.insert(defined_private_function_variants, {defined_csname, call_byte_range})
-            end
+      if statement.type == FUNCTION_VARIANT_DEFINITION then
+        -- Record private function variant defitions.
+        maybe_used_csnames[statement.base_csname] = true
+        maybe_defined_csnames[statement.defined_csname] = true
+        table.insert(variant_base_csnames, {statement.base_csname, statement.byte_range})
+        if statement.confidence == DEFINITELY then
+          if defined_function_variant_csnames[statement.defined_csname] then
+            issues:add("w407", "multiply defined function variant", statement.byte_range)
           end
-        elseif statement_type == FUNCTION_DEFINITION then
-          -- Record private function defitions.
-          local _, _, confidence, defined_csname = table.unpack(statement)
-          maybe_defined_csnames[defined_csname] = true
-          if confidence == DEFINITELY and is_function_private(defined_csname) then
-            table.insert(defined_private_functions, {defined_csname, call_byte_range})
+          defined_function_variant_csnames[statement.defined_csname] = true
+          if is_function_private(statement.defined_csname) then
+            table.insert(defined_private_function_variants, {statement.defined_csname, statement.byte_range})
           end
-        elseif statement_type == OTHER_STATEMENT then
-          -- Record control sequences used in other statements.
-          -- TODO: Also record partially-understood control sequences like `\use:c{__ccool_aux_prop:\g__ccool_option_expans_tl}` from line
-          --       55 of file `ccool.sty` in TeX Live 2024, which, if understood as the wildcard `__ccool_aux_prop:*` should silence issue
-          --       W401 on line 50 of the same file. There should likely be some minimum number of understood tokens to prevent statements
-          --       like `\use:c{\foo}` from silencing all issues of this type.
+        end
+      elseif statement.type == FUNCTION_DEFINITION then
+        -- Record private function defitions.
+        maybe_defined_csnames[statement.defined_csname] = true
+        if statement.confidence == DEFINITELY and is_function_private(statement.defined_csname) then
+          table.insert(defined_private_functions, {statement.defined_csname, statement.byte_range})
+        end
+      elseif statement.type == OTHER_STATEMENT then
+        -- Record control sequences used in other statements.
+        -- TODO: Also record partially-understood control sequences like `\use:c{__ccool_aux_prop:\g__ccool_option_expans_tl}` from line
+        --       55 of file `ccool.sty` in TeX Live 2024, which, if understood as the wildcard `__ccool_aux_prop:*` should silence issue
+        --       W401 on line 50 of the same file. There should likely be some minimum number of understood tokens to prevent statements
+        --       like `\use:c{\foo}` from silencing all issues of this type.
+        for _, call in statement.call_range:enumerate(segment_calls) do
+          local _, _, call_csname, call_arguments = table.unpack(call)
           maybe_used_csnames[call_csname] = true
-          for _, argument in ipairs(arguments) do
+          for _, argument in ipairs(call_arguments) do
             local argument_specifier, argument_token_range = table.unpack(argument)
             if lpeg.match(parsers.N_or_n_type_argument_specifier, argument_specifier) ~= nil then
               for _, token in argument_token_range:enumerate(segment_tokens, map_forward) do
@@ -597,38 +614,38 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               end
             end
           end
-        elseif statement_type == OTHER_TOKENS_SIMPLE or statement_type == OTHER_TOKENS_COMPLEX then
-          -- Record control sequence names in blocks of other unrecognized tokens.
-          for _, token in call_token_range:enumerate(segment_tokens, map_forward) do
-            local token_type, token_payload = table.unpack(token)
-            if token_type == CONTROL_SEQUENCE then
-              maybe_used_csnames[token_payload] = true
-            end
-          end
-        else
-          error('Unexpected statement type "' .. statement_type .. '"')
         end
+      elseif statement.type == OTHER_TOKENS_SIMPLE or statement.type == OTHER_TOKENS_COMPLEX then
+        -- Record control sequence names in blocks of other unrecognized tokens.
+        for _, token in statement.token_range:enumerate(segment_tokens, map_forward) do
+          local token_type, token_payload = table.unpack(token)
+          if token_type == CONTROL_SEQUENCE then
+            maybe_used_csnames[token_payload] = true
+          end
+        end
+      else
+        error('Unexpected statement type "' .. statement.type .. '"')
       end
     end
   end
 
   --- Report issues apparent from the collected information.
   for _, defined_private_function in ipairs(defined_private_functions) do
-    local defined_csname, call_byte_range = table.unpack(defined_private_function)
+    local defined_csname, byte_range = table.unpack(defined_private_function)
     if not maybe_used_csnames[defined_csname] then
-      issues:add('w401', 'unused private function', call_byte_range)
+      issues:add('w401', 'unused private function', byte_range)
     end
   end
   for _, defined_private_function_variant in ipairs(defined_private_function_variants) do
-    local defined_csname, call_byte_range = table.unpack(defined_private_function_variant)
+    local defined_csname, byte_range = table.unpack(defined_private_function_variant)
     if not maybe_used_csnames[defined_csname] then
-      issues:add('w402', 'unused private function variant', call_byte_range)
+      issues:add('w402', 'unused private function variant', byte_range)
     end
   end
   for _, variant_base_csname in ipairs(variant_base_csnames) do
-    local base_csname, call_byte_range = table.unpack(variant_base_csname)
+    local base_csname, byte_range = table.unpack(variant_base_csname)
     if not maybe_defined_csnames[base_csname] and lpeg.match(parsers.expl3_maybe_standard_library_csname, base_csname) == nil then
-      issues:add('e405', 'function variant for an undefined function', call_byte_range)
+      issues:add('e405', 'function variant for an undefined function', byte_range)
     end
   end
 

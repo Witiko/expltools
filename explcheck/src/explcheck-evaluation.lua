@@ -103,18 +103,17 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
       local seen_call_numbers = {}
       local part_calls = analysis_results.calls[part_number]
       for _, statement in ipairs(part_statements) do
-        local statement_type, call_range = table.unpack(statement)
-        if num_statements[statement_type] == nil then
-          assert(num_statement_tokens[statement_type] == nil)
-          num_statements[statement_type] = 0
-          num_statement_tokens[statement_type] = 0
+        if num_statements[statement.type] == nil then
+          assert(num_statement_tokens[statement.type] == nil)
+          num_statements[statement.type] = 0
+          num_statement_tokens[statement.type] = 0
         end
-        num_statements[statement_type] = num_statements[statement_type] + 1
-        for call_number, call in call_range:enumerate(part_calls) do
+        num_statements[statement.type] = num_statements[statement.type] + 1
+        for call_number, call in statement.call_range:enumerate(part_calls) do
           if seen_call_numbers[call_number] == nil then
             seen_call_numbers[call_number] = true
             local _, call_tokens = table.unpack(call)
-            num_statement_tokens[statement_type] = num_statement_tokens[statement_type] + #call_tokens
+            num_statement_tokens[statement.type] = num_statement_tokens[statement.type] + #call_tokens
           end
         end
         num_statements_total = num_statements_total + 1
@@ -134,28 +133,27 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
         seen_replacement_text_call_numbers[replacement_text_number] = {}
         local nesting_depth = part_replacement_texts.nesting_depth[replacement_text_number]
         for _, statement in pairs(replacement_text_statements) do
-          local statement_type, call_range = table.unpack(statement)
-          if num_replacement_text_statements[statement_type] == nil then
-            assert(num_replacement_text_statement_tokens[statement_type] == nil)
-            num_replacement_text_statements[statement_type] = 0
-            num_replacement_text_statement_tokens[statement_type] = 0
-            replacement_text_max_nesting_depth[statement_type] = 0
+          if num_replacement_text_statements[statement.type] == nil then
+            assert(num_replacement_text_statement_tokens[statement.type] == nil)
+            num_replacement_text_statements[statement.type] = 0
+            num_replacement_text_statement_tokens[statement.type] = 0
+            replacement_text_max_nesting_depth[statement.type] = 0
           end
-          num_replacement_text_statements[statement_type] = num_replacement_text_statements[statement_type] + 1
-          if statement_type ~= FUNCTION_DEFINITION or nesting_depth == 1 then
+          num_replacement_text_statements[statement.type] = num_replacement_text_statements[statement.type] + 1
+          if statement.type ~= FUNCTION_DEFINITION or nesting_depth == 1 then
             -- prevent counting overlapping tokens from nested function definitions several times
-            for call_number, call in call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
+            for call_number, call in statement.call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
               if seen_replacement_text_call_numbers[replacement_text_number][call_number] == nil then
                 seen_replacement_text_call_numbers[replacement_text_number][call_number] = true
                 local _, call_tokens = table.unpack(call)
-                num_replacement_text_statement_tokens[statement_type]
-                  = num_replacement_text_statement_tokens[statement_type] + #call_tokens
+                num_replacement_text_statement_tokens[statement.type]
+                  = num_replacement_text_statement_tokens[statement.type] + #call_tokens
               end
             end
           end
           num_replacement_text_statements_total = num_replacement_text_statements_total + 1
-          replacement_text_max_nesting_depth[statement_type]
-            = math.max(replacement_text_max_nesting_depth[statement_type], nesting_depth)
+          replacement_text_max_nesting_depth[statement.type]
+            = math.max(replacement_text_max_nesting_depth[statement.type], nesting_depth)
         end
       end
     end
