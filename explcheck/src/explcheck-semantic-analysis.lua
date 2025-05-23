@@ -185,7 +185,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         --
         --  [1]: The LaTeX Project. 2025-04-29. The LaTeX3 Interfaces.
         --       <http://mirrors.ctan.org/macros/latex/required/l3kernel/interface3.pdf>
-        local function get_compatible_variant_argument_specifier(base_argument_specifier)
+        local function get_compatible_variant_argument_specifiers(base_argument_specifier)
           if base_argument_specifier == "N" then
             return "N", "c"
           elseif base_argument_specifier == "n" then
@@ -240,7 +240,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             end
             any_specifiers_changed = true
             local any_compatible_specifier = false
-            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifier(base_argument_specifier))) do
+            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifiers(base_argument_specifier))) do
               if argument_specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
                 any_compatible_specifier = true
                 break  -- skip further checks
@@ -267,7 +267,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local base_argument_specifier = base_argument_specifiers:sub(i, i)
           local intermediate_result = {}
           for _, prefix in ipairs(variant_argument_specifiers_list) do
-            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifier(base_argument_specifier))) do
+            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifiers(base_argument_specifier))) do
               table.insert(intermediate_result, prefix .. compatible_specifier)
             end
           end
