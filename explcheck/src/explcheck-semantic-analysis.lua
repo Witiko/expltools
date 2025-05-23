@@ -232,9 +232,17 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         variant_argument_specifiers = {}
         for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
           if #argument_specifiers ~= #base_argument_specifiers then
-            issues:add("t403", "function variant of incompatible type", byte_range)
-            return nil  -- variant argument specifiers are different arity than base argument specifiers, give up
+            if #argument_specifiers < #base_argument_specifiers then  -- variant argument specifiers are shorter than base specifiers
+              argument_specifiers = string.format(
+                "%s%s",  -- treat the variant specifiers as a prefix with the rest filled in with the base specifiers
+                argument_specifiers, base_argument_specifiers:sub(#argument_specifiers + 1)
+              )
+            else  -- variant argument specifiers are longer than base specifiers
+              issues:add("t403", "function variant of incompatible type", byte_range)
+              return nil  -- give up
+            end
           end
+          assert(#argument_specifiers == #base_argument_specifiers)
           local any_specifiers_changed = false
           for i = 1, #argument_specifiers do
             local base_argument_specifier = base_argument_specifiers:sub(i, i)
