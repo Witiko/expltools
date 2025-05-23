@@ -209,6 +209,18 @@ local do_not_use_argument_specifiers = (
   * do_not_use_argument_specifier
 )
 
+local compatible_argument_specifiers = (
+  P("N") * Cc({"N", "c"})
+  + P("n") * Cc({"n", "o", "V", "v", "f", "e", "x"})
+  + C(argument_specifier)
+  + Cc({})
+)
+local deprecated_argument_specifiers = (
+  P("n") * Cc({"N", "c"})
+  + P("N") * Cc({"n", "o", "V", "v", "f", "e", "x"})
+  + Cc({})
+)
+
 ---- Function, variable, and constant names
 local expl3_function_csname = (
   (underscore * underscore)^-1 * letter^1  -- module
@@ -696,9 +708,11 @@ return {
   any = any,
   argument_specifiers = argument_specifiers,
   commented_lines = commented_lines,
+  compatible_argument_specifiers = compatible_argument_specifiers,
   condition = condition,
   conditions = conditions,
   decimal_digit = decimal_digit,
+  deprecated_argument_specifiers = deprecated_argument_specifiers,
   determine_expl3_catcode = determine_expl3_catcode,
   do_not_use_argument_specifier = do_not_use_argument_specifier,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
@@ -713,9 +727,9 @@ return {
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
-  expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
+  expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,

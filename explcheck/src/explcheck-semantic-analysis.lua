@@ -178,23 +178,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       -- Try and extract a list of variant argument specifiers in a (conditional) function variant definition.
       -- Together with the argument specifiers, include a measurement of confidence about the correctness of the extracted information.
       local function parse_variant_argument_specifiers(csname, argument)
-
-        -- Get all compatible variant argument specifiers for a base argument specifier.
-        --
-        -- See also the definition of function `\cs_generate_variant:Nn` in Section 5.2 of The LaTeX Project (2025) [1].
-        --
-        --  [1]: The LaTeX Project. 2025-04-29. The LaTeX3 Interfaces.
-        --       <http://mirrors.ctan.org/macros/latex/required/l3kernel/interface3.pdf>
-        local function get_compatible_variant_argument_specifiers(base_argument_specifier)
-          if base_argument_specifier == "N" then
-            return "N", "c"
-          elseif base_argument_specifier == "n" then
-            return "n", "o", "V", "v", "f", "e", "x"
-          else
-            return base_argument_specifier
-          end
-        end
-
         -- extract the argument specifiers from the csname
         local _, base_argument_specifiers = parse_expl3_csname(csname)
         if base_argument_specifiers == nil then
@@ -240,15 +223,26 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             end
             any_specifiers_changed = true
             local any_compatible_specifier = false
-            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifiers(base_argument_specifier))) do
+            for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
               if argument_specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
                 any_compatible_specifier = true
                 break  -- skip further checks
               end
             end
             if not any_compatible_specifier then
-              issues:add("t403", "function variant of incompatible type", byte_range)
-              return nil  -- variant argument specifier is incompatible with base argument specifier, give up
+              local any_deprecated_specifier = false
+              for _, deprecated_specifier in ipairs(lpeg.match(parsers.deprecated_argument_specifiers, base_argument_specifier)) do
+                if argument_specifier == deprecated_specifier then  -- variant argument specifier is deprecated regarding the base specifier
+                  any_deprecated_specifier = true
+                  break  -- skip further checks
+                end
+              end
+              if any_deprecated_specifier then
+                issues:add("w410", "function variant of deprecated type", byte_range)
+              else
+                issues:add("t403", "function variant of incompatible type", byte_range)
+                return nil  -- variant argument specifier is incompatible with base argument specifier, give up
+              end
             end
             ::continue::
           end
@@ -267,7 +261,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local base_argument_specifier = base_argument_specifiers:sub(i, i)
           local intermediate_result = {}
           for _, prefix in ipairs(variant_argument_specifiers_list) do
-            for _, compatible_specifier in ipairs(table.pack(get_compatible_variant_argument_specifiers(base_argument_specifier))) do
+            for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
               table.insert(intermediate_result, prefix .. compatible_specifier)
             end
           end

@@ -34,6 +34,8 @@ A function or conditional function variant is generated from an incompatible arg
 
  /t403-01.tex
 
+Deprecated variants, such as `N` or `c` variants of an `n` parent, are not included in this issue. Instead, they produce <#deprecated-variant>.
+
 Higher-order variants can be created from existing variants as long as only `n` and `N` arguments are changed to other types:
 
  /t403-02.tex
@@ -93,6 +95,11 @@ A function or conditional function variant is used but undefined.
   { foo }
   { bar }
 ```
+
+### Function variant of deprecated type {.w label=w410 #deprecated-variant}
+A function or conditional function variant is generated from a deprecated argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].
+
+ /w410.tex
 
 ## Variables and constants
 
