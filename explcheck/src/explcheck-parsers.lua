@@ -254,8 +254,7 @@ local expl3_variable_or_constant_type = (
   + P("flag")
   + P("fp") * P("array")^-1
   + P("int") * P("array")^-1
-  + P("ior")
-  + P("iow")
+  + P("io") * S("rw")
   + P("muskip")
   + P("prop")
   + P("regex")
@@ -263,6 +262,48 @@ local expl3_variable_or_constant_type = (
   + P("skip")
   + P("str")
   + P("tl")
+)
+
+local expl3_maybe_standard_library_csname = (
+  (
+    expl3_variable_or_constant_type
+    + P("benchmark")
+    + P("char")
+    + P("codepoint")
+    + S("hv") * P("coffin")
+    + P("color")
+    + P("cs")
+    + P("debug")
+    + P("draw")
+    + P("exp")
+    + P("file")
+    + P("graphics")
+    + P("group")
+    + P("if")
+    + P("keys")
+    + P("keyval")
+    + P("legacy")
+    + P("lua")
+    + P("mode")
+    + P("msg")
+    + P("opacity")
+    + P("pdf")
+    + P("peek")
+    + P("prg")
+    + P("quark")
+    + P("reverse_if")
+    + P("scan")
+    + P("sort")
+    + P("sys")
+    + P("text")
+    + P("token")
+    + P("use")
+  )
+  * (
+    underscore
+    * (any - colon)^0
+  )^-1
+  * colon
 )
 
 local expl3_variable_or_constant_csname = (
@@ -670,6 +711,7 @@ return {
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
+  expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,

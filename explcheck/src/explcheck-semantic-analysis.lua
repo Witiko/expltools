@@ -639,7 +639,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   end
   for _, variant_base_csname in ipairs(variant_base_csnames) do
     local base_csname, call_byte_range = table.unpack(variant_base_csname)
-    if not maybe_defined_csnames[base_csname] then
+    if not maybe_defined_csnames[base_csname] and lpeg.match(parsers.expl3_maybe_standard_library_csname, base_csname) == nil then
       issues:add('e405', 'function variant for an undefined function', call_byte_range)
     end
   end
