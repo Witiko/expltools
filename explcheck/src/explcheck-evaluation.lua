@@ -60,14 +60,13 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     num_calls_total = 0
     for _, part_calls in ipairs(analysis_results.calls) do
       for _, call in ipairs(part_calls) do
-        local call_type, call_tokens, _, _ = table.unpack(call)
-        if num_calls[call_type] == nil then
-          assert(num_call_tokens[call_type] == nil)
-          num_calls[call_type] = 0
-          num_call_tokens[call_type] = 0
+        if num_calls[call.type] == nil then
+          assert(num_call_tokens[call.type] == nil)
+          num_calls[call.type] = 0
+          num_call_tokens[call.type] = 0
         end
-        num_calls[call_type] = num_calls[call_type] + 1
-        num_call_tokens[call_type] = num_call_tokens[call_type] + #call_tokens
+        num_calls[call.type] = num_calls[call.type] + 1
+        num_call_tokens[call.type] = num_call_tokens[call.type] + #call.token_range
         num_calls_total = num_calls_total + 1
       end
     end
@@ -80,14 +79,13 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
       for _, replacement_text_calls in ipairs(part_replacement_texts.calls) do
         for _, call in pairs(replacement_text_calls) do
-          local call_type, call_tokens, _, _ = table.unpack(call)
-          if num_replacement_text_calls[call_type] == nil then
-            assert(num_replacement_text_call_tokens[call_type] == nil)
-            num_replacement_text_calls[call_type] = 0
-            num_replacement_text_call_tokens[call_type] = 0
+          if num_replacement_text_calls[call.type] == nil then
+            assert(num_replacement_text_call_tokens[call.type] == nil)
+            num_replacement_text_calls[call.type] = 0
+            num_replacement_text_call_tokens[call.type] = 0
           end
-          num_replacement_text_calls[call_type] = num_replacement_text_calls[call_type] + 1
-          num_replacement_text_call_tokens[call_type] = num_replacement_text_call_tokens[call_type] + #call_tokens
+          num_replacement_text_calls[call.type] = num_replacement_text_calls[call.type] + 1
+          num_replacement_text_call_tokens[call.type] = num_replacement_text_call_tokens[call.type] + #call.token_range
           num_replacement_text_calls_total = num_replacement_text_calls_total + 1
         end
       end
@@ -112,8 +110,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
         for call_number, call in statement.call_range:enumerate(part_calls) do
           if seen_call_numbers[call_number] == nil then
             seen_call_numbers[call_number] = true
-            local _, call_tokens = table.unpack(call)
-            num_statement_tokens[statement.type] = num_statement_tokens[statement.type] + #call_tokens
+            num_statement_tokens[statement.type] = num_statement_tokens[statement.type] + #call.token_range
           end
         end
         num_statements_total = num_statements_total + 1
@@ -145,9 +142,8 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
             for call_number, call in statement.call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
               if seen_replacement_text_call_numbers[replacement_text_number][call_number] == nil then
                 seen_replacement_text_call_numbers[replacement_text_number][call_number] = true
-                local _, call_tokens = table.unpack(call)
                 num_replacement_text_statement_tokens[statement.type]
-                  = num_replacement_text_statement_tokens[statement.type] + #call_tokens
+                  = num_replacement_text_statement_tokens[statement.type] + #call.token_range
               end
             end
           end

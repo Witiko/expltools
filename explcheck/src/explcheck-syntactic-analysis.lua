@@ -123,11 +123,14 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
   -- Record a range of unrecognized tokens.
   local function record_other_tokens(other_token_range)  -- the range is in tokens, not transformed_tokens
     local previous_call = #calls > 0 and calls[#calls] or nil
-    if previous_call == nil or previous_call[1] ~= OTHER_TOKENS then  -- record a new span of other tokens between calls
-      table.insert(calls, {OTHER_TOKENS, other_token_range})
+    if previous_call == nil or previous_call.type ~= OTHER_TOKENS then  -- record a new span of other tokens between calls
+      table.insert(calls, {
+        type = OTHER_TOKENS,
+        token_range = other_token_range,
+      })
     else  -- extend the previous span of other tokens
-      assert(previous_call[1] == OTHER_TOKENS)
-      previous_call[2] = new_range(previous_call[2]:start(), other_token_range:stop(), INCLUSIVE, #tokens)
+      assert(previous_call.type == OTHER_TOKENS)
+      previous_call.token_range = new_range(previous_call.token_range:start(), other_token_range:stop(), INCLUSIVE, #tokens)
     end
   end
 
@@ -473,7 +476,12 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
         end
         next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
         if are_parameter_texts_valid then  -- if all "TeX parameter" arguments are valid, record the call
-          table.insert(calls, {CALL, next_token_range, csname, arguments})
+          table.insert(calls, {
+            type = CALL,
+            token_range = next_token_range,
+            csname = csname,
+            arguments = arguments,
+          })
         else  -- otherwise, skip all tokens from the call
           record_other_tokens(next_token_range)
         end
