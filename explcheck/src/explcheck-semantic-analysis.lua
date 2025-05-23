@@ -402,7 +402,12 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end
           local function map_back(...) return first_map_back(second_map_back(...)) end
           local function map_forward(...) return second_map_forward(first_map_forward(...)) end
-          table.insert(replacement_text_tokens, {replacement_text_argument.token_range, doubly_transformed_tokens, map_back, map_forward})
+          table.insert(replacement_text_tokens, {
+            token_range = replacement_text_argument.token_range,
+            transformed_tokens = doubly_transformed_tokens,
+            map_back = map_back,
+            map_forward = map_forward,
+          })
           -- determine all effectively defined csnames
           local effectively_defined_csnames = {}
           if is_conditional then  -- conditional function
@@ -487,16 +492,27 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     while previous_num_replacement_texts < current_num_replacement_texts do
       for replacement_text_number = previous_num_replacement_texts + 1, current_num_replacement_texts do
         local replacement_text_tokens = replacement_texts.tokens[replacement_text_number]
-        local replacement_text_token_range, transformed_tokens, map_back, map_forward = table.unpack(replacement_text_tokens)
         -- record the current nesting depth with the replacement text
         table.insert(replacement_texts.nesting_depth, current_nesting_depth)
         -- extract nested calls from the replacement text using syntactic analysis
-        local nested_calls
-          = get_calls(tokens, transformed_tokens, replacement_text_token_range, map_back, map_forward, issues, groupings)
+        local nested_calls = get_calls(
+          tokens,
+          replacement_text_tokens.transformed_tokens,
+          replacement_text_tokens.token_range,
+          replacement_text_tokens.map_back,
+          replacement_text_tokens.map_forward,
+          issues,
+          groupings
+        )
         table.insert(replacement_texts.calls, nested_calls)
         -- extract nested statements and replacement texts from the nested calls using semactic analysis
-        local nested_statements, nested_replacement_text_tokens
-          = record_statements_and_replacement_texts(tokens, transformed_tokens, nested_calls, map_back, map_forward)
+        local nested_statements, nested_replacement_text_tokens = record_statements_and_replacement_texts(
+          tokens,
+          replacement_text_tokens.transformed_tokens,
+          nested_calls,
+          replacement_text_tokens.map_back,
+          replacement_text_tokens.map_forward
+        )
         for _, nested_statement in ipairs(nested_statements) do
           if nested_statement.type == FUNCTION_DEFINITION then
             -- make the reference to the replacement text absolute instead of relative
@@ -549,8 +565,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       local nested_statements = part_replacement_texts.statements[replacement_text_number]
       table.insert(call_segments, nested_calls)
       table.insert(statement_segments, nested_statements)
-      local _, nested_tokens, _, map_forward = table.unpack(part_replacement_texts.tokens[replacement_text_number])
-      table.insert(token_segments, {nested_tokens, map_forward})
+      local replacement_text_tokens = part_replacement_texts.tokens[replacement_text_number]
+      table.insert(token_segments, {replacement_text_tokens.transformed_tokens, replacement_text_tokens.map_forward})
     end
   end
 
