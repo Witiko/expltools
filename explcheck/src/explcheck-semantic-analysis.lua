@@ -190,12 +190,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             return "N", "c"
           elseif base_argument_specifier == "n" then
             return "n", "o", "V", "v", "f", "e", "x"
-          elseif base_argument_specifier == "T" then
-            return "T"
-          elseif base_argument_specifier == "F" then
-            return "F"
-          elseif base_argument_specifier == "p" then
-            return "p"
           else
             return base_argument_specifier
           end
