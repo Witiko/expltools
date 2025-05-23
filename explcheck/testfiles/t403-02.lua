@@ -22,7 +22,7 @@ semantic_analysis.process(filename, content, issues, results, options)
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{7, 9}}
+local expected_line_numbers = {{10, 12}}
 for index, err in ipairs(issues.sort(issues.errors)) do
   assert(err[1] == "t403")
   assert(err[2] == "function variant of incompatible type")

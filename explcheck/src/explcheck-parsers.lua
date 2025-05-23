@@ -176,11 +176,6 @@ local argument = (
   * expl3_catcodes[2]
 )
 
-local basic_argument_specifier = S("NnTFp")
-local basic_argument_specifiers = (
-  basic_argument_specifier^0
-  * eof
-)
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
 local parameter_argument_specifier = S("p")
@@ -657,7 +652,6 @@ local conditions = comma_list(condition)
 return {
   any = any,
   argument_specifiers = argument_specifiers,
-  basic_argument_specifiers = basic_argument_specifiers,
   commented_lines = commented_lines,
   condition = condition,
   conditions = conditions,

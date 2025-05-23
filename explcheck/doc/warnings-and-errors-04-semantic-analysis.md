@@ -33,6 +33,9 @@ A private function or conditional function variant is defined but unused.
 A function or conditional function variant is generated from an incompatible argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].
 
  /t403-01.tex
+
+Higher-order variants can be created from existing variants as long as only `n` and `N` arguments are changed to other types:
+
  /t403-02.tex
 
 ### Protected predicate function {.e label=e404}

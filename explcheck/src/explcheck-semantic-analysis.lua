@@ -197,7 +197,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           elseif base_argument_specifier == "p" then
             return "p"
           else
-            error('Unexpected base argument specifier "' .. base_argument_specifier .. '"')
+            return base_argument_specifier
           end
         end
 
@@ -205,12 +205,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         local _, base_argument_specifiers = parse_expl3_csname(csname)
         if base_argument_specifiers == nil then
           return nil  -- we couldn't parse the csname, give up
-        end
-
-        -- check that the base argument specifiers are only N and n
-        if lpeg.match(parsers.basic_argument_specifiers, base_argument_specifiers) == nil then
-          issues:add("t403", "function variant of incompatible type", byte_range)
-          return nil  -- cannot generate variants from non-basic argument specifiers, give up
         end
 
         local variant_argument_specifiers
