@@ -289,6 +289,7 @@ local expl3_maybe_standard_library_csname = (
     + P("draw")
     + P("exp")
     + P("file")
+    + P("graph")  -- part of the lt3graph package
     + P("graphics")
     + P("group")
     + P("hook")  -- part of the lthooks module
@@ -312,6 +313,7 @@ local expl3_maybe_standard_library_csname = (
     + P("text")
     + P("token")
     + P("use")
+    + P("withargs")  -- part of the withargs package
   )
   * (
     underscore
