@@ -2,7 +2,29 @@
 
 ## expltools 2025-05-XX
 
+### explcheck v0.10.0
+
+#### Development
+
+- Add more support for semantic analysis. (#86)
+
+  This adds support for the following new issues from Section 4 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+  1. W401 (Unused function)
+  2. W402 (Unused function variant)
+  3. T403 (Function variant of incompatible type)
+  4. E404 (Protected predicate function)
+  5. E405 (Function variant for an undefined function)
+  6. W407 (Multiply defined function variant)
+
+  After these changes, 6 out of 24 (25%) issues from this section are
+  supported. Support for the remaining issues will be added in upcoming releases.
+
 #### Fixes
+
+- Report issue S205 (Malformed function name) also for conditional function
+  definitions. (#86)
 
 - In the command-line interface, do not consider arguments starting with `-`
   filenames. (contributed by @muzimuzhi in #83, fixed in #84)

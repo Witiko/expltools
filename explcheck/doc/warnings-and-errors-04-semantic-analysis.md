@@ -17,122 +17,48 @@ A function with a `V`-type argument is called with a variable or constant that d
   \c_false_bool
 ```
 
-### Unused function {.w #unused-function}
+### Unused private function {.w label=w401 #unused-private-function}
 A private function or conditional function is defined but unused.
 
-``` tex
-\cs_new:Nn  % warning on this line
-  \__module_foo:
-  { bar }
-```
+ /w401-01.tex
+ /w401-02.tex
 
-``` tex
-\prg_new_conditional:Nnn  % warning on this line
-  \__module_foo:
-  { p, T, F, TF } 
-  { \prg_return_true: }
-```
-
-### Unused function variant {.w #unused-function-variant}
+### Unused private function variant {.w label=w402 #unused-private-function-variant}
 A private function or conditional function variant is defined but unused.
 
-``` tex
-\cs_new:Nn
-  \__module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn  % warning on this line
-  \__module_foo:n
-  { V }
-\__module_foo:n
-  { baz }
-```
+ /w402-01.tex
+ /w402-02.tex
 
-``` tex
-\prg_new_conditional:Nnn
-  \__module_foo:n
-  { p, T, F, TF } 
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \__module_foo:n
-  { TF } 
-  { V }
-\__module_foo:nTF
-  { foo }
-  { bar }
-  { baz }
-```
+### Function variant of incompatible type {.t label=t403}
+A function or conditional function variant is generated from an incompatible argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].
 
-### Function variant of incompatible type {.t}
-A function variant is generated from an incompatible argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].
+ /t403-01.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:Nn
-  { bar }
-\cs_generate_variant:Nn  % error on this line
-  \module_foo:Nn
-  { nn }
-\cs_generate_variant:Nn  % error on this line
-  \module_foo:Nn
-  { NN }
-```
+Deprecated variants, such as `N` or `c` variants of an `n` parent, are not included in this issue. Instead, they produce <#deprecated-variant>.
 
-### Protected predicate function {.e}
+Higher-order variants can be created from existing variants as long as only `n` and `N` arguments are changed to other types:
+
+ /t403-02.tex
+
+### Protected predicate function {.e label=e404}
 A protected predicate function is defined.
 
-``` tex
-\prg_new_protected_conditional:Nnn
-  \module_foo:
-  { p }
-  { \prg_return_true: }
-```
+ /e404.tex
 
-### Function variant for an undefined conditional function {.e}
-A variant is defined for an undefined conditional function.
+### Function variant for an undefined function {.e label=e405}
+A variant is defined for an undefined function.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \module_foo:n
-  { TF }
-  { V }
-\module_foo:nT
-  { bar }
-  { baz }
-```
+ /e405-01.tex
+ /e405-02.tex
 
-### Multiply defined function variant {.w}
-A function or conditional function is defined multiple times.
+### Multiply defined function {.e}
+TODO
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-\cs_generate_variant:Nn  % warning on this line
-  \module_foo:n
-  { o, V }
-```
+### Multiply defined function variant {.w label=w407}
+A function or conditional function variant is defined multiple times.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { TF }
-  { V }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \module_foo:n
-  { TF }
-  { o, V }
-```
+ /w407-01.tex
+ /w407-02.tex
 
 ### Calling an undefined function {.e #calling-undefined-function}
 A function is used but undefined.
@@ -169,6 +95,11 @@ A function or conditional function variant is used but undefined.
   { foo }
   { bar }
 ```
+
+### Function variant of deprecated type {.w label=w410 #deprecated-variant}
+A function or conditional function variant is generated from a deprecated argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].
+
+ /w410.tex
 
 ## Variables and constants
 
