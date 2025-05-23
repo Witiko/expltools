@@ -330,7 +330,11 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 if num_parameters == nil then
                   are_parameter_texts_valid = false
                 end
-                table.insert(arguments, {argument_specifier, next_token_range, num_parameters})
+                table.insert(arguments, {
+                  specifier = argument_specifier,
+                  token_range = next_token_range,
+                  num_parameters = num_parameters,
+                })
                 break
               end
               next_token_number = next_token_number + 1
@@ -375,7 +379,10 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 )
                 if #next_token_range == 1 then  -- a single token, record it
                     issues:add('w303', 'braced N-type function call argument', next_token.byte_range)
-                    table.insert(arguments, {argument_specifier, next_token_range})
+                    table.insert(arguments, {
+                      specifier = argument_specifier,
+                      token_range = next_token_range,
+                    })
                     next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
                     tokens[next_token_range:start()][1] == CHARACTER and tokens[next_token_range:start()][3] == 6 and  -- a parameter
@@ -418,7 +425,10 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               end
               -- an N-type argument, record it
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
-              table.insert(arguments, {argument_specifier, next_token_range})
+              table.insert(arguments, {
+                specifier = argument_specifier,
+                token_range = next_token_range,
+              })
             end
           elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
             if next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the balanced text
@@ -444,7 +454,10 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   map_back,
                   #tokens
                 )
-                table.insert(arguments, {argument_specifier, next_token_range})
+                table.insert(arguments, {
+                  specifier = argument_specifier,
+                  token_range = next_token_range,
+                })
                 next_token_number = map_forward(next_grouping.stop)
               end
             elseif next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping (partial application?), skip all tokens
@@ -469,7 +482,10 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               -- an unbraced n-type argument, record it
               issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range)
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
-              table.insert(arguments, {argument_specifier, next_token_range})
+              table.insert(arguments, {
+                specifier = argument_specifier,
+                token_range = next_token_range,
+              })
             end
           else
             error('Unexpected argument specifier "' .. argument_specifier .. '"')

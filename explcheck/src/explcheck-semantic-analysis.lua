@@ -145,12 +145,11 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         local conditions
 
         -- try to determine the list of conditions
-        local argument_specifier, argument_token_range = table.unpack(argument)
         local conditions_text, condition_list
-        if argument_specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
+        if argument.specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
           goto unknown_conditions
         end
-        conditions_text = extract_string_from_tokens(argument_token_range)
+        conditions_text = extract_string_from_tokens(argument.token_range)
         if conditions_text == nil then  -- failed to read conditions
           goto unknown_conditions  -- assume all conditions with lower confidence
         end
@@ -184,12 +183,11 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         local variant_argument_specifiers
 
         -- try to determine all sets of variant argument specifiers
-        local argument_specifier, argument_token_range = table.unpack(argument)
         local variant_argument_specifiers_text, variant_argument_specifiers_list
-        if argument_specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
+        if argument.specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
           goto unknown_argument_specifiers
         end
-        variant_argument_specifiers_text = extract_string_from_tokens(argument_token_range)
+        variant_argument_specifiers_text = extract_string_from_tokens(argument.token_range)
         if variant_argument_specifiers_text == nil then  -- failed to read specifiers
           goto unknown_argument_specifiers  -- assume all specifiers with lower confidence
         end
@@ -214,14 +212,14 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local any_specifiers_changed = false
           for i = 1, #argument_specifiers do
             local base_argument_specifier = base_argument_specifiers:sub(i, i)
-            argument_specifier = argument_specifiers:sub(i, i)
-            if base_argument_specifier == argument_specifier then  -- variant argument specifier is same as base argument specifier
+            argument.specifier = argument_specifiers:sub(i, i)
+            if base_argument_specifier == argument.specifier then  -- variant argument specifier is same as base argument specifier
               goto continue  -- skip further checks
             end
             any_specifiers_changed = true
             local any_compatible_specifier = false
             for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
-              if argument_specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
+              if argument.specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
                 any_compatible_specifier = true
                 break  -- skip further checks
               end
@@ -229,7 +227,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             if not any_compatible_specifier then
               local any_deprecated_specifier = false
               for _, deprecated_specifier in ipairs(lpeg.match(parsers.deprecated_argument_specifiers, base_argument_specifier)) do
-                if argument_specifier == deprecated_specifier then  -- variant argument specifier is deprecated regarding the base specifier
+                if argument.specifier == deprecated_specifier then  -- variant argument specifier is deprecated regarding the base specifier
                   any_deprecated_specifier = true
                   break  -- skip further checks
                 end
@@ -282,9 +280,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       if call.type == CALL then  -- a function call
         -- Ignore error S204 (Missing stylistic whitespaces) in Lua code.
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
-          local _, lua_code_token_range = table.unpack(call.arguments[arguments_number])
-          if #lua_code_token_range > 0 then
-            local lua_code_byte_range = lua_code_token_range:new_range_from_subranges(get_token_byte_range, #content)
+          local lua_code_argument = call.arguments[arguments_number]
+          if #lua_code_argument.token_range > 0 then
+            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range, #content)
             issues:ignore('s204', lua_code_byte_range)
           end
         end
@@ -296,9 +294,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if function_variant_definition ~= nil then
           local is_conditional = table.unpack(function_variant_definition)
           -- determine the name of the defined function
-          local base_csname_specifier, base_csname_token_range = table.unpack(call.arguments[1])
-          assert(base_csname_specifier == "N" and #base_csname_token_range == 1)
-          local base_csname_token = transformed_tokens[first_map_forward(base_csname_token_range:start())]
+          local base_csname_argument = call.arguments[1]
+          assert(base_csname_argument.specifier == "N" and #base_csname_argument.token_range == 1)
+          local base_csname_token = transformed_tokens[first_map_forward(base_csname_argument.token_range:start())]
           local base_csname = base_csname_token.payload
           if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
             goto other_statement
@@ -359,14 +357,14 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if function_definition ~= nil then
           local is_conditional, is_protected, is_nopar = table.unpack(function_definition)
           -- determine the replacement text
-          local replacement_text_specifier, replacement_text_token_range = table.unpack(call.arguments[#call.arguments])
-          if replacement_text_specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
+          local replacement_text_argument = call.arguments[#call.arguments]
+          if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
             goto other_statement
           end
           -- determine the name of the defined function
-          local defined_csname_specifier, defined_csname_token_range = table.unpack(call.arguments[1])
-          assert(defined_csname_specifier == "N" and #defined_csname_token_range == 1)
-          local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_token_range:start())]
+          local defined_csname_argument = call.arguments[1]
+          assert(defined_csname_argument.specifier == "N" and #defined_csname_argument.token_range == 1)
+          local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
           local defined_csname = defined_csname_token.payload
           if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
             goto other_statement
@@ -379,9 +377,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             num_parameters = #argument_specifiers
           end
           for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
-            if lpeg.match(parsers.parameter_argument_specifier, argument[1]) and argument[3] ~= nil then
-              if num_parameters == nil or argument[3] > num_parameters then  -- if one method gives a higher number, trust it
-                num_parameters = argument[3]
+            if lpeg.match(parsers.parameter_argument_specifier, argument.specifier) and argument.num_parameters ~= nil then
+              if num_parameters == nil or argument.num_parameters > num_parameters then  -- if one method gives a higher number, trust it
+                num_parameters = argument.num_parameters
               end
               assert(num_parameters ~= nil)
               break
@@ -392,8 +390,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end
           -- parse the replacement text and record the function definition
           local mapped_replacement_text_token_range = new_range(
-            first_map_forward(replacement_text_token_range:start()),
-            first_map_forward(replacement_text_token_range:stop()),
+            first_map_forward(replacement_text_argument.token_range:start()),
+            first_map_forward(replacement_text_argument.token_range:stop()),
             INCLUSIVE + MAYBE_EMPTY,
             #transformed_tokens
           )
@@ -404,7 +402,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end
           local function map_back(...) return first_map_back(second_map_back(...)) end
           local function map_forward(...) return second_map_forward(first_map_forward(...)) end
-          table.insert(replacement_text_tokens, {replacement_text_token_range, doubly_transformed_tokens, map_back, map_forward})
+          table.insert(replacement_text_tokens, {replacement_text_argument.token_range, doubly_transformed_tokens, map_back, map_forward})
           -- determine all effectively defined csnames
           local effectively_defined_csnames = {}
           if is_conditional then  -- conditional function
@@ -598,9 +596,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csnames[call.csname] = true
           for _, argument in ipairs(call.arguments) do
-            local argument_specifier, argument_token_range = table.unpack(argument)
-            if lpeg.match(parsers.N_or_n_type_argument_specifier, argument_specifier) ~= nil then
-              for _, token in argument_token_range:enumerate(segment_tokens, map_forward) do
+            if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+              for _, token in argument.token_range:enumerate(segment_tokens, map_forward) do
                 if token.type == CONTROL_SEQUENCE then
                   maybe_used_csnames[token.payload] = true
                 end
