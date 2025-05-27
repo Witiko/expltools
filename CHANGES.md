@@ -38,6 +38,9 @@
   `${{ github.repository }}` and the primary workflow now runs on push to any
   Git branch, not just the main branch.
 
+- Split regression test results into files that contain all pathnames for which
+  a specific issue was detected. (suggested by @koppor, added in #88)
+
 ### explcheck v0.10.0
 
 ## expltools 2025-05-05
