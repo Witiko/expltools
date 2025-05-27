@@ -169,7 +169,7 @@ jobs:
             issues/
       - name: Compare issues against the baselines
         if: matrix.release != 'latest'
-        run: git diff --no-index --word-diff-regex=. --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
+        run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
       - name: Check if the configuration is minimal
         if: matrix.release == 'latest'
         run: |
