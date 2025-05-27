@@ -2,12 +2,15 @@
 -- A checker that reads the default configuration of the static analyzer explcheck and regression test results
 -- and then tests which parts of the configuration can be removed without affecting the results of the static analysis.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "prune-explcheck-config")
+local lfs = require("lfs")
 
 local config = require("explcheck-config")
 local new_issues = require("explcheck-issues")
-local process_with_all_steps = require("explcheck-utils").process_with_all_steps
+local utils = require("explcheck-utils")
+
+local get_stem = utils.get_stem
+local get_suffix = utils.get_suffix
+local process_with_all_steps = utils.process_with_all_steps
 
 local default_config = config.default_config
 local default_config_pathname = config.default_config_pathname
@@ -15,34 +18,29 @@ local get_package = config.get_package
 
 -- Read regression test results and use KPathSea to find the files in the results.
 local function read_results(results_pathname)
-  local num_skipped = 0
+  local num_issues = 0
+  local seen_filenames = {}
   local results = {
     filenames = {},
-    pathnames = {},
     issues = {},
   }
-  for line in io.lines(results_pathname) do
-    local line_filename, issues = line:match("^(%S+)%s+(%S+)$")
-    assert(line_filename ~= nil)
-    assert(issues ~= nil)
-    local line_pathname = kpse.find_file(line_filename)
-    if line_pathname == nil then
-      num_skipped = num_skipped + 1
+  for issue_pathname in lfs.dir(results_pathname) do
+    if get_suffix(issue_pathname) ~= ".txt" then
       goto continue
     end
-    table.insert(results.filenames, line_filename)
-    results.pathnames[line_filename] = line_pathname
-    results.issues[line_filename] = new_issues()
-    for issue in issues:gmatch("[^,]+") do
-      results.issues[line_filename]:add(issue)
+    num_issues = num_issues + 1
+    local issue = get_stem(issue_pathname)
+    for filename in io.lines(results_pathname .. "/" .. issue_pathname) do
+      if seen_filenames[filename] == nil then
+        seen_filenames[filename] = true
+        table.insert(results.filenames, filename)
+        results.issues[filename] = new_issues()
+      end
+      results.issues[filename]:add(issue)
     end
     ::continue::
   end
-  io.write(string.format('Read %d files', #results.filenames))
-  if num_skipped > 0 then
-    io.write(string.format(', skipped %d files', num_skipped))
-  end
-  print(string.format(' from file "%s".', results_pathname))
+  print(string.format('Read %d issues and %d files from files in "%s".', num_issues, #results.filenames, results_pathname))
   return results
 end
 
@@ -114,20 +112,18 @@ local function main(results_pathname)
 
   -- Try to remove all options for the individual files from the test results.
   for _, filename in ipairs(results.filenames) do
-    local pathname = results.pathnames[filename]
     local expected_issues = results.issues[filename]
-    assert(pathname ~= nil)
     assert(expected_issues ~= nil)
     -- If the configuration specifies options for this filename, check them.
     if default_config.filename and default_config.filename[filename] ~= nil then
       local options_location = string.format('section [filename."%s"]', filename)
-      try_to_remove_all_options(pathname, default_config.filename[filename], options_location, expected_issues)
+      try_to_remove_all_options(filename, default_config.filename[filename], options_location, expected_issues)
     end
     -- If the configuration specifies options for this package, check them.
-    local package = get_package(pathname)
+    local package = get_package(filename)
     if default_config.package and default_config.package[package] ~= nil then
       local options_location = string.format('section [package."%s"]', package)
-      try_to_remove_all_options(pathname, default_config.package[package], options_location, expected_issues)
+      try_to_remove_all_options(filename, default_config.package[package], options_location, expected_issues)
     end
   end
 
@@ -145,9 +141,9 @@ local function main(results_pathname)
   -- Print the results.
   io.write(string.format('Checked %d different options in file "%s"', num_options, default_config_pathname))
   if #key_locations.to_remove == 0 then
-    print(string.format(', none of which can be removed without affecting file "%s".', results_pathname))
+    print(string.format(', none of which can be removed without affecting files in "%s".', results_pathname))
   else
-    print(string.format(', %d of which can be removed without affecting file "%s":', #key_locations.to_remove, results_pathname))
+    print(string.format(', %d of which can be removed without affecting files in "%s":', #key_locations.to_remove, results_pathname))
     for _, key_location in ipairs(key_locations.to_remove) do
       print(string.format('- %s', key_location))
     end
