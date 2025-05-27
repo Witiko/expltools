@@ -145,23 +145,21 @@ jobs:
           fi
           # Split the issues into individual files.
           mkdir issues
-          python3 <<'EOF'
-          issue_files, seen_issues = dict(), set()
-          with open('issues.txt', 'rt') as rf:
-              for line in rf:
-                  filename, issue = line.split()
-                  # Skip duplicate lines.
-                  if (filename, issue) in seen_issues:
-                      continue
-                  seen_issues.add((filename, issue))
-                  # Store the filename in the corresponding issue file.
-                  if issue not in issue_files:
-                      issue_files[issue] = open(f'issues/{issue}.txt', 'wt')
-                  print(filename, file=issue_files[issue])
+          sort -u issues.txt | python3 -c '
+          import sys
+
+          # Read filenames and issues.
+          issue_files = dict()
+          for line in sys.stdin:
+              filename, issue = line.split()
+              # Store the filename in the corresponding issue file.
+              if issue not in issue_files:
+                  issue_files[issue] = open(f"issues/{issue}.txt", "wt")
+              print(filename, file=issue_files[issue])
           # Close the issue files.
           for wf in issue_files.values():
               wf.close()
-          EOF
+          '
       - name: Upload issues
         if: matrix.release != 'latest'
         uses: actions/upload-artifact@v4
