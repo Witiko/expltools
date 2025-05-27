@@ -2,6 +2,9 @@
 -- A checker that reads the default configuration of the static analyzer explcheck and regression test results
 -- and then tests which parts of the configuration can be removed without affecting the results of the static analysis.
 
+local kpse = require("kpse")
+kpse.set_program_name("texlua", "prune-explcheck-config")
+
 local lfs = require("lfs")
 
 local config = require("explcheck-config")
