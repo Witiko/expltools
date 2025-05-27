@@ -1,0 +1,6 @@
+/usr/local/texlive/2017/texmf-dist/tex/latex/ducksay/ducksay.sty
+/usr/local/texlive/2017/texmf-dist/tex/latex/knowledge/knowledge.sty
+/usr/local/texlive/2017/texmf-dist/tex/latex/leadsheets/leadsheets.library.songs.code.tex
+/usr/local/texlive/2017/texmf-dist/tex/latex/nwejm/nwejmart.cls
+/usr/local/texlive/2017/texmf-dist/tex/latex/sidenotes/sidenotes.sty
+/usr/local/texlive/2017/texmf-dist/tex/latex/urcls/URrules.sty
