@@ -1,0 +1,1 @@
+/usr/local/texlive/2019/texmf-dist/tex/lualatex/emoji/emoji.sty

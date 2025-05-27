@@ -1,0 +1,16 @@
+/usr/local/texlive/2013/texmf-dist/doc/latex/cweb-latex/examples/rcs.sty
+/usr/local/texlive/2013/texmf-dist/doc/latex/exsheets/cntformats_en.tex
+/usr/local/texlive/2013/texmf-dist/doc/latex/hobby/hobby_doc.tex
+/usr/local/texlive/2013/texmf-dist/doc/latex/lualatex-doc-de/lualatex-doc-DE.tex
+/usr/local/texlive/2013/texmf-dist/doc/latex/tex-overview/tex-overview-aux.tex
+/usr/local/texlive/2013/texmf-dist/doc/pdftex/thanh/ext/ufntinst.sty
+/usr/local/texlive/2013/texmf-dist/source/lualatex/lualatex-doc/lualatex-doc.tex
+/usr/local/texlive/2013/texmf-dist/tex/fontinst/base/cfntinst.sty
+/usr/local/texlive/2013/texmf-dist/tex/fontinst/base/finstmsc.sty
+/usr/local/texlive/2013/texmf-dist/tex/fontinst/base/fontinst.sty
+/usr/local/texlive/2013/texmf-dist/tex/fontinst/base/xfntinst.sty
+/usr/local/texlive/2013/texmf-dist/tex/latex/mh/empheq.sty
+/usr/local/texlive/2013/texmf-dist/tex/latex/mh/mathtools.sty
+/usr/local/texlive/2013/texmf-dist/tex/latex/mh/mhsetup.sty
+/usr/local/texlive/2013/texmf-dist/tex/latex/rcs/rcs.sty
+/usr/local/texlive/2013/texmf-dist/tex/plain/mkpattern/mkpatter.tex

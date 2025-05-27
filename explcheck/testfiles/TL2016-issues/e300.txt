@@ -1,0 +1,6 @@
+/usr/local/texlive/2016/texmf-dist/source/latex/skrapport/skrapport.tex
+/usr/local/texlive/2016/texmf-dist/tex/latex/gzt/gzt.cls
+/usr/local/texlive/2016/texmf-dist/tex/latex/gzt/gztarticle.cls
+/usr/local/texlive/2016/texmf-dist/tex/latex/nwejm/nwejm.cls
+/usr/local/texlive/2016/texmf-dist/tex/latex/nwejm/nwejmart.cls
+/usr/local/texlive/2016/texmf-dist/tex/latex/siunitx/siunitx.sty

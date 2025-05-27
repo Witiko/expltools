@@ -1,0 +1,8 @@
+/usr/local/texlive/2018/texmf-dist/tex/latex/diffcoeff/diffcoeff.sty
+/usr/local/texlive/2018/texmf-dist/tex/latex/gzt/gzt.cls
+/usr/local/texlive/2018/texmf-dist/tex/latex/gzt/gztarticle.cls
+/usr/local/texlive/2018/texmf-dist/tex/latex/jslectureplanner/jslectureplanner.sty
+/usr/local/texlive/2018/texmf-dist/tex/latex/nwejm/nwejm.cls
+/usr/local/texlive/2018/texmf-dist/tex/latex/nwejm/nwejmart.cls
+/usr/local/texlive/2018/texmf-dist/tex/latex/siunitx/siunitx.sty
+/usr/local/texlive/2018/texmf-dist/tex/latex/xassoccnt/xassoccnt.sty

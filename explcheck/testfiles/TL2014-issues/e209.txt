@@ -1,0 +1,6 @@
+/usr/local/texlive/2014/texmf-dist/doc/xelatex/xecjk/example/xunicode-symbols.tex
+/usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3regex-trace.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3str-convert.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3tl-analysis.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/xcjk2uni/xCJK2uni-make.tex
