@@ -1,10 +1,10 @@
 /usr/local/texlive/2013/texmf-dist/doc/latex/GS1/examples/GS_set_EAN_control_digit.tex
 /usr/local/texlive/2013/texmf-dist/doc/latex/GS1/examples/int_set_to_EAN_control_digit.tex
+/usr/local/texlive/2013/texmf-dist/tex/latex/GS1/GS1.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
-/usr/local/texlive/2013/texmf-dist/tex/latex/GS1/GS1.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/hobby/hobby.code.tex
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3sort/l3sort.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3kernel/l3expan.sty
@@ -14,6 +14,6 @@
 /usr/local/texlive/2013/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/zhnumber/zhnumber.sty
-/usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty
 /usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
+/usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty
 /usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty

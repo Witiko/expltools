@@ -20,7 +20,6 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/celtic/tikzlibraryceltic.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemformula/chemformula.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemgreek/chemgreek.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros4.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.acid-base.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.base.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.isotopes.code.tex
@@ -33,6 +32,7 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.spectroscopy.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.thermodynamics.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.xfrac.code.tex
+/usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros4.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/citeall/citeall.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/classics/classics.sty
@@ -47,16 +47,16 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/fontspec/fontspec.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/fontspec/fontspec.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/ghsystem/ghsystem.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/gzt/gzt.cls
+/usr/local/texlive/2016/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/hobby/hobby.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/hobete/hobete.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/kotex-oblivoir/memhangul-x/xob-font.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3regex-trace.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3str-format.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3tl-analysis.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/xgalley/l3galley.sty
@@ -79,8 +79,8 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/morewrites/morewrites.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/mucproc/mucproc.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/notes2bib/notes2bib.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/nwejm/nwejmart.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/nwejm/nwejm.cls
+/usr/local/texlive/2016/texmf-dist/tex/latex/nwejm/nwejmart.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/phonenumbers/phn-DE_Ortsnamen.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/phonenumbers/phn-FR_Ortsnamen.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/phonenumbers/phn-US_Ortsnamen.tex

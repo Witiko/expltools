@@ -1,9 +1,9 @@
 /usr/local/texlive/2023/texmf-dist/tex/generic/lt3luabridge/lt3luabridge.tex
 /usr/local/texlive/2023/texmf-dist/tex/generic/markdown/markdown.tex
+/usr/local/texlive/2023/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-toc.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/bfh-ci/bfhlayout.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/bfh-ci/bfhsciposter.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/ccool/ccool.sty
-/usr/local/texlive/2023/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-toc.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/emotion/emotion.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/jobname-suffix/jobname-suffix.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/kalendarium/kalendarium.sty

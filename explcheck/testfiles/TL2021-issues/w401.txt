@@ -2,8 +2,8 @@
 /usr/local/texlive/2021/texmf-dist/tex/generic/scontents/scontents-code.tex
 /usr/local/texlive/2021/texmf-dist/tex/generic/scontents/scontents.tex
 /usr/local/texlive/2021/texmf-dist/tex/generic/witharrows/witharrows.sty
-/usr/local/texlive/2021/texmf-dist/tex/latex/acro/acro2.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/acro/acro.sty
+/usr/local/texlive/2021/texmf-dist/tex/latex/acro/acro2.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/akshar/akshar.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/chemformula/chemformula.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/citation-style-language/citation-style-language.sty
@@ -18,8 +18,8 @@
 /usr/local/texlive/2021/texmf-dist/tex/latex/emoji/emoji.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/erw-l3/erw-l3.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/etl/etl.sty
-/usr/local/texlive/2021/texmf-dist/tex/latex/fduthesis/fduthesis.cls
 /usr/local/texlive/2021/texmf-dist/tex/latex/fduthesis/fduthesis-en.cls
+/usr/local/texlive/2021/texmf-dist/tex/latex/fduthesis/fduthesis.cls
 /usr/local/texlive/2021/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/fontawesome5/fontawesome5-generic-helper.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
@@ -59,8 +59,8 @@
 /usr/local/texlive/2021/texmf-dist/tex/latex/scontents/scontents.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/sdaps/sdapsbase.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/secnum/secnum.sty
-/usr/local/texlive/2021/texmf-dist/tex/latex/siunitx/siunitx.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/siunitx/siunitx-v2.sty
+/usr/local/texlive/2021/texmf-dist/tex/latex/siunitx/siunitx.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/skdoc/skdoc.cls
 /usr/local/texlive/2021/texmf-dist/tex/latex/skmath/skmath.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/skrapport/skrapport-size-common.sty

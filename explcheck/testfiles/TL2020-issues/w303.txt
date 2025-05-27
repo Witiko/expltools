@@ -1,3 +1,4 @@
+/usr/local/texlive/2020/texmf-dist/tex/latex/GS1/GS1.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/akshar/akshar.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/aligned-overset/aligned-overset.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/ccool/ccool.sty
@@ -10,9 +11,8 @@
 /usr/local/texlive/2020/texmf-dist/tex/latex/erw-l3/erw-l3.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/factura/factura.cls
-/usr/local/texlive/2020/texmf-dist/tex/latex/GS1/GS1.sty
-/usr/local/texlive/2020/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2020/texmf-dist/tex/latex/gzt/gzt.cls
+/usr/local/texlive/2020/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2020/texmf-dist/tex/latex/hobby/hobby.code.tex
 /usr/local/texlive/2020/texmf-dist/tex/latex/invoice2/invoice2.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/jslectureplanner/jslectureplanner.sty
@@ -25,8 +25,8 @@
 /usr/local/texlive/2020/texmf-dist/tex/latex/mhchem/mhchem.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/nicematrix/nicematrix.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/numerica/numerica.sty
-/usr/local/texlive/2020/texmf-dist/tex/latex/nwejm/nwejmart.cls
 /usr/local/texlive/2020/texmf-dist/tex/latex/nwejm/nwejm.cls
+/usr/local/texlive/2020/texmf-dist/tex/latex/nwejm/nwejmart.cls
 /usr/local/texlive/2020/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/pseudo/pseudo.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/returntogrid/returntogrid.sty

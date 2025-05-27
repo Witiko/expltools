@@ -1,12 +1,11 @@
 /usr/local/texlive/2016/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
 /usr/local/texlive/2016/texmf-dist/doc/xelatex/xecjk/xunicode-symbols.tex
 /usr/local/texlive/2016/texmf-dist/tex/generic/ctex/ctexspamacro.tex
+/usr/local/texlive/2016/texmf-dist/tex/latex/GS1/rule-D.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/breqn/flexisym.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemformula/chemformula.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemgreek/chemgreek.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros4.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros5.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.acid-base.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.all.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.base.code.tex
@@ -24,10 +23,13 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.spectroscopy.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.symbols.code.tex
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros.module.units.code.tex
+/usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros4.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros5.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/citeall/citeall.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/cooking-units/cooking-units.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/copyedit/copyedit.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctexart.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctexbeamer.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctexbook.cls
@@ -36,7 +38,6 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctexpatch.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctexrep.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctexsize.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/ctex/ctxdoc.cls
 /usr/local/texlive/2016/texmf-dist/tex/latex/denisbdoc/denisbdoc.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/embrac/embrac.sty
@@ -47,10 +48,9 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/ghsystem/ghsystem.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/GS1/rule-D.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/kantlipsum/kantlipsum.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3regex-trace.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3str-convert.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3tl-analysis.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/l3experimental/l3str/l3tl-build.sty
@@ -83,7 +83,7 @@
 /usr/local/texlive/2016/texmf-dist/tex/luatex/luatexja/patches/lltjp-unicode-math.sty
 /usr/local/texlive/2016/texmf-dist/tex/plain/mkpattern/mkpatter.tex
 /usr/local/texlive/2016/texmf-dist/tex/xelatex/interchar/interchar.sty
-/usr/local/texlive/2016/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty
 /usr/local/texlive/2016/texmf-dist/tex/xelatex/xecjk/xeCJK-listings.sty
 /usr/local/texlive/2016/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
+/usr/local/texlive/2016/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty
 /usr/local/texlive/2016/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty

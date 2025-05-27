@@ -18,8 +18,8 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/figput/figput.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/grading-scheme/grading-scheme.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/gs1/GS1.sty
-/usr/local/texlive/2023/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/gzt/gzt.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/invoice2/invoice2.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/jobname-suffix/jobname-suffix.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/jslectureplanner/jslectureplanner.sty
@@ -31,8 +31,8 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/mitthesis/mitthesis.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/non-decimal-units/non-decimal-units.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/numerica/numerica.sty
-/usr/local/texlive/2023/texmf-dist/tex/latex/nwejm/nwejmart.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/nwejm/nwejm.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/nwejm/nwejmart.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/pdfmanagement-testphase/l3pdffield-testphase.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/projlib/projlib-theorem.sty
@@ -45,8 +45,8 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/string-diagrams/string-diagrams.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/termsim/termsim.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/topiclongtable/topiclongtable.sty
-/usr/local/texlive/2023/texmf-dist/tex/latex/tuda-ci/beamerouterthemeTUDa2023.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/tuda-ci/beamerouterthemeTUDa.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/tuda-ci/beamerouterthemeTUDa2023.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/tzplot/tzplot.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/ufrgscca/ufrgscca-forms.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty

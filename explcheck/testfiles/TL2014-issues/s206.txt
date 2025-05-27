@@ -1,6 +1,6 @@
 /usr/local/texlive/2014/texmf-dist/doc/latex/GS1/examples/GS_cut_EAN_control_digit.tex
-/usr/local/texlive/2014/texmf-dist/doc/latex/GS1/examples/GS_set_code_digit_seq.tex
 /usr/local/texlive/2014/texmf-dist/doc/latex/GS1/examples/GS_set_EAN_control_digit.tex
+/usr/local/texlive/2014/texmf-dist/doc/latex/GS1/examples/GS_set_code_digit_seq.tex
 /usr/local/texlive/2014/texmf-dist/doc/latex/GS1/examples/int_set_to_EAN_control_digit.tex
 /usr/local/texlive/2014/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
 /usr/local/texlive/2014/texmf-dist/doc/latex/latex-referenz/l3keysdemo.sty
@@ -17,8 +17,8 @@
 /usr/local/texlive/2014/texmf-dist/tex/latex/fixocgx/fixocgx.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
-/usr/local/texlive/2014/texmf-dist/tex/latex/fontspec/fontspec.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/fontspec/fontspec.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/gtl/gtl.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/hobby/hobby.code.tex
 /usr/local/texlive/2014/texmf-dist/tex/latex/hobby/pml3array.sty
@@ -27,8 +27,8 @@
 /usr/local/texlive/2014/texmf-dist/tex/latex/kotex-oblivoir/memhangul-x/xob-font.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3sort/l3sort.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3flag.sty
-/usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3regex-trace.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3str-convert.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3str.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/l3experimental/l3str/l3tl-analysis.sty
@@ -48,8 +48,8 @@
 /usr/local/texlive/2014/texmf-dist/tex/latex/spath3/spath3.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/tasks/tasks.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
-/usr/local/texlive/2014/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/xpatch/xpatch.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/xpeek/xpeek.sty
@@ -58,5 +58,5 @@
 /usr/local/texlive/2014/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec.sty
 /usr/local/texlive/2014/texmf-dist/tex/luatex/luatexja/addons/luatexja-preset.sty
 /usr/local/texlive/2014/texmf-dist/tex/xelatex/interchar/interchar.sty
-/usr/local/texlive/2014/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty
 /usr/local/texlive/2014/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
+/usr/local/texlive/2014/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty

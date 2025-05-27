@@ -1,4 +1,5 @@
 /usr/local/texlive/2013/texmf-dist/doc/xelatex/xecjk/example/xunicode-symbols.tex
+/usr/local/texlive/2013/texmf-dist/tex/latex/GS1/rule-D.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/chemmacros/chemformula.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/chemmacros/chemgreek.sty
@@ -12,12 +13,11 @@
 /usr/local/texlive/2013/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
-/usr/local/texlive/2013/texmf-dist/tex/latex/GS1/rule-D.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/kantlipsum/kantlipsum.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3sort/l3sort.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3flag.sty
-/usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3regex-trace.sty
+/usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3str-convert.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3str.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3tl-analysis.sty
@@ -54,8 +54,8 @@
 /usr/local/texlive/2013/texmf-dist/tex/latex/regexpatch/regexpatch.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/siunitx/siunitx.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
-/usr/local/texlive/2013/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
+/usr/local/texlive/2013/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/xcjk2uni/xCJK2uni.sty
 /usr/local/texlive/2013/texmf-dist/tex/latex/xpatch/xpatch.sty
@@ -63,7 +63,7 @@
 /usr/local/texlive/2013/texmf-dist/tex/latex/zhnumber/zhnumber.sty
 /usr/local/texlive/2013/texmf-dist/tex/luatex/luatexja/patches/lltjp-unicode-math.sty
 /usr/local/texlive/2013/texmf-dist/tex/plain/mkpattern/mkpatter.tex
-/usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty
 /usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xeCJK-listings.sty
 /usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
+/usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xeCJKfntef.sty
 /usr/local/texlive/2013/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty

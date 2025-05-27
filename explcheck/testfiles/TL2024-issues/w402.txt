@@ -1,3 +1,5 @@
+/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
+/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/ccool/ccool.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cdcmd/cdcmd.sty
@@ -15,11 +17,9 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/person.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/dbshow/dbshow.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/derivative/derivative.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/exsheets/exsheets.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/fduthesis/fduthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/fduthesis/fduthesis-en.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/fduthesis/fduthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/functional/functional.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/hduthesis/hduthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/hustthesis/hustthesis.cls
@@ -37,8 +37,8 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/moremath/moremath.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/nicematrix/nicematrix.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/njuthesis/njuthesis.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/numerica/numerica.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/numerica-tables/numerica-tables.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/numerica/numerica.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/nwafuthesis/nwafuthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/postnotes/postnotes.sty

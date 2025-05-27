@@ -24,8 +24,8 @@
 /usr/local/texlive/2016/texmf-dist/tex/latex/skmath/skmath.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/skrapport/skrapport-size-common.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
-/usr/local/texlive/2016/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/xassoccnt/xassoccnt.sty
 /usr/local/texlive/2016/texmf-dist/tex/latex/xpinyin/xpinyin.sty

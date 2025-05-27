@@ -1,8 +1,8 @@
+/usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-toc.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex-dev/tools/array.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/bfh-ci/bfhlayout.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/bfh-ci/bfhsciposter.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/ccool/ccool.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-toc.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/tools/array.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/emotion/emotion.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fancyhdr/extramarks-v4.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fancyhdr/fancyhdr.sty
