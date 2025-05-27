@@ -43,7 +43,7 @@ local function read_results(results_pathname)
     end
     ::continue::
   end
-  print(string.format('Read %d issues and %d files from files in "%s".', num_issues, #results.filenames, results_pathname))
+  print(string.format('Read %d issues and %d files listed in "%s".', num_issues, #results.filenames, results_pathname))
   return results
 end
 
@@ -144,9 +144,9 @@ local function main(results_pathname)
   -- Print the results.
   io.write(string.format('Checked %d different options in file "%s"', num_options, default_config_pathname))
   if #key_locations.to_remove == 0 then
-    print(string.format(', none of which can be removed without affecting files in "%s".', results_pathname))
+    print(string.format(', none of which can be removed without affecting files listed in "%s".', results_pathname))
   else
-    print(string.format(', %d of which can be removed without affecting files in "%s":', #key_locations.to_remove, results_pathname))
+    print(string.format(', %d of which can be removed without affecting files listed in "%s":', #key_locations.to_remove, results_pathname))
     for _, key_location in ipairs(key_locations.to_remove) do
       print(string.format('- %s', key_location))
     end
