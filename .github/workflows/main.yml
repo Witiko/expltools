@@ -136,8 +136,8 @@ jobs:
           export LUAINPUTS=explcheck/src
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -exec \
             sh -c '
-              texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" || true
-            ' sh {} + > issues.txt
+              texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" 1>&2 || true
+            ' sh {} + -print 1> files.txt 2> issues.txt
           # Display any potential exceptions.
           if grep -v '^/' issues.txt
           then
@@ -175,7 +175,7 @@ jobs:
         run: |
           set -e
           export LUAINPUTS=explcheck/src
-          texlua explcheck/src/prune-explcheck-config.lua issues/
+          texlua explcheck/src/prune-explcheck-config.lua files.txt issues/
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, shellcheck, unit-tests, regression-tests]

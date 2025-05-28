@@ -54,6 +54,9 @@
 - Split regression test results into files that contain all pathnames for which
   a specific issue was detected. (suggested by @koppor, added in #88)
 
+- Continuously prune sections that correspond to non-existing files in the
+  default config file `explcheck-config.toml`. (#86)
+
 ### explcheck v0.10.0
 
 ## expltools 2025-05-05
