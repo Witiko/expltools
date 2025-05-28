@@ -311,7 +311,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.lwarp]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "w302"]
 
 [package.memoir]
 ignored_issues = ["e304"]
@@ -357,3 +357,6 @@ ignored_issues = ["e304"]
 
 [filename."platexrelease.sty"]
 ignored_issues = ["e304"]
+
+[package.pstool]
+ignored_issues = ["w302"]
