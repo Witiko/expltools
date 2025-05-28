@@ -693,6 +693,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if statement.confidence == DEFINITELY and is_function_private(statement.defined_csname) then
           table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
+        -- Record source control sequences used as the source in indirect function definitions.
+        if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
+          maybe_used_csnames[statement.source_csname] = true
+        end
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequences used in other statements.
         -- TODO: Also record partially-understood control sequences like `\use:c{__ccool_aux_prop:\g__ccool_option_expans_tl}` from line
