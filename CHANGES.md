@@ -26,6 +26,8 @@
 - In the command-line interface, do not consider arguments starting with `-`
   filenames. (contributed by @muzimuzhi in #83, fixed in #84)
 
+- Fix issues with token mapping in syntactic analysis. (#86, #90)
+
 #### Continuous integration
 
 - Switch to the GitHub Action `softprops/action-gh-release` for automatic
