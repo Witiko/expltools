@@ -30,7 +30,6 @@
 /usr/local/texlive/2021/texmf-dist/tex/latex/celtic/tikzlibraryceltic.code.tex
 /usr/local/texlive/2021/texmf-dist/tex/latex/chemformula/chemformula.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/chemgreek/chemgreek.sty
-/usr/local/texlive/2021/texmf-dist/tex/latex/chemmacros/chemmacros-2015-02-08.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/citation-style-language/citation-style-language.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/citeall/citeall.sty
@@ -73,7 +72,6 @@
 /usr/local/texlive/2021/texmf-dist/tex/latex/exsheets/exsheets-listings.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/factura/factura.cls
-/usr/local/texlive/2021/texmf-dist/tex/latex/fduthesis/fduthesis-en.cls
 /usr/local/texlive/2021/texmf-dist/tex/latex/fnpct/fnpct-2019-10-05.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/fontawesome5/fontawesome5-utex-helper.sty

@@ -1,6 +1,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/generic/markdown/markdown.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
+/usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-question.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/grading-scheme/grading-scheme.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/expl3-code.tex

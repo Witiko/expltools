@@ -114,8 +114,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/zhnumber/zhnumber.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/zugferd/zugferd.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/letgut/letgut.cls
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-demo.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-pdf.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-27c.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-29c.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-29e.sty

@@ -902,14 +902,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/lua-ul/lua-ul.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/lua-widow-control/lua-widow-control.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/lualatex-math/lualatex-math.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-demo.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-patches-amsmath.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-patches-amstext.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-patches-kernel.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-patches-lab-math.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-pdf-demo.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml-pdf.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/luamml/luamml.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/luaprogtable/luaprogtable.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/marginalia/marginalia.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/novel/novel-Footnotes.sty

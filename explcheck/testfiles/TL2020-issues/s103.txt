@@ -18,19 +18,6 @@
 /usr/local/texlive/2020/texmf-dist/tex/latex/celtic/tikzlibraryceltic.code.tex
 /usr/local/texlive/2020/texmf-dist/tex/latex/chemformula/chemformula.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/chemgreek/chemgreek.sty
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.acid-base.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.base.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.isotopes.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.lang.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.newman.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.nomenclature.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.orbital.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.phases.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.reactions.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.spectroscopy.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.thermodynamics.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.xfrac.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros4.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/citeall/citeall.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/classics/classics.sty
@@ -58,7 +45,6 @@
 /usr/local/texlive/2020/texmf-dist/tex/latex/exsheets/exsheets-listings.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/factura/factura.cls
-/usr/local/texlive/2020/texmf-dist/tex/latex/fduthesis/fduthesis-en.cls
 /usr/local/texlive/2020/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/fontawesome5/fontawesome5-utex-helper.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/fontawesome5/fontawesome5.sty
