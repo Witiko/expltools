@@ -220,17 +220,15 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             end
           end
           assert(#argument_specifiers == #base_argument_specifiers)
-          local any_specifiers_changed = false
           for i = 1, #argument_specifiers do
             local base_argument_specifier = base_argument_specifiers:sub(i, i)
-            argument.specifier = argument_specifiers:sub(i, i)
-            if base_argument_specifier == argument.specifier then  -- variant argument specifier is same as base argument specifier
+            local argument_specifier = argument_specifiers:sub(i, i)
+            if base_argument_specifier == argument_specifier then  -- variant argument specifier is same as base argument specifier
               goto continue  -- skip further checks
             end
-            any_specifiers_changed = true
             local any_compatible_specifier = false
             for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
-              if argument.specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
+              if argument_specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
                 any_compatible_specifier = true
                 break  -- skip further checks
               end
@@ -238,7 +236,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             if not any_compatible_specifier then
               local any_deprecated_specifier = false
               for _, deprecated_specifier in ipairs(lpeg.match(parsers.deprecated_argument_specifiers, base_argument_specifier)) do
-                if argument.specifier == deprecated_specifier then  -- variant argument specifier is deprecated regarding the base specifier
+                if argument_specifier == deprecated_specifier then  -- variant argument specifier is deprecated regarding the base specifier
                   any_deprecated_specifier = true
                   break  -- skip further checks
                 end
@@ -251,10 +249,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               end
             end
             ::continue::
-          end
-          if not any_specifiers_changed then
-            issues:add("w407", "multiply defined function variant", byte_range)
-            return nil  -- variant argument specifiers are the same as base argument specifiers, give up
           end
           table.insert(variant_argument_specifiers, {argument_specifiers, DEFINITELY})
         end
@@ -279,9 +273,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         end
         variant_argument_specifiers = {}
         for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
-          if base_argument_specifiers ~= argument_specifiers then
-            table.insert(variant_argument_specifiers, {argument_specifiers, MAYBE})
-          end
+          table.insert(variant_argument_specifiers, {argument_specifiers, MAYBE})
         end
 
         ::done_parsing::
@@ -337,14 +329,18 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
                 local condition, condition_confidence = table.unpack(condition_table)
                 local base_conditional_csname = get_conditional_function_csname(base_csname, condition)
                 local defined_conditional_csname = get_conditional_function_csname(defined_csname, condition)
-                if defined_conditional_csname == nil then  -- we couldn't determine the defined csname, give up
+                if base_conditional_csname == nil or defined_conditional_csname == nil then  -- we couldn't determine a csname, give up
                   goto other_statement
                 end
                 local confidence = math.min(argument_specifier_confidence, condition_confidence)
-                table.insert(defined_csnames, {base_conditional_csname, defined_conditional_csname, confidence})
+                if base_conditional_csname ~= defined_conditional_csname then
+                  table.insert(defined_csnames, {base_conditional_csname, defined_conditional_csname, confidence})
+                end
               end
             else  -- non-conditional function
-              table.insert(defined_csnames, {base_csname, defined_csname, argument_specifier_confidence})
+              if base_csname ~= defined_csname then
+                table.insert(defined_csnames, {base_csname, defined_csname, argument_specifier_confidence})
+              end
             end
           end
           -- record function variant definition statements for all effectively defined csnames
@@ -354,6 +350,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               type = FUNCTION_VARIANT_DEFINITION,
               call_range = call_range,
               confidence = confidence,
+              -- The following attributes are specific to the type.
               base_csname = effective_base_csname,
               defined_csname = defined_csname,
               is_conditional = is_conditional,
@@ -476,40 +473,40 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               goto other_statement
             end
             assert(defined_csname ~= nil)
-            -- determine the name of the source function
-            local source_csname_argument = call.arguments[2]
-            assert(source_csname_argument.specifier == "N")
-            local source_csname_token = transformed_tokens[first_map_forward(source_csname_argument.token_range:start())]
-            local source_csname = source_csname_token.payload
-            if source_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            -- determine the name of the base function
+            local base_csname_argument = call.arguments[2]
+            assert(base_csname_argument.specifier == "N")
+            local base_csname_token = transformed_tokens[first_map_forward(base_csname_argument.token_range:start())]
+            local base_csname = base_csname_token.payload
+            if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
               goto other_statement
             end
-            assert(source_csname ~= nil)
-            -- determine all effectively defined csnames and effective source csnames
-            local effective_defined_and_source_csnames = {}
+            assert(base_csname ~= nil)
+            -- determine all effectively defined csnames and effective base csnames
+            local effective_defined_and_base_csnames = {}
             if is_conditional then  -- conditional function
               -- determine the conditions
               local conditions = parse_conditions(call.arguments[#call.arguments - 1])
               if conditions == nil then  -- we couldn't determine the conditions, give up
                 goto other_statement
               end
-              -- determine the defined and source csnames
+              -- determine the defined and base csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, confidence = table.unpack(condition_table)
                 local effectively_defined_csname = get_conditional_function_csname(defined_csname, condition)
-                local effective_source_csname = get_conditional_function_csname(source_csname, condition)
-                if effectively_defined_csname == nil or effective_source_csname == nil then  -- we couldn't determine a csname, give up
+                local effective_base_csname = get_conditional_function_csname(base_csname, condition)
+                if effectively_defined_csname == nil or effective_base_csname == nil then  -- we couldn't determine a csname, give up
                   goto other_statement
                 end
-                table.insert(effective_defined_and_source_csnames, {effectively_defined_csname, effective_source_csname, confidence})
+                table.insert(effective_defined_and_base_csnames, {effectively_defined_csname, effective_base_csname, confidence})
               end
             else  -- non-conditional function
-              effective_defined_and_source_csnames = {{defined_csname, source_csname, DEFINITELY}}
+              effective_defined_and_base_csnames = {{defined_csname, base_csname, DEFINITELY}}
             end
             -- record function definition statements for all effectively defined csnames
-            for _, effective_defined_and_source_csname_table in ipairs(effective_defined_and_source_csnames) do  -- lua
-              local effectively_defined_csname, effective_source_csname, confidence
-                = table.unpack(effective_defined_and_source_csname_table)
+            for _, effective_defined_and_base_csname_table in ipairs(effective_defined_and_base_csnames) do  -- lua
+              local effectively_defined_csname, effective_base_csname, confidence
+                = table.unpack(effective_defined_and_base_csname_table)
               local statement = {
                 type = FUNCTION_DEFINITION,
                 call_range = call_range,
@@ -520,7 +517,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
                 -- The following attributes are specific to the subtype.
-                source_csname = effective_source_csname,
+                base_csname = effective_base_csname,
                 is_conditional = is_conditional,
               }
               table.insert(statements, statement)
@@ -694,9 +691,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if statement.confidence == DEFINITELY and is_function_private(statement.defined_csname) then
           table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
-        -- Record source control sequences used as the source in indirect function definitions.
+        -- Record base control sequences used as the base in indirect function definitions.
         if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
-          maybe_used_csnames[statement.source_csname] = true
+          maybe_used_csnames[statement.base_csname] = true
         end
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequences used in other statements.

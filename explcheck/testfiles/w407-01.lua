@@ -20,9 +20,9 @@ syntactic_analysis.process(filename, content, issues, results, options)
 semantic_analysis.process(filename, content, issues, results, options)
 
 assert(#issues.errors == 0)
-assert(#issues.warnings == 2)
+assert(#issues.warnings == 1)
 
-local expected_line_numbers = {{4, 6}, {10, 12}}
+local expected_line_numbers = {{7, 9}}
 for index, warning in ipairs(issues.sort(issues.warnings)) do
   assert(warning[1] == "w407")
   assert(warning[2] == "multiply defined function variant")
