@@ -102,8 +102,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       end
 
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
-      local token_range = call.token_range
-      local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
+      local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range, #content)
 
       -- Split an expl3 control sequence name to a stem and the argument specifiers.
       local function parse_expl3_csname(csname)
@@ -342,7 +341,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             local statement = {
               type = FUNCTION_VARIANT_DEFINITION,
               call_range = call_range,
-              byte_range = byte_range,
               confidence = confidence,
               base_csname = effective_base_csname,
               defined_csname = defined_csname,
@@ -437,8 +435,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             local statement = {
               type = FUNCTION_DEFINITION,
               call_range = call_range,
-              token_range = token_range,
-              byte_range = byte_range,
               confidence = confidence,
               defined_csname = effectively_defined_csname,
               is_conditional = is_conditional,
@@ -455,17 +451,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         local statement = {
           type = OTHER_STATEMENT,
           call_range = call_range,
-          token_range = token_range,
-          byte_range = byte_range,
         }
         table.insert(statements, statement)
       elseif call.type == OTHER_TOKENS then  -- other tokens
-        local statement_type = classify_tokens(tokens, token_range)
+        local statement_type = classify_tokens(tokens, call.token_range)
         local statement = {
           type = statement_type,
           call_range = call_range,
-          token_range = token_range,
-          byte_range = byte_range,
         }
         table.insert(statements, statement)
       else
@@ -559,14 +551,14 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     table.insert(call_segments, part_calls)
     table.insert(statement_segments, part_statements)
     local part_tokens = results.tokens[part_number]
-    table.insert(token_segments, {part_tokens, identity})
+    table.insert(token_segments, {part_tokens, part_tokens, identity})
     local part_replacement_texts = replacement_texts[part_number]
     for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls) do
       local nested_statements = part_replacement_texts.statements[replacement_text_number]
       table.insert(call_segments, nested_calls)
       table.insert(statement_segments, nested_statements)
       local replacement_text_tokens = part_replacement_texts.tokens[replacement_text_number]
-      table.insert(token_segments, {replacement_text_tokens.transformed_tokens, replacement_text_tokens.map_forward})
+      table.insert(token_segments, {part_tokens, replacement_text_tokens.transformed_tokens, replacement_text_tokens.map_forward})
     end
   end
 
@@ -581,27 +573,42 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   local maybe_defined_csnames, maybe_used_csnames = {}, {}
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
-    local segment_tokens, map_forward = table.unpack(token_segments[segment_number])
+    local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
+
+    -- Get the token range for a given call.
+    local function get_call_token_range(call_number)
+      local token_range = segment_calls[call_number].token_range
+      return token_range
+    end
+
+    -- Get the byte range for a given token.
+    local function get_token_byte_range(token_number)
+      local byte_range = segment_tokens[token_number].byte_range
+      return byte_range
+    end
+
     for _, statement in ipairs(segment_statements) do
+      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range, #segment_tokens)
+      local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
       if statement.type == FUNCTION_VARIANT_DEFINITION then
         -- Record private function variant defitions.
         maybe_used_csnames[statement.base_csname] = true
         maybe_defined_csnames[statement.defined_csname] = true
-        table.insert(variant_base_csnames, {statement.base_csname, statement.byte_range})
+        table.insert(variant_base_csnames, {statement.base_csname, byte_range})
         if statement.confidence == DEFINITELY then
           if defined_function_variant_csnames[statement.defined_csname] then
-            issues:add("w407", "multiply defined function variant", statement.byte_range)
+            issues:add("w407", "multiply defined function variant", byte_range)
           end
           defined_function_variant_csnames[statement.defined_csname] = true
           if is_function_private(statement.defined_csname) then
-            table.insert(defined_private_function_variants, {statement.defined_csname, statement.byte_range})
+            table.insert(defined_private_function_variants, {statement.defined_csname, byte_range})
           end
         end
       elseif statement.type == FUNCTION_DEFINITION then
         -- Record private function defitions.
         maybe_defined_csnames[statement.defined_csname] = true
         if statement.confidence == DEFINITELY and is_function_private(statement.defined_csname) then
-          table.insert(defined_private_functions, {statement.defined_csname, statement.byte_range})
+          table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequences used in other statements.
@@ -613,7 +620,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           maybe_used_csnames[call.csname] = true
           for _, argument in ipairs(call.arguments) do
             if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-              for _, token in argument.token_range:enumerate(segment_tokens, map_forward) do
+              for _, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
                 if token.type == CONTROL_SEQUENCE then
                   maybe_used_csnames[token.payload] = true
                 end
@@ -623,7 +630,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         end
       elseif statement.type == OTHER_TOKENS_SIMPLE or statement.type == OTHER_TOKENS_COMPLEX then
         -- Record control sequence names in blocks of other unrecognized tokens.
-        for _, token in statement.token_range:enumerate(segment_tokens, map_forward) do
+        for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
             maybe_used_csnames[token.payload] = true
           end
