@@ -53,7 +53,7 @@ expl3_detection_strategy = "always"
 max_line_length = 100
 ignored_issues = ["e304"]
 
-[pathname.knowledge]
+[package.knowledge]
 ignored_issues = ["e201", "e300", "e301", "w302", "e405"]
 
 [filename."grading-scheme.sty"]
