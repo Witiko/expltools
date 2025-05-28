@@ -1,0 +1,2 @@
+/usr/local/texlive/2024/texmf-dist/tex/generic/markdown/markdown.tex
+/usr/local/texlive/2024/texmf-dist/tex/latex/markdown/markdown.sty
