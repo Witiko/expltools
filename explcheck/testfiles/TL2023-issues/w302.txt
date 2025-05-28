@@ -91,8 +91,6 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/longdivision/longdivision.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/lt3graph/lt3graph.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/lt3rawobjects/lt3rawobjects.sty
-/usr/local/texlive/2023/texmf-dist/tex/latex/lwarp/lwarp-siunitx-v2.sty
-/usr/local/texlive/2023/texmf-dist/tex/latex/lwarp/lwarp-siunitx.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/mathcommand/mathcommand.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/media9/media9.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/menukeys/menukeys-2020-12-19.sty
@@ -122,7 +120,6 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/projlib/projlib-author.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/projlib/projlib-language.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/pseudo/pseudo.sty
-/usr/local/texlive/2023/texmf-dist/tex/latex/pstool/pstool.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/pxpic/pxpic.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/regexpatch/regexpatch.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/responsive/responsive.sty

@@ -8,6 +8,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-block.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-table.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/tools/l3sys-query.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex-dev/tools/longtable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro2.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/algobox/algobox.sty
@@ -67,6 +68,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fancyhdr/extramarks-v4.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/fduthesis/fdudoc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/fistrum/fistrum.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fontawesome5/fontawesome5.sty
@@ -83,6 +85,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/homework/homework.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/hustthesis/hustthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/istgame/istgame.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq-trimmarks.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/jmsdelim/jmsdelim.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/jsonparse/jsonparse.sty
@@ -140,8 +143,10 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-author.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-language.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/pseudo/pseudo.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/pxpic/pxpic.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/regexpatch/regexpatch.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/responsive/responsive.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/rmathbr/rmathbr.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/scaletextbullet/scaletextbullet.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/schule/schule.mod.Bewertung.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/scripture/scripture.sty
@@ -162,8 +167,10 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/soup/soup.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/spath3/spath3.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/spath3/tikzlibraryspath3.code.tex
+/usr/local/texlive/2024/texmf-dist/tex/latex/spectralsequences/sseqforeach.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/spectralsequences/sseqmacromakers.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/spectralsequences/sseqmessages.code.tex
+/usr/local/texlive/2024/texmf-dist/tex/latex/spectralsequences/sseqparsers.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/starray/starray.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/statistics/statistics.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/etc/lststex.sty
@@ -187,6 +194,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/timechart/timechart.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tipauni/tipauni.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tools/l3sys-query.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/tools/longtable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/topiclongtable/topiclongtable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/beamerouterthemeTUDa.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaexercise.cls
@@ -197,6 +205,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math-input/unicode-math-input.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/unicodefonttable/unicodefonttable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks-nums.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks.sty

@@ -86,7 +86,6 @@
 /usr/local/texlive/2020/texmf-dist/tex/latex/pmhanguljamo/pmhanguljamo.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/pseudo/pseudo.sty
-/usr/local/texlive/2020/texmf-dist/tex/latex/pstool/pstool.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/regexpatch/regexpatch.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/rmathbr/rmathbr.sty
 /usr/local/texlive/2020/texmf-dist/tex/latex/schule/schule.mod.Bewertung.code.tex
