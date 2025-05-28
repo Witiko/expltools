@@ -11,7 +11,7 @@ warnings_are_errors = false
 
 [package.l3kernel]
 expl3_detection_strategy = "always"
-ignored_issues = ["e208", "e209", "e300", "e301", "w302", "e304"]
+ignored_issues = ["e208", "e209", "e300", "e301", "w302", "e304", "e405"]
 max_line_length = 140
 
 [filename."tex4ht.sty"]
@@ -36,8 +36,9 @@ max_line_length = 90
 [filename."statistics.sty"]
 max_line_length = 100
 
-[filename."chemmacros.sty"]
+[package.chemmacros]
 max_line_length = 100
+ignored_issues = ["e405"]
 
 [filename."interlinear.sty"]
 expl3_detection_strategy = "precision"
@@ -52,8 +53,8 @@ expl3_detection_strategy = "always"
 max_line_length = 100
 ignored_issues = ["e304"]
 
-[filename."knowledge.sty"]
-ignored_issues = ["e201", "e300", "e301", "w302"]
+[pathname.knowledge]
+ignored_issues = ["e201", "e300", "e301", "w302", "e405"]
 
 [filename."grading-scheme.sty"]
 ignored_issues = ["e201"]
@@ -66,10 +67,11 @@ ignored_issues = ["e300"]
 [package.stex]
 expl3_detection_strategy = "always"
 max_line_length = 110
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e405"]
 
-[filename."qrbill.sty"]
+[package.qrbill]
 max_line_length = 180
+ignored_issues = ["e405"]
 
 [filename."cleveref-forward.sty"]
 max_line_length = 160
@@ -85,10 +87,10 @@ expl3_detection_strategy = "precision"
 expl3_detection_strategy = "always"
 max_line_length = 90
 
-[filename."unravel.sty"]
+[package.unravel]
 expl3_detection_strategy = "always"
 max_line_length = 100
-ignored_issues = ["e209", "e300"]
+ignored_issues = ["e209", "e300", "e405"]
 
 [filename."polexprcore.tex"]
 expl3_detection_strategy = "precision"
@@ -100,7 +102,7 @@ ignored_issues = ["e201"]
 max_line_length = 110
 
 [package.unicode-math]
-ignored_issues = ["e209"]
+ignored_issues = ["e209", "e405"]
 max_line_length = 130
 
 [package.fontspec]
@@ -128,8 +130,9 @@ max_line_length = 150
 expl3_detection_strategy = "always"
 max_line_length = 90
 
-[filename."luamml-patches-mathtools.sty"]
+[package.luamml]
 expl3_detection_strategy = "never"
+ignored_issues = ["e405"]
 
 [package.xecjk]
 expl3_detection_strategy = "always"
@@ -144,12 +147,12 @@ max_line_length = 110
 ignored_issues = ["e209"]
 max_line_length = 110
 
-[filename."fduthesis.cls"]
-ignored_issues = ["e209"]
+[package.fduthesis]
+ignored_issues = ["e209", "e405"]
 max_line_length = 100
 
-[filename."nwafuthesis.cls"]
-ignored_issues = ["e209"]
+[package.nwafuthesis]
+ignored_issues = ["e209", "e405"]
 max_line_length = 130
 
 [filename."zxjatype.sty"]
@@ -262,7 +265,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.latex-lab]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e405"]
 
 [package.animate]
 ignored_issues = ["e304"]
@@ -281,7 +284,7 @@ expl3_detection_strategy = "always"
 ignored_issues = ["e201", "e304"]
 
 [package.easybook]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e405"]
 
 [package.els-cas-templates]
 ignored_issues = ["e304"]
@@ -305,7 +308,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.jlreq]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e405"]
 
 [package.liederbuch]
 ignored_issues = ["e304"]
@@ -344,13 +347,13 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.ufrgscca]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e405"]
 
 [package.univie-ling]
 ignored_issues = ["e304"]
 
 [package.zugferd]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e405"]
 
 [package.luatexko]
 ignored_issues = ["e304"]
@@ -378,3 +381,78 @@ ignored_issues = ["w401"]
 
 [filename."lltjp-unicode-math.sty"]
 ignored_issues = ["w401"]
+
+[package.datatool]
+ignored_issues = ["e405"]
+
+[package.modiagram]
+ignored_issues = ["e405"]
+
+[package.biblatex]
+ignored_issues = ["e405"]
+
+[package.clistmap]
+ignored_issues = ["e405"]
+
+[package.cprotectinside]
+ignored_issues = ["e405"]
+
+[package.erw-l3]
+ignored_issues = ["e405"]
+
+[package.genealogy-profiles]
+ignored_issues = ["e405"]
+
+[package.ghsystem]
+ignored_issues = ["e405"]
+
+[package.hustthesis]
+ignored_issues = ["e405"]
+
+[package.keytheorems]
+ignored_issues = ["e405"]
+
+[package.lambdax]
+ignored_issues = ["e405"]
+
+[package.lt3rawobjects]
+ignored_issues = ["e405"]
+
+[package.mahjong]
+ignored_issues = ["e405"]
+
+[package.neoschool]
+ignored_issues = ["e405"]
+
+[package.newpax]
+ignored_issues = ["e405"]
+
+[package.njuthesis]
+ignored_issues = ["e405"]
+
+[package.numerica]
+ignored_issues = ["e405"]
+
+[package.pdfmanagement-testphase]
+ignored_issues = ["e405"]
+
+[package.postnotes]
+ignored_issues = ["e405"]
+
+[package.prettytok]
+ignored_issues = ["e405"]
+
+[package.sdaps]
+ignored_issues = ["e405"]
+
+[package.semantex]
+ignored_issues = ["e405"]
+
+[package.sjtutex]
+ignored_issues = ["e405"]
+
+[package.starray]
+ignored_issues = ["e405"]
+
+[package.tagpdf]
+ignored_issues = ["e405"]
