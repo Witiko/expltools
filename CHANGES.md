@@ -34,6 +34,8 @@
 - Do not report issue E300 (Unexpected function call argument) for potential
   partial applications. (#86)
 
+- Improve the detection of LaTeX style files. (#86)
+
 #### Continuous integration
 
 - Switch to the GitHub Action `softprops/action-gh-release` for automatic

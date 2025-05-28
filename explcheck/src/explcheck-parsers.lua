@@ -559,6 +559,11 @@ local latex_style_file_csname =
   -- LaTeX3 package writer commands
   + P("ProvidesExplClass")
   + P("ProvidesExplPackage")
+  -- Other LaTeX2e commands
+  -- See <http://mirrors.ctan.org/macros/latex/base/source2e.pdf>.
+  + P("@gobble")
+  + P("@ifpackagelater")
+  + P("@ifpackageloaded")
 )
 
 local latex_style_file_content = (
