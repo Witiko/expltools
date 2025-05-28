@@ -582,7 +582,7 @@ local expl3_expansion_csname = (
 )
 
 ---- Assigning functions
-local expl3_function_definition_csname = Ct(
+local expl3_direct_function_definition_csname = Ct(
   (
     -- A non-conditional function
     P("cs") * Cc(false)
@@ -597,6 +597,17 @@ local expl3_function_definition_csname = Ct(
     * P("_conditional")
   )
   * P(":N")
+)
+local expl3_indirect_function_definition_csname = Ct(
+  (
+    -- A non-conditional function
+    P("cs") * Cc(false)
+    * P("_new_eq")
+    -- A conditional function
+    + P("prg") * Cc(true)
+    * P("_new_eq_conditional")
+  )
+  * P(":NN")
 )
 local expl3_function_definition_or_assignment_csname = (
   (
@@ -722,13 +733,14 @@ return {
   endinput = endinput,
   eof = eof,
   expl3_catcodes = expl3_catcodes,
+  expl3_direct_function_definition_csname = expl3_direct_function_definition_csname,
   expl3_endlinechar = expl3_endlinechar,
   expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
-  expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
+  expl3_indirect_function_definition_csname = expl3_indirect_function_definition_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
   expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,

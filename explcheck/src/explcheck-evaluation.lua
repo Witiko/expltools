@@ -1,11 +1,15 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
+local semantic_analysis = require("explcheck-semantic-analysis")
+
 local token_types = require("explcheck-lexical-analysis").token_types
-local statement_types = require("explcheck-semantic-analysis").statement_types
+local statement_types = semantic_analysis.statement_types
+local statement_subtypes = semantic_analysis.statement_subtypes
 
 local ARGUMENT = token_types.ARGUMENT
 
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
+local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
@@ -137,7 +141,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
             replacement_text_max_nesting_depth[statement.type] = 0
           end
           num_replacement_text_statements[statement.type] = num_replacement_text_statements[statement.type] + 1
-          if statement.type ~= FUNCTION_DEFINITION or nesting_depth == 1 then
+          if nesting_depth == 1 or statement.type ~= FUNCTION_DEFINITION or statement.subtype ~= FUNCTION_DEFINITION_DIRECT then
             -- prevent counting overlapping tokens from nested function definitions several times
             for call_number, call in statement.call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
               if seen_replacement_text_call_numbers[replacement_text_number][call_number] == nil then

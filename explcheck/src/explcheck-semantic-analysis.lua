@@ -38,6 +38,16 @@ local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
 local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
 
+local statement_subtypes = {
+  FUNCTION_DEFINITION = {
+    DIRECT = "direct function definition",
+    INDIRECT = "indirect function definition",
+  }
+}
+
+local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
+local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDIRECT
+
 local statement_confidences = {
   DEFINITELY = 1,
   MAYBE = 0.5,
@@ -287,7 +297,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         end
 
         local function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, call.csname)
-        local function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
+        local direct_function_definition = lpeg.match(parsers.expl3_direct_function_definition_csname, call.csname)
+        local indirect_function_definition = lpeg.match(parsers.expl3_indirect_function_definition_csname, call.csname)
 
         -- Process a function variant definition.
         if function_variant_definition ~= nil then
@@ -351,9 +362,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           goto continue
         end
 
-        -- Process a function definition.
-        if function_definition ~= nil then
-          local is_conditional, is_protected, is_nopar = table.unpack(function_definition)
+        -- Process a direct function definition.
+        if direct_function_definition ~= nil then
+          local is_conditional, is_protected, is_nopar = table.unpack(direct_function_definition)
           -- determine the replacement text
           local replacement_text_argument = call.arguments[#call.arguments]
           if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
@@ -368,9 +379,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             goto other_statement
           end
           assert(defined_csname ~= nil)
-          local _, argument_specifiers = parse_expl3_csname(defined_csname)
           -- determine the number of parameters of the defined function
           local num_parameters
+          local _, argument_specifiers = parse_expl3_csname(defined_csname)
           if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
             num_parameters = #argument_specifiers
           end
@@ -434,13 +445,75 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             local effectively_defined_csname, confidence = table.unpack(effectively_defined_csname_table)
             local statement = {
               type = FUNCTION_DEFINITION,
+              subtype = FUNCTION_DEFINITION_DIRECT,
               call_range = call_range,
               confidence = confidence,
               defined_csname = effectively_defined_csname,
+              -- The following attributes are specific to the subtype.
               is_conditional = is_conditional,
               is_protected = is_protected,
               is_nopar = is_nopar,
               replacement_text_number = #replacement_text_tokens,
+            }
+            table.insert(statements, statement)
+          end
+          goto continue
+        end
+
+        -- Process an indirect function definition.
+        if indirect_function_definition ~= nil then
+          local is_conditional = table.unpack(indirect_function_definition)
+          -- determine the name of the defined function
+          local defined_csname_argument = call.arguments[1]
+          assert(defined_csname_argument.specifier == "N" and #defined_csname_argument.token_range == 1)
+          local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
+          local defined_csname = defined_csname_token.payload
+          if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            goto other_statement
+          end
+          assert(defined_csname ~= nil)
+          -- determine the name of the source function
+          local source_csname_argument = call.arguments[2]
+          assert(source_csname_argument.specifier == "N" and #source_csname_argument.token_range == 1)
+          local source_csname_token = transformed_tokens[first_map_forward(source_csname_argument.token_range:start())]
+          local source_csname = source_csname_token.payload
+          if source_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            goto other_statement
+          end
+          assert(source_csname ~= nil)
+          -- determine all effectively defined csnames and effective source csnames
+          local effective_defined_and_source_csnames = {}
+          if is_conditional then  -- conditional function
+            -- determine the conditions
+            local conditions = parse_conditions(call.arguments[#call.arguments - 1])
+            if conditions == nil then  -- we couldn't determine the conditions, give up
+              goto other_statement
+            end
+            -- determine the defined and source csnames
+            for _, condition_table in ipairs(conditions) do
+              local condition, confidence = table.unpack(condition_table)
+              local effectively_defined_csname = get_conditional_function_csname(defined_csname, condition)
+              local effective_source_csname = get_conditional_function_csname(source_csname, condition)
+              if effectively_defined_csname == nil or effective_source_csname == nil then  -- we couldn't determine a csname, give up
+                goto other_statement
+              end
+              table.insert(effective_defined_and_source_csnames, {effectively_defined_csname, effective_source_csname, confidence})
+            end
+          else  -- non-conditional function
+            effective_defined_and_source_csnames = {{defined_csname, source_csname, DEFINITELY}}
+          end
+          -- record function definition statements for all effectively defined csnames
+          for _, effective_defined_and_source_csname_table in ipairs(effective_defined_and_source_csnames) do  -- lua
+            local effectively_defined_csname, effective_source_csname, confidence = table.unpack(effective_defined_and_source_csname_table)
+            local statement = {
+              type = FUNCTION_DEFINITION,
+              subtype = FUNCTION_DEFINITION_INDIRECT,
+              call_range = call_range,
+              confidence = confidence,
+              defined_csname = effectively_defined_csname,
+              -- The following attributes are specific to the subtype.
+              source_csname = effective_source_csname,
+              is_conditional = is_conditional,
             }
             table.insert(statements, statement)
           end
@@ -506,7 +579,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           replacement_text_tokens.map_forward
         )
         for _, nested_statement in ipairs(nested_statements) do
-          if nested_statement.type == FUNCTION_DEFINITION then
+          if nested_statement.type == FUNCTION_DEFINITION and nested_statement.subtype == FUNCTION_DEFINITION_DIRECT then
             -- make the reference to the replacement text absolute instead of relative
             nested_statement.replacement_text_number = nested_statement.replacement_text_number + current_num_replacement_texts
           end
@@ -669,4 +742,5 @@ end
 return {
   process = semantic_analysis,
   statement_types = statement_types,
+  statement_subtypes = statement_subtypes,
 }
