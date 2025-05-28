@@ -31,6 +31,9 @@
 
 - Fix issues with token mapping in syntactic analysis. (#86, #90)
 
+- Do not report issue E300 (Unexpected function call argument) for potential
+  partial applications. (#86)
+
 #### Continuous integration
 
 - Switch to the GitHub Action `softprops/action-gh-release` for automatic

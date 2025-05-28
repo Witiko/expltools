@@ -314,13 +314,15 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             parameter_text_start_token_number = next_token_number  -- a "TeX parameter" argument specifier, try to collect parameter text
             while next_token_number <= transformed_token_range_end do
               next_token = transformed_tokens[next_token_number]
-              if next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping, skip the control sequence
-                if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
+              if next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping, missing argument (partial application?)
+                if csname ~= original_csname then  -- first, retry without trying to understand non-expl3
                   csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                   goto retry_control_sequence
-                else
-                  issues:add('e300', 'unexpected function call argument', next_token.byte_range)
-                  goto skip_other_token
+                else  -- if this doesn't help, skip all remaining tokens
+                  next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
+                  record_other_tokens(next_token_range)
+                  token_number = next_token_number
+                  goto continue
                 end
               elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, validate and record parameter text
                 next_token_number = next_token_number - 1

@@ -252,3 +252,6 @@ ignored_issues = ["e300"]
 
 [package.didec]
 ignored_issues = ["w302"]
+
+[package.zhnumber]
+ignored_issues = ["e300"]
