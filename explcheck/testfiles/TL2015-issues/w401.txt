@@ -18,7 +18,6 @@
 /usr/local/texlive/2015/texmf-dist/tex/latex/metrix/metrix.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/mhchem/mhchem.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/morewrites/morewrites.sty
-/usr/local/texlive/2015/texmf-dist/tex/latex/notes2bib/notes2bib.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/siunitx/siunitx.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/skdoc/skdoc.cls
 /usr/local/texlive/2015/texmf-dist/tex/latex/skmath/skmath.sty
@@ -29,9 +28,7 @@
 /usr/local/texlive/2015/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/xassoccnt/xassoccnt.sty
-/usr/local/texlive/2015/texmf-dist/tex/latex/xcjk2uni/xCJK2uni.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/xpinyin/xpinyin.sty
 /usr/local/texlive/2015/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-24.sty
-/usr/local/texlive/2015/texmf-dist/tex/luatex/luatexja/patches/lltjp-unicode-math.sty
 /usr/local/texlive/2015/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
 /usr/local/texlive/2015/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty

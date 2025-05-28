@@ -1,6 +1,7 @@
 /usr/local/texlive/2015/texmf-dist/doc/latex/lualatex-doc-de/lualatex-doc-DE.tex
 /usr/local/texlive/2015/texmf-dist/doc/latex/mhchem/mhchem.tex
 /usr/local/texlive/2015/texmf-dist/doc/latex/unicode-math/unicode-math-doc.tex
+/usr/local/texlive/2015/texmf-dist/doc/xelatex/xecjk/xunicode-symbols.tex
 /usr/local/texlive/2015/texmf-dist/source/lualatex/lualatex-doc/lualatex-doc.tex
 /usr/local/texlive/2015/texmf-dist/tex/generic/gtl/gtl.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/GS1/GS1.sty

@@ -60,11 +60,6 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/letterswitharrows/letterswitharrows.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/lt3graph/lt3graph.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/lt3rawobjects/lt3rawobjects.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/lwarp/lwarp-acro.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/lwarp/lwarp-chemformula.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/lwarp/lwarp-siunitx-v2.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/lwarp/lwarp-siunitx.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/lwarp/lwarp-statistics.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/mathcommand/mathcommand.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/mercatormap/mercatormap.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/metrix/metrix.sty
@@ -73,7 +68,6 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/nicematrix/nicematrix.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/ninecolors/ninecolors.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/njuthesis/njuthesis.cls
-/usr/local/texlive/2022/texmf-dist/tex/latex/notes2bib/notes2bib.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/numerica-plus/numerica-plus.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/numerica-tables/numerica-tables.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/numerica/numerica.sty
@@ -83,7 +77,6 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/pdfmanagement-testphase/pdfmanagement-firstaid.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/pdfoverlay/pdfoverlay.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/physics2/phy-explsetup.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/plautopatch/plsiunitx.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/precattl/precattl.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/rmathbr/rmathbr.sty
@@ -97,7 +90,6 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/skrapport/skrapport-size-common.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/skrapport/skrapport.cls
 /usr/local/texlive/2022/texmf-dist/tex/latex/spath3/tikzlibraryspath3.code.tex
-/usr/local/texlive/2022/texmf-dist/tex/latex/spectralsequences/sseqmacromakers.code.tex
 /usr/local/texlive/2022/texmf-dist/tex/latex/stex/problem.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/tabularray/tabularray-2021.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/tabularray/tabularray.sty
@@ -109,14 +101,11 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/tcolorbox/tcbdocumentation.code.tex
 /usr/local/texlive/2022/texmf-dist/tex/latex/tikzfill/tikzfill-common.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/tikzsymbols/tikzsymbols.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/tuda-ci/beamerthemeTUDa-mecheng.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/tuda-ci/tudarules.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/typoaid/typoaid.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/udes-genie-these/udes-genie-these.cls
 /usr/local/texlive/2022/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/unravel/unravel.sty
-/usr/local/texlive/2022/texmf-dist/tex/latex/xcjk2uni/xCJK2uni.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/xpinyin/xpinyin.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/xsim/xsim.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/zhlipsum/zhlipsum.sty
@@ -126,8 +115,6 @@
 /usr/local/texlive/2022/texmf-dist/tex/lualatex/letgut/letgut.cls
 /usr/local/texlive/2022/texmf-dist/tex/lualatex/lua-widow-control/lua-widow-control.sty
 /usr/local/texlive/2022/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-27c.sty
-/usr/local/texlive/2022/texmf-dist/tex/luatex/luatexja/patches/lltjp-fontspec.sty
-/usr/local/texlive/2022/texmf-dist/tex/luatex/luatexja/patches/lltjp-unicode-math.sty
 /usr/local/texlive/2022/texmf-dist/tex/platex/jlreq-deluxe/jlreq-deluxe.sty
 /usr/local/texlive/2022/texmf-dist/tex/xelatex/hanzibox/hanzibox.sty
 /usr/local/texlive/2022/texmf-dist/tex/xelatex/xduts/xdufont.sty
