@@ -174,14 +174,14 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
     if csname == "directlua" then  -- \directlua
       normalized_csname = "lua_now:e"
     elseif csname == "let" then  -- \let
-      if token_number + 1 <= token_range:stop() then
+      if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- followed by a control sequence
-          if token_number + 2 <= token_range:stop() then
+          if token_number + 2 <= transformed_token_range_end then
             if transformed_tokens[token_number + 2][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
               normalized_csname = "cs_set_eq:NN"  -- \let \csname \csname
             elseif transformed_tokens[token_number + 2][1] == CHARACTER then  -- followed by a character
               if transformed_tokens[token_number + 2][2] == "=" then  -- that is an equal sign
-                if token_number + 3 <= token_range:stop() then
+                if token_number + 3 <= transformed_token_range_end then
                   if transformed_tokens[token_number + 3][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
                     ignored_token_number = token_number + 2
                     normalized_csname = "cs_set_eq:NN"  -- \let \csname = \csname
@@ -193,7 +193,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
         end
       end
     elseif csname == "def" or csname == "gdef" or csname == "edef" or csname == "xdef" then  -- \?def
-      if token_number + 1 <= token_range:stop() then
+      if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- followed by a control sequence
           if csname == "def" then  -- \def \csname
             normalized_csname = "cs_set:Npn"
@@ -211,19 +211,19 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
     elseif csname == "global" then  -- \global
       next_token_number = next_token_number + 1
       assert(next_token_number == token_number + 2)
-      if token_number + 1 <= token_range:stop() then
+      if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1][1] == CONTROL_SEQUENCE then  -- followed by a control sequence
           csname = transformed_tokens[token_number + 1][2]
           if csname == "let" then  -- \global \let
-            if token_number + 2 <= token_range:stop() then
+            if token_number + 2 <= transformed_token_range_end then
               if transformed_tokens[token_number + 2][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
-                if token_number + 3 <= token_range:stop() then
+                if token_number + 3 <= transformed_token_range_end then
                   if transformed_tokens[token_number + 3][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
                     normalized_csname = "cs_gset_eq:NN"  -- \global \let \csname \csname
                     goto skip_decrement
                   elseif transformed_tokens[token_number + 3][1] == CHARACTER then  -- followed by a character
                     if transformed_tokens[token_number + 3][2] == "=" then  -- that is an equal sign
-                      if token_number + 4 <= token_range:stop() then
+                      if token_number + 4 <= transformed_token_range_end then
                         if transformed_tokens[token_number + 4][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
                           ignored_token_number = token_number + 3
                           normalized_csname = "cs_gset_eq:NN"  -- \global \let \csname = \csname
@@ -236,7 +236,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               end
             end
           elseif csname == "def" or csname == "gdef" or csname == "edef" or csname == "xdef" then  -- \global \?def
-            if token_number + 2 <= token_range:stop() then
+            if token_number + 2 <= transformed_token_range_end then
               if transformed_tokens[token_number + 2][1] == CONTROL_SEQUENCE then  -- followed by another control sequence
                 if csname == "def" then  -- \global \def \csname
                   normalized_csname = "cs_gset:Npn"
@@ -350,7 +350,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               assert(next_grouping ~= nil)
               assert(map_forward(next_grouping.start) == next_token_number)
               if next_grouping.stop == nil then  -- an unclosed grouping, skip the control sequence
-              if token_range:stop() == #tokens then
+                if token_range:stop() == #tokens then
                   if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
                     csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                     goto retry_control_sequence
@@ -364,19 +364,21 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   map_forward(next_grouping.start + 1),
                   map_forward(next_grouping.stop - 1),
                   INCLUSIVE + MAYBE_EMPTY,
-                  #transformed_tokens,
-                  map_back,
-                  #tokens
+                  #transformed_tokens
                 )
                 if #next_token_range == 1 then  -- a single token, record it
                     issues:add('w303', 'braced N-type function call argument', next_byte_range)
-                    table.insert(arguments, {argument_specifier, next_token_range})
+                    table.insert(arguments, {
+                      argument_specifier,
+                      new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
+                    })
                     next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
-                    tokens[next_token_range:start()][1] == CHARACTER and tokens[next_token_range:start()][3] == 6 and  -- a parameter
-                    (tokens[next_token_range:stop()][1] == ARGUMENT or  -- followed by a function call argument (could be a digit)
-                     tokens[next_token_range:stop()][1] == CHARACTER and  -- or an actual digit (unrecognized parameter/replacement text?)
-                     lpeg.match(parsers.decimal_digit, tokens[next_token_range:stop()][2])) then  -- skip all tokens
+                    transformed_tokens[next_token_range:start()][1] == CHARACTER and
+                    transformed_tokens[next_token_range:start()][3] == 6 and  -- a parameter
+                    (transformed_tokens[next_token_range:stop()][1] == ARGUMENT or  -- followed by a function call argument (maybe digit)
+                     transformed_tokens[next_token_range:stop()][1] == CHARACTER and  -- digit (unrecognized parameter/replacement text?)
+                     lpeg.match(parsers.decimal_digit, transformed_tokens[next_token_range:stop()][2])) then  -- skip all tokens
                   next_token_range
                     = new_range(token_number, map_forward(next_grouping.stop), INCLUSIVE, #transformed_tokens, map_back, #tokens)
                   record_other_tokens(next_token_range)
