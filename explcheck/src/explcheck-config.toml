@@ -182,7 +182,7 @@ max_line_length = 100
 
 [package.tuda-ci]
 expl3_detection_strategy = "always"
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "w401"]
 
 [filename."xob-dotemph.sty"]
 ignored_issues = ["e209"]
@@ -311,7 +311,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.lwarp]
-ignored_issues = ["e304", "w302"]
+ignored_issues = ["e304", "w302", "w401"]
 
 [package.memoir]
 ignored_issues = ["e304"]
@@ -332,7 +332,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.spectralsequences]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "w401"]
 
 [filename."beamerthemesTeX.sty"]
 ignored_issues = ["e304"]
@@ -360,3 +360,21 @@ ignored_issues = ["e304"]
 
 [package.pstool]
 ignored_issues = ["w302"]
+
+[package.notes2bib]
+ignored_issues = ["w401"]
+
+[package.plautopatch]
+ignored_issues = ["w401"]
+
+[filename."tagpdf-debug-lua.sty"]
+ignored_issues = ["w401"]
+
+[filename."lltjp-fontspec.sty"]
+ignored_issues = ["w401"]
+
+[filename."lltjp-siunitx.sty"]
+ignored_issues = ["w401"]
+
+[filename."lltjp-unicode-math.sty"]
+ignored_issues = ["w401"]
