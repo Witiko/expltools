@@ -66,12 +66,14 @@ ignored_issues = ["e300"]
 [package.stex]
 expl3_detection_strategy = "always"
 max_line_length = 110
+ignored_issues = ["e304"]
 
 [filename."qrbill.sty"]
 max_line_length = 180
 
 [filename."cleveref-forward.sty"]
 max_line_length = 160
+ignored_issues = ["e304"]
 
 [filename."latexrelease.sty"]
 expl3_detection_strategy = "never"
@@ -109,7 +111,7 @@ ignored_issues = ["e209"]
 
 [filename."interchar.sty"]
 expl3_detection_strategy = "always"
-ignored_issues = ["e300"]
+ignored_issues = ["e300", "e304"]
 max_line_length = 90
 
 [filename."bangla.sty"]
@@ -155,20 +157,16 @@ ignored_issues = ["e209"]
 max_line_length = 90
 
 [filename."cfntinst.sty"]
-ignored_issues = ["e209"]
+ignored_issues = ["e209", "e304"]
 
 [filename."xfntinst.sty"]
-ignored_issues = ["e209"]
+ignored_issues = ["e209", "e304"]
 
 [filename."fontinst.sty"]
-ignored_issues = ["e209"]
+ignored_issues = ["e209", "e304"]
 
 [filename."beamerouterthemeUR.sty"]
 max_line_length = 140
-
-[filename."denisbdoc.sty"]
-expl3_detection_strategy = "always"
-ignored_issues = ["e201"]
 
 [package.whatsnote]
 expl3_detection_strategy = "always"
@@ -184,6 +182,7 @@ max_line_length = 100
 
 [package.tuda-ci]
 expl3_detection_strategy = "always"
+ignored_issues = ["e304"]
 
 [filename."xob-dotemph.sty"]
 ignored_issues = ["e209"]
@@ -209,7 +208,7 @@ ignored_issues = ["e301", "w302"]
 ignored_issues = ["e300", "e301"]
 
 [package.mathcommand]
-ignored_issues = ["e301"]
+ignored_issues = ["e301", "e304"]
 
 [package.media4svg]
 ignored_issues = ["e301"]
@@ -235,10 +234,10 @@ ignored_issues = ["e304"]
 [filename."skdoc.cls"]
 ignored_issues = ["e304"]
 
-[package."koma-script"]
+[package.koma-script]
 ignored_issues = ["e304"]
 
-[package."duckuments"]
+[package.duckuments]
 ignored_issues = ["e304"]
 
 [package.xduts]
@@ -255,3 +254,109 @@ ignored_issues = ["w302"]
 
 [package.zhnumber]
 ignored_issues = ["e300"]
+
+[package.expex-acro]
+ignored_issues = ["e304"]
+
+[package.texapi]
+ignored_issues = ["e304"]
+
+[package.latex-lab]
+ignored_issues = ["e304"]
+
+[package.animate]
+ignored_issues = ["e304"]
+
+[package.asmejour]
+ignored_issues = ["e304"]
+
+[package.beamertheme-gotham]
+ignored_issues = ["e304"]
+
+[package.bfh-ci]
+ignored_issues = ["e304"]
+
+[package.denisbdoc]
+expl3_detection_strategy = "always"
+ignored_issues = ["e201", "e304"]
+
+[package.easybook]
+ignored_issues = ["e304"]
+
+[package.els-cas-templates]
+ignored_issues = ["e304"]
+
+[package.genealogytree]
+ignored_issues = ["e304"]
+
+[package.handoutwithnotes]
+ignored_issues = ["e304"]
+
+[package.hvlogos]
+ignored_issues = ["e304"]
+
+[package.incgraph]
+ignored_issues = ["e304"]
+
+[package.istgame]
+ignored_issues = ["e304"]
+
+[package.hobete]
+ignored_issues = ["e304"]
+
+[package.jlreq]
+ignored_issues = ["e304"]
+
+[package.liederbuch]
+ignored_issues = ["e304"]
+
+[package.lwarp]
+ignored_issues = ["e304"]
+
+[package.memoir]
+ignored_issues = ["e304"]
+
+[package.nlctdoc]
+ignored_issues = ["e304"]
+
+[package.q-and-a]
+ignored_issues = ["e304"]
+
+[package.rbt-mathnotes]
+ignored_issues = ["e304"]
+
+[package.shtthesis]
+ignored_issues = ["e304"]
+
+[package.sidenotes]
+ignored_issues = ["e304"]
+
+[package.spectralsequences]
+ignored_issues = ["e304"]
+
+[filename."beamerthemesTeX.sty"]
+ignored_issues = ["e304"]
+
+[package.tcolorbox]
+ignored_issues = ["e304"]
+
+[package.tikzlings]
+ignored_issues = ["e304"]
+
+[package.tzplot]
+ignored_issues = ["e304"]
+
+[package.ufrgscca]
+ignored_issues = ["e304"]
+
+[package.univie-ling]
+ignored_issues = ["e304"]
+
+[package.zugferd]
+ignored_issues = ["e304"]
+
+[package.luatexko]
+ignored_issues = ["e304"]
+
+[filename."platexrelease.sty"]
+ignored_issues = ["e304"]
