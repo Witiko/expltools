@@ -36,6 +36,9 @@
 
 - Improve the detection of LaTeX style files. (#86)
 
+- Produce tokens for invalid characters if issue E209 (Invalid characters) is
+  ignored. (#86)
+
 #### Continuous integration
 
 - Switch to the GitHub Action `softprops/action-gh-release` for automatic

@@ -222,10 +222,10 @@ local function lexical_analysis(pathname, content, issues, results, options)
           character_index = character_index + character_index_increment
         elseif catcode == 14 then  -- comment character
           character_index = #line_text + 1
-        elseif catcode == 15 then  -- invalid character
-          issues:add('e209', 'invalid characters', range)
-          character_index = character_index + character_index_increment
         else
+          if catcode == 15 then  -- invalid character
+            issues:add('e209', 'invalid characters', range)
+          end
           if catcode == 1 or catcode == 2 then  -- begin/end grouping
             if catcode == 1 then  -- begin grouping
               current_grouping = {parent = current_grouping, start = #tokens + 1}
