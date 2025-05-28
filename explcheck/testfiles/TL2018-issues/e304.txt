@@ -1,0 +1,1 @@
+/usr/local/texlive/2018/texmf-dist/tex/latex/polyglossia/polyglossia.sty

@@ -4,6 +4,8 @@
 /usr/local/texlive/2015/texmf-dist/tex/latex/chemmacros/chemmacros.module.acid-base.code.tex
 /usr/local/texlive/2015/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/exsheets/exsheets.sty
+/usr/local/texlive/2015/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
+/usr/local/texlive/2015/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
 /usr/local/texlive/2015/texmf-dist/tex/latex/gzt/gzt.cls
 /usr/local/texlive/2015/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2015/texmf-dist/tex/latex/hobby/hobby.code.tex

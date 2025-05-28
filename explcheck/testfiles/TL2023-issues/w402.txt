@@ -6,17 +6,22 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/chinesechess/chinesechess.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/circledtext/circledtext.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/clistmap/clistmap.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/codedescribe/codedescribe.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/cooking-units/cooking-units.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/dbshow/dbshow.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/derivative/derivative.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/erw-l3/erw-l3.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/fduthesis/fduthesis-en.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/fduthesis/fduthesis.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/functional/functional.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/jlreq/jlreq.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/l3experimental/l3draw/l3draw.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/l3experimental/l3graphics/l3graphics.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/l3kernel/expl3-code.tex
 /usr/local/texlive/2023/texmf-dist/tex/latex/l3kernel/l3doc.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate-2023-10-10.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/lt3rawobjects/lt3rawobjects.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/mahjong/mahjong.sty
@@ -29,6 +34,7 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/projlib/projlib-datetime.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/semantex/semantex.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/siunitx/siunitx.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/sjtutex/sjtuthesis.cls
 /usr/local/texlive/2023/texmf-dist/tex/latex/spath3/spath3.sty
 /usr/local/texlive/2023/texmf-dist/tex/latex/spath3/tikzlibraryspath3.code.tex
@@ -47,3 +53,4 @@
 /usr/local/texlive/2023/texmf-dist/tex/latex/zref-clever/zref-clever.sty
 /usr/local/texlive/2023/texmf-dist/tex/xelatex/hanzibox/hanzibox.sty
 /usr/local/texlive/2023/texmf-dist/tex/xelatex/xduts/xdupgthesis.cls
+/usr/local/texlive/2023/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty

@@ -340,9 +340,6 @@ ignored_issues = ["e304"]
 [package.tcolorbox]
 ignored_issues = ["e304"]
 
-[package.tikzlings]
-ignored_issues = ["e304"]
-
 [package.tzplot]
 ignored_issues = ["e304"]
 

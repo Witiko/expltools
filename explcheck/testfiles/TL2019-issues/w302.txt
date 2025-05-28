@@ -31,7 +31,9 @@
 /usr/local/texlive/2019/texmf-dist/tex/latex/ebproof/ebproof.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/elzcards/elzcards.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/endiagram/endiagram.sty
+/usr/local/texlive/2019/texmf-dist/tex/latex/erw-l3/erw-l3.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/exsheets/exsheets.sty
+/usr/local/texlive/2019/texmf-dist/tex/latex/fduthesis/fdudoc.cls
 /usr/local/texlive/2019/texmf-dist/tex/latex/fontawesome5/fontawesome5.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
@@ -65,6 +67,7 @@
 /usr/local/texlive/2019/texmf-dist/tex/latex/pmhanguljamo/pmhanguljamo.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/pseudo/pseudo.sty
+/usr/local/texlive/2019/texmf-dist/tex/latex/pstool/pstool.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/regexpatch/regexpatch.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/schule/schule.mod.Bewertung.code.tex
 /usr/local/texlive/2019/texmf-dist/tex/latex/sdaps/sdapsbase.sty
@@ -75,7 +78,9 @@
 /usr/local/texlive/2019/texmf-dist/tex/latex/siunitx/siunitx.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/soup/soup.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/spath3/spath3.sty
+/usr/local/texlive/2019/texmf-dist/tex/latex/spectralsequences/sseqforeach.code.tex
 /usr/local/texlive/2019/texmf-dist/tex/latex/spectralsequences/sseqmessages.code.tex
+/usr/local/texlive/2019/texmf-dist/tex/latex/spectralsequences/sseqparsers.code.tex
 /usr/local/texlive/2019/texmf-dist/tex/latex/statistics/statistics.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/substances/substances.sty
 /usr/local/texlive/2019/texmf-dist/tex/latex/topiclongtable/topiclongtable.sty

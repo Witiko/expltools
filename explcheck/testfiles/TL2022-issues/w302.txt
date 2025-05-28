@@ -48,6 +48,7 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/exam-zh/exam-zh-question.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/exam-zh/exam-zh.cls
 /usr/local/texlive/2022/texmf-dist/tex/latex/exsheets/exsheets.sty
+/usr/local/texlive/2022/texmf-dist/tex/latex/fduthesis/fdudoc.cls
 /usr/local/texlive/2022/texmf-dist/tex/latex/fistrum/fistrum.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/fnpct/fnpct.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/fontawesome5/fontawesome5.sty
@@ -58,6 +59,7 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/gzt/gzt.cls
 /usr/local/texlive/2022/texmf-dist/tex/latex/gzt/gztarticle.cls
 /usr/local/texlive/2022/texmf-dist/tex/latex/istgame/istgame.sty
+/usr/local/texlive/2022/texmf-dist/tex/latex/jlreq/jlreq-trimmarks.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/jlreq/jlreq.cls
 /usr/local/texlive/2022/texmf-dist/tex/latex/jmsdelim/jmsdelim.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/kotex-oblivoir/memhangul-x/xob-font.sty
@@ -78,6 +80,8 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/lipsum/lipsum.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/longdivision/longdivision.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/lt3graph/lt3graph.sty
+/usr/local/texlive/2022/texmf-dist/tex/latex/lwarp/lwarp-siunitx-v2.sty
+/usr/local/texlive/2022/texmf-dist/tex/latex/lwarp/lwarp-siunitx.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/mathcommand/mathcommand.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/media9/media9.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/menukeys/menukeys-2020-12-19.sty
@@ -105,7 +109,10 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/projlib/projlib-author.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/projlib/projlib-language.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/pseudo/pseudo.sty
+/usr/local/texlive/2022/texmf-dist/tex/latex/pstool/pstool.sty
+/usr/local/texlive/2022/texmf-dist/tex/latex/pxpic/pxpic.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/regexpatch/regexpatch.sty
+/usr/local/texlive/2022/texmf-dist/tex/latex/rmathbr/rmathbr.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/schule/schule.mod.Bewertung.code.tex
 /usr/local/texlive/2022/texmf-dist/tex/latex/scripture/scripture.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/sdaps/sdapsbase.sty
@@ -121,8 +128,10 @@
 /usr/local/texlive/2022/texmf-dist/tex/latex/soup/soup.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/spath3/spath3.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/spath3/tikzlibraryspath3.code.tex
+/usr/local/texlive/2022/texmf-dist/tex/latex/spectralsequences/sseqforeach.code.tex
 /usr/local/texlive/2022/texmf-dist/tex/latex/spectralsequences/sseqmacromakers.code.tex
 /usr/local/texlive/2022/texmf-dist/tex/latex/spectralsequences/sseqmessages.code.tex
+/usr/local/texlive/2022/texmf-dist/tex/latex/spectralsequences/sseqparsers.code.tex
 /usr/local/texlive/2022/texmf-dist/tex/latex/statistics/statistics.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/stex/document-structure.sty
 /usr/local/texlive/2022/texmf-dist/tex/latex/stex/etc/stexthm.sty

@@ -4,8 +4,13 @@
 /usr/local/texlive/2017/texmf-dist/tex/latex/exsheets/exsheets.sty
 /usr/local/texlive/2017/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
 /usr/local/texlive/2017/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
+/usr/local/texlive/2017/texmf-dist/tex/latex/l3experimental/l3color/l3color.sty
+/usr/local/texlive/2017/texmf-dist/tex/latex/l3experimental/l3draw/l3draw.sty
 /usr/local/texlive/2017/texmf-dist/tex/latex/l3kernel/l3doc.cls
+/usr/local/texlive/2017/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate.sty
 /usr/local/texlive/2017/texmf-dist/tex/latex/modiagram/modiagram.sty
 /usr/local/texlive/2017/texmf-dist/tex/latex/spath3/spath3.sty
+/usr/local/texlive/2017/texmf-dist/tex/latex/xsim/xsim.environments.code.tex
 /usr/local/texlive/2017/texmf-dist/tex/latex/xsim/xsim.verbwrite.code.tex
 /usr/local/texlive/2017/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
+/usr/local/texlive/2017/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty

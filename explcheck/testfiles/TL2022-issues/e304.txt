@@ -1,0 +1,3 @@
+/usr/local/texlive/2022/texmf-dist/tex/latex-dev/base/source2edoc.cls
+/usr/local/texlive/2022/texmf-dist/tex/latex/base/source2edoc.cls
+/usr/local/texlive/2022/texmf-dist/tex/latex/polyglossia/polyglossia.sty

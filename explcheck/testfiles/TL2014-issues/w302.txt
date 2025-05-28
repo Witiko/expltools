@@ -1,4 +1,5 @@
 /usr/local/texlive/2014/texmf-dist/doc/latex/lualatex-doc-de/lualatex-doc-DE.tex
+/usr/local/texlive/2014/texmf-dist/source/latex/pstool/pstool.tex
 /usr/local/texlive/2014/texmf-dist/source/lualatex/lualatex-doc/lualatex-doc.tex
 /usr/local/texlive/2014/texmf-dist/tex/latex/GS1/GS1.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/acro/acro.sty
@@ -24,8 +25,11 @@
 /usr/local/texlive/2014/texmf-dist/tex/latex/leadsheets/leadsheets.library.chords.code.tex
 /usr/local/texlive/2014/texmf-dist/tex/latex/lt3graph/lt3graph.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/media9/media9.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/morewrites/morewrites.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/morewrites/primargs.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/notes2bib/notes2bib.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/polyglossia/polyglossia.sty
+/usr/local/texlive/2014/texmf-dist/tex/latex/pstool/pstool.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/regexpatch/regexpatch.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/sidenotes/sidenotes.sty
 /usr/local/texlive/2014/texmf-dist/tex/latex/siunitx/siunitx.sty

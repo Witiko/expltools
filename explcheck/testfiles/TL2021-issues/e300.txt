@@ -9,6 +9,5 @@
 /usr/local/texlive/2021/texmf-dist/tex/latex/polyglossia/polyglossia.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/semantex/semantex.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/stex/stex.sty
-/usr/local/texlive/2021/texmf-dist/tex/latex/styledcmd/styledcmd.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/tikzlings/tikzlings-addons.sty
 /usr/local/texlive/2021/texmf-dist/tex/latex/xassoccnt/xassoccnt.sty

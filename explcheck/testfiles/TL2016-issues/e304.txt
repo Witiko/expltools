@@ -1,0 +1,4 @@
+/usr/local/texlive/2016/texmf-dist/tex/latex/polyglossia/polyglossia.sty
+/usr/local/texlive/2016/texmf-dist/tex/lualatex/novel/novel-Images.sty
+/usr/local/texlive/2016/texmf-dist/tex/lualatex/novel/novel-LayoutSettings.sty
+/usr/local/texlive/2016/texmf-dist/tex/lualatex/novel/novel-TextMacros.sty

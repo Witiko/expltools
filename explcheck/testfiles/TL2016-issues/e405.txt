@@ -1,0 +1,6 @@
+/usr/local/texlive/2016/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
+/usr/local/texlive/2016/texmf-dist/tex/latex/chemmacros/chemmacros4.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/modiagram/modiagram.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/spath3/spath3.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/unicode-math/unicode-math.sty
+/usr/local/texlive/2016/texmf-dist/tex/latex/unravel/unravel.sty
