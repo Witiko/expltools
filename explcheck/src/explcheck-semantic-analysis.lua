@@ -51,10 +51,12 @@ local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDI
 local statement_confidences = {
   DEFINITELY = 1,
   MAYBE = 0.5,
+  NONE = 0,
 }
 
 local DEFINITELY = statement_confidences.DEFINITELY
 local MAYBE = statement_confidences.MAYBE
+local NONE = statement_confidences.NONE
 
 local simple_text_catcodes = {
   [3] = true,  -- math shift
@@ -364,7 +366,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
         -- Process a direct function definition.
         if direct_function_definition ~= nil then
-          local is_conditional, is_protected, is_nopar = table.unpack(direct_function_definition)
+          local is_conditional, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(direct_function_definition)
           -- determine the replacement text
           local replacement_text_argument = call.arguments[#call.arguments]
           if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
@@ -445,9 +447,12 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             local effectively_defined_csname, confidence = table.unpack(effectively_defined_csname_table)
             local statement = {
               type = FUNCTION_DEFINITION,
-              subtype = FUNCTION_DEFINITION_DIRECT,
               call_range = call_range,
               confidence = confidence,
+              -- The following attributes are specific to the type.
+              subtype = FUNCTION_DEFINITION_DIRECT,
+              maybe_redefinition = maybe_redefinition,
+              is_global = is_global,
               defined_csname = effectively_defined_csname,
               -- The following attributes are specific to the subtype.
               is_conditional = is_conditional,
@@ -462,7 +467,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
         -- Process an indirect function definition.
         if indirect_function_definition ~= nil then
-          local is_conditional = table.unpack(indirect_function_definition)
+          local is_conditional, maybe_redefinition, is_global = table.unpack(indirect_function_definition)
           -- determine the name of the defined function
           local defined_csname_argument = call.arguments[1]
           assert(defined_csname_argument.specifier == "N" and #defined_csname_argument.token_range == 1)
@@ -507,9 +512,12 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             local effectively_defined_csname, effective_source_csname, confidence = table.unpack(effective_defined_and_source_csname_table)
             local statement = {
               type = FUNCTION_DEFINITION,
-              subtype = FUNCTION_DEFINITION_INDIRECT,
               call_range = call_range,
               confidence = confidence,
+              -- The following attributes are specific to the type.
+              subtype = FUNCTION_DEFINITION_INDIRECT,
+              maybe_redefinition = maybe_redefinition,
+              is_global = is_global,
               defined_csname = effectively_defined_csname,
               -- The following attributes are specific to the subtype.
               source_csname = effective_source_csname,
@@ -524,6 +532,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         local statement = {
           type = OTHER_STATEMENT,
           call_range = call_range,
+          confidence = NONE,
         }
         table.insert(statements, statement)
       elseif call.type == OTHER_TOKENS then  -- other tokens
@@ -531,6 +540,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         local statement = {
           type = statement_type,
           call_range = call_range,
+          confidence = NONE,
         }
         table.insert(statements, statement)
       else

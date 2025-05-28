@@ -582,30 +582,38 @@ local expl3_expansion_csname = (
 )
 
 ---- Assigning functions
+local expl3_function_definition_type_signifier = (
+  P("_new") * Cc(false) * Cc(true)  -- definition
+  + (  -- assignment
+    C(true)
+    * (
+      P("gset") * Cc(true)  -- global
+      + P("set") * Cc(false)  -- local
+    )
+  )
+)
 local expl3_direct_function_definition_csname = Ct(
   (
-    -- A non-conditional function
-    P("cs") * Cc(false)
-    * P("_new")
+    P("cs") * Cc(false)  -- non-conditional function
+    * expl3_function_definition_type_signifier
     * (P("_protected") * Cc(true) + Cc(false))
     * (P("_nopar") * Cc(true) + Cc(false))
-    -- A conditional function
-    + P("prg") * Cc(true)
-    * P("_new")
+    + P("prg") * Cc(true)  -- conditional function
+    * expl3_function_definition_type_signifier
     * (P("_protected") * Cc(true) + Cc(false))
-    * Cc(false)  -- Conditional functions cannot be "nopar".
+    * Cc(false)  -- conditional functions cannot be "nopar"
     * P("_conditional")
   )
   * P(":N")
 )
 local expl3_indirect_function_definition_csname = Ct(
   (
-    -- A non-conditional function
-    P("cs") * Cc(false)
-    * P("_new_eq")
-    -- A conditional function
-    + P("prg") * Cc(true)
-    * P("_new_eq_conditional")
+    P("cs") * Cc(false)  -- non-conditional function
+    * expl3_function_definition_type_signifier
+    * P("_eq")
+    + P("prg") * Cc(true)  -- conditional function
+    * expl3_function_definition_type_signifier
+    * P("_eq_conditional")
   )
   * P(":NN")
 )
