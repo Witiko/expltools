@@ -307,7 +307,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local is_conditional = table.unpack(function_variant_definition)
           -- determine the name of the defined function
           local base_csname_argument = call.arguments[1]
-          assert(base_csname_argument.specifier == "N" and #base_csname_argument.token_range == 1)
+          assert(base_csname_argument.specifier == "N")
           local base_csname_token = transformed_tokens[first_map_forward(base_csname_argument.token_range:start())]
           local base_csname = base_csname_token.payload
           if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
@@ -374,7 +374,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end
           -- determine the name of the defined function
           local defined_csname_argument = call.arguments[1]
-          assert(defined_csname_argument.specifier == "N" and #defined_csname_argument.token_range == 1)
+          assert(defined_csname_argument.specifier == "N")
           local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
           local defined_csname = defined_csname_token.payload
           if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
@@ -470,7 +470,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local is_conditional, maybe_redefinition, is_global = table.unpack(indirect_function_definition)
           -- determine the name of the defined function
           local defined_csname_argument = call.arguments[1]
-          assert(defined_csname_argument.specifier == "N" and #defined_csname_argument.token_range == 1)
+          assert(defined_csname_argument.specifier == "N")
           local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
           local defined_csname = defined_csname_token.payload
           if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
@@ -479,7 +479,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           assert(defined_csname ~= nil)
           -- determine the name of the source function
           local source_csname_argument = call.arguments[2]
-          assert(source_csname_argument.specifier == "N" and #source_csname_argument.token_range == 1)
+          assert(source_csname_argument.specifier == "N")
           local source_csname_token = transformed_tokens[first_map_forward(source_csname_argument.token_range:start())]
           local source_csname = source_csname_token.payload
           if source_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
