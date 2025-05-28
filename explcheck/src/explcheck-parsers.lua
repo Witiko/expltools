@@ -583,7 +583,7 @@ local expl3_expansion_csname = (
 
 ---- Assigning functions
 local expl3_function_definition_type_signifier = (
-  P("_new") * Cc(false) * Cc(true)  -- definition
+  P("new") * Cc(false) * Cc(true)  -- definition
   + (  -- assignment
     C(true)
     * (
@@ -594,11 +594,11 @@ local expl3_function_definition_type_signifier = (
 )
 local expl3_direct_function_definition_csname = Ct(
   (
-    P("cs") * Cc(false)  -- non-conditional function
+    P("cs_") * Cc(false)  -- non-conditional function
     * expl3_function_definition_type_signifier
     * (P("_protected") * Cc(true) + Cc(false))
     * (P("_nopar") * Cc(true) + Cc(false))
-    + P("prg") * Cc(true)  -- conditional function
+    + P("prg_") * Cc(true)  -- conditional function
     * expl3_function_definition_type_signifier
     * (P("_protected") * Cc(true) + Cc(false))
     * Cc(false)  -- conditional functions cannot be "nopar"
@@ -608,7 +608,7 @@ local expl3_direct_function_definition_csname = Ct(
 )
 local expl3_indirect_function_definition_csname = Ct(
   (
-    P("cs") * Cc(false)  -- non-conditional function
+    P("cs_") * Cc(false)  -- non-conditional function
     * expl3_function_definition_type_signifier
     * P("_eq")
     + P("prg") * Cc(true)  -- conditional function
