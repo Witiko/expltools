@@ -298,15 +298,19 @@ local expl3_maybe_standard_library_csname = (
     + P("keyval")
     + P("legacy")
     + P("lua")
+    + P("mark")  -- part of the ltmarks module
     + P("mode")
     + P("msg")
     + P("opacity")
+    + P("para")  -- part of the ltpara module
     + P("pdf")
     + P("peek")
     + P("prg")
+    + P("property")  -- part of the ltproperties module
     + P("quark")
     + P("reverse_if")
     + P("scan")
+    + P("socket")  -- part of the ltsockets module
     + P("sort")
     + P("sys")
     + P("tag")  -- part of the tagpdf package
