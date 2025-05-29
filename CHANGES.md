@@ -1,5 +1,18 @@
 # Changes
 
+## expltools 2025-06-XX
+
+### explcheck v0.11.0
+
+#### Fixes
+
+- Do not report issue E405 (Function variant for an undefined function) for
+  standard functions from the modules ltmarks, ltpara, ltproperties, and
+  ltsockets. (fixed in commit cb0713df, based on [a TeX StackExchange
+  post][tse/739823/70941] by @cfr42)
+
+ [tse/739823/70941]: https://tex.stackexchange.com/a/739823/70941
+
 ## expltools 2025-05-29
 
 ### explcheck v0.10.0
