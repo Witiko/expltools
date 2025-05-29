@@ -443,6 +443,3 @@ ignored_issues = ["e405"]
 
 [package.tagpdf]
 ignored_issues = ["e405"]
-
-[package.robust-externalize]
-ignored_issues = ["e405"]
