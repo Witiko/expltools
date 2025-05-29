@@ -696,7 +696,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           maybe_used_csnames[statement.base_csname] = true
         end
       elseif statement.type == OTHER_STATEMENT then
-        -- Record control sequences used in other statements.
+        -- Record control sequences defined and used in other statements.
         -- TODO: Also record partially-understood control sequences like `\use:c{__ccool_aux_prop:\g__ccool_option_expans_tl}` from line
         --       55 of file `ccool.sty` in TeX Live 2024, which, if understood as the wildcard `__ccool_aux_prop:*` should silence issue
         --       W401 on line 50 of the same file. There should likely be some minimum number of understood tokens to prevent statements
@@ -705,9 +705,18 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           maybe_used_csnames[call.csname] = true
           for _, argument in ipairs(call.arguments) do
             if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-              for _, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+              for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
                 if token.type == CONTROL_SEQUENCE then
                   maybe_used_csnames[token.payload] = true
+                  if token_number + 1 <= #segment_transformed_tokens then
+                    local next_token = segment_transformed_tokens[token_number + 1]
+                    if (
+                          next_token.type == CONTROL_SEQUENCE
+                          and lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
+                        ) then
+                      maybe_defined_csnames[next_token.payload] = true
+                    end
+                  end
                 end
               end
             end

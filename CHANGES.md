@@ -6,7 +6,7 @@
 
 #### Development
 
-- Add more support for semantic analysis. (#86)
+- Add more support for semantic analysis. (#86, #92)
 
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
