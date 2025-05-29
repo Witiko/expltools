@@ -1,11 +1,15 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
+local semantic_analysis = require("explcheck-semantic-analysis")
+
 local token_types = require("explcheck-lexical-analysis").token_types
-local statement_types = require("explcheck-semantic-analysis").statement_types
+local statement_types = semantic_analysis.statement_types
+local statement_subtypes = semantic_analysis.statement_subtypes
 
 local ARGUMENT = token_types.ARGUMENT
 
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
+local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
@@ -35,7 +39,7 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     num_tokens = 0
     for _, part_tokens in ipairs(analysis_results.tokens) do
       for _, token in ipairs(part_tokens) do
-        assert(token[1] ~= ARGUMENT)
+        assert(token.type ~= ARGUMENT)
         num_tokens = num_tokens + 1
       end
     end
@@ -60,14 +64,13 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     num_calls_total = 0
     for _, part_calls in ipairs(analysis_results.calls) do
       for _, call in ipairs(part_calls) do
-        local call_type, call_tokens, _, _ = table.unpack(call)
-        if num_calls[call_type] == nil then
-          assert(num_call_tokens[call_type] == nil)
-          num_calls[call_type] = 0
-          num_call_tokens[call_type] = 0
+        if num_calls[call.type] == nil then
+          assert(num_call_tokens[call.type] == nil)
+          num_calls[call.type] = 0
+          num_call_tokens[call.type] = 0
         end
-        num_calls[call_type] = num_calls[call_type] + 1
-        num_call_tokens[call_type] = num_call_tokens[call_type] + #call_tokens
+        num_calls[call.type] = num_calls[call.type] + 1
+        num_call_tokens[call.type] = num_call_tokens[call.type] + #call.token_range
         num_calls_total = num_calls_total + 1
       end
     end
@@ -80,14 +83,13 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
       for _, replacement_text_calls in ipairs(part_replacement_texts.calls) do
         for _, call in pairs(replacement_text_calls) do
-          local call_type, call_tokens, _, _ = table.unpack(call)
-          if num_replacement_text_calls[call_type] == nil then
-            assert(num_replacement_text_call_tokens[call_type] == nil)
-            num_replacement_text_calls[call_type] = 0
-            num_replacement_text_call_tokens[call_type] = 0
+          if num_replacement_text_calls[call.type] == nil then
+            assert(num_replacement_text_call_tokens[call.type] == nil)
+            num_replacement_text_calls[call.type] = 0
+            num_replacement_text_call_tokens[call.type] = 0
           end
-          num_replacement_text_calls[call_type] = num_replacement_text_calls[call_type] + 1
-          num_replacement_text_call_tokens[call_type] = num_replacement_text_call_tokens[call_type] + #call_tokens
+          num_replacement_text_calls[call.type] = num_replacement_text_calls[call.type] + 1
+          num_replacement_text_call_tokens[call.type] = num_replacement_text_call_tokens[call.type] + #call.token_range
           num_replacement_text_calls_total = num_replacement_text_calls_total + 1
         end
       end
@@ -100,23 +102,28 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
     num_statements, num_statement_tokens = {}, {}
     num_statements_total = 0
     for part_number, part_statements in ipairs(analysis_results.statements) do
+      local seen_call_numbers = {}
       local part_calls = analysis_results.calls[part_number]
-      for statement_number, statement in ipairs(part_statements) do
-        local statement_type = table.unpack(statement)
-        local _, call_tokens = table.unpack(part_calls[statement_number])
-        if num_statements[statement_type] == nil then
-          assert(num_statement_tokens[statement_type] == nil)
-          num_statements[statement_type] = 0
-          num_statement_tokens[statement_type] = 0
+      for _, statement in ipairs(part_statements) do
+        if num_statements[statement.type] == nil then
+          assert(num_statement_tokens[statement.type] == nil)
+          num_statements[statement.type] = 0
+          num_statement_tokens[statement.type] = 0
         end
-        num_statements[statement_type] = num_statements[statement_type] + 1
-        num_statement_tokens[statement_type] = num_statement_tokens[statement_type] + #call_tokens
+        num_statements[statement.type] = num_statements[statement.type] + 1
+        for call_number, call in statement.call_range:enumerate(part_calls) do
+          if seen_call_numbers[call_number] == nil then
+            seen_call_numbers[call_number] = true
+            num_statement_tokens[statement.type] = num_statement_tokens[statement.type] + #call.token_range
+          end
+        end
         num_statements_total = num_statements_total + 1
       end
     end
   end
   local num_replacement_text_statements, num_replacement_text_statement_tokens
   local num_replacement_text_statements_total, replacement_text_max_nesting_depth
+  local seen_replacement_text_call_numbers = {}
   if analysis_results.replacement_texts ~= nil then
     num_replacement_text_statements, num_replacement_text_statement_tokens = {}, {}
     num_replacement_text_statements_total = 0
@@ -124,25 +131,29 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
 
     for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
       for replacement_text_number, replacement_text_statements in ipairs(part_replacement_texts.statements) do
+        seen_replacement_text_call_numbers[replacement_text_number] = {}
         local nesting_depth = part_replacement_texts.nesting_depth[replacement_text_number]
-        for statement_number, statement in pairs(replacement_text_statements) do
-          local statement_type = table.unpack(statement)
-          local _, call_tokens = table.unpack(part_replacement_texts.calls[replacement_text_number][statement_number])
-          if num_replacement_text_statements[statement_type] == nil then
-            assert(num_replacement_text_statement_tokens[statement_type] == nil)
-            num_replacement_text_statements[statement_type] = 0
-            num_replacement_text_statement_tokens[statement_type] = 0
-            replacement_text_max_nesting_depth[statement_type] = 0
+        for _, statement in pairs(replacement_text_statements) do
+          if num_replacement_text_statements[statement.type] == nil then
+            assert(num_replacement_text_statement_tokens[statement.type] == nil)
+            num_replacement_text_statements[statement.type] = 0
+            num_replacement_text_statement_tokens[statement.type] = 0
+            replacement_text_max_nesting_depth[statement.type] = 0
           end
-          num_replacement_text_statements[statement_type] = num_replacement_text_statements[statement_type] + 1
-          if statement_type ~= FUNCTION_DEFINITION or nesting_depth == 1 then
+          num_replacement_text_statements[statement.type] = num_replacement_text_statements[statement.type] + 1
+          if nesting_depth == 1 or statement.type ~= FUNCTION_DEFINITION or statement.subtype ~= FUNCTION_DEFINITION_DIRECT then
             -- prevent counting overlapping tokens from nested function definitions several times
-            num_replacement_text_statement_tokens[statement_type]
-              = num_replacement_text_statement_tokens[statement_type] + #call_tokens
+            for call_number, call in statement.call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
+              if seen_replacement_text_call_numbers[replacement_text_number][call_number] == nil then
+                seen_replacement_text_call_numbers[replacement_text_number][call_number] = true
+                num_replacement_text_statement_tokens[statement.type]
+                  = num_replacement_text_statement_tokens[statement.type] + #call.token_range
+              end
+            end
           end
           num_replacement_text_statements_total = num_replacement_text_statements_total + 1
-          replacement_text_max_nesting_depth[statement_type]
-            = math.max(replacement_text_max_nesting_depth[statement_type], nesting_depth)
+          replacement_text_max_nesting_depth[statement.type]
+            = math.max(replacement_text_max_nesting_depth[statement.type], nesting_depth)
         end
       end
     end

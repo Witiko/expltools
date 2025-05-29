@@ -5,51 +5,65 @@
 local kpse = require("kpse")
 kpse.set_program_name("texlua", "prune-explcheck-config")
 
+local lfs = require("lfs")
+
 local config = require("explcheck-config")
 local new_issues = require("explcheck-issues")
-local process_with_all_steps = require("explcheck-utils").process_with_all_steps
+local utils = require("explcheck-utils")
+
+local get_stem = utils.get_stem
+local get_suffix = utils.get_suffix
+local process_with_all_steps = utils.process_with_all_steps
 
 local default_config = config.default_config
 local default_config_pathname = config.default_config_pathname
 local get_package = config.get_package
+local get_filename = config.get_filename
 
--- Read regression test results and use KPathSea to find the files in the results.
+-- Read a list of files.
+local function read_filelist(filelist_pathname)
+  local pathnames = {}
+  for pathname in io.lines(filelist_pathname) do
+    table.insert(pathnames, pathname)
+  end
+  print(string.format('Read %d files listed in "%s".', #pathnames, filelist_pathname))
+  return pathnames
+end
+
+-- Read regression test results.
 local function read_results(results_pathname)
-  local num_skipped = 0
+  local num_issues = 0
+  local seen_pathnames = {}
   local results = {
-    filenames = {},
     pathnames = {},
     issues = {},
   }
-  for line in io.lines(results_pathname) do
-    local line_filename, issues = line:match("^(%S+)%s+(%S+)$")
-    assert(line_filename ~= nil)
-    assert(issues ~= nil)
-    local line_pathname = kpse.find_file(line_filename)
-    if line_pathname == nil then
-      num_skipped = num_skipped + 1
+  for issue_pathname in lfs.dir(results_pathname) do
+    if get_suffix(issue_pathname) ~= ".txt" then
       goto continue
     end
-    table.insert(results.filenames, line_filename)
-    results.pathnames[line_filename] = line_pathname
-    results.issues[line_filename] = new_issues()
-    for issue in issues:gmatch("[^,]+") do
-      results.issues[line_filename]:add(issue)
+    num_issues = num_issues + 1
+    local issue = get_stem(issue_pathname)
+    for pathname in io.lines(results_pathname .. "/" .. issue_pathname) do
+      if seen_pathnames[pathname] == nil then
+        seen_pathnames[pathname] = true
+        table.insert(results.pathnames, pathname)
+        results.issues[pathname] = new_issues()
+      end
+      results.issues[pathname]:add(issue)
     end
     ::continue::
   end
-  io.write(string.format('Read %d files', #results.filenames))
-  if num_skipped > 0 then
-    io.write(string.format(', skipped %d files', num_skipped))
-  end
-  print(string.format(' from file "%s".', results_pathname))
+  print(string.format('Read %d issues and %d files listed in "%s".', num_issues, #results.pathnames, results_pathname))
   return results
 end
 
 -- For each file from regression test results, try to remove all options in the default configuration that apply to it and check
--- whether this affects the results of the static analysis or not.
-local function main(results_pathname)
-  -- Read the results.
+-- whether this affects the results of the static analysis or not. Also check whether there exist sections that apply to no files
+-- that were used in regression tests.
+local function main(filelist_pathname, results_pathname)
+  -- Read the list of all files and regression test results.
+  local filelist = read_filelist(filelist_pathname)
   local results = read_results(results_pathname)
 
   local num_options = 0
@@ -113,12 +127,11 @@ local function main(results_pathname)
   end
 
   -- Try to remove all options for the individual files from the test results.
-  for _, filename in ipairs(results.filenames) do
-    local pathname = results.pathnames[filename]
-    local expected_issues = results.issues[filename]
-    assert(pathname ~= nil)
+  for _, pathname in ipairs(results.pathnames) do
+    local expected_issues = results.issues[pathname]
     assert(expected_issues ~= nil)
     -- If the configuration specifies options for this filename, check them.
+    local filename = get_filename(pathname)
     if default_config.filename and default_config.filename[filename] ~= nil then
       local options_location = string.format('section [filename."%s"]', filename)
       try_to_remove_all_options(pathname, default_config.filename[filename], options_location, expected_issues)
@@ -128,6 +141,30 @@ local function main(results_pathname)
     if default_config.package and default_config.package[package] ~= nil then
       local options_location = string.format('section [package."%s"]', package)
       try_to_remove_all_options(pathname, default_config.package[package], options_location, expected_issues)
+    end
+  end
+
+  -- Try to remove sections that apply to no filenames that entered the regression tests.
+  local visited_sections = {
+    filename = {},
+    package = {},
+  }
+  for _, pathname in ipairs(filelist) do
+    local filename = get_filename(pathname)
+    if default_config.filename and default_config.filename[filename] ~= nil then
+      visited_sections.filename[filename] = true
+    end
+    local package = get_package(pathname)
+    if default_config.package and default_config.package[package] ~= nil then
+      visited_sections.package[package] = true
+    end
+  end
+  for key, _ in pairs(visited_sections) do
+    for value, _ in pairs(default_config[key]) do
+      if visited_sections[key][value] == nil then
+        local options_location = string.format('Section [%s."%s"]', key, value)
+        table.insert(key_locations.to_remove, options_location)
+      end
     end
   end
 
@@ -145,9 +182,9 @@ local function main(results_pathname)
   -- Print the results.
   io.write(string.format('Checked %d different options in file "%s"', num_options, default_config_pathname))
   if #key_locations.to_remove == 0 then
-    print(string.format(', none of which can be removed without affecting file "%s".', results_pathname))
+    print(string.format(', none of which can be removed without affecting files listed in "%s".', results_pathname))
   else
-    print(string.format(', %d of which can be removed without affecting file "%s":', #key_locations.to_remove, results_pathname))
+    print(string.format(', %d of which can be removed without affecting files listed in "%s":', #key_locations.to_remove, results_pathname))
     for _, key_location in ipairs(key_locations.to_remove) do
       print(string.format('- %s', key_location))
     end
@@ -159,14 +196,15 @@ local function main(results_pathname)
 end
 
 local function print_usage()
-  print("Usage: " .. arg[0] .. " TEST_RESULTS\n")
-  print("Test which parts of the default config file can be removed without affecting static analysis results.")
+  print("Usage: " .. arg[0] .. " FILE_LIST TEST_RESULTS\n")
+  print("Test which parts of the default config file can be removed without affecting regression test results.")
 end
 
-if #arg ~= 1 then
+if #arg ~= 2 then
   print_usage()
   os.exit(1)
 else
-  local results_pathname = arg[1]
-  main(results_pathname)
+  local filelist_pathname = arg[1]
+  local results_pathname = arg[2]
+  main(filelist_pathname, results_pathname)
 end

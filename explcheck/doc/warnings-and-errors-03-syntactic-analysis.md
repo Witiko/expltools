@@ -5,7 +5,6 @@ In the syntactic analysis step, the expl3 analysis tool converts the list of `\T
 A function is called with an unexpected argument.
 
  /e300-02.tex
- /e300-03.tex
 
 Partial applications are detected by analysing closing braces (`}`) and do not produce an error:
 

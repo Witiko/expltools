@@ -26,6 +26,11 @@ local function get_basename(pathname)
   return pathname:gsub(".*[\\/]", "")
 end
 
+-- Convert a pathname of a file to the stem of the file.
+local function get_stem(pathname)
+  return get_basename(pathname):gsub("%..*", "")
+end
+
 -- Convert a pathname of a file to the pathname of its parent directory.
 local function get_parent(pathname)
   if pathname:find("[\\/]") then
@@ -60,6 +65,7 @@ return {
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
   get_basename = get_basename,
   get_parent = get_parent,
+  get_stem = get_stem,
   get_suffix = get_suffix,
   identity = identity,
   process_with_all_steps = process_with_all_steps,

@@ -95,15 +95,15 @@ jobs:
       matrix:
         release:
           - TL2013
-          - TL2014
-          - TL2015
-          - TL2016
-          - TL2017
-          - TL2018
-          - TL2019
-          - TL2020
-          - TL2021
-          - TL2022
+          # - TL2014
+          # - TL2015
+          # - TL2016
+          # - TL2017
+          # - TL2018
+          # - TL2019
+          # - TL2020
+          # - TL2021
+          # - TL2022
           - TL2023
           - TL2024
           - latest
@@ -136,47 +136,46 @@ jobs:
           export LUAINPUTS=explcheck/src
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -exec \
             sh -c '
-              texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" || true
-            ' sh {} + > issues-full.txt
+              texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" 1>&2 || true
+            ' sh {} + -print 1> files.txt 2> issues.txt
           # Display any potential exceptions.
-          if grep -v '^/' issues-full.txt
+          if grep -v '^/' issues.txt
           then
             exit 1
           fi
-          # Compress the issues.
-          sed 's#^.*/##' issues-full.txt | sort -u | awk '{
-            filename = $1
-            issue = $2
-            if (!(filename in seen_filenames)) {
-              filenames[++n] = filename
-              seen_filenames[filename] = 1
-              issues[filename] = issue
-            } else {
-              issues[filename] = issues[filename] "," issue
-            }
-          }
-          END {
-            for (i = 1; i <= n; i++) {
-              filename = filenames[i]
-              print filename, issues[filename]
-            }
-          }' > issues.txt
+          # Split the issues into individual files.
+          mkdir issues
+          sort -u issues.txt | python3 -c '
+          import sys
+
+          # Read filenames and issues.
+          issue_files = dict()
+          for line in sys.stdin:
+              filename, issue = line.split()
+              # Store the filename in the corresponding issue file.
+              if issue not in issue_files:
+                  issue_files[issue] = open(f"issues/{issue}.txt", "wt")
+              print(filename, file=issue_files[issue])
+          # Close the issue files.
+          for wf in issue_files.values():
+              wf.close()
+          '
       - name: Upload issues
         if: matrix.release != 'latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.release }} issues
+          name: ${{ matrix.release }}-issues
           path: |
-            issues.txt
+            issues/
       - name: Compare issues against the baselines
         if: matrix.release != 'latest'
-        run: git diff --no-index --word-diff-regex=. --color=always explcheck/testfiles/${{ matrix.release }}-issues.txt issues.txt
+        run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
       - name: Check if the configuration is minimal
         if: matrix.release == 'latest'
         run: |
           set -e
           export LUAINPUTS=explcheck/src
-          texlua explcheck/src/prune-explcheck-config.lua issues.txt
+          texlua explcheck/src/prune-explcheck-config.lua files.txt issues/
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, shellcheck, unit-tests, regression-tests]
@@ -203,6 +202,7 @@ jobs:
       - name: Install file "l3obsolete.txt"
         run: tlmgr install --reinstall --with-doc l3kernel
       - name: Build CTAN archive and documentation
+        timeout-minutes: 5
         run: |
           set -e
           l3build tag

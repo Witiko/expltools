@@ -102,13 +102,20 @@
             \tl_put_right:Nn
               \l_tmpa_tl
               { ] }
-            \prop_get:NVN
+            \prop_get:NVNTF
               \g__expltools_explcheck_labels_prop
               \l_tmpb_tl
               \l_tmpb_tl
-            \tl_put_right:Nx
-              \l_tmpa_tl
-              { { \l_tmpb_tl } }
+              {
+                \tl_put_right:Nx
+                  \l_tmpa_tl
+                  { { \l_tmpb_tl } }
+              }
+              {
+                \tl_put_right:Nn
+                  \l_tmpa_tl
+                  { ???? }
+              }
             \tl_use:N
               \l_tmpa_tl
           }

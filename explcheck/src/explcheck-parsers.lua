@@ -41,6 +41,19 @@ local linechar = any - newline
 local space = S(" ")
 local tab = S("\t")
 
+---- Comma-lists
+local function comma_list(item_parser)
+  return Ct(
+    eof
+    + C(item_parser)
+    * (
+      P(",") * C(item_parser)
+    )^0
+    * P(",")^-1
+    * eof
+  )
+end
+
 -- Intermediate parsers
 ---- Default expl3 category code table, corresponds to `\c_code_cctab` in expl3
 local expl3_endlinechar = ' '  -- luacheck: ignore expl3_endlinechar
@@ -187,12 +200,25 @@ local argument_specifiers = (
   argument_specifier^0
   * eof
 )
+local variant_argument_specifiers = comma_list(argument_specifier^0)
 local do_not_use_argument_specifiers = (
   (
     argument_specifier
     - do_not_use_argument_specifier
   )^0
   * do_not_use_argument_specifier
+)
+
+local compatible_argument_specifiers = (
+  P("N") * Cc({"N", "c"})
+  + P("n") * Cc({"n", "o", "V", "v", "f", "e", "x"})
+  + C(argument_specifier)
+  + Cc({})
+)
+local deprecated_argument_specifiers = (
+  P("n") * Cc({"N", "c"})
+  + P("N") * Cc({"n", "o", "V", "v", "f", "e", "x"})
+  + Cc({})
 )
 
 ---- Function, variable, and constant names
@@ -240,8 +266,7 @@ local expl3_variable_or_constant_type = (
   + P("flag")
   + P("fp") * P("array")^-1
   + P("int") * P("array")^-1
-  + P("ior")
-  + P("iow")
+  + P("io") * S("rw")
   + P("muskip")
   + P("prop")
   + P("regex")
@@ -249,6 +274,52 @@ local expl3_variable_or_constant_type = (
   + P("skip")
   + P("str")
   + P("tl")
+)
+
+local expl3_maybe_standard_library_csname = (
+  (
+    expl3_variable_or_constant_type
+    + P("benchmark")
+    + P("char")
+    + P("codepoint")
+    + S("hv") * P("coffin")
+    + P("color")
+    + P("cs")
+    + P("debug")
+    + P("draw")
+    + P("exp")
+    + P("file")
+    + P("graph")  -- part of the lt3graph package
+    + P("graphics")
+    + P("group")
+    + P("hook")  -- part of the lthooks module
+    + P("if")
+    + P("keys")
+    + P("keyval")
+    + P("legacy")
+    + P("lua")
+    + P("mode")
+    + P("msg")
+    + P("opacity")
+    + P("pdf")
+    + P("peek")
+    + P("prg")
+    + P("quark")
+    + P("reverse_if")
+    + P("scan")
+    + P("sort")
+    + P("sys")
+    + P("tag")  -- part of the tagpdf package
+    + P("text")
+    + P("token")
+    + P("use")
+    + P("withargs")  -- part of the withargs package
+  )
+  * (
+    underscore
+    * (any - colon)^0
+  )^-1
+  * colon
 )
 
 local expl3_variable_or_constant_csname = (
@@ -355,7 +426,7 @@ local commented_lines = Ct(
   + eof
 )
 
--- Explcheck issues
+------ Explcheck issues
 local issue_code = (
   S("EeSsTtWw")
   * decimal_digit
@@ -488,6 +559,11 @@ local latex_style_file_csname =
   -- LaTeX3 package writer commands
   + P("ProvidesExplClass")
   + P("ProvidesExplPackage")
+  -- Other LaTeX2e commands
+  -- See <http://mirrors.ctan.org/macros/latex/base/source2e.pdf>.
+  + P("@gobble")
+  + P("@ifpackagelater")
+  + P("@ifpackageloaded")
 )
 
 local latex_style_file_content = (
@@ -511,27 +587,89 @@ local expl3_expansion_csname = (
 )
 
 ---- Assigning functions
-local expl3_function_definition_csname = Ct(
-  P("cs_new")
-  * (P("_protected") * Cc(true) + Cc(false))
-  * (P("_nopar") * Cc(true) + Cc(false))
+local expl3_function_definition_type_signifier = (
+  P("new") * Cc(false) * Cc(true)  -- definition
+  + (  -- assignment
+    C(true)
+    * (
+      P("gset") * Cc(true)  -- global
+      + P("set") * Cc(false)  -- local
+    )
+  )
+)
+local expl3_direct_function_definition_csname = (
+  (
+    P("cs_") * Cc(false)  -- non-conditional function
+    * expl3_function_definition_type_signifier
+    * (P("_protected") * Cc(true) + Cc(false))
+    * (P("_nopar") * Cc(true) + Cc(false))
+    + P("prg_") * Cc(true)  -- conditional function
+    * expl3_function_definition_type_signifier
+    * (P("_protected") * Cc(true) + Cc(false))
+    * Cc(false)  -- conditional functions cannot be "nopar"
+    * P("_conditional")
+  )
   * P(":N")
 )
+local expl3_indirect_function_definition_csname = (
+  (
+    P("cs_") * Cc(false)  -- non-conditional function
+    * expl3_function_definition_type_signifier
+    * P("_eq")
+    + P("prg") * Cc(true)  -- conditional function
+    * expl3_function_definition_type_signifier
+    * P("_eq_conditional")
+  )
+  * P(":NN")
+)
+local expl3_function_definition_csname = Ct(
+  Cc(true) * expl3_direct_function_definition_csname
+  + Cc(false) * expl3_indirect_function_definition_csname
+)
 local expl3_function_definition_or_assignment_csname = (
-  P("cs")
-  * underscore
-  * (
-    (
-      P("new")
-      + P("g")^-1
-      * P("set")
-    )
+  (
+    -- A non-conditional function
+    P("cs")
+    * underscore
     * (
-      P("_eq")
-      + P("_protected")^-1
-      * P("_nopar")^-1
+      (
+        P("new")
+        + P("g")^-1
+        * P("set")
+      )
+      * (
+        P("_eq")
+        + P("_protected")^-1
+        * P("_nopar")^-1
+      )
+      + P("generate_from_arg_count")
     )
-    + P("generate_from_arg_count")
+    -- A conditional function
+    + P("prg")
+    * underscore
+    * (
+      (
+        P("new")
+        + P("g")^-1
+        * P("set")
+      )
+      * (
+        P("_eq")
+        + P("_protected")^-1
+      )
+    )
+    * P("_conditional")
+  )
+  * P(":N")
+)
+
+---- Generating function variants
+local expl3_function_variant_definition_csname = Ct(
+  (
+    -- A non-conditional function
+    P("cs_generate_variant") * Cc(false)
+    -- A conditional function
+    + P("prg_generate_conditional_variant") * Cc(true)
   )
   * P(":N")
 )
@@ -588,11 +726,23 @@ local expl3_quark_or_scan_mark_csname = (
   * underscore
 )
 
+---- Conditions in a conditional function definition
+local condition = (
+  P("p")
+  + P("T") * P("F")^-1
+  + P("F")
+)
+local conditions = comma_list(condition)
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
   commented_lines = commented_lines,
+  compatible_argument_specifiers = compatible_argument_specifiers,
+  condition = condition,
+  conditions = conditions,
   decimal_digit = decimal_digit,
+  deprecated_argument_specifiers = deprecated_argument_specifiers,
   determine_expl3_catcode = determine_expl3_catcode,
   do_not_use_argument_specifier = do_not_use_argument_specifier,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
@@ -602,12 +752,14 @@ return {
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
   expl3_expansion_csname = expl3_expansion_csname,
-  expl3_function_definition_csname = expl3_function_definition_csname,
-  expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
+  expl3_function_definition_csname = expl3_function_definition_csname,
+  expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
+  expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
+  expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
@@ -620,6 +772,7 @@ return {
   latex_style_file_content = latex_style_file_content,
   linechar = linechar,
   newline = newline,
+  N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
@@ -629,5 +782,6 @@ return {
   success = success,
   tab = tab,
   tex_lines = tex_lines,
+  variant_argument_specifiers = variant_argument_specifiers,
   weird_argument_specifier = weird_argument_specifier,
 }

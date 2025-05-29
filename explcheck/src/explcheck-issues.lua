@@ -10,6 +10,7 @@ function Issues.new(cls)
   -- Initialize the class.
   self.errors = {}
   self.warnings = {}
+  self.seen_issues = {}
   self.ignored_issues = {}
   return self
 end
@@ -35,6 +36,21 @@ end
 -- Add an issue to the table of issues.
 function Issues:add(identifier, message, range)
   identifier = self._normalize_identifier(identifier)
+
+  -- Discard duplicate issues.
+  local range_start = (range ~= nil and range:start()) or false
+  local range_end = (range ~= nil and range:stop()) or false
+  if self.seen_issues[identifier] == nil then
+    self.seen_issues[identifier] = {}
+  end
+  if self.seen_issues[identifier][range_start] == nil then
+    self.seen_issues[identifier][range_start] = {}
+  end
+  if self.seen_issues[identifier][range_start][range_end] == nil then
+    self.seen_issues[identifier][range_start][range_end] = true
+  else
+    return
+  end
 
   -- Construct the issue.
   local issue = {identifier, message, range}

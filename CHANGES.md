@@ -1,11 +1,43 @@
 # Changes
 
-## expltools 2025-05-XX
+## expltools 2025-05-29
+
+### explcheck v0.10.0
+
+#### Development
+
+- Add more support for semantic analysis. (#86, #92)
+
+  This adds support for the following new issues from Section 4 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+  1. W401 (Unused function)
+  2. W402 (Unused function variant)
+  3. T403 (Function variant of incompatible type)
+  4. E404 (Protected predicate function)
+  5. E405 (Function variant for an undefined function)
+  6. W407 (Multiply defined function variant)
+
+  After these changes, 6 out of 24 (25%) issues from this section are
+  supported. Support for the remaining issues will be added in upcoming releases.
 
 #### Fixes
 
+- Report issue S205 (Malformed function name) also for conditional function
+  definitions. (#86)
+
 - In the command-line interface, do not consider arguments starting with `-`
   filenames. (contributed by @muzimuzhi in #83, fixed in #84)
+
+- Fix issues with token mapping in syntactic analysis. (#86, #90)
+
+- Do not report issue E300 (Unexpected function call argument) for potential
+  partial applications. (#86)
+
+- Improve the detection of LaTeX style files. (#86)
+
+- Produce tokens for invalid characters if issue E209 (Invalid characters) is
+  ignored. (#86)
 
 #### Continuous integration
 
@@ -19,7 +51,11 @@
   `${{ github.repository }}` and the primary workflow now runs on push to any
   Git branch, not just the main branch.
 
-### explcheck v0.10.0
+- Split regression test results into files that contain all pathnames for which
+  a specific issue was detected. (suggested by @koppor, added in #88)
+
+- Continuously prune sections that correspond to non-existing files in the
+  default config file `explcheck-config.toml`. (#86)
 
 ## expltools 2025-05-05
 

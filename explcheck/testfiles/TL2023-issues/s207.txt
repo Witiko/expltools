@@ -1,0 +1,2 @@
+/usr/local/texlive/2023/texmf-dist/tex/latex/functional/functional.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/stex/stex.sty

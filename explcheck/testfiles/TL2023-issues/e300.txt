@@ -1,0 +1,14 @@
+/usr/local/texlive/2023/texmf-dist/tex/latex/bithesis/bithesis.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/diffcoeff/diffcoeff.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/diffcoeff/diffcoeff4.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/gzt/gzt.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/gzt/gztarticle.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/jslectureplanner/jslectureplanner.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/nicematrix/nicematrix.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/numerica/numerica.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/nwejm/nwejm.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/nwejm/nwejmart.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/responsive/responsive.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/se2thesis/se2thesis.cls
+/usr/local/texlive/2023/texmf-dist/tex/latex/starray/starray.sty
+/usr/local/texlive/2023/texmf-dist/tex/latex/xassoccnt/xassoccnt.sty
