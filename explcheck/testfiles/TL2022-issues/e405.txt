@@ -1,3 +1,0 @@
-/usr/local/texlive/2022/texmf-dist/tex/context/third/markdown/t-markdown.tex
-/usr/local/texlive/2022/texmf-dist/tex/generic/lt3luabridge/lt3luabridge.tex
-/usr/local/texlive/2022/texmf-dist/tex/latex/nicematrix/nicematrix.sty

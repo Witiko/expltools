@@ -1,3 +1,0 @@
-/usr/local/texlive/2019/texmf-dist/tex/generic/chemfig/chemfig.tex
-/usr/local/texlive/2019/texmf-dist/tex/latex/tagpdf/tagpdfdocu-patches.sty
-/usr/local/texlive/2019/texmf-dist/tex/xetex/xetexko/xetexko-font.sty

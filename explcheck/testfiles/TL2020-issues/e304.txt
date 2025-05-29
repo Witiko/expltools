@@ -1,3 +1,0 @@
-/usr/local/texlive/2020/texmf-dist/tex/latex-dev/base/source2edoc.cls
-/usr/local/texlive/2020/texmf-dist/tex/latex/base/source2edoc.cls
-/usr/local/texlive/2020/texmf-dist/tex/latex/tagpdf/tagpdfdocu-patches.sty

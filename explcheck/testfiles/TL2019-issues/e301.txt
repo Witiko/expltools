@@ -1,3 +1,0 @@
-/usr/local/texlive/2019/texmf-dist/tex/latex/chemmacros/chemmacros.module.nomenclature.code.tex
-/usr/local/texlive/2019/texmf-dist/tex/latex/chemmacros/chemmacros.module.redox.code.tex
-/usr/local/texlive/2019/texmf-dist/tex/latex/chemmacros/chemmacros.module.scheme.code.tex

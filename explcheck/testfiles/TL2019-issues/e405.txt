@@ -1,3 +1,0 @@
-/usr/local/texlive/2019/texmf-dist/tex/latex/lipsum/lipsum.sty
-/usr/local/texlive/2019/texmf-dist/tex/latex/spath3/spath3.sty
-/usr/local/texlive/2019/texmf-dist/tex/latex/xsim/xsim.collections.code.tex

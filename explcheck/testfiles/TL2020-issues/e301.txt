@@ -1,1 +1,0 @@
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros.module.base.code.tex

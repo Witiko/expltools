@@ -1,6 +1,0 @@
-/usr/local/texlive/2020/texmf-dist/tex/latex/chemmacros/chemmacros5.sty
-/usr/local/texlive/2020/texmf-dist/tex/latex/l3kernel/expl3-code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/leadsheets/leadsheets.library.translations.code.tex
-/usr/local/texlive/2020/texmf-dist/tex/latex/leadsheets/leadsheets.sty
-/usr/local/texlive/2020/texmf-dist/tex/latex/lt3graph/lt3graph.sty
-/usr/local/texlive/2020/texmf-dist/tex/latex/xsim/xsim.sty

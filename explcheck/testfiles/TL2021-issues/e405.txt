@@ -1,1 +1,0 @@
-/usr/local/texlive/2021/texmf-dist/tex/xelatex/xecjk/xeCJK.sty

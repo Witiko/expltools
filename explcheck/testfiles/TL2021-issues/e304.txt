@@ -1,5 +1,0 @@
-/usr/local/texlive/2021/texmf-dist/tex/latex-dev/base/source2edoc.cls
-/usr/local/texlive/2021/texmf-dist/tex/latex/base/source2edoc.cls
-/usr/local/texlive/2021/texmf-dist/tex/latex/markdown/markdown.sty
-/usr/local/texlive/2021/texmf-dist/tex/latex/projlib/old-modules/PJLthm.sty
-/usr/local/texlive/2021/texmf-dist/tex/latex/tagpdf/tagpdfdocu-patches.sty

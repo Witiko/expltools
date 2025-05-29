@@ -1,2 +1,0 @@
-/usr/local/texlive/2017/texmf-dist/tex/latex/spath3/spath3.sty
-/usr/local/texlive/2017/texmf-dist/tex/latex/xsim/xsim.collections.code.tex

@@ -1,3 +1,0 @@
-/usr/local/texlive/2014/texmf-dist/tex/latex/embrac/embrac.sty
-/usr/local/texlive/2014/texmf-dist/tex/latex/hobby/pml3array.sty
-/usr/local/texlive/2014/texmf-dist/tex/latex/spath3/spath3.sty

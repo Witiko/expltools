@@ -1,4 +1,0 @@
-/usr/local/texlive/2016/texmf-dist/doc/latex/acro/acro_en.tex
-/usr/local/texlive/2016/texmf-dist/doc/latex/chemmacros/chemmacros_en.tex
-/usr/local/texlive/2016/texmf-dist/doc/latex/lt3graph/lt3graph.tex
-/usr/local/texlive/2016/texmf-dist/doc/xelatex/interchar/interchartest.tex

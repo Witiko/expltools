@@ -1,1 +1,0 @@
-/usr/local/texlive/2015/texmf-dist/tex/latex/spath3/spath3.sty
