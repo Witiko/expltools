@@ -71,7 +71,6 @@ ignored_issues = ["e304", "e405"]
 
 [package.qrbill]
 max_line_length = 180
-ignored_issues = ["e405"]
 
 [filename."cleveref-forward.sty"]
 max_line_length = 160
@@ -382,13 +381,7 @@ ignored_issues = ["w401"]
 [filename."lltjp-unicode-math.sty"]
 ignored_issues = ["w401"]
 
-[package.datatool]
-ignored_issues = ["e405"]
-
 [package.modiagram]
-ignored_issues = ["e405"]
-
-[package.biblatex]
 ignored_issues = ["e405"]
 
 [package.clistmap]
@@ -439,16 +432,10 @@ ignored_issues = ["e405"]
 [package.postnotes]
 ignored_issues = ["e405"]
 
-[package.prettytok]
-ignored_issues = ["e405"]
-
 [package.sdaps]
 ignored_issues = ["e405"]
 
 [package.semantex]
-ignored_issues = ["e405"]
-
-[package.sjtutex]
 ignored_issues = ["e405"]
 
 [package.starray]
