@@ -1,2 +1,0 @@
-/usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3regex-trace.sty
-/usr/local/texlive/2013/texmf-dist/tex/latex/l3experimental/l3str/l3regex.sty

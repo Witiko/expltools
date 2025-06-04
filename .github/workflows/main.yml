@@ -94,17 +94,17 @@ jobs:
       fail-fast: false
       matrix:
         release:
-          - TL2013
-          # - TL2014
-          # - TL2015
-          # - TL2016
-          # - TL2017
-          # - TL2018
-          # - TL2019
-          # - TL2020
-          # - TL2021
-          # - TL2022
-          - TL2023
+          #- TL2013
+          #- TL2014
+          #- TL2015
+          #- TL2016
+          #- TL2017
+          #- TL2018
+          #- TL2019
+          #- TL2020
+          #- TL2021
+          #- TL2022
+          #- TL2023
           - TL2024
           - latest
     container:

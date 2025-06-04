@@ -1,3 +1,0 @@
-/usr/local/texlive/2013/texmf-dist/tex/latex/mh/empheq.sty
-/usr/local/texlive/2013/texmf-dist/tex/latex/mh/mathtools.sty
-/usr/local/texlive/2013/texmf-dist/tex/latex/mh/mhsetup.sty
