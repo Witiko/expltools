@@ -11,7 +11,7 @@ local C, Ct, Cs, P = lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.P
 -- Extract the obsolete functions/variables from file "explcheck-obsolete.lua".
 local input_filename = assert(kpse.find_file("l3obsolete.txt", "TeX system documentation"))
 local input_file = assert(io.open(input_filename, "r"), "Could not open " .. input_filename .. " for writing")
-local line, input_state, csnames = input_file:read("*line"), "preamble", {}
+local line, input_state, csnames, seen_csnames = input_file:read("*line"), "preamble", {}, {}
 local latest_date = nil
 while line ~= nil do
   if input_state == "preamble" and line == "Deprecated functions and variables" then
@@ -24,11 +24,30 @@ while line ~= nil do
     if latest_date == nil or date > latest_date then
       latest_date = date
     end
-    local _, _, csname = line:find([[\(%S*)]])
+    local _, _, raw_csname = line:find([[\(%S*)]])
+    local extracted_csnames = {raw_csname}
+    -- Try to determine the base form for conditional function names, so that occurences in calls like
+    -- `\prg_generate_conditional_variant:Nnn` are also detected even without semantic analysis.
+    local _, _, csname_stem, argument_specifiers = raw_csname:find("([^:]*):([^:]*)")
+    if csname_stem ~= nil then
+      if argument_specifiers:sub(-2) == "TF" then
+        table.insert(extracted_csnames, string.format("%s:%s", csname_stem, argument_specifiers:sub(1, -3)))
+      elseif argument_specifiers:sub(-1) == "T" or raw_csname:sub(-1) == "F" then
+        table.insert(extracted_csnames, string.format("%s:%s", csname_stem, argument_specifiers:sub(1, -2)))
+      elseif csname_stem:sub(-2) == "_p" then
+        table.insert(extracted_csnames, string.format("%s:%s", csname_stem:sub(1, -3), argument_specifiers))
+      end
+    end
     if csnames[input_state] == nil then
       csnames[input_state] = {}
+      seen_csnames[input_state] = {}
     end
-    table.insert(csnames[input_state], csname)
+    for _, csname in ipairs(extracted_csnames) do
+      if seen_csnames[input_state][csname] == nil then
+        table.insert(csnames[input_state], csname)
+        seen_csnames[input_state][csname] = true
+      end
+    end
   end
   line = input_file:read("*line")
 end
