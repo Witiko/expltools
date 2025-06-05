@@ -34,6 +34,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datagidx.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool-base.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/dbshow/dbshow.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/denisbdoc/denisbdoc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/derivative/derivative.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/ducksay/ducksay.code.v2.tex
