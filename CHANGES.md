@@ -6,7 +6,8 @@
 
 #### Development
 
-- Detect base forms of deprecated conditional function names. (c96332f)
+- Detect base forms of deprecated conditional function names.
+  (#95, c96332f, 3a4dfbf)
 
 #### Fixes
 
