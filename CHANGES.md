@@ -4,6 +4,10 @@
 
 ### explcheck v0.11.0
 
+#### Development
+
+- Detect base forms of deprecated conditional function names. (c96332f)
+
 #### Fixes
 
 - Do not report issue E405 (Function variant for an undefined function) for
