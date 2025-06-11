@@ -61,14 +61,11 @@ A function or conditional function variant is defined multiple times.
  /w407-02.tex
 
 ### Calling an undefined function {.e #calling-undefined-function}
-A function is used but undefined.
+A function or conditional function (variant) is used but undefined.
 
 ``` tex
 \module_foo:  % error on this line
 ```
-
-### Calling an undefined function variant {.e #calling-undefined-function-variant}
-A function or conditional function variant is used but undefined.
 
 ``` tex
 \cs_new:Nn

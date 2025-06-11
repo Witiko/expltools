@@ -98,7 +98,7 @@ A private function or conditional function variant is defined but all its calls 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
 ### Calling a function before definition {.e}
-A function is used before it has been defined or after it has been undefined.
+A function or conditional function (variant) is used before it has been defined or after it has been undefined.
 
 ``` tex
 \module_foo:  % error on this line
@@ -116,11 +116,6 @@ A function is used before it has been defined or after it has been undefined.
 \module_foo:  % error on this line
 ```
 
-This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
-
-### Calling a function variant before definition {.e}
-A function or conditional function variant is used before it has been defined.
-
 ``` tex
 \cs_new:Nn
   \module_foo:n
@@ -135,7 +130,7 @@ A function or conditional function variant is used before it has been defined.
   { V }
 ```
 
-This check is a stronger version of <#calling-undefined-function-variant> and should only be emitted if <#calling-undefined-function-variant> has not previously been emitted for this function variant.
+This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
 ### Setting a function before definition {.w}
 A function is set before it has been defined or after it has been undefined.
