@@ -27,6 +27,15 @@ A function or conditional function is defined multiple times.
 ```
 
 ``` tex
+\cs_new:Nn
+  \module_foo:
+  { bar }
+\cs_gset:Nn
+  \module_foo:
+  { bar }
+```
+
+``` tex
 \prg_new_conditional:Nnn
   \module_foo:
   { p, T, F, TF }
@@ -51,6 +60,17 @@ A function or conditional function is defined multiple times.
 \cs_undefine:N
   \module_foo:TF
 \prg_new_conditional:Nnn
+  \module_foo:
+  { p, T, F, TF }
+  { \prg_return_true: }
+```
+
+``` tex
+\prg_new_conditional:Nnn
+  \module_foo:
+  { p, T, F, TF }
+  { \prg_return_true: }
+\prg_gset_conditional:Nnn
   \module_foo:
   { p, T, F, TF }
   { \prg_return_true: }
