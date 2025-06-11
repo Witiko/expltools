@@ -17,11 +17,19 @@
   functions and functions that are defined in different code paths that never
   meet.
 
-- Remove issue W407 (Multiply defined function variant) and schedule a
-  replacement for the flow analysis. (#99)
+- Remove issue W407 (Multiply defined function variant) and plan for a
+  replacement issue W501 of the same name for the flow analysis. (#99)
 
   Semantic analysis can't distinguish between multiply defined variants and
   variants that are defined in different code paths that never meet.
+
+- Merge the planned issues E408 (Calling an undefined function) and E409
+  (Calling an undefined function variant) into E408. (#99)
+
+- Plan for a flow-aware variant E504 (Defining a function variant before
+  definition) of issue E405 (Function variant for an undefined function). (#99)
+
+- Add extra examples for planned issue E500 (Multiply defined function). (#99)
 
 #### Fixes
 
