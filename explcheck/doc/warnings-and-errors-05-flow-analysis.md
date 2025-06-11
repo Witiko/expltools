@@ -178,7 +178,7 @@ A private function or conditional function variant is defined but all its calls 
 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
-### Defining a function variant before definition {.w}
+### Defining a function variant before definition {.e}
 A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
 
 ``` tex
