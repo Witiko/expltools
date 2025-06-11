@@ -137,7 +137,7 @@ A function or conditional function variant is defined multiple times.
   { TF }
 ```
 
-### Unreachable function {.w}
+### Unreachable private function {.w}
 A private function or conditional function is defined but all its calls are unreachable.[^1]
 
  [^1]: Code is unreachable if it is only reachable through private functions which that are either unused or also unreachable.
@@ -153,7 +153,7 @@ A private function or conditional function is defined but all its calls are unre
 
 This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
-### Unreachable function variant {.w}
+### Unreachable private function variant {.w}
 A private function or conditional function variant is defined but all its calls are unreachable.
 
 ``` tex
