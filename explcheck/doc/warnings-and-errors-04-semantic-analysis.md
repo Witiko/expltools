@@ -51,9 +51,6 @@ A function or conditional function variant is defined for an undefined function.
  /e405-01.tex
  /e405-02.tex
 
-### Multiply defined function {.e}
-TODO
-
 ### Multiply defined function variant {.w label=w407}
 A function or conditional function variant is defined multiple times.
 
