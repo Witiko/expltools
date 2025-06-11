@@ -76,6 +76,67 @@ A function or conditional function is defined multiple times.
   { \prg_return_true: }
 ```
 
+### Multiply defined function variant {.w}
+A function or conditional function variant is defined multiple times.
+
+``` tex
+\cs_new:Nn
+  \module_foo:n
+  { bar~#1 }
+\cs_generate_variant:Nn
+  \module_foo:n
+  { V }
+\cs_generate_variant:Nn  % warning on this line
+  \module_foo:n
+  { o, V }
+```
+
+``` tex
+\cs_new:Nn
+  \module_foo:n
+  { bar~#1 }
+\cs_generate_variant:Nn
+  \module_foo:n
+  { V }
+\cs_undefine:N
+  \module_foo:V
+\cs_generate_variant:Nn
+  \module_foo:n
+  { o, V }
+```
+
+``` tex
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\prg_generate_conditional_variant:Nnn
+  \module_foo:n
+  { V }
+  { TF }
+\prg_generate_conditional_variant:Nnn  % warning on this line
+  \module_foo:n
+  { o, V }
+  { TF }
+```
+
+``` tex
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\prg_generate_conditional_variant:Nnn
+  \module_foo:n
+  { V }
+  { TF }
+\cs_undefine:N
+  \module_foo:VTF
+\prg_generate_conditional_variant:Nnn
+  \module_foo:n
+  { o, V }
+  { TF }
+```
+
 ### Unreachable function {.w}
 A private function or conditional function is defined but all its calls are unreachable.[^1]
 

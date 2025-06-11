@@ -650,7 +650,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
   --- Make a pass over the segments, building up information.
   local defined_private_functions, defined_private_function_variants = {}, {}
-  local defined_function_variant_csnames, variant_base_csnames = {}, {}
+  local variant_base_csnames = {}
   local maybe_defined_csnames, maybe_used_csnames = {}, {}
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
@@ -677,10 +677,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         maybe_defined_csnames[statement.defined_csname] = true
         table.insert(variant_base_csnames, {statement.base_csname, byte_range})
         if statement.confidence == DEFINITELY then
-          if defined_function_variant_csnames[statement.defined_csname] then
-            issues:add("w407", "multiply defined function variant", byte_range)
-          end
-          defined_function_variant_csnames[statement.defined_csname] = true
           if is_function_private(statement.defined_csname) then
             table.insert(defined_private_function_variants, {statement.defined_csname, byte_range})
           end
