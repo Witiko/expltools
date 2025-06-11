@@ -277,6 +277,160 @@ A variable of one type is used where a variable of a different type should be us
 ```
 
 ``` tex
+\tl_new:N
+  \l_example_tl
+\tl_count:N
+  \l_example_tl
+\str_count:N
+  \l_example_tl
+\seq_count:N
+  \l_example_tl  % error on this line
+\clist_count:N
+  \l_example_tl  % error on this line
+\prop_count:N
+  \l_example_tl  % error on this line
+\intarray_count:N
+  \l_example_tl  % error on this line
+\fparray_count:N
+  \l_example_tl  % error on this line
+```
+
+``` tex
+\str_new:N
+  \l_example_str
+\tl_count:N
+  \l_example_str
+\str_count:N
+  \l_example_str
+\seq_count:N
+  \l_example_str  % error on this line
+\clist_count:N
+  \l_example_str  % error on this line
+\prop_count:N
+  \l_example_str  % error on this line
+\intarray_count:N
+  \l_example_str  % error on this line
+\fparray_count:N
+  \l_example_str  % error on this line
+```
+
+``` tex
+\int_new:N
+  \l_example_int
+\tl_count:N
+  \l_example_int  % error on this line
+\str_count:N
+  \l_example_int  % error on this line
+\seq_count:N
+  \l_example_int  % error on this line
+\clist_count:N
+  \l_example_int  % error on this line
+\prop_count:N
+  \l_example_int  % error on this line
+\intarray_count:N
+  \l_example_int  % error on this line
+\fparray_count:N
+  \l_example_int  % error on this line
+```
+
+``` tex
+\seq_new:N
+  \l_example_seq
+\tl_count:N
+  \l_example_seq  % error on this line
+\str_count:N
+  \l_example_seq  % error on this line
+\seq_count:N
+  \l_example_seq
+\clist_count:N
+  \l_example_seq  % error on this line
+\prop_count:N
+  \l_example_seq  % error on this line
+\intarray_count:N
+  \l_example_seq  % error on this line
+\fparray_count:N
+  \l_example_seq  % error on this line
+```
+
+``` tex
+\clist_new:N
+  \l_example_clist
+\tl_count:N
+  \l_example_clist  % error on this line
+\str_count:N
+  \l_example_clist  % error on this line
+\seq_count:N
+  \l_example_clist  % error on this line
+\clist_count:N
+  \l_example_clist
+\prop_count:N
+  \l_example_clist  % error on this line
+\intarray_count:N
+  \l_example_clist  % error on this line
+\fparray_count:N
+  \l_example_clist  % error on this line
+```
+
+``` tex
+\clist_new:N
+  \l_example_prop
+\tl_count:N
+  \l_example_prop  % error on this line
+\str_count:N
+  \l_example_prop  % error on this line
+\seq_count:N
+  \l_example_prop  % error on this line
+\clist_count:N
+  \l_example_prop  % error on this line
+\prop_count:N
+  \l_example_prop
+\intarray_count:N
+  \l_example_prop  % error on this line
+\fparray_count:N
+  \l_example_prop  % error on this line
+```
+
+``` tex
+\intarray_new:Nn
+  \g_example_intarray
+  { 5 }
+\tl_count:N
+  \g_example_intarray  % error on this line
+\str_count:N
+  \g_example_intarray  % error on this line
+\seq_count:N
+  \g_example_intarray  % error on this line
+\clist_count:N
+  \g_example_intarray  % error on this line
+\prop_count:N
+  \g_example_intarray  % error on this line
+\intarray_count:N
+  \g_example_intarray
+\fparray_count:N
+  \g_example_intarray  % error on this line
+```
+
+``` tex
+\fparray_new:Nn
+  \g_example_fparray
+  { 5 }
+\tl_count:N
+  \g_example_fparray  % error on this line
+\str_count:N
+  \g_example_fparray  % error on this line
+\seq_count:N
+  \g_example_fparray  % error on this line
+\clist_count:N
+  \g_example_fparray  % error on this line
+\prop_count:N
+  \g_example_fparray  % error on this line
+\intarray_count:N
+  \g_example_fparray  % error on this line
+\fparray_count:N
+  \g_example_fparray
+```
+
+``` tex
 \ior_new:N
   \l_example_ior
 \iow_open:Nn

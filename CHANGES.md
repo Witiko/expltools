@@ -31,6 +31,10 @@
 
 - Add extra examples for planned issue E500 (Multiply defined function). (#99)
 
+- Include functions `\*_count:N` in the planned issue T420 (Using a variable of
+  an incompatible type). (suggested by @FrankMittelbach in latex3/latex3#1754,
+  fixed in #97 and #99)
+
 #### Fixes
 
 - Do not report issue E405 (Function variant for an undefined function) for
