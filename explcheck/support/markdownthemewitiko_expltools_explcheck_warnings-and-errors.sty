@@ -151,17 +151,27 @@
                       \l_tmpa_tl
                       \l__expltools_explcheck_current_label_tl
                       {
+                        \tl_set:Nx
+                          \l_tmpb_tl
+                          { \tl_tail:V \l_tmpa_tl }
                         % If the provided label is out-of-order, check whether
                         % it had already been used.
-                        \int_compare:nNnTF
-                          { \g__expltools_explcheck_subsection_int }
-                          <
-                          { \tl_tail:n { ##2 } }
+                        \bool_if:nTF
+                          {
+                            \int_compare_p:nNn
+                              { \thesection  }
+                              =
+                              { \tl_head:V \l_tmpb_tl } &&
+                            \int_compare_p:nNn
+                              { \g__expltools_explcheck_subsection_int }
+                              <
+                              { \tl_tail:V \l_tmpb_tl }
+                          }
                           {
                             % If not, skip any intermediate labels and use it.
                             \int_gset:Nn
                               \g__expltools_explcheck_subsection_int
-                              { \tl_tail:n { ##2 } }
+                              { \tl_tail:V \l_tmpb_tl }
                             \tl_set:NV
                               \l__expltools_explcheck_current_label_tl
                               \l_tmpa_tl
