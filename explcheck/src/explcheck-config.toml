@@ -236,9 +236,6 @@ ignored_issues = ["e304"]
 [filename."skdoc.cls"]
 ignored_issues = ["e304"]
 
-[package.koma-script]
-ignored_issues = ["e304"]
-
 [package.duckuments]
 ignored_issues = ["e304"]
 
