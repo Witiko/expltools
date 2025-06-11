@@ -9,6 +9,20 @@
 - Detect base forms of deprecated conditional function names.
   (#95, c96332f, 3a4dfbf)
 
+#### Warnings and errors
+
+- Remove the planned issue E406 (Multiply defined function). (#99)
+
+  Semantic analysis wouldn't be able to distinguish between multiply defined
+  functions and functions that are defined in different code paths that never
+  meet.
+
+- Remove issue W407 (Multiply defined function variant) and schedule a
+  replacement for the flow analysis. (#99)
+
+  Semantic analysis can't distinguish between multiply defined variants and
+  variants that are defined in different code paths that never meet.
+
 #### Fixes
 
 - Do not report issue E405 (Function variant for an undefined function) for
