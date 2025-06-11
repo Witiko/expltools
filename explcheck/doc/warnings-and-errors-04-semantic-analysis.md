@@ -45,8 +45,8 @@ A protected predicate function is defined.
 
  /e404.tex
 
-### Function variant for an undefined function {.e label=e405}
-A variant is defined for an undefined function.
+### Function variant for an undefined function {.e label=e405 #function-variant-for-undefined-function}
+A function or conditional function variant is defined for an undefined function.
 
  /e405-01.tex
  /e405-02.tex

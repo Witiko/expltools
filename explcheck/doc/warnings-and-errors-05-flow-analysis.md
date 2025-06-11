@@ -97,6 +97,75 @@ A private function or conditional function variant is defined but all its calls 
 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
+### Defining a function variant before definition {.w}
+A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
+
+``` tex
+\cs_new:Nn
+  \module_foo:n
+  { bar }
+\cs_generate_variant:Nn
+  \module_foo:n
+  { V }
+```
+
+``` tex
+\cs_generate_variant:Nn  % error on this line
+  \module_foo:n
+  { V }
+\cs_new:Nn
+  \module_foo:n
+  { bar }
+```
+
+``` tex
+\cs_new:Nn
+  \module_foo:n
+  { bar }
+\cs_undefine:N
+  \module_foo:n
+\cs_generate_variant:Nn  % error on this line
+  \module_foo:n
+  { V }
+```
+
+``` tex
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\prg_generate_conditional_variant:Nnn
+  \module_foo:n
+  { V }
+  { TF }
+```
+
+``` tex
+\prg_generate_conditional_variant:Nnn  % error on this line
+  \module_foo:n
+  { V }
+  { TF }
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+```
+
+``` tex
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\cs_undefine:N
+  \module_foo:nTF
+\prg_generate_conditional_variant:Nnn  % error on this line
+  \module_foo:n
+  { V }
+  { TF }
+```
+
+This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
+
 ### Calling a function before definition {.e}
 A function or conditional function (variant) is used before it has been defined or after it has been undefined.
 
