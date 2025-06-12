@@ -41,7 +41,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/markdown/markdown.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/modiagram/modiagram.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/moremath/moremath.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/nicematrix/nicematrix.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/njuthesis/njuthesis-doc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/njuthesis/njuthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/numerica-tables/numerica-tables.sty

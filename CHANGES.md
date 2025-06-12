@@ -20,6 +20,20 @@
   After this change, all possible variants are efficiently encoded using a
   pattern, which allowed us to support arbitrarily many arguments.
 
+- Add support for detecting function use in c- and v-type arguments. (#99)
+
+  Previously, if a function `\__example_foo:n` was defined and then used as
+  `\use:c { __example_foo:n }`, issue W401 (Unused private function) would be
+  raised. After this change, issues like W401 and W402 (Unused private function
+  variant) are no longer reported in such cases.
+
+  Furthermore, if a c- or v-type argument can only be partially understood,
+  such as `\use:c { __example_foo: \unexpected }`, a pattern `__example_foo:*`
+  is generated and functions whose name matches the pattern are marked as
+  used with low confidence. However, such pattern is only produced when at
+  least N tokens from the argument can be recognized, where N is given by a new
+  Lua option `min_simple_tokens_in_csname_pattern` (default is 5 tokens).
+
 #### Warnings and errors
 
 - Remove the planned issue E406 (Multiply defined function). (#99)

@@ -1,12 +1,15 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
-local token_types = require("explcheck-lexical-analysis").token_types
+local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
+local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
 
-local ARGUMENT = token_types.ARGUMENT
+local is_token_simple = lexical_analysis.is_token_simple
+local token_types = lexical_analysis.token_types
+
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 
 local new_range = ranges.new_range
@@ -66,20 +69,8 @@ local csname_types = {
 local TEXT = csname_types.TEXT
 local PATTERN = csname_types.PATTERN
 
-local simple_text_catcodes = {
-  [3] = true,  -- math shift
-  [4] = true,  -- alignment tab
-  [5] = true,  -- end of line
-  [7] = true,  -- superscript
-  [8] = true,  -- subscript
-  [9] = true,  -- ignored character
-  [10] = true,  -- space
-  [11] = true,  -- letter
-  [12] = true,  -- other
-}
-
 -- Determine the meaning of function calls and register any issues.
-local function semantic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname options
+local function semantic_analysis(pathname, content, issues, results, options)
 
   -- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
   -- a more complex material that may have side effects and presents a boundary between chunks of well-understood
@@ -89,11 +80,47 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   --
   local function classify_tokens(tokens, token_range)
     for _, token in token_range:enumerate(tokens) do
-      if simple_text_catcodes[token.catcode] == nil then
+      if not is_token_simple(token) then  -- complex material
         return OTHER_TOKENS_COMPLEX
       end
     end
-    return OTHER_TOKENS_SIMPLE
+    return OTHER_TOKENS_SIMPLE  -- simple material
+  end
+
+  -- Try and convert tokens from a range into a text.
+  local function extract_text_from_tokens(token_range, tokens, map_forward)
+    local texts = {}
+    for _, token in token_range:enumerate(tokens, map_forward or identity) do
+      if not is_token_simple(token) then  -- complex material, give up
+        return nil
+      else  -- simple material
+        table.insert(texts, token.payload)
+      end
+    end
+    local text = table.concat(texts)
+    return text
+  end
+
+  -- Convert tokens from a range into a PEG pattern.
+  local function extract_pattern_from_tokens(token_range, tokens, map_forward)
+    local pattern, transcripts, num_simple_tokens = parsers.success, {}, 0
+    local previous_token_was_simple = true
+    for _, token in token_range:enumerate(tokens, map_forward or identity) do
+      if is_token_simple(token) then  -- simple material
+        pattern = pattern * lpeg.P(token.payload)
+        table.insert(transcripts, token.payload)
+        num_simple_tokens = num_simple_tokens + 1
+        previous_token_was_simple = true
+      else  -- complex material
+        if previous_token_was_simple then
+          pattern = pattern * parsers.any^0
+          table.insert(transcripts, "*")
+        end
+        previous_token_was_simple = false
+      end
+    end
+    local transcript = table.concat(transcripts)
+    return pattern, transcript, num_simple_tokens
   end
 
   -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
@@ -101,19 +128,6 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     local statements = {}
     local replacement_text_tokens = {}
     for call_number, call in ipairs(calls) do
-
-      -- Try and convert tokens from a range into a string.
-      local function extract_string_from_tokens(token_range)
-        local token_texts = {}
-        for _, token in token_range:enumerate(transformed_tokens, first_map_forward) do
-          if token.type == CONTROL_SEQUENCE or token.type == ARGUMENT then  -- complex material, give up
-            return nil
-          else
-            table.insert(token_texts, token.payload)
-          end
-        end
-        return table.concat(token_texts)
-      end
 
       -- Get the byte range for a given token.
       local function get_token_byte_range(token_number)
@@ -268,7 +282,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if argument.specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
           goto unknown_conditions
         end
-        conditions_text = extract_string_from_tokens(argument.token_range)
+        conditions_text = extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
         if conditions_text == nil then  -- failed to read conditions
           goto unknown_conditions  -- assume all conditions with lower confidence
         end
@@ -306,7 +320,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if argument.specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
           goto unknown_argument_specifiers
         end
-        variant_argument_specifiers_text = extract_string_from_tokens(argument.token_range)
+        variant_argument_specifiers_text = extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
         if variant_argument_specifiers_text == nil then  -- failed to read specifiers
           goto unknown_argument_specifiers  -- assume all specifiers with lower confidence
         end
@@ -762,10 +776,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
   --- Make a pass over the segments, building up information.
   local defined_private_functions = {}
+
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
   local defined_private_function_variant_byte_ranges = {}
   local variant_base_csnames = {}
-  local maybe_used_csnames, maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, {}, parsers.fail
+  local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
+  local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
+
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
     local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
@@ -782,19 +799,40 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
       return byte_range
     end
 
+    -- Try and convert tokens from a range into a csname.
+    local function extract_csname_from_tokens(token_range)
+      local text = extract_text_from_tokens(token_range, segment_transformed_tokens, map_forward)
+      local csname
+      if text ~= nil then  -- simple material
+        csname = {
+          payload = text,
+          transcript = text,
+          type = TEXT
+        }
+      else  -- complex material
+        local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range, segment_transformed_tokens, map_forward)
+        if num_simple_tokens < get_option("min_simple_tokens_in_csname_pattern", options, pathname) then  -- too few simple tokens, give up
+          return nil
+        end
+        csname = {
+          payload = pattern,
+          transcript = transcript,
+          type = PATTERN
+        }
+      end
+      return csname
+    end
+
     for _, statement in ipairs(segment_statements) do
       local token_range = statement.call_range:new_range_from_subranges(get_call_token_range, #segment_tokens)
       local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
       if statement.type == FUNCTION_VARIANT_DEFINITION then
         -- Record private function variant defitions.
-        maybe_used_csnames[statement.base_csname] = true
+        maybe_used_csname_texts[statement.base_csname] = true
         if statement.defined_csname.type == TEXT then
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
-          maybe_defined_csname_pattern = (
-            maybe_defined_csname_pattern
-            + statement.defined_csname.payload
-          )
+          maybe_defined_csname_pattern = maybe_defined_csname_pattern + statement.defined_csname.payload
         else
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
@@ -827,21 +865,29 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         end
         -- Record base control sequences used as the base in indirect function definitions.
         if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
-          maybe_used_csnames[statement.base_csname] = true
+          maybe_used_csname_texts[statement.base_csname] = true
         end
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequences defined and used in other statements.
-        -- TODO: Also record partially-understood control sequences like `\use:c{__ccool_aux_prop:\g__ccool_option_expans_tl}` from line
-        --       55 of file `ccool.sty` in TeX Live 2024, which, if understood as the wildcard `__ccool_aux_prop:*` should silence issue
-        --       W401 on line 50 of the same file. There should likely be some minimum number of understood tokens to prevent statements
-        --       like `\use:c{\foo}` from silencing all issues of this type.
         for _, call in statement.call_range:enumerate(segment_calls) do
-          maybe_used_csnames[call.csname] = true
+          maybe_used_csname_texts[call.csname] = true
           for _, argument in ipairs(call.arguments) do
+            -- Collect tokens within c- and v-type arguments and interpret them as function usage.
+            if lpeg.match(parsers.c_or_v_type_argument_specifier, argument.specifier) ~= nil then
+              local csname = extract_csname_from_tokens(argument.token_range)
+              if csname ~= nil then
+                if csname.type == TEXT then
+                  maybe_used_csname_texts[csname.payload] = true
+                elseif csname.type == PATTERN then
+                  maybe_used_csname_pattern = maybe_used_csname_pattern + csname.payload
+                end
+              end
+            end
+            -- Scan the tokens within N- and n-type arguments of all calls in the statement and look for function usage and definitions.
             if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
               for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
                 if token.type == CONTROL_SEQUENCE then
-                  maybe_used_csnames[token.payload] = true
+                  maybe_used_csname_texts[token.payload] = true
                   if token_number + 1 <= #segment_transformed_tokens then
                     local next_token = segment_transformed_tokens[token_number + 1]
                     if (
@@ -860,7 +906,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         -- Record control sequence names in blocks of other unrecognized tokens.
         for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
-            maybe_used_csnames[token.payload] = true
+            maybe_used_csname_texts[token.payload] = true
           end
         end
       else
@@ -871,12 +917,13 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
   -- Finalize PEG patterns.
   maybe_defined_csname_pattern = maybe_defined_csname_pattern * parsers.eof
+  maybe_used_csname_pattern = maybe_used_csname_pattern * parsers.eof
   defined_private_function_variant_pattern = defined_private_function_variant_pattern * parsers.eof
 
   --- Report issues apparent from the collected information.
   for _, defined_private_function in ipairs(defined_private_functions) do
     local defined_csname, byte_range = table.unpack(defined_private_function)
-    if not maybe_used_csnames[defined_csname] then
+    if not maybe_used_csname_texts[defined_csname] and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range)
     end
   end
@@ -887,11 +934,18 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   end
   for _, defined_private_function_variant in ipairs(defined_private_function_variant_texts) do
     assert(defined_private_function_variant.csname.type == TEXT)
-    if maybe_used_csnames[defined_private_function_variant.csname.payload] then
+    if maybe_used_csname_texts[defined_private_function_variant.csname.payload]
+        or lpeg.match(maybe_used_csname_pattern, defined_private_function_variant.csname.payload) ~= nil then
       used_private_function_variants[defined_private_function_variant.number] = true
     end
   end
-  for maybe_used_csname, _ in pairs(maybe_used_csnames) do
+  for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
+    -- Although we might want to also test whether "defined_private_function_variant_pattern" and
+    -- "maybe_used_csname_pattern" overlap, intersection is undecideable for parsing expression languages (PELs). In
+    -- theory, we could use regular expressions instead of PEG patterns, since intersection is decideable for regular
+    -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
+    -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
+    -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
     local defined_private_function_variant = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
     if defined_private_function_variant ~= nil then
       assert(defined_private_function_variant.csname.type == PATTERN)

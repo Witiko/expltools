@@ -178,6 +178,7 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
+local c_or_v_type_argument_specifier = S("cv")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
 local do_not_use_argument_specifier = S("D")
@@ -741,6 +742,7 @@ local conditions = comma_list(condition)
 return {
   any = any,
   argument_specifiers = argument_specifiers,
+  c_or_v_type_argument_specifier = c_or_v_type_argument_specifier,
   commented_lines = commented_lines,
   compatible_argument_specifiers = compatible_argument_specifiers,
   condition = condition,
