@@ -21,6 +21,33 @@ local token_types = {
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 local CHARACTER = token_types.CHARACTER
+local ARGUMENT = token_types.ARGUMENT
+
+local simple_text_catcodes = {
+  [3] = true,  -- math shift
+  [4] = true,  -- alignment tab
+  [5] = true,  -- end of line
+  [7] = true,  -- superscript
+  [8] = true,  -- subscript
+  [9] = true,  -- ignored character
+  [10] = true,  -- space
+  [11] = true,  -- letter
+  [12] = true,  -- other
+}
+
+-- Determine whether a token constitutes "simple text" [1, p. 383] with no expected side effects.
+--
+--  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
+--
+local function is_token_simple(token)
+  if token.type == CONTROL_SEQUENCE or token.type == ARGUMENT then
+    return false
+  elseif token.type == CHARACTER then
+    return simple_text_catcodes[token.catcode] ~= nil
+  else
+    error('Unexpected token type "' .. token.type .. '"')
+  end
+end
 
 -- Tokenize the content and register any issues.
 local function lexical_analysis(pathname, content, issues, results, options)
@@ -354,6 +381,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
 end
 
 return {
+  is_token_simple = is_token_simple,
   process = lexical_analysis,
   token_types = token_types,
 }
