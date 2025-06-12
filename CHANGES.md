@@ -9,6 +9,17 @@
 - Detect base forms of deprecated conditional function names.
   (#95, c96332f, 3a4dfbf)
 
+- Improve support for low-confidence function variant definitions. (#99)
+
+  Previously, when unexpected material was encountered in variant argument
+  specifiers, variants for all possible sets of specifiers were expected to be
+  defined with low confidence. However, for base functions with many
+  specifiers, this behavior was disabled because it would lead to a
+  combinatorial explosion.
+
+  After this change, all possible variants are efficiently encoded using a
+  pattern, which allowed us to support arbitrarily many arguments.
+
 #### Warnings and errors
 
 - Remove the planned issue E406 (Multiply defined function). (#99)
