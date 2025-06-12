@@ -4,6 +4,7 @@ error_format = "%f:%l:%c: %t%n %m"
 ignored_issues = []
 make_at_letter = "auto"
 max_line_length = 80
+max_guessed_specifiers = 10_000  # The maximum number of variant argument specifiers to guess when they cannot be parsed
 porcelain = false
 terminal_width = 80
 verbose = false

@@ -1,5 +1,6 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
+local get_option = require("explcheck-config").get_option
 local token_types = require("explcheck-lexical-analysis").token_types
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local ranges = require("explcheck-ranges")
@@ -71,7 +72,7 @@ local simple_text_catcodes = {
 }
 
 -- Determine the meaning of function calls and register any issues.
-local function semantic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname options
+local function semantic_analysis(pathname, content, issues, results, options)
 
   -- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
   -- a more complex material that may have side effects and presents a boundary between chunks of well-understood
@@ -256,19 +257,21 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 
         ::unknown_argument_specifiers::
         -- assume all possible sets of variant argument specifiers with lower confidence
-        variant_argument_specifiers_list = {""}
-        for i = 1, #base_argument_specifiers do
-          local base_argument_specifier = base_argument_specifiers:sub(i, i)
-          local intermediate_result = {}
-          for _, prefix in ipairs(variant_argument_specifiers_list) do
-            for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
-              table.insert(intermediate_result, prefix .. compatible_specifier)
+        do
+          local max_intermediate_result_size = get_option("max_guessed_specifiers", options, pathname)
+          variant_argument_specifiers_list = {""}
+          for i = 1, #base_argument_specifiers do
+            local base_argument_specifier = base_argument_specifiers:sub(i, i)
+            local intermediate_result = {}
+            for _, prefix in ipairs(variant_argument_specifiers_list) do
+              for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
+                table.insert(intermediate_result, prefix .. compatible_specifier)
+              end
             end
-          end
-          variant_argument_specifiers_list = intermediate_result
-          if #intermediate_result > 10000 then  -- if there are too many possible variant argument specifiers
-            return nil  -- give up to prevent a combinatorial explosion
-            -- TODO: produce a special "wildcard" return value instead; this will complicate processing but should remain O(1)
+            if #intermediate_result > max_intermediate_result_size then  -- if there are too many possible variant argument specifiers
+              return nil  -- give up to prevent a combinatorial explosion
+              -- TODO: produce a special "wildcard" return value instead; this will complicate processing but should remain O(1)
+            end
           end
         end
         variant_argument_specifiers = {}
