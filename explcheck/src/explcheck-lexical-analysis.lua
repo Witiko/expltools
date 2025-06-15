@@ -334,6 +334,9 @@ local function lexical_analysis(pathname, content, issues, results, options)
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
             issues:add('w200', '"do not use" argument specifiers', token.byte_range)
+            issues:ignore('s206', token.byte_range)
+            -- TODO: Add a configuration option that would allow us to express that w200 silences s206,
+            --       so that we don't need to do this manually.
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
             issues:add('e201', 'unknown argument specifiers', token.byte_range)
