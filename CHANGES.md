@@ -67,6 +67,10 @@
   ltsockets. (fixed in commit cb0713df, based on [a TeX StackExchange
   post][tse/739823/70941] by @cfr42)
 
+- Do not report issue S206 (Malformed variable or constant name) when issue
+  W200 ("Do not use" argument specifiers) is reported for the same control
+  sequence. (reported by @muzimuzhi in #100, fixed in #99)
+
  [tse/739823/70941]: https://tex.stackexchange.com/a/739823/70941
 
 ## expltools 2025-05-29
