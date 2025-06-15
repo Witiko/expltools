@@ -9,12 +9,67 @@
 - Detect base forms of deprecated conditional function names.
   (#95, c96332f, 3a4dfbf)
 
+- Improve support for low-confidence function variant definitions. (#99)
+
+  Previously, when unexpected material was encountered in variant argument
+  specifiers, variants for all possible sets of specifiers were expected to be
+  defined with low confidence. However, for base functions with many
+  specifiers, this behavior was disabled because it would lead to a
+  combinatorial explosion.
+
+  After this change, all possible variants are efficiently encoded using a
+  pattern, which allowed us to support arbitrarily many arguments.
+
+- Add support for detecting function use in c- and v-type arguments. (#99)
+
+  Previously, if a function `\__example_foo:n` was defined and then used as
+  `\use:c { __example_foo:n }`, issue W401 (Unused private function) would be
+  raised. After this change, issues like W401 and W402 (Unused private function
+  variant) are no longer reported in such cases.
+
+  Furthermore, if a c- or v-type argument can only be partially understood,
+  such as `\use:c { __example_foo: \unexpected }`, a pattern `__example_foo:*`
+  is generated and functions whose name matches the pattern are marked as
+  used with low confidence. However, such pattern is only produced when at
+  least N tokens from the argument can be recognized, where N is given by a new
+  Lua option `min_simple_tokens_in_csname_pattern` (default is 5 tokens).
+
+#### Warnings and errors
+
+- Remove the planned issue E406 (Multiply defined function). (#99)
+
+  Semantic analysis wouldn't be able to distinguish between multiply defined
+  functions and functions that are defined in different code paths that never
+  meet.
+
+- Remove issue W407 (Multiply defined function variant) and plan for a
+  replacement issue W501 of the same name for the flow analysis. (#99)
+
+  Semantic analysis can't distinguish between multiply defined variants and
+  variants that are defined in different code paths that never meet.
+
+- Merge the planned issues E408 (Calling an undefined function) and E409
+  (Calling an undefined function variant) into E408. (#99)
+
+- Plan for a flow-aware variant E504 (Defining a function variant before
+  definition) of issue E405 (Function variant for an undefined function). (#99)
+
+- Add extra examples for planned issue E500 (Multiply defined function). (#99)
+
+- Include functions `\*_count:N` in the planned issue T420 (Using a variable of
+  an incompatible type). (suggested by @FrankMittelbach in latex3/latex3#1754,
+  fixed in #97 and #99)
+
 #### Fixes
 
 - Do not report issue E405 (Function variant for an undefined function) for
   standard functions from the modules ltmarks, ltpara, ltproperties, and
   ltsockets. (fixed in commit cb0713df, based on [a TeX StackExchange
   post][tse/739823/70941] by @cfr42)
+
+- Do not report issue W206 (Malformed variable or constant name) when issue
+  W200 ("Do not use" argument specifiers) is reported for the same control
+  sequence. (reported by @muzimuzhi in #100, fixed in #99)
 
  [tse/739823/70941]: https://tex.stackexchange.com/a/739823/70941
 

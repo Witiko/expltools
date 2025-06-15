@@ -45,30 +45,18 @@ A protected predicate function is defined.
 
  /e404.tex
 
-### Function variant for an undefined function {.e label=e405}
-A variant is defined for an undefined function.
+### Function variant for an undefined function {.e label=e405 #function-variant-for-undefined-function}
+A function or conditional function variant is defined for an undefined function.
 
  /e405-01.tex
  /e405-02.tex
 
-### Multiply defined function {.e}
-TODO
-
-### Multiply defined function variant {.w label=w407}
-A function or conditional function variant is defined multiple times.
-
- /w407-01.tex
- /w407-02.tex
-
 ### Calling an undefined function {.e #calling-undefined-function}
-A function is used but undefined.
+A function or conditional function (variant) is used but undefined.
 
 ``` tex
 \module_foo:  % error on this line
 ```
-
-### Calling an undefined function variant {.e #calling-undefined-function-variant}
-A function or conditional function variant is used but undefined.
 
 ``` tex
 \cs_new:Nn
@@ -286,6 +274,160 @@ A variable of one type is used where a variable of a different type should be us
 ``` tex
 \tl_new:N
   \l_example_str  % error on this line
+```
+
+``` tex
+\tl_new:N
+  \l_example_tl
+\tl_count:N
+  \l_example_tl
+\str_count:N
+  \l_example_tl
+\seq_count:N
+  \l_example_tl  % error on this line
+\clist_count:N
+  \l_example_tl  % error on this line
+\prop_count:N
+  \l_example_tl  % error on this line
+\intarray_count:N
+  \l_example_tl  % error on this line
+\fparray_count:N
+  \l_example_tl  % error on this line
+```
+
+``` tex
+\str_new:N
+  \l_example_str
+\tl_count:N
+  \l_example_str
+\str_count:N
+  \l_example_str
+\seq_count:N
+  \l_example_str  % error on this line
+\clist_count:N
+  \l_example_str  % error on this line
+\prop_count:N
+  \l_example_str  % error on this line
+\intarray_count:N
+  \l_example_str  % error on this line
+\fparray_count:N
+  \l_example_str  % error on this line
+```
+
+``` tex
+\int_new:N
+  \l_example_int
+\tl_count:N
+  \l_example_int  % error on this line
+\str_count:N
+  \l_example_int  % error on this line
+\seq_count:N
+  \l_example_int  % error on this line
+\clist_count:N
+  \l_example_int  % error on this line
+\prop_count:N
+  \l_example_int  % error on this line
+\intarray_count:N
+  \l_example_int  % error on this line
+\fparray_count:N
+  \l_example_int  % error on this line
+```
+
+``` tex
+\seq_new:N
+  \l_example_seq
+\tl_count:N
+  \l_example_seq  % error on this line
+\str_count:N
+  \l_example_seq  % error on this line
+\seq_count:N
+  \l_example_seq
+\clist_count:N
+  \l_example_seq  % error on this line
+\prop_count:N
+  \l_example_seq  % error on this line
+\intarray_count:N
+  \l_example_seq  % error on this line
+\fparray_count:N
+  \l_example_seq  % error on this line
+```
+
+``` tex
+\clist_new:N
+  \l_example_clist
+\tl_count:N
+  \l_example_clist  % error on this line
+\str_count:N
+  \l_example_clist  % error on this line
+\seq_count:N
+  \l_example_clist  % error on this line
+\clist_count:N
+  \l_example_clist
+\prop_count:N
+  \l_example_clist  % error on this line
+\intarray_count:N
+  \l_example_clist  % error on this line
+\fparray_count:N
+  \l_example_clist  % error on this line
+```
+
+``` tex
+\clist_new:N
+  \l_example_prop
+\tl_count:N
+  \l_example_prop  % error on this line
+\str_count:N
+  \l_example_prop  % error on this line
+\seq_count:N
+  \l_example_prop  % error on this line
+\clist_count:N
+  \l_example_prop  % error on this line
+\prop_count:N
+  \l_example_prop
+\intarray_count:N
+  \l_example_prop  % error on this line
+\fparray_count:N
+  \l_example_prop  % error on this line
+```
+
+``` tex
+\intarray_new:Nn
+  \g_example_intarray
+  { 5 }
+\tl_count:N
+  \g_example_intarray  % error on this line
+\str_count:N
+  \g_example_intarray  % error on this line
+\seq_count:N
+  \g_example_intarray  % error on this line
+\clist_count:N
+  \g_example_intarray  % error on this line
+\prop_count:N
+  \g_example_intarray  % error on this line
+\intarray_count:N
+  \g_example_intarray
+\fparray_count:N
+  \g_example_intarray  % error on this line
+```
+
+``` tex
+\fparray_new:Nn
+  \g_example_fparray
+  { 5 }
+\tl_count:N
+  \g_example_fparray  % error on this line
+\str_count:N
+  \g_example_fparray  % error on this line
+\seq_count:N
+  \g_example_fparray  % error on this line
+\clist_count:N
+  \g_example_fparray  % error on this line
+\prop_count:N
+  \g_example_fparray  % error on this line
+\intarray_count:N
+  \g_example_fparray  % error on this line
+\fparray_count:N
+  \g_example_fparray
 ```
 
 ``` tex
