@@ -34,6 +34,13 @@
   least N tokens from the argument can be recognized, where N is given by a new
   Lua option `min_simple_tokens_in_csname_pattern` (default is 5 tokens).
 
+- Add more support for semantic analysis. (#99)
+
+  This adds support for the following new issues from Section 4 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+  1. T400 (Expanding an unexpandable variable or constant)
+
 #### Warnings and errors
 
 - Remove the planned issue E406 (Multiply defined function). (#99)

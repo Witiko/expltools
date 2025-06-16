@@ -7,8 +7,11 @@ local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
 
+local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
+
+local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 
@@ -20,6 +23,7 @@ local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
 local get_calls = syntactic_analysis.get_calls
+local get_call_token_range = syntactic_analysis.get_call_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
@@ -87,20 +91,6 @@ local function semantic_analysis(pathname, content, issues, results, options)
     return OTHER_TOKENS_SIMPLE  -- simple material
   end
 
-  -- Try and convert tokens from a range into a text.
-  local function extract_text_from_tokens(token_range, tokens, map_forward)
-    local texts = {}
-    for _, token in token_range:enumerate(tokens, map_forward or identity) do
-      if not is_token_simple(token) then  -- complex material, give up
-        return nil
-      else  -- simple material
-        table.insert(texts, token.payload)
-      end
-    end
-    local text = table.concat(texts)
-    return text
-  end
-
   -- Convert tokens from a range into a PEG pattern.
   local function extract_pattern_from_tokens(token_range, tokens, map_forward)
     local pattern, transcripts, num_simple_tokens = parsers.success, {}, 0
@@ -129,14 +119,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local replacement_text_tokens = {}
     for call_number, call in ipairs(calls) do
 
-      -- Get the byte range for a given token.
-      local function get_token_byte_range(token_number)
-        local byte_range = tokens[token_number].byte_range
-        return byte_range
-      end
-
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
-      local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range, #content)
+      local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
 
       -- Split an expl3 control sequence name to a stem and the argument specifiers.
       local function parse_expl3_csname(csname)
@@ -411,7 +395,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
           local lua_code_argument = call.arguments[arguments_number]
           if #lua_code_argument.token_range > 0 then
-            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range, #content)
+            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
             issues:ignore('s204', lua_code_byte_range)
           end
         end
@@ -706,7 +690,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
           replacement_text_tokens.map_back,
           replacement_text_tokens.map_forward,
           issues,
-          groupings
+          groupings,
+          content
         )
         table.insert(replacement_texts.calls, nested_calls)
         -- extract nested statements and replacement texts from the nested calls using semactic analysis
@@ -787,18 +772,6 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local segment_calls = call_segments[segment_number]
     local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
 
-    -- Get the token range for a given call.
-    local function get_call_token_range(call_number)
-      local token_range = segment_calls[call_number].token_range
-      return token_range
-    end
-
-    -- Get the byte range for a given token.
-    local function get_token_byte_range(token_number)
-      local byte_range = segment_tokens[token_number].byte_range
-      return byte_range
-    end
-
     -- Try and convert tokens from a range into a csname.
     local function extract_csname_from_tokens(token_range)
       local text = extract_text_from_tokens(token_range, segment_transformed_tokens, map_forward)
@@ -824,8 +797,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
 
     for _, statement in ipairs(segment_statements) do
-      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range, #segment_tokens)
-      local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
+      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment_calls), #segment_tokens)
+      local byte_range = token_range:new_range_from_subranges(get_token_byte_range(segment_tokens), #content)
       if statement.type == FUNCTION_VARIANT_DEFINITION then
         -- Record private function variant defitions.
         maybe_used_csname_texts[statement.base_csname] = true

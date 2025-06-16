@@ -1,0 +1,10 @@
+\cs_new:Nn
+  \module_foo:n
+  { #1 }
+\cs_generate_variant:Nn
+  \module_foo:n
+  { V, v }
+\module_foo:V
+  \c_false_bool  % error on this line
+\module_foo:v
+  { c_false_bool }  % error on this line

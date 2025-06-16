@@ -49,6 +49,14 @@ local function is_token_simple(token)
   end
 end
 
+-- Get the byte range for a given token.
+local function get_token_byte_range(tokens)
+  return function(token_number)
+    local byte_range = tokens[token_number].byte_range
+    return byte_range
+  end
+end
+
 -- Tokenize the content and register any issues.
 local function lexical_analysis(pathname, content, issues, results, options)
 
@@ -384,6 +392,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
 end
 
 return {
+  get_token_byte_range = get_token_byte_range,
   is_token_simple = is_token_simple,
   process = lexical_analysis,
   token_types = token_types,

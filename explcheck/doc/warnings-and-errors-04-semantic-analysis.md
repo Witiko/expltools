@@ -3,19 +3,10 @@ In the semantic analysis step, the expl3 analysis tool determines the meaning of
 
 ## Functions and conditional functions
 
-### Expanding an unexpandable variable or constant {.t}
+### Expanding an unexpandable variable or constant {.t label=t400}
 A function with a `V`-type argument is called with a variable or constant that does not support `V`-type expansion [@latexteam2024interfaces, Section 1.1].
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { #1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-\module_foo:V  % error on this line
-  \c_false_bool
-```
+ /t400.tex
 
 ### Unused private function {.w label=w401 #unused-private-function}
 A private function or conditional function is defined but unused.

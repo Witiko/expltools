@@ -178,6 +178,8 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
+local v_type_argument_specifier = S("v")
+local V_type_argument_specifier = S("V")
 local c_or_v_type_argument_specifier = S("cv")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
@@ -256,25 +258,44 @@ local expl3like_material = (
   + any_expl3_variable_or_constant
 )
 
-local expl3_variable_or_constant_type = (
+local expl3_expandable_variable_or_constant_type = (
   P("bitset")
-  + S("hv")^-1 * P("box")
-  + P("bool")
-  + P("cctab")
   + P("clist")
-  + P("coffin")
   + P("dim")
-  + P("flag")
-  + P("fp") * P("array")^-1
-  + P("int") * P("array")^-1
-  + P("io") * S("rw")
+  + P("fp") * -#P("array")
+  + P("int") * -#P("array")
   + P("muskip")
-  + P("prop")
-  + P("regex")
-  + P("seq")
   + P("skip")
   + P("str")
   + P("tl")
+)
+local expl3_unexpandable_variable_or_constant_type = (
+  P("bool")
+  + P("cctab")
+  + S("hv")^-1 * P("box")
+  + P("coffin")
+  + P("flag")
+  + P("fparray")
+  + P("intarray")
+  + P("io") * S("rw")
+  + P("prop")
+  + P("regex")
+  + P("seq")
+)
+
+local expl3_variable_or_constant_type = (
+  expl3_expandable_variable_or_constant_type
+  + expl3_unexpandable_variable_or_constant_type
+)
+
+local expl3_maybe_unexpandable_csname = (
+  (
+    -#(expl3_unexpandable_variable_or_constant_type * eof)
+    * (any - underscore)^0
+    * underscore
+  )^0
+  * expl3_unexpandable_variable_or_constant_type
+  * eof
 )
 
 local expl3_maybe_standard_library_csname = (
@@ -766,6 +787,7 @@ return {
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
   expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,
+  expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
@@ -789,5 +811,7 @@ return {
   tab = tab,
   tex_lines = tex_lines,
   variant_argument_specifiers = variant_argument_specifiers,
+  v_type_argument_specifier = v_type_argument_specifier,
+  V_type_argument_specifier = V_type_argument_specifier,
   weird_argument_specifier = weird_argument_specifier,
 }

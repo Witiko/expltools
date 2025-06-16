@@ -15,7 +15,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datagidx.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/dataplot.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool-base.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/person.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/dbshow/dbshow.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/derivative/derivative.sty
