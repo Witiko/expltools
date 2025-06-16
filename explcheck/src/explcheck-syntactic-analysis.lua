@@ -314,14 +314,14 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
                   lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_token.payload) ~= nil then
-                issues:add('t400', 'expanding an unexpandable variable or constant', argument_token.byte_range)
+                issues:add('t305', 'expanding an unexpandable variable or constant', argument_token.byte_range)
               end
             end
           elseif lpeg.match(parsers.v_type_argument_specifier, argument.specifier) ~= nil then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
             if argument_text ~= nil and lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_text) ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
-              issues:add('t400', 'expanding an unexpandable variable or constant', argument_byte_range)
+              issues:add('t305', 'expanding an unexpandable variable or constant', argument_byte_range)
             end
           end
           table.insert(arguments, argument)

@@ -39,7 +39,10 @@
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
-  1. T400 (Expanding an unexpandable variable or constant)
+  1. T400[^t400] (Expanding an unexpandable variable or constant)
+
+ [^t400]: This issue has later been moved to Section 3 of the same document and
+ renamed to T305, since it can be detected by the syntactic analysis already.
 
 #### Warnings and errors
 
@@ -66,6 +69,9 @@
 - Include functions `\*_count:N` in the planned issue T420 (Using a variable of
   an incompatible type). (suggested by @FrankMittelbach in latex3/latex3#1754,
   fixed in #97 and #99)
+
+- Remove issue T400 (Expanding an unexpandable variable or constant) and create
+  a corresponding issue T305 for the syntactic analysis.
 
 #### Fixes
 

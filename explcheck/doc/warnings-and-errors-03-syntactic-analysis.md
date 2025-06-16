@@ -34,3 +34,8 @@ A parameter or replacement text contains parameter tokens (`#`) followed by unex
 
  /e304-01.tex
  /e304-02.tex
+
+### Expanding an unexpandable variable or constant {.t label=t305}
+A function with a `V`-type argument is called with a variable or constant that does not support `V`-type expansion [@latexteam2024interfaces, Section 1.1].
+
+ /t305.tex
