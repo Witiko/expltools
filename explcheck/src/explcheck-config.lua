@@ -19,7 +19,8 @@ local default_config_pathname = string.sub(debug.getinfo(1).source, 2, (#".lua" 
 local default_config = read_config_file(default_config_pathname)
 
 -- Load the user-defined configuration from the config file .explcheckrc (if it exists).
-local user_config = read_config_file(".explcheckrc")
+local user_config_pathname = ".explcheckrc"
+local user_config = read_config_file(user_config_pathname)
 
 -- Get the filename of a file.
 local function get_filename(pathname)
@@ -68,4 +69,5 @@ return {
   get_option = get_option,
   get_package = get_package,
   user_config = user_config,
+  user_config_pathname = user_config_pathname,
 }
