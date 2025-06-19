@@ -1,8 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesExplPackage
   {markdownthemewitiko_expltools_explcheck_warnings-and-errors}%
-  {2025-06-11}%
-  {0.0.5}%
+  {2025-06-19}%
+  {0.0.6}%
   {Snippets for typesetting the documentation of the warnings and errors for %
    the expl3 analysis tool}
 \int_new:N
@@ -13,8 +13,12 @@
   \l__expltools_explcheck_current_label_tl
 \tl_new:N
   \l__expltools_explcheck_current_identifier_tl
+\bool_new:N
+  \l__expltools_explcheck_work_in_progress_bool
 \prop_new:N
   \g__expltools_explcheck_labels_prop
+\RequirePackage
+  { xcolor }
 \cs_new:Nn
   \__expltools_explcheck_increment_counters:
   {
@@ -46,10 +50,70 @@
           \label
           \l__expltools_explcheck_current_identifier_tl
       }
-    \exp_args:NV
-      \index
-      \l__expltools_explcheck_current_label_tl
+    \bool_if:NTF
+      \l__expltools_explcheck_work_in_progress_bool
+      {
+        \tl_set:NV
+          \l_tmpa_tl
+          \l__expltools_explcheck_current_label_tl
+        \tl_put_right:Nn
+          \l_tmpa_tl
+          {
+            @
+            \textcolor
+              { gray }
+          }
+        \tl_put_right:Nx
+          \l_tmpa_tl
+          {
+              { \l__expltools_explcheck_current_label_tl }
+          }
+        \exp_args:NV
+          \index
+          \l_tmpa_tl
+      }
+      {
+        \exp_args:NV
+          \index
+          \l__expltools_explcheck_current_label_tl
+      }
   }
+\color_set:nnn
+  { __expltools_explcheck_gray }
+  { gray }
+  { 0.5 }
+\cs_new:Nn
+  \__expltools_explcheck_display_heading:Nn
+  {
+    \bool_if:NTF
+      \l__expltools_explcheck_work_in_progress_bool
+      {
+        #1
+          {
+            \textcolor
+              { gray }
+              { #2 }
+           }
+        \markdownSetup
+          {
+            renderers = {
+              headerAttributeContextEnd += {
+                \color_select:n
+                  { __expltools_explcheck_gray }
+                \usemintedstyle { bw }
+              },
+            }
+          }
+      }
+      {
+        #1
+          { #2 }
+      }
+    \__expltools_explcheck_increment_counters:
+  }
+\cs_generate_variant:Nn
+  \__expltools_explcheck_display_heading:Nn
+  { NV }
 \markdownSetupSnippet
   { body }
   {
@@ -131,6 +195,8 @@
       },
       headerAttributeContextBegin = {
         \group_begin:
+        \bool_set_true:N
+          \l__expltools_explcheck_work_in_progress_bool
         \markdownSetup
           {
             renderers = {
@@ -144,6 +210,8 @@
                   { ##1 }
                   { label }
                   {
+                    \bool_set_false:N
+                      \l__expltools_explcheck_work_in_progress_bool
                     \tl_set:Nx
                       \l_tmpa_tl
                       { \str_uppercase:n { ##2 } }
@@ -222,18 +290,32 @@
                   {
                     renderers = {
                       headingTwo = {
-                        \subsection
-                          {
-                            ####1~[ \l__expltools_explcheck_current_label_tl ]
-                          }
-                        \__expltools_explcheck_increment_counters:
+                        \tl_set:Nn
+                          \l_tmpa_tl
+                          { ####1~[ }
+                        \tl_put_right:NV
+                          \l_tmpa_tl
+                          \l__expltools_explcheck_current_label_tl
+                        \tl_put_right:Nn
+                          \l_tmpa_tl
+                          { ] }
+                        \__expltools_explcheck_display_heading:NV
+                          \subsection
+                          \l_tmpa_tl
                       },
                       headingThree = {
-                        \subsubsection
-                          {
-                            ####1~[ \l__expltools_explcheck_current_label_tl ]
-                          }
-                        \__expltools_explcheck_increment_counters:
+                        \tl_set:Nn
+                          \l_tmpa_tl
+                          { ####1~[ }
+                        \tl_put_right:NV
+                          \l_tmpa_tl
+                          \l__expltools_explcheck_current_label_tl
+                        \tl_put_right:Nn
+                          \l_tmpa_tl
+                          { ] }
+                        \__expltools_explcheck_display_heading:NV
+                          \subsubsection
+                          \l_tmpa_tl
                       },
                     },
                   }
@@ -242,6 +324,14 @@
           }
       },
       headerAttributeContextEnd = {
+        \group_end:
+      },
+      sectionBegin = {
+        \group_begin:
+        \color_group_begin:
+      },
+      sectionEnd = {
+        \color_group_end:
         \group_end:
       },
       contentBlock = {

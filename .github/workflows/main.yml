@@ -240,7 +240,7 @@ jobs:
         run: tlmgr install --reinstall --with-doc l3kernel
       - name: Determine Docker image tag
         run: printf 'IMAGE_TAG=ghcr.io/%s/explcheck\n' "$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-      - name: Build and publish Docker image
+      - name: Build Docker image
         run: |
           set -e
           l3build tag

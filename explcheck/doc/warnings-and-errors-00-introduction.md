@@ -41,3 +41,5 @@ Warnings and errors have different types that decides the prefix of their idenfi
 
     `E`
     :   Other errors
+
+Issues that are planned but not yet implemented are grayed out.

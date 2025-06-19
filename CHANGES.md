@@ -6,6 +6,8 @@
 
 #### Development
 
+This version of explcheck has implemented the following new features:
+
 - Detect base forms of deprecated conditional function names.
   (#95, c96332f, 3a4dfbf)
 
@@ -46,6 +48,11 @@
 
 #### Warnings and errors
 
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Gray out issues that are only planned and not yet implemented. (#99)
+
 - Remove the planned issue E406 (Multiply defined function). (#99)
 
   Semantic analysis wouldn't be able to distinguish between multiply defined
@@ -74,6 +81,8 @@
   a corresponding issue T305 for the syntactic analysis.
 
 #### Fixes
+
+This version of explcheck has fixed the following bugs:
 
 - Do not report issue E405 (Function variant for an undefined function) for
   standard functions from the modules ltmarks, ltpara, ltproperties, and
