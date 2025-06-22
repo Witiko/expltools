@@ -248,7 +248,7 @@ A function or conditional function variant is defined before the base function h
 This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
 ### Calling a function before definition {.e}
-A function or conditional function (variant) is used before it has been defined or after it has been undefined.
+A function or conditional function (variant) is called before it has been defined or after it has been undefined.
 
 ``` tex
 \module_foo:  % error on this line

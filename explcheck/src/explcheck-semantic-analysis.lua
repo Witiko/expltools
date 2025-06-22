@@ -762,9 +762,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
   --- Make a pass over the segments, building up information.
   local defined_private_functions = {}
 
+  ---- Collect information about symbols that were definitely defined.
+  local called_functions_and_variants = {}
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
   local defined_private_function_variant_byte_ranges = {}
   local variant_base_csnames = {}
+
+  ---- Collect information about symbols that may have been defined.
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
@@ -799,9 +803,12 @@ local function semantic_analysis(pathname, content, issues, results, options)
     for _, statement in ipairs(segment_statements) do
       local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment_calls), #segment_tokens)
       local byte_range = token_range:new_range_from_subranges(get_token_byte_range(segment_tokens), #content)
+      -- Process a function variant definition.
       if statement.type == FUNCTION_VARIANT_DEFINITION then
-        -- Record private function variant defitions.
+        -- Record base control sequence names of variants, both as control sequence name usage and separately.
+        table.insert(variant_base_csnames, {statement.base_csname, byte_range})
         maybe_used_csname_texts[statement.base_csname] = true
+        -- Record control sequence name definitions.
         if statement.defined_csname.type == TEXT then
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
@@ -809,43 +816,45 @@ local function semantic_analysis(pathname, content, issues, results, options)
         else
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
-        table.insert(variant_base_csnames, {statement.base_csname, byte_range})
-        if statement.confidence == DEFINITELY then
-          if statement.is_private then
-            table.insert(defined_private_function_variant_byte_ranges, byte_range)
-            local defined_private_function_variant = {
-              number = #defined_private_function_variant_byte_ranges,
-              csname = statement.defined_csname
-            }
-            if statement.defined_csname.type == TEXT then
-              table.insert(defined_private_function_variant_texts, defined_private_function_variant)
-            elseif statement.defined_csname.type == PATTERN then
-              defined_private_function_variant_pattern = (
-                defined_private_function_variant_pattern
-                + statement.defined_csname.payload
-                / defined_private_function_variant
-              )
-            else
-              error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
-            end
+        -- Record private function variant definitions.
+        if statement.confidence == DEFINITELY and statement.is_private then
+          table.insert(defined_private_function_variant_byte_ranges, byte_range)
+          local defined_private_function_variant = {
+            number = #defined_private_function_variant_byte_ranges,
+            csname = statement.defined_csname
+          }
+          if statement.defined_csname.type == TEXT then
+            table.insert(defined_private_function_variant_texts, defined_private_function_variant)
+          elseif statement.defined_csname.type == PATTERN then
+            defined_private_function_variant_pattern = (
+              defined_private_function_variant_pattern
+              + statement.defined_csname.payload
+              / defined_private_function_variant
+            )
+          else
+            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
           end
         end
+      -- Process a function definition.
       elseif statement.type == FUNCTION_DEFINITION then
-        -- Record private function defitions.
-        maybe_defined_csname_texts[statement.defined_csname] = true
-        if statement.confidence == DEFINITELY and statement.is_private then
-          table.insert(defined_private_functions, {statement.defined_csname, byte_range})
-        end
-        -- Record base control sequences used as the base in indirect function definitions.
+        -- Record the base control sequences used in indirect function definitions.
         if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
           maybe_used_csname_texts[statement.base_csname] = true
         end
+        -- Record control sequence name definitions.
+        maybe_defined_csname_texts[statement.defined_csname] = true
+        -- Record private function defition.
+        if statement.confidence == DEFINITELY and statement.is_private then
+          table.insert(defined_private_functions, {statement.defined_csname, byte_range})
+        end
+      -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
-        -- Record control sequences defined and used in other statements.
+        -- Record control sequence name usage.
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csname_texts[call.csname] = true
+          table.insert(called_functions_and_variants, {call.csname, byte_range})
           for _, argument in ipairs(call.arguments) do
-            -- Collect tokens within c- and v-type arguments and interpret them as function usage.
+            -- Extract text from tokens within c- and v-type arguments.
             if lpeg.match(parsers.c_or_v_type_argument_specifier, argument.specifier) ~= nil then
               local csname = extract_csname_from_tokens(argument.token_range)
               if csname ~= nil then
@@ -856,11 +865,23 @@ local function semantic_analysis(pathname, content, issues, results, options)
                 end
               end
             end
-            -- Scan the tokens within N- and n-type arguments of all calls in the statement and look for function usage and definitions.
+            -- Scan control sequence tokens within N- and n-type arguments.
+            if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+              for _, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+                if token.type == CONTROL_SEQUENCE then
+                  maybe_used_csname_texts[token.payload] = true
+                end
+              end
+            end
+          end
+        end
+        -- Record control sequence name definitions.
+        for _, call in statement.call_range:enumerate(segment_calls) do
+          for _, argument in ipairs(call.arguments) do
+            -- Scan control sequence tokens within N- and n-type arguments.
             if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
               for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
                 if token.type == CONTROL_SEQUENCE then
-                  maybe_used_csname_texts[token.payload] = true
                   if token_number + 1 <= #segment_transformed_tokens then
                     local next_token = segment_transformed_tokens[token_number + 1]
                     if (
@@ -875,8 +896,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
             end
           end
         end
+      -- Process a block of unrecognized tokens.
       elseif statement.type == OTHER_TOKENS_SIMPLE or statement.type == OTHER_TOKENS_COMPLEX then
-        -- Record control sequence names in blocks of other unrecognized tokens.
+        -- Record control sequence name usage by scanning all control sequence tokens.
         for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
             maybe_used_csname_texts[token.payload] = true
@@ -894,6 +916,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   defined_private_function_variant_pattern = defined_private_function_variant_pattern * parsers.eof
 
   --- Report issues apparent from the collected information.
+  ---- Report unused private functions.
   for _, defined_private_function in ipairs(defined_private_functions) do
     local defined_csname, byte_range = table.unpack(defined_private_function)
     if not maybe_used_csname_texts[defined_csname] and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
@@ -901,6 +924,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
 
+  ---- Report unused private function variants.
   local used_private_function_variants = {}
   for private_function_variant_number, _ in ipairs(defined_private_function_variant_byte_ranges) do
     used_private_function_variants[private_function_variant_number] = false
@@ -913,7 +937,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
   for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
-    -- Although we might want to also test whether "defined_private_function_variant_pattern" and
+    -- NOTE: Although we might want to also test whether "defined_private_function_variant_pattern" and
     -- "maybe_used_csname_pattern" overlap, intersection is undecideable for parsing expression languages (PELs). In
     -- theory, we could use regular expressions instead of PEG patterns, since intersection is decideable for regular
     -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
@@ -931,12 +955,24 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
 
+  ---- Record function variants for undefined functions.
   for _, variant_base_csname in ipairs(variant_base_csnames) do
     local base_csname, byte_range = table.unpack(variant_base_csname)
     if lpeg.match(parsers.expl3_maybe_standard_library_csname, base_csname) == nil
         and not maybe_defined_csname_texts[base_csname]
         and not lpeg.match(maybe_defined_csname_pattern, base_csname) then
       issues:add('e405', 'function variant for an undefined function', byte_range)
+    end
+  end
+
+  ---- Record calls to undefined functions and function variants.
+  for _, called_function_or_variant in ipairs(called_functions_and_variants) do
+    local csname, byte_range = table.unpack(called_function_or_variant)
+    if lpeg.match(parsers.expl3like_csname, csname) ~= nil
+        and lpeg.match(parsers.expl3_maybe_standard_library_csname, csname) == nil
+        and not maybe_defined_csname_texts[csname]
+        and not lpeg.match(maybe_defined_csname_pattern, csname) then
+      issues:add('e408', 'calling an undefined function', byte_range)
     end
   end
 

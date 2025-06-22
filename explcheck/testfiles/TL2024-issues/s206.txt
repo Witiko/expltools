@@ -2,8 +2,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/generic/termmenu/termmenu.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-table.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/tools/longtable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/abspos/abspos.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro2.sty
@@ -75,7 +73,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/hvfloat/hvfloat.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/istgame/istgame.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq-complements.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/jmsdelim/jmsdelim.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/jobname-suffix/jobname-suffix.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/kanbun/kanbun.sty
@@ -91,11 +88,9 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/l3doc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate-2023-10-10.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/langsci-avm/langsci-avm.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-table.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/leftindex/leftindex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/linearregression/linearregression.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lisp-on-tex/lisp-mod-l3regex.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/litetable/litetable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/longdivision/longdivision.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-chemmacros.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-enotez.sty
@@ -110,7 +105,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimalist-classical.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/mitthesis/mitthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/moderncv/moderncv.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/mucproc/mucproc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/naive-ebnf/naive-ebnf.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/newpx/newpxmath.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/nicematrix/nicematrix.sty
@@ -176,7 +170,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzlings/tikzlings-list.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzmark/tikzlibrarytikzmark.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzsymbols/tikzsymbols.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/tools/longtable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaexercise.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaleaflet.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaletter.cls
@@ -195,11 +188,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/urcls/URletter.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/urcls/URoptions.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/urcls/URrules.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/urcls/URspecialopts.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/urcls/beamerouterthemeUR.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/weiqi/weiqi.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/wordcloud/wordcloud.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/wrapstuff/wrapstuff.sty

@@ -42,6 +42,10 @@ This version of explcheck has implemented the following new features:
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
   1. T400[^t400] (Expanding an unexpandable variable or constant)
+  2. E408 (Calling an undefined function)
+
+  This concludes all planned issues from Section 4.1 (Functions and conditional
+  functions) from this document.
 
  [^t400]: This issue has later been moved to Section 3 of the same document and
  renamed to T305, since it can be detected by the syntactic analysis already.

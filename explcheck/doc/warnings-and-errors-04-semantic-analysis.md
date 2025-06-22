@@ -37,38 +37,12 @@ A function or conditional function variant is defined for an undefined function.
  /e405-01.tex
  /e405-02.tex
 
-### Calling an undefined function {.e #calling-undefined-function}
-A function or conditional function (variant) is used but undefined.
+### Calling an undefined function {.e label=e408 #calling-undefined-function}
+A function or conditional function (variant) is called but undefined.
 
-``` tex
-\module_foo:  % error on this line
-```
-
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\tl_set:Nn
-  \l_tmpa_tl
-  { baz }
-\module_foo:V  % error on this line
-  \l_tmpa_tl
-```
-
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { TF }
-  { V }
-\module_foo:VTF  % error on this line
-  \l_tmpa_tl
-  { foo }
-  { bar }
-```
+ /e408-01.tex
+ /e408-02.tex
+ /e408-03.tex
 
 ### Function variant of deprecated type {.w label=w410 #deprecated-variant}
 A function or conditional function variant is generated from a deprecated argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].

@@ -383,6 +383,7 @@ local expl3like_csname = (
     * colon  -- a csname with at least one colon at the end
     * letter^0
   )
+  * eof
 )
 
 ---- Comments
