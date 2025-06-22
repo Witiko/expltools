@@ -309,8 +309,8 @@ local expl3_standard_library_prefixes = (
   + P("draw")
   + P("exp")
   + P("file")
-  + P("graph")  -- part of the lt3graph package
   + P("graphics")
+  + P("graph")  -- part of the lt3graph package
   + P("group")
   + P("hook")  -- part of the lthooks module
   + P("if")
