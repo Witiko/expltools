@@ -180,9 +180,6 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
-local v_type_argument_specifier = S("v")
-local V_type_argument_specifier = S("V")
-local c_or_v_type_argument_specifier = S("cv")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
 local do_not_use_argument_specifier = S("D")
@@ -771,7 +768,6 @@ local conditions = comma_list(condition)
 return {
   any = any,
   argument_specifiers = argument_specifiers,
-  c_or_v_type_argument_specifier = c_or_v_type_argument_specifier,
   commented_lines = commented_lines,
   compatible_argument_specifiers = compatible_argument_specifiers,
   condition = condition,
@@ -779,7 +775,6 @@ return {
   decimal_digit = decimal_digit,
   deprecated_argument_specifiers = deprecated_argument_specifiers,
   determine_expl3_catcode = determine_expl3_catcode,
-  do_not_use_argument_specifier = do_not_use_argument_specifier,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
   endinput = endinput,
@@ -812,14 +807,10 @@ return {
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
-  parameter_argument_specifier = parameter_argument_specifier,
   provides = provides,
   space = space,
   success = success,
   tab = tab,
   tex_lines = tex_lines,
   variant_argument_specifiers = variant_argument_specifiers,
-  v_type_argument_specifier = v_type_argument_specifier,
-  V_type_argument_specifier = V_type_argument_specifier,
-  weird_argument_specifier = weird_argument_specifier,
 }

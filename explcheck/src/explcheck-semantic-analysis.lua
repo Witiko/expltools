@@ -495,7 +495,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
               num_parameters = #argument_specifiers
             end
             for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
-              if lpeg.match(parsers.parameter_argument_specifier, argument.specifier) and argument.num_parameters ~= nil then
+              if argument.specifier == "p" and argument.num_parameters ~= nil then
                 if num_parameters == nil or argument.num_parameters > num_parameters then  -- if one method gives a higher number, trust it
                   num_parameters = argument.num_parameters
                 end
@@ -855,7 +855,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           table.insert(called_functions_and_variants, {call.csname, byte_range})
           for _, argument in ipairs(call.arguments) do
             -- Extract text from tokens within c- and v-type arguments.
-            if lpeg.match(parsers.c_or_v_type_argument_specifier, argument.specifier) ~= nil then
+            if argument.specifier == "c" or argument.specifier == "v" then
               local csname = extract_csname_from_tokens(argument.token_range)
               if csname ~= nil then
                 if csname.type == TEXT then

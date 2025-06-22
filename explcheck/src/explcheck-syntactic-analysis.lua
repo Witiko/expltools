@@ -310,14 +310,14 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
         local arguments = {}
 
         local function record_argument(argument)
-          if lpeg.match(parsers.V_type_argument_specifier, argument.specifier) ~= nil then
+          if argument.specifier == "V" then
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
                   lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_token.payload) ~= nil then
                 issues:add('t305', 'expanding an unexpandable variable or constant', argument_token.byte_range)
               end
             end
-          elseif lpeg.match(parsers.v_type_argument_specifier, argument.specifier) ~= nil then
+          elseif argument.specifier == "v" then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
             if argument_text ~= nil and lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_text) ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
@@ -331,9 +331,9 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
         local num_parameters
         local are_parameter_texts_valid = true
         for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
-          if lpeg.match(parsers.weird_argument_specifier, argument_specifier) then
+          if argument_specifier == "w" then
             goto skip_other_token  -- a "weird" argument specifier, skip the control sequence
-          elseif lpeg.match(parsers.do_not_use_argument_specifier, argument_specifier) then
+          elseif argument_specifier == "D" then
             goto skip_other_token  -- a "do not use" argument specifier, skip the control sequence
           end
           ::check_token::
@@ -356,7 +356,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             next_token_number = next_token_number + 1
             goto check_token
           end
-          if lpeg.match(parsers.parameter_argument_specifier, argument_specifier) then
+          if argument_specifier == "p" then
             parameter_text_start_token_number = next_token_number  -- a "TeX parameter" argument specifier, try to collect parameter text
             while next_token_number <= transformed_token_range_end do
               next_token = transformed_tokens[next_token_number]
