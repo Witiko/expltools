@@ -50,6 +50,16 @@ This version of explcheck has implemented the following new features:
  [^t400]: This issue has later been moved to Section 3 of the same document and
  renamed to T305, since it can be detected by the syntactic analysis already.
 
+- Add module `explcheck-latex3.lua` that includes LPEG parsers and other
+  information extraction from LaTeX3 data files. (#99)
+
+  This module was previously names `explcheck-obsolete.lua` and only included
+  information about deprecated control sequences extracted from the file
+  "l3obsolete.txt". The new module also contains registered LaTeX module names
+  extracted from the file "l3prefixes.csv". This new information is used to
+  determine whether a control sequence is "well-known" in order to reduce false
+  positive detections of issues such as E408 (Calling an undefined function).
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled

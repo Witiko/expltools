@@ -1,5 +1,7 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
+local registered_prefixes = require("explcheck-latex3").prefixes
+
 local lpeg = require("lpeg")
 local C, Cc, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cc, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
 
@@ -298,48 +300,53 @@ local expl3_maybe_unexpandable_csname = (
   * eof
 )
 
-local expl3_maybe_standard_library_csname = (
-  (
-    expl3_variable_or_constant_type
-    + P("benchmark")
-    + P("char")
-    + P("codepoint")
-    + S("hv") * P("coffin")
-    + P("color")
-    + P("cs")
-    + P("debug")
-    + P("draw")
-    + P("exp")
-    + P("file")
-    + P("graph")  -- part of the lt3graph package
-    + P("graphics")
-    + P("group")
-    + P("hook")  -- part of the lthooks module
-    + P("if")
-    + P("keys")
-    + P("keyval")
-    + P("legacy")
-    + P("lua")
-    + P("mark")  -- part of the ltmarks module
-    + P("mode")
-    + P("msg")
-    + P("opacity")
-    + P("para")  -- part of the ltpara module
-    + P("pdf")
-    + P("peek")
-    + P("prg")
-    + P("property")  -- part of the ltproperties module
-    + P("quark")
-    + P("reverse_if")
-    + P("scan")
-    + P("socket")  -- part of the ltsockets module
-    + P("sort")
-    + P("sys")
-    + P("tag")  -- part of the tagpdf package
-    + P("text")
-    + P("token")
-    + P("use")
-    + P("withargs")  -- part of the withargs package
+local expl3_standard_library_prefixes = (
+  expl3_variable_or_constant_type
+  + P("benchmark")
+  + P("char")
+  + P("codepoint")
+  + S("hv") * P("coffin")
+  + P("color")
+  + P("cs")
+  + P("debug")
+  + P("draw")
+  + P("exp")
+  + P("file")
+  + P("graph")  -- part of the lt3graph package
+  + P("graphics")
+  + P("group")
+  + P("hook")  -- part of the lthooks module
+  + P("if")
+  + P("keys")
+  + P("keyval")
+  + P("legacy")
+  + P("lua")
+  + P("mark")  -- part of the ltmarks module
+  + P("mode")
+  + P("msg")
+  + P("opacity")
+  + P("para")  -- part of the ltpara module
+  + P("pdf")
+  + P("peek")
+  + P("prg")
+  + P("property")  -- part of the ltproperties module
+  + P("quark")
+  + P("reverse_if")
+  + P("scan")
+  + P("socket")  -- part of the ltsockets module
+  + P("sort")
+  + P("sys")
+  + P("tag")  -- part of the tagpdf package
+  + P("text")
+  + P("token")
+  + P("use")
+  + P("withargs")  -- part of the withargs package
+)
+local expl3_well_known_function_csname = (
+  P("__")^-1
+  * (
+    expl3_standard_library_prefixes * #underscore
+    + registered_prefixes
   )
   * (
     underscore
@@ -787,13 +794,13 @@ return {
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3like_csname = expl3like_csname,
   expl3like_material = expl3like_material,
-  expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl3_variable_or_constant_use_csname = expl3_variable_or_constant_use_csname,
+  expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   fail = fail,

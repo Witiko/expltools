@@ -94,12 +94,12 @@ function main(target, names)
   local return_value
   if ({check=true, bundlecheck=true, ctan=true, bundlectan=true, doc=true, tag=true})[target] ~= nil then
     if ({check=true, bundlecheck=true, tag=true})[target] ~= nil then
-      -- After tagging or before checking, generate file "explcheck-obsolete.lua".
-      print("Generating  explcheck-obsolete.lua")
+      -- After tagging or before checking, generate file "explcheck-latex3.lua".
+      print("Generating  explcheck-latex3.lua")
       local lfs = require("lfs")
       local current_dir = lfs.currentdir()
       lfs.chdir(sourcefiledir)
-      require("generate-explcheck-obsolete")
+      require("generate-explcheck-latex3")
       lfs.chdir(current_dir)
     end
     local func = target == "bundlectan" and bundlectan or target_list[target].func

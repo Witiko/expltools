@@ -2,7 +2,7 @@
 
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
-local obsolete = require("explcheck-obsolete")
+local obsolete = require("explcheck-latex3").obsolete
 local parsers = require("explcheck-parsers")
 
 local new_range = ranges.new_range
