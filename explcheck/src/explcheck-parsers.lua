@@ -324,6 +324,15 @@ local expl3_standard_library_prefixes = (
   + P("opacity")
   + P("para")  -- part of the ltpara module
   + P("pdf")
+  * (
+    P("annot")  -- part of the l3pdfannot module
+    + P("dict")  -- part of the l3pdfdict module
+    + P("field")  -- part of the l3pdffield module
+    + P("file")  -- part of the l3pdffile module
+    + P("management")  -- part of the l3pdfmanagement module
+    + P("meta")  -- part of the l3pdfmeta module
+    + P("xform")  -- part of the l3pdfxform module
+  )^0
   + P("peek")
   + P("prg")
   + P("property")  -- part of the ltproperties module
