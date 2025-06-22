@@ -113,6 +113,27 @@ local function semantic_analysis(pathname, content, issues, results, options)
     return pattern, transcript, num_simple_tokens
   end
 
+  -- Extract the name of a control sequence from a call argument.
+  local function extract_csname_from_argument(argument, tokens, map_forward)
+    local csname
+    if argument.specifier == "N" then
+      local csname_token = tokens[map_forward(argument.token_range:start())]
+      if csname_token.type ~= CONTROL_SEQUENCE then  -- the N-type argument is not a control sequence, give up
+        return nil
+      end
+      csname = csname_token.payload
+    elseif argument.specifier == "c" then
+      csname = extract_text_from_tokens(argument.token_range, tokens, map_forward)
+      if csname == nil then  -- the c-type argument contains complex material, give up
+        return nil
+      end
+    else
+      error('Unexpected argument specifier "' .. argument.specifier .. '"')
+    end
+    assert(csname ~= nil)
+    return csname
+  end
+
   -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
   local function record_statements_and_replacement_texts(tokens, transformed_tokens, calls, first_map_back, first_map_forward)
     local statements = {}
@@ -408,13 +429,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
           local is_conditional = table.unpack(function_variant_definition)
           -- determine the name of the defined function
           local base_csname_argument = call.arguments[1]
-          assert(base_csname_argument.specifier == "N")
-          local base_csname_token = transformed_tokens[first_map_forward(base_csname_argument.token_range:start())]
-          local base_csname = base_csname_token.payload
-          if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+          local base_csname = extract_csname_from_argument(base_csname_argument, transformed_tokens, first_map_forward)
+          if base_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
-          assert(base_csname ~= nil)
           local base_csname_stem, base_argument_specifiers = parse_expl3_csname(base_csname)
           if base_csname_stem == nil then  -- we couldn't parse the csname, give up
             goto other_statement
@@ -481,13 +499,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
             end
             -- determine the name of the defined function
             local defined_csname_argument = call.arguments[1]
-            assert(defined_csname_argument.specifier == "N")
-            local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
-            local defined_csname = defined_csname_token.payload
-            if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            local defined_csname = extract_csname_from_argument(defined_csname_argument, transformed_tokens, first_map_forward)
+            if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(defined_csname ~= nil)
             -- determine the number of parameters of the defined function
             local num_parameters
             local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
@@ -572,22 +587,16 @@ local function semantic_analysis(pathname, content, issues, results, options)
             local _, is_conditional, maybe_redefinition, is_global = table.unpack(function_definition)
             -- determine the name of the defined function
             local defined_csname_argument = call.arguments[1]
-            assert(defined_csname_argument.specifier == "N")
-            local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
-            local defined_csname = defined_csname_token.payload
-            if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            local defined_csname = extract_csname_from_argument(defined_csname_argument, transformed_tokens, first_map_forward)
+            if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(defined_csname ~= nil)
             -- determine the name of the base function
             local base_csname_argument = call.arguments[2]
-            assert(base_csname_argument.specifier == "N")
-            local base_csname_token = transformed_tokens[first_map_forward(base_csname_argument.token_range:start())]
-            local base_csname = base_csname_token.payload
-            if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            local base_csname = extract_csname_from_argument(base_csname_argument, transformed_tokens, first_map_forward)
+            if base_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(base_csname ~= nil)
             -- determine all effectively defined csnames and effective base csnames
             local effective_defined_and_base_csnames = {}
             if is_conditional then  -- conditional function

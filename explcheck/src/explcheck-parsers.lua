@@ -640,7 +640,8 @@ local expl3_direct_function_definition_csname = (
     * Cc(false)  -- conditional functions cannot be "nopar"
     * P("_conditional")
   )
-  * P(":N")
+  * colon
+  * S("Nc")
 )
 local expl3_indirect_function_definition_csname = (
   (
@@ -651,7 +652,9 @@ local expl3_indirect_function_definition_csname = (
     * expl3_function_definition_type_signifier
     * P("_eq_conditional")
   )
-  * P(":NN")
+  * colon
+  * S("Nc")
+  * S("Nc")
 )
 local expl3_function_definition_csname = Ct(
   Cc(true) * expl3_direct_function_definition_csname
@@ -702,7 +705,8 @@ local expl3_function_variant_definition_csname = Ct(
     -- A conditional function
     + P("prg_generate_conditional_variant") * Cc(true)
   )
-  * P(":N")
+  * P(":")
+  * S("Nc")
 )
 
 ---- Function calls with Lua arguments
