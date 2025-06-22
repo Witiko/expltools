@@ -1,0 +1,1 @@
+/usr/local/texlive/2024/texmf-dist/tex/latex/keytheorems/class-support/keythms-amsart-support.tex

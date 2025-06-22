@@ -196,10 +196,6 @@ max_line_length = 120
 [filename."letterswitharrows.sty"]
 max_line_length = 110
 
-[filename."keythms-amsart-support.tex"]
-expl3_detection_strategy = "always"
-ignored_issues = ["e301", "w302"]
-
 [package.leadsheets]
 ignored_issues = ["e300", "e301"]
 
