@@ -492,16 +492,34 @@ local function semantic_analysis(pathname, content, issues, results, options)
           -- Process a direct function definition.
           if is_direct then
             local _, is_conditional, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
-            -- determine the replacement text
-            local replacement_text_argument = call.arguments[#call.arguments]
-            if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
-              goto other_statement
-            end
             -- determine the name of the defined function
             local defined_csname_argument = call.arguments[1]
             local defined_csname = extract_csname_from_argument(defined_csname_argument, transformed_tokens, first_map_forward)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
+            end
+            -- determine the replacement text
+            local replacement_text_argument = call.arguments[#call.arguments]
+            if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion, report partial information
+              local statement = {
+                type = FUNCTION_DEFINITION,
+                call_range = call_range,
+                confidence = MAYBE,
+                -- The following attributes are specific to the type.
+                subtype = FUNCTION_DEFINITION_DIRECT,
+                maybe_redefinition = maybe_redefinition,
+                is_private = is_function_private(defined_csname),
+                is_global = is_global,
+                defined_csname = defined_csname,
+                -- The following attributes are specific to the subtype.
+                is_conditional = is_conditional,
+                is_protected = is_protected,
+                is_nopar = is_nopar,
+                replacement_text_number = nil,
+                replacement_text_argument = replacement_text_argument,
+              }
+              table.insert(statements, statement)
+              goto continue
             end
             -- determine the number of parameters of the defined function
             local num_parameters
@@ -579,6 +597,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
                 is_protected = is_protected,
                 is_nopar = is_nopar,
                 replacement_text_number = #replacement_text_tokens,
+                replacement_text_argument = replacement_text_argument,
               }
               table.insert(statements, statement)
             end
@@ -712,7 +731,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
           replacement_text_tokens.map_forward
         )
         for _, nested_statement in ipairs(nested_statements) do
-          if nested_statement.type == FUNCTION_DEFINITION and nested_statement.subtype == FUNCTION_DEFINITION_DIRECT then
+          if nested_statement.type == FUNCTION_DEFINITION
+              and nested_statement.subtype == FUNCTION_DEFINITION_DIRECT
+              and nested_statement.replacement_text_number ~= nil then
             -- make the reference to the replacement text absolute instead of relative
             nested_statement.replacement_text_number = nested_statement.replacement_text_number + current_num_replacement_texts
           end
@@ -809,6 +830,47 @@ local function semantic_analysis(pathname, content, issues, results, options)
       return csname
     end
 
+    -- Process an argument and record control sequence name usage and definitions.
+    local function process_argument_tokens(argument)
+      -- Record control sequence name usage.
+      --- Extract text from tokens within c- and v-type arguments.
+      if argument.specifier == "c" or argument.specifier == "v" then
+        local csname = extract_csname_from_tokens(argument.token_range)
+        if csname ~= nil then
+          if csname.type == TEXT then
+            maybe_used_csname_texts[csname.payload] = true
+          elseif csname.type == PATTERN then
+            maybe_used_csname_pattern = maybe_used_csname_pattern + csname.payload
+          end
+        end
+      end
+      --- Scan control sequence tokens within N- and n-type arguments.
+      if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+        for _, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+          if token.type == CONTROL_SEQUENCE then
+            maybe_used_csname_texts[token.payload] = true
+          end
+        end
+      end
+      -- Record control sequence name definitions.
+      --- Scan control sequence tokens within N- and n-type arguments.
+      if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+        for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+          if token.type == CONTROL_SEQUENCE then
+            if token_number + 1 <= #segment_transformed_tokens then
+              local next_token = segment_transformed_tokens[token_number + 1]
+              if (
+                    next_token.type == CONTROL_SEQUENCE
+                    and lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
+                  ) then
+                maybe_defined_csname_texts[next_token.payload] = true
+              end
+            end
+          end
+        end
+      end
+    end
+
     for _, statement in ipairs(segment_statements) do
       local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment_calls), #segment_tokens)
       local byte_range = token_range:new_range_from_subranges(get_token_byte_range(segment_tokens), #content)
@@ -850,59 +912,23 @@ local function semantic_analysis(pathname, content, issues, results, options)
         if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
           maybe_used_csname_texts[statement.base_csname] = true
         end
-        -- Record control sequence name definitions.
+        -- Record control sequence name usage and definitions.
         maybe_defined_csname_texts[statement.defined_csname] = true
+        if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_number == nil then
+          process_argument_tokens(statement.replacement_text_argument)
+        end
         -- Record private function defition.
         if statement.confidence == DEFINITELY and statement.is_private then
           table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
-        -- Record control sequence name usage.
+        -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csname_texts[call.csname] = true
           table.insert(called_functions_and_variants, {call.csname, byte_range})
           for _, argument in ipairs(call.arguments) do
-            -- Extract text from tokens within c- and v-type arguments.
-            if argument.specifier == "c" or argument.specifier == "v" then
-              local csname = extract_csname_from_tokens(argument.token_range)
-              if csname ~= nil then
-                if csname.type == TEXT then
-                  maybe_used_csname_texts[csname.payload] = true
-                elseif csname.type == PATTERN then
-                  maybe_used_csname_pattern = maybe_used_csname_pattern + csname.payload
-                end
-              end
-            end
-            -- Scan control sequence tokens within N- and n-type arguments.
-            if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-              for _, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
-                if token.type == CONTROL_SEQUENCE then
-                  maybe_used_csname_texts[token.payload] = true
-                end
-              end
-            end
-          end
-        end
-        -- Record control sequence name definitions.
-        for _, call in statement.call_range:enumerate(segment_calls) do
-          for _, argument in ipairs(call.arguments) do
-            -- Scan control sequence tokens within N- and n-type arguments.
-            if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-              for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
-                if token.type == CONTROL_SEQUENCE then
-                  if token_number + 1 <= #segment_transformed_tokens then
-                    local next_token = segment_transformed_tokens[token_number + 1]
-                    if (
-                          next_token.type == CONTROL_SEQUENCE
-                          and lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
-                        ) then
-                      maybe_defined_csname_texts[next_token.payload] = true
-                    end
-                  end
-                end
-              end
-            end
+            process_argument_tokens(argument)
           end
         end
       -- Process a block of unrecognized tokens.

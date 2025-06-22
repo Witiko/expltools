@@ -60,7 +60,9 @@ This version of explcheck has implemented the following new features:
   determine whether a control sequence is "well-known" in order to reduce false
   positive detections of issues such as E408 (Calling an undefined function).
 
-- Support c-type arguments in function (variant) definitions. (#99)
+- Support c-type csname arguments in function (variant) definitions. (#99)
+
+- Support non-n-type replacement text arguments in function definitions. (#99)
 
 #### Warnings and errors
 
