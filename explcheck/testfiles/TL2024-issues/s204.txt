@@ -1,7 +1,6 @@
 /usr/local/texlive/2024/texmf-dist/source/latex/koma-script/doc/plength-tikz.tex
 /usr/local/texlive/2024/texmf-dist/source/latex/koma-script/doc/variables-tikz.tex
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/cfntinst.sty
-/usr/local/texlive/2024/texmf-dist/tex/fontinst/base/finstmsc.sty
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/fontinst.sty
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/xfntinst.sty
 /usr/local/texlive/2024/texmf-dist/tex/generic/babel/babel-ca-chinese.tex
@@ -349,7 +348,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/kfupm-math-exam/kfupm-math-exam.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/knowledge/knowledge.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/koma-script-source-doc.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/scrlayer.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/scrlfile-hook-3.34.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/scrlfile-hook.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/tocbasic.sty
@@ -434,7 +432,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-ghsystem.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-lipsum.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-lltjp-siunitx.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-mathtools.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-minibox.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-realscripts.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-scrextend.sty
@@ -613,7 +610,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/rbt-mathnotes/rbt-mathnotes-util.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/rbt-mathnotes/rbt-mathnotes.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/rbt-mathnotes/rbt-mathnotes.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/rcs/rcs.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/realscripts/realscripts.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/rec-thy/rec-thy.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/recorder-fingering/recorder-fingering.sty
@@ -833,11 +829,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math/unicode-math.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicodefonttable/unicodefonttable.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unigrazpub/unigrazpub.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/univie-ling/univie-ling-expose.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/univie-ling/univie-ling-handout.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/univie-ling/univie-ling-paper.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/univie-ling/univie-ling-poster.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/univie-ling/univie-ling-thesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/urcls/URbeamer.cls
@@ -930,8 +921,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexko/luatexko.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luaxml/luaxml.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/nodetree/nodetree-embed.sty
-/usr/local/texlive/2024/texmf-dist/tex/plain/mkpattern/mkpatter.tex
-/usr/local/texlive/2024/texmf-dist/tex/plain/xintsession/xintsession.tex
 /usr/local/texlive/2024/texmf-dist/tex/platex/base/platexrelease.sty
 /usr/local/texlive/2024/texmf-dist/tex/platex/jlreq-deluxe/jlreq-deluxe.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/bidi-atbegshi/bidi-atbegshi.sty
