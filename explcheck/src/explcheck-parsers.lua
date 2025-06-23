@@ -348,18 +348,25 @@ local expl3_standard_library_prefixes = (
   + P("use")
   + P("withargs")  -- part of the withargs package
 )
-local expl3_well_known_function_csname = (
-  P("__")^-1
-  * (
-    expl3_standard_library_prefixes * #underscore
-    + registered_prefixes
+local function expl3_well_known_function_csname(other_prefix_texts)
+  local other_prefixes = fail
+  for _, prefix_text in ipairs(other_prefix_texts) do
+    other_prefixes = other_prefixes + P(prefix_text)
+  end
+  return (
+    P("__")^-1
+    * (
+      expl3_standard_library_prefixes * #(underscore + colon)
+      + registered_prefixes * #(underscore + colon)
+      + other_prefixes
+    )
+    * (
+      underscore
+      * (any - colon)^0
+    )^0
+    * colon
   )
-  * (
-    underscore
-    * (any - colon)^0
-  )^-1
-  * colon
-)
+end
 
 local expl3_variable_or_constant_csname = (
   S("cgl")  -- scope

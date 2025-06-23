@@ -22,6 +22,12 @@ This version of explcheck has implemented the following new features:
   After this change, all possible variants are efficiently encoded using a
   pattern, which allowed us to support arbitrarily many arguments.
 
+- Recognize more argument specifiers in function (variant) definitions. (#99)
+
+  This includes support for c-type csname arguments and non-n-type replacement
+  text arguments. In the latter case, the replacement text is not analyzed and
+  the function is assumed to be defined with unknown replacement text.
+
 - Add support for detecting function use in c- and v-type arguments. (#99)
 
   Previously, if a function `\__example_foo:n` was defined and then used as
@@ -53,28 +59,37 @@ This version of explcheck has implemented the following new features:
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
   1. T400[^t400] (Expanding an unexpandable variable or constant)
-  2. E408 (Calling an undefined function)
+  2. E408[^e408] (Calling an undefined function)
 
   This concludes all planned issues from Section 4.1 (Functions and conditional
   functions) from this document.
 
  [^t400]: This issue has later been moved to Section 3 of the same document and
- renamed to T305, since it can be detected by the syntactic analysis already.
+    renamed to T305, since it can be detected by the syntactic analysis already.
+
+ [^e408]: By default, all standard library prefixes, defined by the parser
+    `expl3_standard_library_prefixes` as well as registered prefixes from the
+    file `l3prefixes.csv` are excluded from this error.
+
+    Besides well-known prefixes, you may also declare other imported prefixes
+    using a new Lua option `imported_prefixes`. For example, here is how your
+    config file `.explcheckrc` might look if you use the function
+    `\precattl_exec:n` from the package precattl:
+
+    ``` csv
+    [defaults]
+    imported_prefixes = ["precattl"]
+    ```
 
 - Add module `explcheck-latex3.lua` that includes LPEG parsers and other
   information extraction from LaTeX3 data files. (#99)
 
-  This module was previously names `explcheck-obsolete.lua` and only included
+  This module was previously named `explcheck-obsolete.lua` and only included
   information about deprecated control sequences extracted from the file
-  "l3obsolete.txt". The new module also contains registered LaTeX module names
-  extracted from the file "l3prefixes.csv". This new information is used to
-  determine whether a control sequence is "well-known" in order to reduce false
+  `l3obsolete.txt`. The new module also contains registered LaTeX module names
+  extracted from the file `l3prefixes.csv`. This new information is used to
+  determine whether a control sequence is well-known in order to reduce false
   positive detections of issues such as E408 (Calling an undefined function).
-
-- Recognize more calls as function (variant) definitions. (#99)
-
-  This includes support for c-type csname arguments and non-n-type replacement
-  text arguments. (#99)
 
 #### Warnings and errors
 

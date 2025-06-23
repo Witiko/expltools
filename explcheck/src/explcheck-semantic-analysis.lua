@@ -990,10 +990,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
 
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local expl3_well_known_function_csname = parsers.expl3_well_known_function_csname(imported_prefixes)
+
   ---- Record function variants for undefined functions.
   for _, variant_base_csname in ipairs(variant_base_csnames) do
     local base_csname, byte_range = table.unpack(variant_base_csname)
-    if lpeg.match(parsers.expl3_well_known_function_csname, base_csname) == nil
+    if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
         and not maybe_defined_csname_texts[base_csname]
         and not lpeg.match(maybe_defined_csname_pattern, base_csname) then
       issues:add('e405', 'function variant for an undefined function', byte_range)
@@ -1004,7 +1007,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, called_function_or_variant in ipairs(called_functions_and_variants) do
     local csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_csname, csname) ~= nil
-        and lpeg.match(parsers.expl3_well_known_function_csname, csname) == nil
+        and lpeg.match(expl3_well_known_function_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and not lpeg.match(maybe_defined_csname_pattern, csname) then
       issues:add('e408', 'calling an undefined function', byte_range)

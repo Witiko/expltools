@@ -32,7 +32,7 @@ max_line_length = 100
 
 [package.chemmacros]
 max_line_length = 100
-ignored_issues = ["e405"]
+imported_prefixes = ["chemgreek"]
 
 [filename."interlinear.sty"]
 expl3_detection_strategy = "precision"
@@ -62,6 +62,7 @@ ignored_issues = ["e300"]
 expl3_detection_strategy = "always"
 max_line_length = 110
 ignored_issues = ["e304", "e405"]
+imported_prefixes = ["stex"]
 
 [package.qrbill]
 max_line_length = 180
@@ -106,7 +107,7 @@ ignored_issues = ["e209"]
 
 [filename."interchar.sty"]
 expl3_detection_strategy = "always"
-ignored_issues = ["e300", "e304"]
+ignored_issues = ["e300", "e304", "e408"]
 max_line_length = 90
 
 [filename."bangla.sty"]
@@ -119,10 +120,6 @@ expl3_detection_strategy = "precision"
 ignored_issues = ["e209", "e301"]
 max_line_length = 150
 
-[filename."platexrelease.sty"]
-expl3_detection_strategy = "always"
-max_line_length = 90
-
 [package.luamml]
 expl3_detection_strategy = "never"
 ignored_issues = ["e405"]
@@ -131,6 +128,10 @@ ignored_issues = ["e405"]
 expl3_detection_strategy = "always"
 ignored_issues = ["e209", "e300"]
 max_line_length = 100
+imported_prefixes = ["xunadd"]
+
+[package.xepersian]
+imported_prefixes = ["xepersian"]
 
 [filename."luaprogtable.sty"]
 expl3_detection_strategy = "always"
@@ -166,6 +167,7 @@ max_line_length = 140
 
 [package.whatsnote]
 expl3_detection_strategy = "always"
+imported_prefixes = ["whatsnote"]
 
 [filename."multicolrule.sty"]
 max_line_length = 100
@@ -192,15 +194,17 @@ expl3_detection_strategy = "always"
 [package.hduthesis]
 expl3_detection_strategy = "always"
 max_line_length = 120
+imported_prefixes = ["hdu"]
 
 [filename."letterswitharrows.sty"]
 max_line_length = 110
 
 [package.leadsheets]
 ignored_issues = ["e300", "e301"]
+imported_prefixes = ["leadsheets"]
 
 [package.mathcommand]
-ignored_issues = ["e301", "e304"]
+ignored_issues = ["e301", "e304", "e408"]
 
 [package.media4svg]
 ignored_issues = ["e301"]
@@ -213,6 +217,7 @@ ignored_issues = ["e301"]
 
 [package.zitie]
 ignored_issues = ["e300"]
+imported_prefixes = ["zitie"]
 
 [filename."spreadtab.sty"]
 expl3_detection_strategy = "never"
@@ -231,6 +236,7 @@ ignored_issues = ["e304"]
 
 [package.xduts]
 ignored_issues = ["e300"]
+imported_prefixes = ["xdu"]
 
 [package.semtex]
 ignored_issues = ["e300"]
@@ -273,7 +279,7 @@ ignored_issues = ["e201", "e304"]
 ignored_issues = ["e304", "e405"]
 
 [package.els-cas-templates]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e408"]
 
 [package.genealogytree]
 ignored_issues = ["e304"]
@@ -300,7 +306,7 @@ ignored_issues = ["e304", "e405"]
 ignored_issues = ["e304"]
 
 [package.lwarp]
-ignored_issues = ["e304", "w302", "w401"]
+ignored_issues = ["e304", "w302", "w401", "e408"]
 
 [package.memoir]
 ignored_issues = ["e304"]
@@ -310,9 +316,11 @@ ignored_issues = ["e304"]
 
 [package.q-and-a]
 ignored_issues = ["e304"]
+imported_prefixes = ["projlib"]
 
 [package.rbt-mathnotes]
 ignored_issues = ["e304"]
+imported_prefixes = ["mn"]
 
 [package.shtthesis]
 ignored_issues = ["e304"]
@@ -322,6 +330,7 @@ ignored_issues = ["e304"]
 
 [package.spectralsequences]
 ignored_issues = ["e304", "w401"]
+imported_prefixes = ["sseq"]
 
 [filename."beamerthemesTeX.sty"]
 ignored_issues = ["e304"]
@@ -334,6 +343,7 @@ ignored_issues = ["e304"]
 
 [package.ufrgscca]
 ignored_issues = ["e304", "e405"]
+imported_prefixes = ["ufrgscca"]
 
 [package.univie-ling]
 ignored_issues = ["e304"]
@@ -342,9 +352,6 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304", "e405"]
 
 [package.luatexko]
-ignored_issues = ["e304"]
-
-[filename."platexrelease.sty"]
 ignored_issues = ["e304"]
 
 [package.pstool]
@@ -369,7 +376,7 @@ ignored_issues = ["w401"]
 ignored_issues = ["w401"]
 
 [package.modiagram]
-ignored_issues = ["e405"]
+ignored_issues = ["e405", "e408"]
 
 [package.clistmap]
 ignored_issues = ["e405"]
@@ -383,50 +390,107 @@ ignored_issues = ["e405"]
 [package.genealogy-profiles]
 ignored_issues = ["e405"]
 
-[package.ghsystem]
-ignored_issues = ["e405"]
-
-[package.hustthesis]
-ignored_issues = ["e405"]
-
-[package.keytheorems]
-ignored_issues = ["e405"]
-
 [package.lambdax]
 ignored_issues = ["e405"]
 
 [package.lt3rawobjects]
-ignored_issues = ["e405"]
+ignored_issues = ["e405", "e408"]
 
 [package.mahjong]
 ignored_issues = ["e405"]
 
-[package.neoschool]
-ignored_issues = ["e405"]
-
-[package.newpax]
-ignored_issues = ["e405"]
-
 [package.njuthesis]
 ignored_issues = ["e405"]
-
-[package.numerica]
-ignored_issues = ["e405"]
-
-[package.pdfmanagement-testphase]
-ignored_issues = ["e405"]
-
-[package.postnotes]
-ignored_issues = ["e405"]
-
-[package.sdaps]
-ignored_issues = ["e405"]
+imported_prefixes = ["ctxdoc", "nju"]
 
 [package.semantex]
 ignored_issues = ["e405"]
 
-[package.starray]
-ignored_issues = ["e405"]
-
 [package.tagpdf]
 ignored_issues = ["e405"]
+
+[package.witharrows]
+imported_prefixes = ["MH"]
+
+[package.ccool]
+ignored_issues = ["e408"]
+
+[package.cdcmd]
+ignored_issues = ["e408"]
+
+[package.clistmap]
+imported_prefixes = ["erw"]
+
+[package.colorist]
+ignored_issues = ["e408"]
+imported_prefixes = ["projlib", "crefthe"]
+
+[package.minimalist]
+ignored_issues = ["e408"]
+imported_prefixes = ["projlib", "crefthe"]
+
+[package.datatool]
+imported_prefixes = ["datatool"]
+
+[package.download]
+ignored_issues = ["e408"]
+
+[package.emotion]
+ignored_issues = ["e408"]
+
+[package.exsheets]
+ignored_issues = ["e408"]
+
+[package.fontawesome5]
+imported_prefixes = ["fontawesome"]
+
+[package.hobby]
+imported_prefixes = ["hobby"]
+
+[package.homework]
+imported_prefixes = ["projlib"]
+
+[package.jwjournal]
+imported_prefixes = ["projlib"]
+
+[package.knowledge]
+imported_prefixes = ["kl", "knowledge", "ktuple", "scope"]
+
+[package.lambdax]
+imported_prefixes = ["keyparse"]
+
+[package.pgf-interference]
+ignored_issues = ["e408"]
+
+[package.pkgloader]
+ignored_issues = ["e408"]
+
+[package.projlib]
+imported_prefixes = ["crthm", "projlib"]
+
+[package.pythonimmediate]
+imported_prefixes = ["precattl"]
+
+[package.saveenv]
+imported_prefixes = ["precattl"]
+
+[package.sjtutex]
+imported_prefixes = ["sjtu"]
+
+[package.styledcmd]
+imported_prefixes = ["proxy", "object"]
+
+[package.tikzmark]
+imported_prefixes = ["tikzmark"]
+
+[package.tilings]
+imported_prefixes = ["tilings"]
+
+[package.typog]
+ignored_issues = ["e408"]
+
+[package.updatemarks]
+imported_prefixes = ["parserange"]
+
+[package.xcntperchap]
+imported_prefixes = ["xassoccnt"]

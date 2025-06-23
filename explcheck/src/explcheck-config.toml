@@ -2,6 +2,7 @@
 expl3_detection_strategy = "auto"
 error_format = "%f:%l:%c: %t%n %m"
 ignored_issues = []
+imported_prefixes = []
 make_at_letter = "auto"
 max_line_length = 80
 min_simple_tokens_in_csname_pattern = 5
