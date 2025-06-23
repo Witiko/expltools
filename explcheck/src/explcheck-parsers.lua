@@ -661,70 +661,38 @@ local expl3_function_definition_type_signifier = (
 local expl3_direct_function_definition_csname = (
   (
     P("cs_") * Cc(false)  -- non-conditional function
-    * expl3_function_definition_type_signifier
-    * (P("_protected") * Cc(true) + Cc(false))
-    * (P("_nopar") * Cc(true) + Cc(false))
+    * (
+      P("generate_from_arg_count") * Cc(false)  -- indirect application of a creator function
+      + Cc(true) * expl3_function_definition_type_signifier  -- direct application of a creator function
+      * (P("_protected") * Cc(true) + Cc(false))
+      * (P("_nopar") * Cc(true) + Cc(false))
+    )
     + P("prg_") * Cc(true)  -- conditional function
+    * Cc(true)  -- conditional functions don't support indirect application of a creator function
     * expl3_function_definition_type_signifier
     * (P("_protected") * Cc(true) + Cc(false))
     * Cc(false)  -- conditional functions cannot be "nopar"
     * P("_conditional")
   )
   * colon
-  * S("Nc")
+  * argument_specifier
 )
 local expl3_indirect_function_definition_csname = (
   (
     P("cs_") * Cc(false)  -- non-conditional function
     * expl3_function_definition_type_signifier
     * P("_eq")
-    + P("prg") * Cc(true)  -- conditional function
+    + P("prg_") * Cc(true)  -- conditional function
     * expl3_function_definition_type_signifier
     * P("_eq_conditional")
   )
   * colon
-  * S("Nc")
-  * S("Nc")
+  * argument_specifier
+  * argument_specifier
 )
 local expl3_function_definition_csname = Ct(
   Cc(true) * expl3_direct_function_definition_csname
   + Cc(false) * expl3_indirect_function_definition_csname
-)
-local expl3_function_definition_or_assignment_csname = (
-  (
-    -- A non-conditional function
-    P("cs")
-    * underscore
-    * (
-      (
-        P("new")
-        + P("g")^-1
-        * P("set")
-      )
-      * (
-        P("_eq")
-        + P("_protected")^-1
-        * P("_nopar")^-1
-      )
-      + P("generate_from_arg_count")
-    )
-    -- A conditional function
-    + P("prg")
-    * underscore
-    * (
-      (
-        P("new")
-        + P("g")^-1
-        * P("set")
-      )
-      * (
-        P("_eq")
-        + P("_protected")^-1
-      )
-    )
-    * P("_conditional")
-  )
-  * P(":N")
 )
 
 ---- Generating function variants
@@ -735,7 +703,7 @@ local expl3_function_variant_definition_csname = Ct(
     -- A conditional function
     + P("prg_generate_conditional_variant") * Cc(true)
   )
-  * P(":")
+  * colon
   * S("Nc")
 )
 
@@ -819,7 +787,6 @@ return {
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
-  expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3like_csname = expl3like_csname,
   expl3like_function_csname = expl3like_function_csname,

@@ -91,49 +91,6 @@ local function semantic_analysis(pathname, content, issues, results, options)
     return OTHER_TOKENS_SIMPLE  -- simple material
   end
 
-  -- Convert tokens from a range into a PEG pattern.
-  local function extract_pattern_from_tokens(token_range, tokens, map_forward)
-    local pattern, transcripts, num_simple_tokens = parsers.success, {}, 0
-    local previous_token_was_simple = true
-    for _, token in token_range:enumerate(tokens, map_forward or identity) do
-      if is_token_simple(token) then  -- simple material
-        pattern = pattern * lpeg.P(token.payload)
-        table.insert(transcripts, token.payload)
-        num_simple_tokens = num_simple_tokens + 1
-        previous_token_was_simple = true
-      else  -- complex material
-        if previous_token_was_simple then
-          pattern = pattern * parsers.any^0
-          table.insert(transcripts, "*")
-        end
-        previous_token_was_simple = false
-      end
-    end
-    local transcript = table.concat(transcripts)
-    return pattern, transcript, num_simple_tokens
-  end
-
-  -- Extract the name of a control sequence from a call argument.
-  local function extract_csname_from_argument(argument, tokens, map_forward)
-    local csname
-    if argument.specifier == "N" then
-      local csname_token = tokens[map_forward(argument.token_range:start())]
-      if csname_token.type ~= CONTROL_SEQUENCE then  -- the N-type argument is not a control sequence, give up
-        return nil
-      end
-      csname = csname_token.payload
-    elseif argument.specifier == "c" then
-      csname = extract_text_from_tokens(argument.token_range, tokens, map_forward)
-      if csname == nil then  -- the c-type argument contains complex material, give up
-        return nil
-      end
-    else
-      error('Unexpected argument specifier "' .. argument.specifier .. '"')
-    end
-    assert(csname ~= nil)
-    return csname
-  end
-
   -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
   local function record_statements_and_replacement_texts(tokens, transformed_tokens, calls, first_map_back, first_map_forward)
     local statements = {}
@@ -142,6 +99,33 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
       local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+
+      -- Try and convert tokens from an argument into a text.
+      local function extract_text_from_argument(argument)
+        assert(lpeg.match(parsers.n_type_argument_specifier, argument.specifier) ~= nil)
+        return extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
+      end
+
+      -- Extract the name of a control sequence from a call argument.
+      local function extract_csname_from_argument(argument)
+        local csname
+        if argument.specifier == "N" then
+          local csname_token = transformed_tokens[first_map_forward(argument.token_range:start())]
+          if csname_token.type ~= CONTROL_SEQUENCE then  -- the N-type argument is not a control sequence, give up
+            return nil
+          end
+          csname = csname_token.payload
+        elseif argument.specifier == "c" then
+          csname = extract_text_from_argument(argument)
+          if csname == nil then  -- the c-type argument contains complex material, give up
+            return nil
+          end
+        else
+          return nil
+        end
+        assert(csname ~= nil)
+        return csname
+      end
 
       -- Split an expl3 control sequence name to a stem and the argument specifiers.
       local function parse_expl3_csname(csname)
@@ -287,7 +271,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         if argument.specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
           goto unknown_conditions
         end
-        conditions_text = extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
+        conditions_text = extract_text_from_argument(argument)
         if conditions_text == nil then  -- failed to read conditions
           goto unknown_conditions  -- assume all conditions with lower confidence
         end
@@ -325,7 +309,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         if argument.specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
           goto unknown_argument_specifiers
         end
-        variant_argument_specifiers_text = extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
+        variant_argument_specifiers_text = extract_text_from_argument(argument)
         if variant_argument_specifiers_text == nil then  -- failed to read specifiers
           goto unknown_argument_specifiers  -- assume all specifiers with lower confidence
         end
@@ -429,7 +413,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           local is_conditional = table.unpack(function_variant_definition)
           -- determine the name of the defined function
           local base_csname_argument = call.arguments[1]
-          local base_csname = extract_csname_from_argument(base_csname_argument, transformed_tokens, first_map_forward)
+          local base_csname = extract_csname_from_argument(base_csname_argument)
           if base_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
@@ -491,31 +475,58 @@ local function semantic_analysis(pathname, content, issues, results, options)
           local is_direct = table.unpack(function_definition)
           -- Process a direct function definition.
           if is_direct then
-            local _, is_conditional, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
+            -- determine the properties of the defined function
+            local _, _, is_creator_function = table.unpack(function_definition)
+            local is_conditional, maybe_redefinition, is_global, is_protected, is_nopar
+            local defined_csname_argument, num_parameters
+            if is_creator_function == true then  -- direct application of a creator function
+              defined_csname_argument = call.arguments[1]
+              _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
+            else  -- indirect application of a creator function
+              defined_csname_argument = call.arguments[2]
+              local num_parameter_argument = call.arguments[3]
+              if num_parameter_argument ~= nil and num_parameter_argument.specifier == "n" then
+                local num_parameters_text = extract_text_from_argument(num_parameter_argument)
+                if num_parameters_text ~= nil then
+                  num_parameters = tonumber(num_parameters_text)
+                end
+              end
+              local creator_function_csname = extract_csname_from_argument(call.arguments[1])
+              if creator_function_csname == nil then  -- couldn't determine the name of the creator function, give up
+                goto other_statement
+              end
+              local actual_function_definition = lpeg.match(parsers.expl3_function_definition_csname, creator_function_csname)
+              if actual_function_definition == nil then  -- couldn't understand the creator function, give up
+                goto other_statement
+              end
+              _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(actual_function_definition)
+            end
             -- determine the name of the defined function
-            local defined_csname_argument = call.arguments[1]
-            local defined_csname = extract_csname_from_argument(defined_csname_argument, transformed_tokens, first_map_forward)
+            local defined_csname = extract_csname_from_argument(defined_csname_argument)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
             local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
             -- determine the replacement text
-            local replacement_text_number, num_parameters
+            local replacement_text_number
             local replacement_text_argument = call.arguments[#call.arguments]
             do
               if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion
                 goto skip_replacement_text  -- record partial information
               end
               -- determine the number of parameters of the defined function
+              local function update_num_parameters(updated_num_parameters)
+                assert(updated_num_parameters ~= nil)
+                if num_parameters == nil or updated_num_parameters > num_parameters then  -- trust the highest guess
+                  num_parameters = updated_num_parameters
+                end
+              end
               if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
-                num_parameters = #argument_specifiers
+                update_num_parameters(#argument_specifiers)
               end
               for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
                 if argument.specifier == "p" and argument.num_parameters ~= nil then
-                  if num_parameters == nil or argument.num_parameters > num_parameters then  -- if one method gives higher number, trust it
-                    num_parameters = argument.num_parameters
-                  end
-                  assert(num_parameters ~= nil)
+                  update_num_parameters(argument.num_parameters)
                   break
                 end
               end
@@ -597,13 +608,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
             local _, is_conditional, maybe_redefinition, is_global = table.unpack(function_definition)
             -- determine the name of the defined function
             local defined_csname_argument = call.arguments[1]
-            local defined_csname = extract_csname_from_argument(defined_csname_argument, transformed_tokens, first_map_forward)
+            local defined_csname = extract_csname_from_argument(defined_csname_argument)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
             -- determine the name of the base function
             local base_csname_argument = call.arguments[2]
-            local base_csname = extract_csname_from_argument(base_csname_argument, transformed_tokens, first_map_forward)
+            local base_csname = extract_csname_from_argument(base_csname_argument)
             if base_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
@@ -797,6 +808,28 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local segment_calls = call_segments[segment_number]
     local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
 
+    -- Convert tokens from a range into a PEG pattern.
+    local function extract_pattern_from_tokens(token_range)
+      local pattern, transcripts, num_simple_tokens = parsers.success, {}, 0
+      local previous_token_was_simple = true
+      for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
+        if is_token_simple(token) then  -- simple material
+          pattern = pattern * lpeg.P(token.payload)
+          table.insert(transcripts, token.payload)
+          num_simple_tokens = num_simple_tokens + 1
+          previous_token_was_simple = true
+        else  -- complex material
+          if previous_token_was_simple then
+            pattern = pattern * parsers.any^0
+            table.insert(transcripts, "*")
+          end
+          previous_token_was_simple = false
+        end
+      end
+      local transcript = table.concat(transcripts)
+      return pattern, transcript, num_simple_tokens
+    end
+
     -- Try and convert tokens from a range into a csname.
     local function extract_csname_from_tokens(token_range)
       local text = extract_text_from_tokens(token_range, segment_transformed_tokens, map_forward)
@@ -808,7 +841,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           type = TEXT
         }
       else  -- complex material
-        local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range, segment_transformed_tokens, map_forward)
+        local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range)
         if num_simple_tokens < get_option("min_simple_tokens_in_csname_pattern", options, pathname) then  -- too few simple tokens, give up
           return nil
         end
@@ -852,7 +885,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
               local next_token = segment_transformed_tokens[token_number + 1]
               if (
                     next_token.type == CONTROL_SEQUENCE
-                    and lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
+                    and lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil
                   ) then
                 maybe_defined_csname_texts[next_token.payload] = true
               end

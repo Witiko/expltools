@@ -53,6 +53,19 @@ This version of explcheck has implemented the following new features:
   expl3-like material are now required, where N is given by a new Lua option
   `min_expl3like_material` (default is 5 instances).
 
+- Recognize indirect applications of creator functions via
+  `\cs_generate_from_arg_count:NNnn` as function definitions. (#99)
+
+- Add module `explcheck-latex3.lua` that includes LPEG parsers and other
+  information extraction from LaTeX3 data files. (#99)
+
+  This module was previously named `explcheck-obsolete.lua` and only included
+  information about deprecated control sequences extracted from the file
+  `l3obsolete.txt`. The new module also contains registered LaTeX module names
+  extracted from the file `l3prefixes.csv`. This new information is used to
+  determine whether a control sequence is well-known in order to reduce false
+  positive detections of issues such as E408 (Calling an undefined function).
+
 - Add more support for semantic analysis. (#99)
 
   This adds support for the following new issues from Section 4 of the document
@@ -81,16 +94,6 @@ This version of explcheck has implemented the following new features:
     [defaults]
     imported_prefixes = ["precattl"]
     ```
-
-- Add module `explcheck-latex3.lua` that includes LPEG parsers and other
-  information extraction from LaTeX3 data files. (#99)
-
-  This module was previously named `explcheck-obsolete.lua` and only included
-  information about deprecated control sequences extracted from the file
-  `l3obsolete.txt`. The new module also contains registered LaTeX module names
-  extracted from the file `l3prefixes.csv`. This new information is used to
-  determine whether a control sequence is well-known in order to reduce false
-  positive detections of issues such as E408 (Calling an undefined function).
 
 #### Warnings and errors
 

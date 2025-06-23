@@ -357,7 +357,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           local next_token = part_tokens[token_index + 1]
           if next_token.type == CONTROL_SEQUENCE then
             if (
-                  lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
+                  lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil
                   and lpeg.match(parsers.expl3like_csname, next_token.payload) ~= nil
                   and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
                   and lpeg.match(parsers.expl3_function_csname, next_token.payload) == nil

@@ -114,11 +114,14 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks-nums.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/useclass/useclass.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/withargs/withargs.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/wordle/wordle.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/xassoccnt/xassoccnt.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/xcntperchap/xcntperchap.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/xpinyin/xpinyin.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/zhlipsum/zhlipsum.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/zugferd/zugferd.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/zxjatype/zxjatype.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/marginalia/marginalia.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/piton/piton.sty
