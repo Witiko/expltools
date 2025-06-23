@@ -176,7 +176,7 @@ local function preprocessing(pathname, content, issues, results, options)
     )
   end
 
-  local has_expl3like_material = false
+  local num_expl3like_material = 0
   local analysis_grammar = P{
     "Root";
     Root = (
@@ -205,7 +205,7 @@ local function preprocessing(pathname, content, issues, results, options)
             "e102",
             "expl3 material in non-expl3 parts",
             function()
-              has_expl3like_material = true
+              num_expl3like_material = num_expl3like_material + 1
               return true
             end
           )
@@ -294,7 +294,7 @@ local function preprocessing(pathname, content, issues, results, options)
     elseif expl3_detection_strategy == "auto" then
       -- Use context clues to determine whether no part or the whole
       -- input file is in expl3.
-      if has_expl3like_material then
+      if num_expl3like_material >= get_option('min_expl3like_material', options, pathname) then
         issues:add('w100', 'no standard delimiters')
         local range = new_range(1, #content, INCLUSIVE, #content)
         table.insert(expl_ranges, range)

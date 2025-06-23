@@ -36,6 +36,17 @@ This version of explcheck has implemented the following new features:
   least N tokens from the argument can be recognized, where N is given by a new
   Lua option `min_simple_tokens_in_csname_pattern` (default is 5 tokens).
 
+- Require more context cues to determine that the whole file is in expl3 when
+  the Lua option `expl3_detection_strategy` is set to "auto", which it is by
+  default. (#99)
+
+  Previously, any expl3-like material, as defined by the LPEG parser
+  `expl3like_material`, would have been sufficient. However, several packages
+  such as rcs and fontinst would place colons (:) directly after control
+  sequences, confusing the detector. Therefore, N separate instances of
+  expl3-like material are now required, where N is given by a new Lua option
+  `min_expl3like_material` (default is 5 instances).
+
 - Add more support for semantic analysis. (#99)
 
   This adds support for the following new issues from Section 4 of the document
@@ -60,9 +71,10 @@ This version of explcheck has implemented the following new features:
   determine whether a control sequence is "well-known" in order to reduce false
   positive detections of issues such as E408 (Calling an undefined function).
 
-- Support c-type csname arguments in function (variant) definitions. (#99)
+- Recognize more calls as function (variant) definitions. (#99)
 
-- Support non-n-type replacement text arguments in function definitions. (#99)
+  This includes support for c-type csname arguments and non-n-type replacement
+  text arguments. (#99)
 
 #### Warnings and errors
 
