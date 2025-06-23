@@ -176,9 +176,10 @@
                   { { \l_tmpb_tl } }
               }
               {
-                \tl_put_right:Nn
-                  \l_tmpa_tl
-                  { ???? }
+                \msg_error:nnV
+                  { expltools / explcheck }
+                  { unknown-referenced-label }
+                  \l_tmpb_tl
               }
             \tl_use:N
               \l_tmpa_tl
@@ -357,3 +358,7 @@
   { expltools / explcheck }
   { unexpected-label }
   { Expected~section~label~"#1",~but~"#2"~was~generated }
+\msg_new:nnn
+  { expltools / explcheck }
+  { unknown-referenced-label }
+  { Referenced~section~label~"#1"~does~not~exist~or~is~a~forward-reference }

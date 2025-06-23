@@ -232,15 +232,20 @@ local expl3_function_csname = (
   * argument_specifier^0  -- argspec
   * (eof + -letter)
 )
-local expl3_function = expl3_catcodes[0] * expl3_function_csname
 
 local any_type = (
   letter^1  -- type
-  * (eof + -letter)
+  * (
+    eof
+    + (
+      any
+      - letter
+      - underscore
+    )
+  )
 )
-local any_expl3_variable_or_constant = (
-  expl3_catcodes[0]
-  * S("cgl")  -- scope
+local any_expl3_variable_or_constant_csname = (
+  S("cgl")  -- scope
   * underscore
   * (
     letter * (letter + underscore * -#any_type)^0  -- just description
@@ -253,8 +258,10 @@ local any_expl3_variable_or_constant = (
 )
 
 local expl3like_material = (
-  expl3_function
-  + any_expl3_variable_or_constant
+  expl3_catcodes[0] * (
+    expl3_function_csname
+    + any_expl3_variable_or_constant_csname
+  )
 )
 
 local expl3_expandable_variable_or_constant_type = (
@@ -389,21 +396,28 @@ local expl3_scratch_variable_csname = (
   * eof
 )
 
-local expl3like_csname = (
+local expl3like_function_with_underscores_csname = (
   underscore^0
   * letter^1
+  * underscore  -- a csname with at least one underscore in the middle
+  * (letter + underscore)^1
   * (
-    underscore  -- a csname with at least one underscore in the middle
-    * (letter + underscore)^1
-    * (
-      colon
-      * letter^0
-    )^-1
-    + (letter + underscore)^0
-    * colon  -- a csname with at least one colon at the end
+    colon
     * letter^0
-  )
+  )^-1
   * eof
+)
+local expl3like_function_csname = (
+  underscore^0
+  * letter^1
+  * (letter + underscore)^0
+  * colon  -- a csname with at least one colon at the end
+  * letter^0
+  * eof
+)
+local expl3like_csname = (
+  expl3like_function_with_underscores_csname
+  + expl3like_function_csname
 )
 
 ---- Comments
@@ -808,6 +822,7 @@ return {
   expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3like_csname = expl3like_csname,
+  expl3like_function_csname = expl3like_function_csname,
   expl3like_material = expl3like_material,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,

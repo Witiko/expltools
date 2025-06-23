@@ -329,7 +329,6 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
 
         local next_grouping, parameter_text_start_token_number
         local num_parameters
-        local are_parameter_texts_valid = true
         for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
           if argument_specifier == "w" then
             goto skip_other_token  -- a "weird" argument specifier, skip the control sequence
@@ -381,9 +380,6 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   #tokens
                 )
                 num_parameters = count_parameters_in_parameter_text(next_token_range)
-                if num_parameters == nil then
-                  are_parameter_texts_valid = false
-                end
                 record_argument({
                   specifier = argument_specifier,
                   token_range = next_token_range,
@@ -546,16 +542,12 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
           next_token_number = next_token_number + 1
         end
         next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
-        if are_parameter_texts_valid then  -- if all "TeX parameter" arguments are valid, record the call
-          table.insert(calls, {
-            type = CALL,
-            token_range = next_token_range,
-            csname = csname,
-            arguments = arguments,
-          })
-        else  -- otherwise, skip all tokens from the call
-          record_other_tokens(next_token_range)
-        end
+        table.insert(calls, {
+          type = CALL,
+          token_range = next_token_range,
+          csname = csname,
+          arguments = arguments,
+        })
         token_number = next_token_number
         goto continue
       else  -- a non-expl3 control sequence, skip it

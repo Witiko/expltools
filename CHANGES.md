@@ -60,6 +60,7 @@ This version of explcheck has implemented the following new features:
 
   1. T400[^t400] (Expanding an unexpandable variable or constant)
   2. E408[^e408] (Calling an undefined function)
+  3. E411 (Indirect function definition from an undefined function)
 
   This concludes all planned issues from Section 4.1 (Functions and conditional
   functions) from this document.
@@ -113,8 +114,8 @@ This version of explcheck has made the following changes to the document titled
 - Merge the planned issues E408 (Calling an undefined function) and E409
   (Calling an undefined function variant) into E408. (#99)
 
-- Plan for a flow-aware variant E504 (Defining a function variant before
-  definition) of issue E405 (Function variant for an undefined function). (#99)
+- Plan for a flow-aware variant E504 (Function variant for an undefined
+  function) of issue E405 of the same name. (#99)
 
 - Add extra examples for planned issue E500 (Multiply defined function). (#99)
 
@@ -124,6 +125,9 @@ This version of explcheck has made the following changes to the document titled
 
 - Remove issue T400 (Expanding an unexpandable variable or constant) and create
   a corresponding issue T305 for the syntactic analysis.
+
+- Plan for a flow-aware variant E506 (Indirect function definition from an
+  undefined function) of issue E411 of the same name.
 
 #### Fixes
 

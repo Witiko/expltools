@@ -137,7 +137,7 @@ A function or conditional function variant is defined multiple times.
   { TF }
 ```
 
-### Unreachable private function {.w}
+### Unused private function {.w}
 A private function or conditional function is defined but all its calls are unreachable.[^1]
 
  [^1]: Code is unreachable if it is only reachable through private functions which that are either unused or also unreachable.
@@ -153,7 +153,7 @@ A private function or conditional function is defined but all its calls are unre
 
 This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
-### Unreachable private function variant {.w}
+### Unused private function variant {.w}
 A private function or conditional function variant is defined but all its calls are unreachable.
 
 ``` tex
@@ -178,7 +178,7 @@ A private function or conditional function variant is defined but all its calls 
 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
-### Defining a function variant before definition {.e}
+### Function variant for an undefined function {.e}
 A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
 
 ``` tex
@@ -247,7 +247,7 @@ A function or conditional function variant is defined before the base function h
 
 This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
-### Calling a function before definition {.e}
+### Calling an undefined function {.e}
 A function or conditional function (variant) is called before it has been defined or after it has been undefined.
 
 ``` tex
@@ -281,6 +281,77 @@ A function or conditional function (variant) is called before it has been define
 ```
 
 This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
+
+### Indirect function definition from an undefined function {.e}
+A function or conditional function is indirectly defined from a function that has yet to be defined or after it has been undefined.
+
+``` tex
+\cs_new:Nn
+  \module_foo:n
+  { bar~#1 }
+\cs_new_eq:NN  % error on this line
+  \module_baz:n
+  \module_bar:n
+\cs_new_eq:NN
+  \module_bar:n
+  \module_foo:n
+\module_baz:n
+  { foo }
+```
+
+``` tex
+\cs_new:Nn
+  \module_foo:n
+  { bar~#1 }
+\cs_new_eq:NN
+  \module_bar:n
+  \module_foo:n
+\cs_undefine:N
+  \module_bar:n
+\cs_new_eq:NN  % error on this line
+  \module_baz:n
+  \module_bar:n
+\module_baz:n
+  { foo }
+```
+
+``` tex
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\cs_new_eq:NN  % error on this line
+  \module_baz:nTF
+  \module_bar:nTF
+\cs_new_eq:NN
+  \module_bar:nTF
+  \module_foo:nTF
+\module_baz:nTF
+  { foo }
+  { bar }
+  { baz }
+```
+
+``` tex
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\cs_new_eq:NN
+  \module_bar:nTF
+  \module_foo:nTF
+\cs_undefine:N
+  \module_bar:nTF
+\cs_new_eq:NN  % error on this line
+  \module_baz:nTF
+  \module_bar:nTF
+\module_baz:nTF
+  { foo }
+  { bar }
+  { baz }
+```
+
+This check is a stronger version of <#indirect-function-definition-from-undefined-function> and should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
 
 ### Setting a function before definition {.w}
 A function is set before it has been defined or after it has been undefined.
@@ -485,7 +556,7 @@ The above example has been taken from @latexteam2024interfaces [Chapter 6].
 
 ## Variables and constants
 
-### Unreachable variable or constant {.w}
+### Unused variable or constant {.w}
 A variable or a constant is declared and perhaps defined but all its uses are unreachable.
 
 ``` tex
@@ -504,7 +575,7 @@ A variable or a constant is declared and perhaps defined but all its uses are un
 
 This check is a stronger version of <#unused-variable-or-constant> and should only be emitted if <#unused-variable-or-constant> has not previously been emitted for this variable or constant.
 
-### Setting a variable before declaration {.e}
+### Setting an undeclared variable {.e}
 A variable is set before it has been declared.
 
 ``` tex
@@ -517,7 +588,7 @@ A variable is set before it has been declared.
 
 This check is a stronger version of <#setting-undeclared-variable> and should prevent <#setting-undeclared-variable> from being emitted for this variable.
 
-### Using a variable or constant before definition {.e}
+### Using an undefined variable or constant {.e}
 A variable or constant is used before it has been defined.
 
 ``` tex
@@ -534,7 +605,7 @@ This check is a stronger version of <#using-undefined-variable-or-constant> and 
 
 ## Messages
 
-### Unreachable message {.w}
+### Unused message {.w}
 A message is defined but all its uses are unreachable.
 
 ``` tex
@@ -553,7 +624,7 @@ A message is defined but all its uses are unreachable.
 
 This check is a stronger version of <#unused-message> and should only be emitted if <#unused-message> has not previously been emitted for this message.
 
-### Setting a message before definition {.e}
+### Setting an undefined message {.e}
 A message is set before it has been defined.
 
 ``` tex
@@ -569,7 +640,7 @@ A message is set before it has been defined.
 
 This check is a stronger version of <#setting-undefined-message> and should prevent <#setting-undefined-message> from being emitted for this message.
 
-### Using a message before definition {.e}
+### Using an undefined message {.e}
 A message is used before it has been defined.
 
 ``` tex

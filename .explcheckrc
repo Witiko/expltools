@@ -23,9 +23,10 @@ expl3_detection_strategy = "always"
 ignored_issues = ["e209"]
 max_line_length = 90
 
-[filename."functional.sty"]
+[package.functional]
 expl3_detection_strategy = "always"
 max_line_length = 90
+ignored_issues = ["e304"]
 
 [filename."statistics.sty"]
 max_line_length = 100
@@ -88,9 +89,6 @@ ignored_issues = ["e209", "e300", "e405"]
 
 [filename."polexprcore.tex"]
 expl3_detection_strategy = "precision"
-
-[filename."timechart.sty"]
-ignored_issues = ["e201"]
 
 [filename."csvsimple-l3.sty"]
 max_line_length = 110
@@ -376,7 +374,7 @@ ignored_issues = ["w401"]
 ignored_issues = ["w401"]
 
 [package.modiagram]
-ignored_issues = ["e405", "e408"]
+ignored_issues = ["e405", "e408", "e411"]
 
 [package.clistmap]
 ignored_issues = ["e405"]
@@ -494,3 +492,9 @@ imported_prefixes = ["parserange"]
 
 [package.xcntperchap]
 imported_prefixes = ["xassoccnt"]
+
+[package.longdivision]
+ignored_issues = ["e411"]
+
+[package.timechart]
+ignored_issues = ["e201", "e411"]

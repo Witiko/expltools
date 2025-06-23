@@ -498,67 +498,58 @@ local function semantic_analysis(pathname, content, issues, results, options)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            -- determine the replacement text
-            local replacement_text_argument = call.arguments[#call.arguments]
-            if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion, report partial information
-              local statement = {
-                type = FUNCTION_DEFINITION,
-                call_range = call_range,
-                confidence = MAYBE,
-                -- The following attributes are specific to the type.
-                subtype = FUNCTION_DEFINITION_DIRECT,
-                maybe_redefinition = maybe_redefinition,
-                is_private = is_function_private(defined_csname),
-                is_global = is_global,
-                defined_csname = defined_csname,
-                -- The following attributes are specific to the subtype.
-                is_conditional = is_conditional,
-                is_protected = is_protected,
-                is_nopar = is_nopar,
-                replacement_text_number = nil,
-                replacement_text_argument = replacement_text_argument,
-              }
-              table.insert(statements, statement)
-              goto continue
-            end
-            -- determine the number of parameters of the defined function
-            local num_parameters
             local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
-            if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
-              num_parameters = #argument_specifiers
-            end
-            for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
-              if argument.specifier == "p" and argument.num_parameters ~= nil then
-                if num_parameters == nil or argument.num_parameters > num_parameters then  -- if one method gives a higher number, trust it
-                  num_parameters = argument.num_parameters
-                end
-                assert(num_parameters ~= nil)
-                break
+            -- determine the replacement text
+            local replacement_text_number, num_parameters
+            local replacement_text_argument = call.arguments[#call.arguments]
+            do
+              if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion
+                goto skip_replacement_text  -- record partial information
               end
+              -- determine the number of parameters of the defined function
+              if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
+                num_parameters = #argument_specifiers
+              end
+              for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
+                if argument.specifier == "p" and argument.num_parameters ~= nil then
+                  if num_parameters == nil or argument.num_parameters > num_parameters then  -- if one method gives higher number, trust it
+                    num_parameters = argument.num_parameters
+                  end
+                  assert(num_parameters ~= nil)
+                  break
+                end
+              end
+              if num_parameters == nil then  -- we couldn't determine the number of parameters
+                goto skip_replacement_text  -- record partial information
+              end
+              -- parse the replacement text and record the function definition
+              local mapped_replacement_text_token_range = new_range(
+                first_map_forward(replacement_text_argument.token_range:start()),
+                first_map_forward(replacement_text_argument.token_range:stop()),
+                INCLUSIVE + MAYBE_EMPTY,
+                #transformed_tokens
+              )
+              local doubly_transformed_tokens, second_map_back, second_map_forward = transform_replacement_text_tokens(
+                content,
+                transformed_tokens,
+                issues,
+                num_parameters,
+                mapped_replacement_text_token_range
+              )
+              if doubly_transformed_tokens == nil then  -- we couldn't parse the replacement text
+                goto skip_replacement_text  -- record partial information
+              end
+              local function map_back(...) return first_map_back(second_map_back(...)) end
+              local function map_forward(...) return second_map_forward(first_map_forward(...)) end
+              table.insert(replacement_text_tokens, {
+                token_range = replacement_text_argument.token_range,
+                transformed_tokens = doubly_transformed_tokens,
+                map_back = map_back,
+                map_forward = map_forward,
+              })
+              replacement_text_number = #replacement_text_tokens
             end
-            if num_parameters == nil then  -- we couldn't determine the number of parameters, give up
-              goto other_statement
-            end
-            -- parse the replacement text and record the function definition
-            local mapped_replacement_text_token_range = new_range(
-              first_map_forward(replacement_text_argument.token_range:start()),
-              first_map_forward(replacement_text_argument.token_range:stop()),
-              INCLUSIVE + MAYBE_EMPTY,
-              #transformed_tokens
-            )
-            local doubly_transformed_tokens, second_map_back, second_map_forward
-              = transform_replacement_text_tokens(content, transformed_tokens, issues, num_parameters, mapped_replacement_text_token_range)
-            if doubly_transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
-              goto other_statement
-            end
-            local function map_back(...) return first_map_back(second_map_back(...)) end
-            local function map_forward(...) return second_map_forward(first_map_forward(...)) end
-            table.insert(replacement_text_tokens, {
-              token_range = replacement_text_argument.token_range,
-              transformed_tokens = doubly_transformed_tokens,
-              map_back = map_back,
-              map_forward = map_forward,
-            })
+            ::skip_replacement_text::
             -- determine all effectively defined csnames
             local effectively_defined_csnames = {}
             if is_conditional then  -- conditional function
@@ -596,7 +587,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
                 is_conditional = is_conditional,
                 is_protected = is_protected,
                 is_nopar = is_nopar,
-                replacement_text_number = #replacement_text_tokens,
+                replacement_text_number = replacement_text_number,
                 replacement_text_argument = replacement_text_argument,
               }
               table.insert(statements, statement)
@@ -796,7 +787,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local called_functions_and_variants = {}
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
   local defined_private_function_variant_byte_ranges = {}
-  local variant_base_csnames = {}
+  local variant_base_csnames, indirect_definition_base_csnames = {}, {}
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
@@ -911,6 +902,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         -- Record the base control sequences used in indirect function definitions.
         if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
           maybe_used_csname_texts[statement.base_csname] = true
+          table.insert(indirect_definition_base_csnames, {statement.base_csname, byte_range})
         end
         -- Record control sequence name usage and definitions.
         maybe_defined_csname_texts[statement.defined_csname] = true
@@ -993,7 +985,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local imported_prefixes = get_option('imported_prefixes', options, pathname)
   local expl3_well_known_function_csname = parsers.expl3_well_known_function_csname(imported_prefixes)
 
-  ---- Record function variants for undefined functions.
+  ---- Report function variants for undefined functions.
   for _, variant_base_csname in ipairs(variant_base_csnames) do
     local base_csname, byte_range = table.unpack(variant_base_csname)
     if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
@@ -1003,14 +995,25 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
 
-  ---- Record calls to undefined functions and function variants.
+  ---- Report calls to undefined functions and function variants.
   for _, called_function_or_variant in ipairs(called_functions_and_variants) do
     local csname, byte_range = table.unpack(called_function_or_variant)
-    if lpeg.match(parsers.expl3like_csname, csname) ~= nil
+    if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_function_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and not lpeg.match(maybe_defined_csname_pattern, csname) then
       issues:add('e408', 'calling an undefined function', byte_range)
+    end
+  end
+
+  ---- Report indirect function definitions from undefined base functions.
+  for _, indirect_definition_base_csname in ipairs(indirect_definition_base_csnames) do
+    local csname, byte_range = table.unpack(indirect_definition_base_csname)
+    if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
+        and lpeg.match(expl3_well_known_function_csname, csname) == nil
+        and not maybe_defined_csname_texts[csname]
+        and not lpeg.match(maybe_defined_csname_pattern, csname) then
+      issues:add('e411', 'indirect function definition from an undefined function', byte_range)
     end
   end
 
