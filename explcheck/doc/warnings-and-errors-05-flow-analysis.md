@@ -554,6 +554,27 @@ A comparison code [@latexteam2024interfaces, Section 6.1] has no return value.
 
 The above example has been taken from @latexteam2024interfaces [Chapter 6].
 
+### Paragraph token in the parameter of a "nopar" function {.e}
+An argument that contains `\par` tokens may reach a function with the "nopar" restriction.
+
+``` tex
+\cs_new_nopar:Nn
+  \example_foo:n
+  { #1 }
+\cs_new:nn
+  \example_bar:n
+  {
+    \example_foo:n
+      { #1 }
+  }
+\example_bar:n
+  {
+    foo
+    \par  % error on this line
+    bar
+  }
+```
+
 ## Variables and constants
 
 ### Unused variable or constant {.w}

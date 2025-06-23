@@ -58,7 +58,7 @@ end
 
 -- Intermediate parsers
 ---- Default expl3 category code table, corresponds to `\c_code_cctab` in expl3
-local expl3_endlinechar = ' '  -- luacheck: ignore expl3_endlinechar
+local expl3_endlinechar = ' '
 local expl3_catcodes = {
   [0] = backslash,  -- escape character
   [1] = lbrace,  -- begin grouping

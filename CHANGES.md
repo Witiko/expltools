@@ -132,6 +132,10 @@ This version of explcheck has made the following changes to the document titled
 - Plan for a flow-aware variant E506 (Indirect function definition from an
   undefined function) of issue E411 of the same name.
 
+- Plan for issue E515 (Paragraph token in the parameter of a "nopar" function)
+  and remove the item "Verifying the 'nopar' restriction on functions" from
+  Section "Caveats".
+
 #### Fixes
 
 This version of explcheck has fixed the following bugs:
