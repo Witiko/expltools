@@ -1,4 +1,5 @@
 [defaults]
+config_file = ".explcheckrc"
 expl3_detection_strategy = "auto"
 error_format = "%f:%l:%c: %t%n %m"
 ignored_issues = []

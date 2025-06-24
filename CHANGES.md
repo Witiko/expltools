@@ -95,6 +95,9 @@ This version of explcheck has implemented the following new features:
     imported_prefixes = ["precattl"]
     ```
 
+- Add command-line options `--config-file` and `--no-config-file`. (suggested
+  by @muzimuzhi in #101, implemented in #99)
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled

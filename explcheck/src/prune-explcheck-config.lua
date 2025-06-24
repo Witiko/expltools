@@ -16,8 +16,7 @@ local get_suffix = utils.get_suffix
 local process_with_all_steps = utils.process_with_all_steps
 
 local default_config = config.default_config
-local user_config = config.user_config
-local user_config_pathname = config.user_config_pathname
+local get_user_config = config.get_user_config
 local get_package = config.get_package
 local get_filename = config.get_filename
 
@@ -63,6 +62,11 @@ end
 -- whether this affects the results of the static analysis or not. Also check whether there exist sections that apply to no files
 -- that were used in regression tests.
 local function main(filelist_pathname, results_pathname)
+  -- Read the user config
+  local user_config, user_config_pathname = get_user_config()
+  assert(user_config ~= nil)
+  assert(user_config_pathname ~= nil)
+
   -- Read the list of all files and regression test results.
   local filelist = read_filelist(filelist_pathname)
   local results = read_results(results_pathname)
