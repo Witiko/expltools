@@ -138,14 +138,14 @@ This version of explcheck has made the following changes to the document titled
   fixed in #97 and #99)
 
 - Remove issue T400 (Expanding an unexpandable variable or constant) and create
-  a corresponding issue T305 for the syntactic analysis.
+  a corresponding issue T305 for the syntactic analysis. (#99)
 
 - Plan for a flow-aware variant E506 (Indirect function definition from an
-  undefined function) of issue E411 of the same name.
+  undefined function) of issue E411 of the same name. (#99)
 
 - Plan for issue E515 (Paragraph token in the parameter of a "nopar" function)
   and remove the item "Verifying the 'nopar' restriction on functions" from
-  Section "Caveats".
+  Section "Caveats". (#99)
 
 #### Fixes
 
