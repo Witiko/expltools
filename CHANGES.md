@@ -158,6 +158,9 @@ This version of explcheck has fixed the following bugs:
 
  [tse/739823/70941]: https://tex.stackexchange.com/a/739823/70941
 
+- Mark file `explcheck.lua` as executable in archive `expltools.ctan.zip`.
+  (suggested by @manfredlotz and @PetraCTAN in #98, fixed in #99)
+
 ## expltools 2025-05-29
 
 ### explcheck v0.10.0
