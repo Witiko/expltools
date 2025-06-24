@@ -86,7 +86,7 @@ This version of explcheck has implemented the following new features:
     renamed to T305, since it can be detected by the syntactic analysis already.
 
  [^e408]: By default, all standard library prefixes, defined by the parser
-    `expl3_standard_library_prefixes` as well as registered prefixes from the
+    `expl3_standard_library_prefixes`, as well as registered prefixes from the
     file `l3prefixes.csv` are excluded from this error.
 
     Besides well-known prefixes, you may also declare other imported prefixes
