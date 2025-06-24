@@ -142,7 +142,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/zhnumber/zhnumber.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/lua-widow-control/lua-widow-control.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luamplib/luamplib.sty
-/usr/local/texlive/2024/texmf-dist/tex/plain/mkpattern/mkpatter.tex
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/bidi-atbegshi/bidi-atbegshi.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/hanzibox/hanzibox.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/interchar/interchar.sty

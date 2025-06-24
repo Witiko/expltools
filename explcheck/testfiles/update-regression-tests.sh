@@ -10,5 +10,5 @@ then
 fi
 
 cd "$(dirname "$(readlink -f "$0")")"
-rm -r TL*-issues/
+rm -rf TL*-issues/
 gh run download "$1"

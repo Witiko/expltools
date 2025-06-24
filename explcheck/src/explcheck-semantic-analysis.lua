@@ -1,12 +1,18 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
-local token_types = require("explcheck-lexical-analysis").token_types
+local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
+local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
 
-local ARGUMENT = token_types.ARGUMENT
+local get_token_byte_range = lexical_analysis.get_token_byte_range
+local is_token_simple = lexical_analysis.is_token_simple
+local token_types = lexical_analysis.token_types
+
+local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
+
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 
 local new_range = ranges.new_range
@@ -17,6 +23,7 @@ local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
 local get_calls = syntactic_analysis.get_calls
+local get_call_token_range = syntactic_analysis.get_call_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
@@ -58,20 +65,16 @@ local DEFINITELY = statement_confidences.DEFINITELY
 local MAYBE = statement_confidences.MAYBE
 local NONE = statement_confidences.NONE
 
-local simple_text_catcodes = {
-  [3] = true,  -- math shift
-  [4] = true,  -- alignment tab
-  [5] = true,  -- end of line
-  [7] = true,  -- superscript
-  [8] = true,  -- subscript
-  [9] = true,  -- ignored character
-  [10] = true,  -- space
-  [11] = true,  -- letter
-  [12] = true,  -- other
+local csname_types = {
+  TEXT = "direct text representation of a control sequence name or its part, usually paired with confidence DEFINITELY",
+  PATTERN = "a PEG pattern that recognizes different control sequences or their parts, usually paired with confidence MAYBE"
 }
 
+local TEXT = csname_types.TEXT
+local PATTERN = csname_types.PATTERN
+
 -- Determine the meaning of function calls and register any issues.
-local function semantic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname options
+local function semantic_analysis(pathname, content, issues, results, options)
 
   -- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
   -- a more complex material that may have side effects and presents a boundary between chunks of well-understood
@@ -81,11 +84,11 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
   --
   local function classify_tokens(tokens, token_range)
     for _, token in token_range:enumerate(tokens) do
-      if simple_text_catcodes[token.catcode] == nil then
+      if not is_token_simple(token) then  -- complex material
         return OTHER_TOKENS_COMPLEX
       end
     end
-    return OTHER_TOKENS_SIMPLE
+    return OTHER_TOKENS_SIMPLE  -- simple material
   end
 
   -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
@@ -94,27 +97,35 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     local replacement_text_tokens = {}
     for call_number, call in ipairs(calls) do
 
-      -- Try and convert tokens from a range into a string.
-      local function extract_string_from_tokens(token_range)
-        local token_texts = {}
-        for _, token in token_range:enumerate(transformed_tokens, first_map_forward) do
-          if token.type == CONTROL_SEQUENCE or token.type == ARGUMENT then  -- complex material, give up
-            return nil
-          else
-            table.insert(token_texts, token.payload)
-          end
-        end
-        return table.concat(token_texts)
-      end
-
-      -- Get the byte range for a given token.
-      local function get_token_byte_range(token_number)
-        local byte_range = tokens[token_number].byte_range
-        return byte_range
-      end
-
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
-      local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range, #content)
+      local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+
+      -- Try and convert tokens from an argument into a text.
+      local function extract_text_from_argument(argument)
+        assert(lpeg.match(parsers.n_type_argument_specifier, argument.specifier) ~= nil)
+        return extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
+      end
+
+      -- Extract the name of a control sequence from a call argument.
+      local function extract_csname_from_argument(argument)
+        local csname
+        if argument.specifier == "N" then
+          local csname_token = transformed_tokens[first_map_forward(argument.token_range:start())]
+          if csname_token.type ~= CONTROL_SEQUENCE then  -- the N-type argument is not a control sequence, give up
+            return nil
+          end
+          csname = csname_token.payload
+        elseif argument.specifier == "c" then
+          csname = extract_text_from_argument(argument)
+          if csname == nil then  -- the c-type argument contains complex material, give up
+            return nil
+          end
+        else
+          return nil
+        end
+        assert(csname ~= nil)
+        return csname
+      end
 
       -- Split an expl3 control sequence name to a stem and the argument specifiers.
       local function parse_expl3_csname(csname)
@@ -122,32 +133,132 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         return csname_stem, argument_specifiers
       end
 
+      -- Determine whether a function is private or public based on its name.
+      local function is_function_private(csname)
+        return csname:sub(1, 2) == "__"
+      end
+
       -- Replace the argument specifiers in an expl3 control sequence name.
-      local function replace_argument_specifiers(csname, argument_specifiers)
-        local csname_stem, base_argument_specifiers = parse_expl3_csname(csname)
-        if csname_stem == nil or base_argument_specifiers == nil then
-          return nil  -- we couldn't parse the csname, give up
+      local function replace_argument_specifiers(csname_stem, argument_specifiers)
+        local csname
+        if type(argument_specifiers) == 'string' then
+          csname = string.format("%s:%s", csname_stem, argument_specifiers)
+        else
+          local transcript = string.format("%s:%s", csname_stem, argument_specifiers.transcript)
+          if argument_specifiers.type == TEXT then
+            csname = {
+              payload = string.format("%s:%s", csname_stem, argument_specifiers.payload),
+              transcript = transcript,
+              type = TEXT
+            }
+          elseif argument_specifiers.type == PATTERN then
+            csname = {
+              payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload,
+              transcript = transcript,
+              type = PATTERN
+            }
+          else
+            error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
+          end
         end
-        return string.format("%s:%s", csname_stem, argument_specifiers)
+        return csname
       end
 
       -- Determine the control sequence name of a conditional function given a base control sequence name and a condition.
-      local function get_conditional_function_csname(csname, condition)
-        local csname_stem, argument_specifiers = parse_expl3_csname(csname)
-        if csname_stem == nil or argument_specifiers == nil then
-          return nil  -- we couldn't parse the csname, give up
-        end
+      local function get_conditional_function_csname(csname_stem, argument_specifiers, condition)
+        local csname
         if condition == "p" then  -- predicate function
-          return string.format("%s_p:%s", csname_stem, argument_specifiers)
+          local format = "%s_p:%s"
+          if type(argument_specifiers) == 'string' then
+            csname = string.format(format, csname_stem, argument_specifiers)
+          else
+            local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
+            if argument_specifiers.type == TEXT then
+              csname = {
+                payload = string.format(format, csname_stem, argument_specifiers.payload),
+                transcript = transcript,
+                type = TEXT
+              }
+            elseif argument_specifiers.type == PATTERN then
+              csname = {
+                payload = lpeg.P(csname_stem) * lpeg.P("_p:") * argument_specifiers.payload,
+                transcript = transcript,
+                type = PATTERN
+              }
+            else
+              error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
+            end
+          end
         elseif condition == "T" then  -- true-branch conditional function
-          return string.format("%s:%sT", csname_stem, argument_specifiers)
+          local format = "%s:%sT"
+          if type(argument_specifiers) == 'string' then
+            csname = string.format(format, csname_stem, argument_specifiers)
+          else
+            local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
+            if argument_specifiers.type == TEXT then
+              csname = {
+                payload = string.format(format, csname_stem, argument_specifiers.payload),
+                transcript = transcript,
+                type = TEXT
+              }
+            elseif argument_specifiers.type == PATTERN then
+              csname = {
+                payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("T"),
+                transcript = transcript,
+                type = PATTERN
+              }
+            else
+              error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
+            end
+          end
         elseif condition == "F" then  -- false-branch conditional function
-          return string.format("%s:%sF", csname_stem, argument_specifiers)
+          local format = "%s:%sF"
+          if type(argument_specifiers) == 'string' then
+            csname = string.format(format, csname_stem, argument_specifiers)
+          else
+            local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
+            if argument_specifiers.type == TEXT then
+              csname = {
+                payload = string.format(format, csname_stem, argument_specifiers.payload),
+                transcript = transcript,
+                type = TEXT
+              }
+            elseif argument_specifiers.type == PATTERN then
+              csname = {
+                payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("F"),
+                transcript = transcript,
+                type = PATTERN
+              }
+            else
+              error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
+            end
+          end
         elseif condition == "TF" then  -- true-and-false-branch conditional function
-          return string.format("%s:%sTF", csname_stem, argument_specifiers)
+          local format = "%s:%sTF"
+          if type(argument_specifiers) == 'string' then
+            csname = string.format(format, csname_stem, argument_specifiers)
+          else
+            local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
+            if argument_specifiers.type == TEXT then
+              csname = {
+                payload = string.format(format, csname_stem, argument_specifiers.payload),
+                transcript = transcript,
+                type = TEXT
+              }
+            elseif argument_specifiers.type == PATTERN then
+              csname = {
+                payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("TF"),
+                transcript = transcript,
+                type = PATTERN,
+              }
+            else
+              error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
+            end
+          end
         else
           error('Unexpected condition "' .. condition .. '"')
         end
+        return csname
       end
 
       -- Try and extract a list of conditions in a conditional function (variant) definition.
@@ -160,7 +271,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if argument.specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
           goto unknown_conditions
         end
-        conditions_text = extract_string_from_tokens(argument.token_range)
+        conditions_text = extract_text_from_argument(argument)
         if conditions_text == nil then  -- failed to read conditions
           goto unknown_conditions  -- assume all conditions with lower confidence
         end
@@ -198,7 +309,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         if argument.specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
           goto unknown_argument_specifiers
         end
-        variant_argument_specifiers_text = extract_string_from_tokens(argument.token_range)
+        variant_argument_specifiers_text = extract_text_from_argument(argument)
         if variant_argument_specifiers_text == nil then  -- failed to read specifiers
           goto unknown_argument_specifiers  -- assume all specifiers with lower confidence
         end
@@ -250,30 +361,34 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             end
             ::continue::
           end
-          table.insert(variant_argument_specifiers, {argument_specifiers, DEFINITELY})
+          table.insert(variant_argument_specifiers, {
+            payload = argument_specifiers,
+            transcript = argument_specifiers,
+            type = TEXT,
+            confidence = DEFINITELY
+          })
         end
         goto done_parsing
 
         ::unknown_argument_specifiers::
         -- assume all possible sets of variant argument specifiers with lower confidence
-        variant_argument_specifiers_list = {""}
-        for i = 1, #base_argument_specifiers do
-          local base_argument_specifier = base_argument_specifiers:sub(i, i)
-          local intermediate_result = {}
-          for _, prefix in ipairs(variant_argument_specifiers_list) do
-            for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
-              table.insert(intermediate_result, prefix .. compatible_specifier)
-            end
+        do
+          variant_argument_specifiers = {}
+          local compatible_specifier_pattern, compatible_specifier_transcripts = parsers.success, {}
+          for i = 1, #base_argument_specifiers do
+            local base_argument_specifier = base_argument_specifiers:sub(i, i)
+            local compatible_specifiers = table.concat(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier))
+            compatible_specifier_pattern = compatible_specifier_pattern * lpeg.S(compatible_specifiers)
+            local compatible_specifier_transcript = string.format('[%s]', compatible_specifiers)
+            table.insert(compatible_specifier_transcripts, compatible_specifier_transcript)
           end
-          variant_argument_specifiers_list = intermediate_result
-          if #intermediate_result > 10000 then  -- if there are too many possible variant argument specifiers
-            return nil  -- give up to prevent a combinatorial explosion
-            -- TODO: produce a special "wildcard" return value instead; this will complicate processing but should remain O(1)
-          end
-        end
-        variant_argument_specifiers = {}
-        for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
-          table.insert(variant_argument_specifiers, {argument_specifiers, MAYBE})
+          local compatible_specifiers_transcript = table.concat(compatible_specifier_transcripts)
+          table.insert(variant_argument_specifiers, {
+            payload = compatible_specifier_pattern,
+            transcript = compatible_specifiers_transcript,
+            type = PATTERN,
+            confidence = MAYBE
+          })
         end
 
         ::done_parsing::
@@ -285,7 +400,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
           local lua_code_argument = call.arguments[arguments_number]
           if #lua_code_argument.token_range > 0 then
-            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range, #content)
+            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
             issues:ignore('s204', lua_code_byte_range)
           end
         end
@@ -298,13 +413,14 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local is_conditional = table.unpack(function_variant_definition)
           -- determine the name of the defined function
           local base_csname_argument = call.arguments[1]
-          assert(base_csname_argument.specifier == "N")
-          local base_csname_token = transformed_tokens[first_map_forward(base_csname_argument.token_range:start())]
-          local base_csname = base_csname_token.payload
-          if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+          local base_csname = extract_csname_from_argument(base_csname_argument)
+          if base_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
-          assert(base_csname ~= nil)
+          local base_csname_stem, base_argument_specifiers = parse_expl3_csname(base_csname)
+          if base_csname_stem == nil then  -- we couldn't parse the csname, give up
+            goto other_statement
+          end
           -- determine the variant argument specifiers
           local variant_argument_specifiers = parse_variant_argument_specifiers(base_csname, call.arguments[2])
           if variant_argument_specifiers == nil then  -- we couldn't parse the variant argument specifiers, give up
@@ -312,12 +428,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           end
           -- determine all defined csnames
           local defined_csnames = {}
-          for _, argument_specifier_table in ipairs(variant_argument_specifiers) do
-            local argument_specifiers, argument_specifier_confidence = table.unpack(argument_specifier_table)
-            local defined_csname = replace_argument_specifiers(base_csname, argument_specifiers)
-            if defined_csname == nil then  -- we couldn't determine the defined csname, give up
-              goto other_statement
-            end
+          for _, argument_specifiers in ipairs(variant_argument_specifiers) do
             if is_conditional then  -- conditional function
               -- determine the conditions
               local conditions = parse_conditions(call.arguments[#call.arguments])
@@ -327,19 +438,17 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               -- determine the defined csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, condition_confidence = table.unpack(condition_table)
-                local base_conditional_csname = get_conditional_function_csname(base_csname, condition)
-                local defined_conditional_csname = get_conditional_function_csname(defined_csname, condition)
-                if base_conditional_csname == nil or defined_conditional_csname == nil then  -- we couldn't determine a csname, give up
-                  goto other_statement
-                end
-                local confidence = math.min(argument_specifier_confidence, condition_confidence)
+                local base_conditional_csname = get_conditional_function_csname(base_csname_stem, base_argument_specifiers, condition)
+                local defined_conditional_csname = get_conditional_function_csname(base_csname_stem, argument_specifiers, condition)
+                local confidence = math.min(argument_specifiers.confidence, condition_confidence)
                 if base_conditional_csname ~= defined_conditional_csname then
                   table.insert(defined_csnames, {base_conditional_csname, defined_conditional_csname, confidence})
                 end
               end
             else  -- non-conditional function
+              local defined_csname = replace_argument_specifiers(base_csname_stem, argument_specifiers)
               if base_csname ~= defined_csname then
-                table.insert(defined_csnames, {base_csname, defined_csname, argument_specifier_confidence})
+                table.insert(defined_csnames, {base_csname, defined_csname, argument_specifiers.confidence})
               end
             end
           end
@@ -353,6 +462,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               -- The following attributes are specific to the type.
               base_csname = effective_base_csname,
               defined_csname = defined_csname,
+              is_private = is_function_private(base_csname),
               is_conditional = is_conditional,
             }
             table.insert(statements, statement)
@@ -365,59 +475,92 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           local is_direct = table.unpack(function_definition)
           -- Process a direct function definition.
           if is_direct then
-            local _, is_conditional, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
-            -- determine the replacement text
-            local replacement_text_argument = call.arguments[#call.arguments]
-            if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion, give up
-              goto other_statement
+            -- determine the properties of the defined function
+            local _, _, is_creator_function = table.unpack(function_definition)
+            local is_conditional, maybe_redefinition, is_global, is_protected, is_nopar
+            local defined_csname_argument, num_parameters
+            if is_creator_function == true then  -- direct application of a creator function
+              defined_csname_argument = call.arguments[1]
+              _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
+            else  -- indirect application of a creator function
+              defined_csname_argument = call.arguments[2]
+              local num_parameter_argument = call.arguments[3]
+              if num_parameter_argument ~= nil and num_parameter_argument.specifier == "n" then
+                local num_parameters_text = extract_text_from_argument(num_parameter_argument)
+                if num_parameters_text ~= nil then
+                  num_parameters = tonumber(num_parameters_text)
+                end
+              end
+              local creator_function_csname = extract_csname_from_argument(call.arguments[1])
+              if creator_function_csname == nil then  -- couldn't determine the name of the creator function, give up
+                goto other_statement
+              end
+              local actual_function_definition = lpeg.match(parsers.expl3_function_definition_csname, creator_function_csname)
+              if actual_function_definition == nil then  -- couldn't understand the creator function, give up
+                goto other_statement
+              end
+              _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(actual_function_definition)
             end
             -- determine the name of the defined function
-            local defined_csname_argument = call.arguments[1]
-            assert(defined_csname_argument.specifier == "N")
-            local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
-            local defined_csname = defined_csname_token.payload
-            if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            local defined_csname = extract_csname_from_argument(defined_csname_argument)
+            if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(defined_csname ~= nil)
-            -- determine the number of parameters of the defined function
-            local num_parameters
-            local _, argument_specifiers = parse_expl3_csname(defined_csname)
-            if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
-              num_parameters = #argument_specifiers
-            end
-            for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
-              if lpeg.match(parsers.parameter_argument_specifier, argument.specifier) and argument.num_parameters ~= nil then
-                if num_parameters == nil or argument.num_parameters > num_parameters then  -- if one method gives a higher number, trust it
-                  num_parameters = argument.num_parameters
-                end
-                assert(num_parameters ~= nil)
-                break
+            local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
+            -- determine the replacement text
+            local replacement_text_number
+            local replacement_text_argument = call.arguments[#call.arguments]
+            do
+              if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion
+                goto skip_replacement_text  -- record partial information
               end
+              -- determine the number of parameters of the defined function
+              local function update_num_parameters(updated_num_parameters)
+                assert(updated_num_parameters ~= nil)
+                if num_parameters == nil or updated_num_parameters > num_parameters then  -- trust the highest guess
+                  num_parameters = updated_num_parameters
+                end
+              end
+              if argument_specifiers ~= nil and lpeg.match(parsers.N_or_n_type_argument_specifiers, argument_specifiers) ~= nil then
+                update_num_parameters(#argument_specifiers)
+              end
+              for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
+                if argument.specifier == "p" and argument.num_parameters ~= nil then
+                  update_num_parameters(argument.num_parameters)
+                  break
+                end
+              end
+              if num_parameters == nil then  -- we couldn't determine the number of parameters
+                goto skip_replacement_text  -- record partial information
+              end
+              -- parse the replacement text and record the function definition
+              local mapped_replacement_text_token_range = new_range(
+                first_map_forward(replacement_text_argument.token_range:start()),
+                first_map_forward(replacement_text_argument.token_range:stop()),
+                INCLUSIVE + MAYBE_EMPTY,
+                #transformed_tokens
+              )
+              local doubly_transformed_tokens, second_map_back, second_map_forward = transform_replacement_text_tokens(
+                content,
+                transformed_tokens,
+                issues,
+                num_parameters,
+                mapped_replacement_text_token_range
+              )
+              if doubly_transformed_tokens == nil then  -- we couldn't parse the replacement text
+                goto skip_replacement_text  -- record partial information
+              end
+              local function map_back(...) return first_map_back(second_map_back(...)) end
+              local function map_forward(...) return second_map_forward(first_map_forward(...)) end
+              table.insert(replacement_text_tokens, {
+                token_range = replacement_text_argument.token_range,
+                transformed_tokens = doubly_transformed_tokens,
+                map_back = map_back,
+                map_forward = map_forward,
+              })
+              replacement_text_number = #replacement_text_tokens
             end
-            if num_parameters == nil then  -- we couldn't determine the number of parameters, give up
-              goto other_statement
-            end
-            -- parse the replacement text and record the function definition
-            local mapped_replacement_text_token_range = new_range(
-              first_map_forward(replacement_text_argument.token_range:start()),
-              first_map_forward(replacement_text_argument.token_range:stop()),
-              INCLUSIVE + MAYBE_EMPTY,
-              #transformed_tokens
-            )
-            local doubly_transformed_tokens, second_map_back, second_map_forward
-              = transform_replacement_text_tokens(content, transformed_tokens, issues, num_parameters, mapped_replacement_text_token_range)
-            if doubly_transformed_tokens == nil then  -- we couldn't parse the replacement text, give up
-              goto other_statement
-            end
-            local function map_back(...) return first_map_back(second_map_back(...)) end
-            local function map_forward(...) return second_map_forward(first_map_forward(...)) end
-            table.insert(replacement_text_tokens, {
-              token_range = replacement_text_argument.token_range,
-              transformed_tokens = doubly_transformed_tokens,
-              map_back = map_back,
-              map_forward = map_forward,
-            })
+            ::skip_replacement_text::
             -- determine all effectively defined csnames
             local effectively_defined_csnames = {}
             if is_conditional then  -- conditional function
@@ -432,10 +575,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
                 if condition == "p" and is_protected then
                   issues:add("e404", "protected predicate function", byte_range)
                 end
-                local effectively_defined_csname = get_conditional_function_csname(defined_csname, condition)
-                if effectively_defined_csname == nil then  -- we couldn't determine the defined csname, give up
-                  goto other_statement
-                end
+                local effectively_defined_csname = get_conditional_function_csname(defined_csname_stem, argument_specifiers, condition)
                 table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
               end
             else  -- non-conditional function
@@ -451,13 +591,15 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
                 -- The following attributes are specific to the type.
                 subtype = FUNCTION_DEFINITION_DIRECT,
                 maybe_redefinition = maybe_redefinition,
+                is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
                 is_protected = is_protected,
                 is_nopar = is_nopar,
-                replacement_text_number = #replacement_text_tokens,
+                replacement_text_number = replacement_text_number,
+                replacement_text_argument = replacement_text_argument,
               }
               table.insert(statements, statement)
             end
@@ -466,25 +608,28 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
             local _, is_conditional, maybe_redefinition, is_global = table.unpack(function_definition)
             -- determine the name of the defined function
             local defined_csname_argument = call.arguments[1]
-            assert(defined_csname_argument.specifier == "N")
-            local defined_csname_token = transformed_tokens[first_map_forward(defined_csname_argument.token_range:start())]
-            local defined_csname = defined_csname_token.payload
-            if defined_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            local defined_csname = extract_csname_from_argument(defined_csname_argument)
+            if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(defined_csname ~= nil)
             -- determine the name of the base function
             local base_csname_argument = call.arguments[2]
-            assert(base_csname_argument.specifier == "N")
-            local base_csname_token = transformed_tokens[first_map_forward(base_csname_argument.token_range:start())]
-            local base_csname = base_csname_token.payload
-            if base_csname_token.type ~= CONTROL_SEQUENCE then  -- name is not a control sequence, give up
+            local base_csname = extract_csname_from_argument(base_csname_argument)
+            if base_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(base_csname ~= nil)
             -- determine all effectively defined csnames and effective base csnames
             local effective_defined_and_base_csnames = {}
             if is_conditional then  -- conditional function
+              -- parse the base and defined csnames
+              local defined_csname_stem, defined_argument_specifiers = parse_expl3_csname(defined_csname)
+              if defined_csname_stem == nil then  -- we couldn't parse the defined csname, give up
+                goto other_statement
+              end
+              local base_csname_stem, base_argument_specifiers = parse_expl3_csname(base_csname)
+              if base_csname_stem == nil then  -- we couldn't parse the base csname, give up
+                goto other_statement
+              end
               -- determine the conditions
               local conditions = parse_conditions(call.arguments[#call.arguments - 1])
               if conditions == nil then  -- we couldn't determine the conditions, give up
@@ -493,11 +638,10 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
               -- determine the defined and base csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, confidence = table.unpack(condition_table)
-                local effectively_defined_csname = get_conditional_function_csname(defined_csname, condition)
-                local effective_base_csname = get_conditional_function_csname(base_csname, condition)
-                if effectively_defined_csname == nil or effective_base_csname == nil then  -- we couldn't determine a csname, give up
-                  goto other_statement
-                end
+                local effectively_defined_csname
+                  = get_conditional_function_csname(defined_csname_stem, defined_argument_specifiers, condition)
+                local effective_base_csname
+                  = get_conditional_function_csname(base_csname_stem, base_argument_specifiers, condition)
                 table.insert(effective_defined_and_base_csnames, {effectively_defined_csname, effective_base_csname, confidence})
               end
             else  -- non-conditional function
@@ -514,6 +658,7 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
                 -- The following attributes are specific to the type.
                 subtype = FUNCTION_DEFINITION_INDIRECT,
                 maybe_redefinition = maybe_redefinition,
+                is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
                 -- The following attributes are specific to the subtype.
@@ -575,7 +720,8 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           replacement_text_tokens.map_back,
           replacement_text_tokens.map_forward,
           issues,
-          groupings
+          groupings,
+          content
         )
         table.insert(replacement_texts.calls, nested_calls)
         -- extract nested statements and replacement texts from the nested calls using semactic analysis
@@ -587,7 +733,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
           replacement_text_tokens.map_forward
         )
         for _, nested_statement in ipairs(nested_statements) do
-          if nested_statement.type == FUNCTION_DEFINITION and nested_statement.subtype == FUNCTION_DEFINITION_DIRECT then
+          if nested_statement.type == FUNCTION_DEFINITION
+              and nested_statement.subtype == FUNCTION_DEFINITION_DIRECT
+              and nested_statement.replacement_text_number ~= nil then
             -- make the reference to the replacement text absolute instead of relative
             nested_statement.replacement_text_number = nested_statement.replacement_text_number + current_num_replacement_texts
           end
@@ -643,90 +791,177 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     end
   end
 
-  -- Determine whether a function is private or public based on its name.
-  local function is_function_private(csname)
-    return csname:sub(1, 2) == "__"
-  end
-
   --- Make a pass over the segments, building up information.
-  local defined_private_functions, defined_private_function_variants = {}, {}
-  local defined_function_variant_csnames, variant_base_csnames = {}, {}
-  local maybe_defined_csnames, maybe_used_csnames = {}, {}
+  local defined_private_functions = {}
+
+  ---- Collect information about symbols that were definitely defined.
+  local called_functions_and_variants = {}
+  local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
+  local defined_private_function_variant_byte_ranges = {}
+  local variant_base_csnames, indirect_definition_base_csnames = {}, {}
+
+  ---- Collect information about symbols that may have been defined.
+  local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
+  local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
+
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
     local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
 
-    -- Get the token range for a given call.
-    local function get_call_token_range(call_number)
-      local token_range = segment_calls[call_number].token_range
-      return token_range
+    -- Convert tokens from a range into a PEG pattern.
+    local function extract_pattern_from_tokens(token_range)
+      local pattern, transcripts, num_simple_tokens = parsers.success, {}, 0
+      local previous_token_was_simple = true
+      for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
+        if is_token_simple(token) then  -- simple material
+          pattern = pattern * lpeg.P(token.payload)
+          table.insert(transcripts, token.payload)
+          num_simple_tokens = num_simple_tokens + 1
+          previous_token_was_simple = true
+        else  -- complex material
+          if previous_token_was_simple then
+            pattern = pattern * parsers.any^0
+            table.insert(transcripts, "*")
+          end
+          previous_token_was_simple = false
+        end
+      end
+      local transcript = table.concat(transcripts)
+      return pattern, transcript, num_simple_tokens
     end
 
-    -- Get the byte range for a given token.
-    local function get_token_byte_range(token_number)
-      local byte_range = segment_tokens[token_number].byte_range
-      return byte_range
+    -- Try and convert tokens from a range into a csname.
+    local function extract_csname_from_tokens(token_range)
+      local text = extract_text_from_tokens(token_range, segment_transformed_tokens, map_forward)
+      local csname
+      if text ~= nil then  -- simple material
+        csname = {
+          payload = text,
+          transcript = text,
+          type = TEXT
+        }
+      else  -- complex material
+        local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range)
+        if num_simple_tokens < get_option("min_simple_tokens_in_csname_pattern", options, pathname) then  -- too few simple tokens, give up
+          return nil
+        end
+        csname = {
+          payload = pattern,
+          transcript = transcript,
+          type = PATTERN
+        }
+      end
+      return csname
     end
 
-    for _, statement in ipairs(segment_statements) do
-      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range, #segment_tokens)
-      local byte_range = token_range:new_range_from_subranges(get_token_byte_range, #content)
-      if statement.type == FUNCTION_VARIANT_DEFINITION then
-        -- Record private function variant defitions.
-        maybe_used_csnames[statement.base_csname] = true
-        maybe_defined_csnames[statement.defined_csname] = true
-        table.insert(variant_base_csnames, {statement.base_csname, byte_range})
-        if statement.confidence == DEFINITELY then
-          if defined_function_variant_csnames[statement.defined_csname] then
-            issues:add("w407", "multiply defined function variant", byte_range)
-          end
-          defined_function_variant_csnames[statement.defined_csname] = true
-          if is_function_private(statement.defined_csname) then
-            table.insert(defined_private_function_variants, {statement.defined_csname, byte_range})
+    -- Process an argument and record control sequence name usage and definitions.
+    local function process_argument_tokens(argument)
+      -- Record control sequence name usage.
+      --- Extract text from tokens within c- and v-type arguments.
+      if argument.specifier == "c" or argument.specifier == "v" then
+        local csname = extract_csname_from_tokens(argument.token_range)
+        if csname ~= nil then
+          if csname.type == TEXT then
+            maybe_used_csname_texts[csname.payload] = true
+          elseif csname.type == PATTERN then
+            maybe_used_csname_pattern = maybe_used_csname_pattern + csname.payload
           end
         end
-      elseif statement.type == FUNCTION_DEFINITION then
-        -- Record private function defitions.
-        maybe_defined_csnames[statement.defined_csname] = true
-        if statement.confidence == DEFINITELY and is_function_private(statement.defined_csname) then
-          table.insert(defined_private_functions, {statement.defined_csname, byte_range})
+      end
+      --- Scan control sequence tokens within N- and n-type arguments.
+      if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+        for _, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+          if token.type == CONTROL_SEQUENCE then
+            maybe_used_csname_texts[token.payload] = true
+          end
         end
-        -- Record base control sequences used as the base in indirect function definitions.
-        if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
-          maybe_used_csnames[statement.base_csname] = true
-        end
-      elseif statement.type == OTHER_STATEMENT then
-        -- Record control sequences defined and used in other statements.
-        -- TODO: Also record partially-understood control sequences like `\use:c{__ccool_aux_prop:\g__ccool_option_expans_tl}` from line
-        --       55 of file `ccool.sty` in TeX Live 2024, which, if understood as the wildcard `__ccool_aux_prop:*` should silence issue
-        --       W401 on line 50 of the same file. There should likely be some minimum number of understood tokens to prevent statements
-        --       like `\use:c{\foo}` from silencing all issues of this type.
-        for _, call in statement.call_range:enumerate(segment_calls) do
-          maybe_used_csnames[call.csname] = true
-          for _, argument in ipairs(call.arguments) do
-            if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-              for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
-                if token.type == CONTROL_SEQUENCE then
-                  maybe_used_csnames[token.payload] = true
-                  if token_number + 1 <= #segment_transformed_tokens then
-                    local next_token = segment_transformed_tokens[token_number + 1]
-                    if (
-                          next_token.type == CONTROL_SEQUENCE
-                          and lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
-                        ) then
-                      maybe_defined_csnames[next_token.payload] = true
-                    end
-                  end
-                end
+      end
+      -- Record control sequence name definitions.
+      --- Scan control sequence tokens within N- and n-type arguments.
+      if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+        for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+          if token.type == CONTROL_SEQUENCE then
+            if token_number + 1 <= #segment_transformed_tokens then
+              local next_token = segment_transformed_tokens[token_number + 1]
+              if (
+                    next_token.type == CONTROL_SEQUENCE
+                    and lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil
+                  ) then
+                maybe_defined_csname_texts[next_token.payload] = true
               end
             end
           end
         end
+      end
+    end
+
+    for _, statement in ipairs(segment_statements) do
+      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment_calls), #segment_tokens)
+      local byte_range = token_range:new_range_from_subranges(get_token_byte_range(segment_tokens), #content)
+      -- Process a function variant definition.
+      if statement.type == FUNCTION_VARIANT_DEFINITION then
+        -- Record base control sequence names of variants, both as control sequence name usage and separately.
+        table.insert(variant_base_csnames, {statement.base_csname, byte_range})
+        maybe_used_csname_texts[statement.base_csname] = true
+        -- Record control sequence name definitions.
+        if statement.defined_csname.type == TEXT then
+          maybe_defined_csname_texts[statement.defined_csname.payload] = true
+        elseif statement.defined_csname.type == PATTERN then
+          maybe_defined_csname_pattern = maybe_defined_csname_pattern + statement.defined_csname.payload
+        else
+          error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
+        end
+        -- Record private function variant definitions.
+        if statement.confidence == DEFINITELY and statement.is_private then
+          table.insert(defined_private_function_variant_byte_ranges, byte_range)
+          local defined_private_function_variant = {
+            number = #defined_private_function_variant_byte_ranges,
+            csname = statement.defined_csname
+          }
+          if statement.defined_csname.type == TEXT then
+            table.insert(defined_private_function_variant_texts, defined_private_function_variant)
+          elseif statement.defined_csname.type == PATTERN then
+            defined_private_function_variant_pattern = (
+              defined_private_function_variant_pattern
+              + statement.defined_csname.payload
+              / defined_private_function_variant
+            )
+          else
+            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
+          end
+        end
+      -- Process a function definition.
+      elseif statement.type == FUNCTION_DEFINITION then
+        -- Record the base control sequences used in indirect function definitions.
+        if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
+          maybe_used_csname_texts[statement.base_csname] = true
+          table.insert(indirect_definition_base_csnames, {statement.base_csname, byte_range})
+        end
+        -- Record control sequence name usage and definitions.
+        maybe_defined_csname_texts[statement.defined_csname] = true
+        if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_number == nil then
+          process_argument_tokens(statement.replacement_text_argument)
+        end
+        -- Record private function defition.
+        if statement.confidence == DEFINITELY and statement.is_private then
+          table.insert(defined_private_functions, {statement.defined_csname, byte_range})
+        end
+      -- Process an unrecognized statement.
+      elseif statement.type == OTHER_STATEMENT then
+        -- Record control sequence name usage and definitions.
+        for _, call in statement.call_range:enumerate(segment_calls) do
+          maybe_used_csname_texts[call.csname] = true
+          table.insert(called_functions_and_variants, {call.csname, byte_range})
+          for _, argument in ipairs(call.arguments) do
+            process_argument_tokens(argument)
+          end
+        end
+      -- Process a block of unrecognized tokens.
       elseif statement.type == OTHER_TOKENS_SIMPLE or statement.type == OTHER_TOKENS_COMPLEX then
-        -- Record control sequence names in blocks of other unrecognized tokens.
+        -- Record control sequence name usage by scanning all control sequence tokens.
         for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
-            maybe_used_csnames[token.payload] = true
+            maybe_used_csname_texts[token.payload] = true
           end
         end
       else
@@ -735,23 +970,83 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
     end
   end
 
+  -- Finalize PEG patterns.
+  maybe_defined_csname_pattern = maybe_defined_csname_pattern * parsers.eof
+  maybe_used_csname_pattern = maybe_used_csname_pattern * parsers.eof
+  defined_private_function_variant_pattern = defined_private_function_variant_pattern * parsers.eof
+
   --- Report issues apparent from the collected information.
+  ---- Report unused private functions.
   for _, defined_private_function in ipairs(defined_private_functions) do
     local defined_csname, byte_range = table.unpack(defined_private_function)
-    if not maybe_used_csnames[defined_csname] then
+    if not maybe_used_csname_texts[defined_csname] and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range)
     end
   end
-  for _, defined_private_function_variant in ipairs(defined_private_function_variants) do
-    local defined_csname, byte_range = table.unpack(defined_private_function_variant)
-    if not maybe_used_csnames[defined_csname] then
+
+  ---- Report unused private function variants.
+  local used_private_function_variants = {}
+  for private_function_variant_number, _ in ipairs(defined_private_function_variant_byte_ranges) do
+    used_private_function_variants[private_function_variant_number] = false
+  end
+  for _, defined_private_function_variant in ipairs(defined_private_function_variant_texts) do
+    assert(defined_private_function_variant.csname.type == TEXT)
+    if maybe_used_csname_texts[defined_private_function_variant.csname.payload]
+        or lpeg.match(maybe_used_csname_pattern, defined_private_function_variant.csname.payload) ~= nil then
+      used_private_function_variants[defined_private_function_variant.number] = true
+    end
+  end
+  for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
+    -- NOTE: Although we might want to also test whether "defined_private_function_variant_pattern" and
+    -- "maybe_used_csname_pattern" overlap, intersection is undecideable for parsing expression languages (PELs). In
+    -- theory, we could use regular expressions instead of PEG patterns, since intersection is decideable for regular
+    -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
+    -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
+    -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
+    local defined_private_function_variant = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
+    if defined_private_function_variant ~= nil then
+      assert(defined_private_function_variant.csname.type == PATTERN)
+      used_private_function_variants[defined_private_function_variant.number] = true
+    end
+  end
+  for private_function_variant_number, byte_range in ipairs(defined_private_function_variant_byte_ranges) do
+    if not used_private_function_variants[private_function_variant_number] then
       issues:add('w402', 'unused private function variant', byte_range)
     end
   end
+
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local expl3_well_known_function_csname = parsers.expl3_well_known_function_csname(imported_prefixes)
+
+  ---- Report function variants for undefined functions.
   for _, variant_base_csname in ipairs(variant_base_csnames) do
     local base_csname, byte_range = table.unpack(variant_base_csname)
-    if not maybe_defined_csnames[base_csname] and lpeg.match(parsers.expl3_maybe_standard_library_csname, base_csname) == nil then
+    if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
+        and not maybe_defined_csname_texts[base_csname]
+        and not lpeg.match(maybe_defined_csname_pattern, base_csname) then
       issues:add('e405', 'function variant for an undefined function', byte_range)
+    end
+  end
+
+  ---- Report calls to undefined functions and function variants.
+  for _, called_function_or_variant in ipairs(called_functions_and_variants) do
+    local csname, byte_range = table.unpack(called_function_or_variant)
+    if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
+        and lpeg.match(expl3_well_known_function_csname, csname) == nil
+        and not maybe_defined_csname_texts[csname]
+        and not lpeg.match(maybe_defined_csname_pattern, csname) then
+      issues:add('e408', 'calling an undefined function', byte_range)
+    end
+  end
+
+  ---- Report indirect function definitions from undefined base functions.
+  for _, indirect_definition_base_csname in ipairs(indirect_definition_base_csnames) do
+    local csname, byte_range = table.unpack(indirect_definition_base_csname)
+    if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
+        and lpeg.match(expl3_well_known_function_csname, csname) == nil
+        and not maybe_defined_csname_texts[csname]
+        and not lpeg.match(maybe_defined_csname_pattern, csname) then
+      issues:add('e411', 'indirect function definition from an undefined function', byte_range)
     end
   end
 
@@ -761,7 +1056,9 @@ local function semantic_analysis(pathname, content, issues, results, options)  -
 end
 
 return {
+  csname_types = csname_types,
   process = semantic_analysis,
   statement_types = statement_types,
+  statement_confidences = statement_confidences,
   statement_subtypes = statement_subtypes,
 }

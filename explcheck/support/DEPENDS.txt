@@ -32,4 +32,5 @@ soul
 upquote
 url
 verse
+xcolor
 xkeyval

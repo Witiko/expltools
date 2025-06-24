@@ -3,20 +3,6 @@ In the semantic analysis step, the expl3 analysis tool determines the meaning of
 
 ## Functions and conditional functions
 
-### Expanding an unexpandable variable or constant {.t}
-A function with a `V`-type argument is called with a variable or constant that does not support `V`-type expansion [@latexteam2024interfaces, Section 1.1].
-
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { #1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-\module_foo:V  % error on this line
-  \c_false_bool
-```
-
 ### Unused private function {.w label=w401 #unused-private-function}
 A private function or conditional function is defined but unused.
 
@@ -34,8 +20,6 @@ A function or conditional function variant is generated from an incompatible arg
 
  /t403-01.tex
 
-Deprecated variants, such as `N` or `c` variants of an `n` parent, are not included in this issue. Instead, they produce <#deprecated-variant>.
-
 Higher-order variants can be created from existing variants as long as only `n` and `N` arguments are changed to other types:
 
  /t403-02.tex
@@ -45,61 +29,31 @@ A protected predicate function is defined.
 
  /e404.tex
 
-### Function variant for an undefined function {.e label=e405}
-A variant is defined for an undefined function.
+### Function variant for an undefined function {.e label=e405 #function-variant-for-undefined-function}
+A function or conditional function variant is defined for an undefined function.
 
  /e405-01.tex
  /e405-02.tex
 
-### Multiply defined function {.e}
-TODO
+### Calling an undefined function {.e label=e408 #calling-undefined-function}
+A function or conditional function (variant) is called but undefined.
 
-### Multiply defined function variant {.w label=w407}
-A function or conditional function variant is defined multiple times.
+ /e408-01.tex
+ /e408-02.tex
+ /e408-03.tex
 
- /w407-01.tex
- /w407-02.tex
-
-### Calling an undefined function {.e #calling-undefined-function}
-A function is used but undefined.
-
-``` tex
-\module_foo:  % error on this line
-```
-
-### Calling an undefined function variant {.e #calling-undefined-function-variant}
-A function or conditional function variant is used but undefined.
-
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\tl_set:Nn
-  \l_tmpa_tl
-  { baz }
-\module_foo:V  % error on this line
-  \l_tmpa_tl
-```
-
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { TF }
-  { V }
-\module_foo:VTF  % error on this line
-  \l_tmpa_tl
-  { foo }
-  { bar }
-```
-
-### Function variant of deprecated type {.w label=w410 #deprecated-variant}
+### Function variant of deprecated type {.w label=w410}
 A function or conditional function variant is generated from a deprecated argument type [@latexteam2024interfaces, Section 5.2, documentation of function `\cs_generate_variant:Nn`].
 
  /w410.tex
+
+### Indirect function definition from an undefined function {.e label=e411 #indirect-function-definition-from-undefined-function}
+A function or conditional function is indirectly defined from an undefined function.
+
+ /e411-01.tex
+ /e411-02.tex
+ /e411-03.tex
+ /e411-04.tex
 
 ## Variables and constants
 
@@ -286,6 +240,160 @@ A variable of one type is used where a variable of a different type should be us
 ``` tex
 \tl_new:N
   \l_example_str  % error on this line
+```
+
+``` tex
+\tl_new:N
+  \l_example_tl
+\tl_count:N
+  \l_example_tl
+\str_count:N
+  \l_example_tl
+\seq_count:N
+  \l_example_tl  % error on this line
+\clist_count:N
+  \l_example_tl  % error on this line
+\prop_count:N
+  \l_example_tl  % error on this line
+\intarray_count:N
+  \l_example_tl  % error on this line
+\fparray_count:N
+  \l_example_tl  % error on this line
+```
+
+``` tex
+\str_new:N
+  \l_example_str
+\tl_count:N
+  \l_example_str
+\str_count:N
+  \l_example_str
+\seq_count:N
+  \l_example_str  % error on this line
+\clist_count:N
+  \l_example_str  % error on this line
+\prop_count:N
+  \l_example_str  % error on this line
+\intarray_count:N
+  \l_example_str  % error on this line
+\fparray_count:N
+  \l_example_str  % error on this line
+```
+
+``` tex
+\int_new:N
+  \l_example_int
+\tl_count:N
+  \l_example_int  % error on this line
+\str_count:N
+  \l_example_int  % error on this line
+\seq_count:N
+  \l_example_int  % error on this line
+\clist_count:N
+  \l_example_int  % error on this line
+\prop_count:N
+  \l_example_int  % error on this line
+\intarray_count:N
+  \l_example_int  % error on this line
+\fparray_count:N
+  \l_example_int  % error on this line
+```
+
+``` tex
+\seq_new:N
+  \l_example_seq
+\tl_count:N
+  \l_example_seq  % error on this line
+\str_count:N
+  \l_example_seq  % error on this line
+\seq_count:N
+  \l_example_seq
+\clist_count:N
+  \l_example_seq  % error on this line
+\prop_count:N
+  \l_example_seq  % error on this line
+\intarray_count:N
+  \l_example_seq  % error on this line
+\fparray_count:N
+  \l_example_seq  % error on this line
+```
+
+``` tex
+\clist_new:N
+  \l_example_clist
+\tl_count:N
+  \l_example_clist  % error on this line
+\str_count:N
+  \l_example_clist  % error on this line
+\seq_count:N
+  \l_example_clist  % error on this line
+\clist_count:N
+  \l_example_clist
+\prop_count:N
+  \l_example_clist  % error on this line
+\intarray_count:N
+  \l_example_clist  % error on this line
+\fparray_count:N
+  \l_example_clist  % error on this line
+```
+
+``` tex
+\clist_new:N
+  \l_example_prop
+\tl_count:N
+  \l_example_prop  % error on this line
+\str_count:N
+  \l_example_prop  % error on this line
+\seq_count:N
+  \l_example_prop  % error on this line
+\clist_count:N
+  \l_example_prop  % error on this line
+\prop_count:N
+  \l_example_prop
+\intarray_count:N
+  \l_example_prop  % error on this line
+\fparray_count:N
+  \l_example_prop  % error on this line
+```
+
+``` tex
+\intarray_new:Nn
+  \g_example_intarray
+  { 5 }
+\tl_count:N
+  \g_example_intarray  % error on this line
+\str_count:N
+  \g_example_intarray  % error on this line
+\seq_count:N
+  \g_example_intarray  % error on this line
+\clist_count:N
+  \g_example_intarray  % error on this line
+\prop_count:N
+  \g_example_intarray  % error on this line
+\intarray_count:N
+  \g_example_intarray
+\fparray_count:N
+  \g_example_intarray  % error on this line
+```
+
+``` tex
+\fparray_new:Nn
+  \g_example_fparray
+  { 5 }
+\tl_count:N
+  \g_example_fparray  % error on this line
+\str_count:N
+  \g_example_fparray  % error on this line
+\seq_count:N
+  \g_example_fparray  % error on this line
+\clist_count:N
+  \g_example_fparray  % error on this line
+\prop_count:N
+  \g_example_fparray  % error on this line
+\intarray_count:N
+  \g_example_fparray  % error on this line
+\fparray_count:N
+  \g_example_fparray
 ```
 
 ``` tex

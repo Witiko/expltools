@@ -47,7 +47,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/databib.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/dataplot.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool-base.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/denisbdoc/denisbdoc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/derivative/derivative.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/diagbox/diagbox.sty

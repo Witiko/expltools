@@ -119,6 +119,7 @@ local function print_usage()
   local max_line_length = tostring(get_option("max_line_length"))
   print(
     "Options:\n\n"
+    .. "\t--config-file=FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
     .. "\t--error-format=FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
     .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
     .. "\t--expl3-detection-strategy={never|always|precision|recall|auto}\n\n"
@@ -141,6 +142,7 @@ local function print_usage()
     .. "\t                           The default setting is --make-at-letter=" .. make_at_letter .. ".\n\n"
     .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
+    .. "\t--no-config-file           Do not load a user config file. See also --config-file.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output. See also --error-format.\n\n"
     .. "\t--verbose                  Print additional information in non-machine-readable output. See also --porcelain.\n\n"
     .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
@@ -173,6 +175,8 @@ else
     elseif argument == "--version" or argument == "-v" then
       print_version()
       os.exit(0)
+    elseif argument:sub(1, 14) == "--config-file=" then
+      options.config_file = argument:sub(15)
     elseif argument:sub(1, 15) == "--error-format=" then
       options.error_format = argument:sub(16)
     elseif argument:sub(1, 27) == "--expl3-detection-strategy=" then
@@ -198,6 +202,8 @@ else
       end
     elseif argument:sub(1, 18) == "--max-line-length=" then
       options.max_line_length = tonumber(argument:sub(19))
+    elseif argument == "--no-config-file" then
+      options.config_file = ""
     elseif argument == "--porcelain" or argument == "-p" then
       options.porcelain = true
     elseif argument == "--verbose" then

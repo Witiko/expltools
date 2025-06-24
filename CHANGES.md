@@ -6,17 +6,160 @@
 
 #### Development
 
+This version of explcheck has implemented the following new features:
+
 - Detect base forms of deprecated conditional function names.
   (#95, c96332f, 3a4dfbf)
 
+- Improve support for low-confidence function variant definitions. (#99)
+
+  Previously, when unexpected material was encountered in variant argument
+  specifiers, variants for all possible sets of specifiers were expected to be
+  defined with low confidence. However, for base functions with many
+  specifiers, this behavior was disabled because it would lead to a
+  combinatorial explosion.
+
+  After this change, all possible variants are efficiently encoded using a
+  pattern, which allowed us to support arbitrarily many arguments.
+
+- Recognize more argument specifiers in function (variant) definitions. (#99)
+
+  This includes support for c-type csname arguments and non-n-type replacement
+  text arguments. In the latter case, the replacement text is not analyzed and
+  the function is assumed to be defined with unknown replacement text.
+
+- Add support for detecting function use in c- and v-type arguments. (#99)
+
+  Previously, if a function `\__example_foo:n` was defined and then used as
+  `\use:c { __example_foo:n }`, issue W401 (Unused private function) would be
+  raised. After this change, issues like W401 and W402 (Unused private function
+  variant) are no longer reported in such cases.
+
+  Furthermore, if a c- or v-type argument can only be partially understood,
+  such as `\use:c { __example_foo: \unexpected }`, a pattern `__example_foo:*`
+  is generated and functions whose name matches the pattern are marked as
+  used with low confidence. However, such pattern is only produced when at
+  least N tokens from the argument can be recognized, where N is given by a new
+  Lua option `min_simple_tokens_in_csname_pattern` (default is 5 tokens).
+
+- Require more context cues to determine that the whole file is in expl3 when
+  the Lua option `expl3_detection_strategy` is set to "auto", which it is by
+  default. (#99)
+
+  Previously, any expl3-like material, as defined by the LPEG parser
+  `expl3like_material`, would have been sufficient. However, several packages
+  such as rcs and fontinst would place colons (:) directly after control
+  sequences, confusing the detector. Therefore, N separate instances of
+  expl3-like material are now required, where N is given by a new Lua option
+  `min_expl3like_material` (default is 5 instances).
+
+- Recognize indirect applications of creator functions via
+  `\cs_generate_from_arg_count:NNnn` as function definitions. (#99)
+
+- Add module `explcheck-latex3.lua` that includes LPEG parsers and other
+  information extraction from LaTeX3 data files. (#99)
+
+  This module was previously named `explcheck-obsolete.lua` and only included
+  information about deprecated control sequences extracted from the file
+  `l3obsolete.txt`. The new module also contains registered LaTeX module names
+  extracted from the file `l3prefixes.csv`. This new information is used to
+  determine whether a control sequence is well-known in order to reduce false
+  positive detections of issues such as E408 (Calling an undefined function).
+
+- Add more support for semantic analysis. (#99)
+
+  This adds support for the following new issues from Section 4 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+  1. T400[^t400] (Expanding an unexpandable variable or constant)
+  2. E408[^e408] (Calling an undefined function)
+  3. E411 (Indirect function definition from an undefined function)
+
+  This concludes all planned issues from Section 4.1 (Functions and conditional
+  functions) from this document.
+
+ [^t400]: This issue has later been moved to Section 3 of the same document and
+    renamed to T305, since it can be detected by the syntactic analysis already.
+
+ [^e408]: By default, all standard library prefixes, defined by the parser
+    `expl3_standard_library_prefixes` as well as registered prefixes from the
+    file `l3prefixes.csv` are excluded from this error.
+
+    Besides well-known prefixes, you may also declare other imported prefixes
+    using a new Lua option `imported_prefixes`. For example, here is how your
+    config file `.explcheckrc` might look if you use the function
+    `\precattl_exec:n` from the package precattl:
+
+    ``` csv
+    [defaults]
+    imported_prefixes = ["precattl"]
+    ```
+
+- Add command-line options `--config-file` and `--no-config-file`. (suggested
+  by @muzimuzhi in #101, implemented in #99)
+
+- Add Lua option `fail_fast` that controls whether the processing of a file
+  stops after the first step that produced any errors. The default value is
+  `true`, which means that the processing stops after the first error. (#99)
+
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Gray out issues that are only planned and not yet implemented. (#99)
+
+- Remove the planned issue E406 (Multiply defined function). (#99)
+
+  Semantic analysis wouldn't be able to distinguish between multiply defined
+  functions and functions that are defined in different code paths that never
+  meet.
+
+- Remove issue W407 (Multiply defined function variant) and plan for a
+  replacement issue W501 of the same name for the flow analysis. (#99)
+
+  Semantic analysis can't distinguish between multiply defined variants and
+  variants that are defined in different code paths that never meet.
+
+- Merge the planned issues E408 (Calling an undefined function) and E409
+  (Calling an undefined function variant) into E408. (#99)
+
+- Plan for a flow-aware variant E504 (Function variant for an undefined
+  function) of issue E405 of the same name. (#99)
+
+- Add extra examples for planned issue E500 (Multiply defined function). (#99)
+
+- Include functions `\*_count:N` in the planned issue T420 (Using a variable of
+  an incompatible type). (suggested by @FrankMittelbach in latex3/latex3#1754,
+  fixed in #97 and #99)
+
+- Remove issue T400 (Expanding an unexpandable variable or constant) and create
+  a corresponding issue T305 for the syntactic analysis.
+
+- Plan for a flow-aware variant E506 (Indirect function definition from an
+  undefined function) of issue E411 of the same name.
+
+- Plan for issue E515 (Paragraph token in the parameter of a "nopar" function)
+  and remove the item "Verifying the 'nopar' restriction on functions" from
+  Section "Caveats".
+
 #### Fixes
+
+This version of explcheck has fixed the following bugs:
 
 - Do not report issue E405 (Function variant for an undefined function) for
   standard functions from the modules ltmarks, ltpara, ltproperties, and
   ltsockets. (fixed in commit cb0713df, based on [a TeX StackExchange
   post][tse/739823/70941] by @cfr42)
 
+- Do not report issue S206 (Malformed variable or constant name) when issue
+  W200 ("Do not use" argument specifiers) is reported for the same control
+  sequence. (reported by @muzimuzhi in #100, fixed in #99)
+
  [tse/739823/70941]: https://tex.stackexchange.com/a/739823/70941
+
+- Mark file `explcheck.lua` as executable in archive `expltools.ctan.zip`.
+  (suggested by @manfredlotz and @PetraCTAN in #98, fixed in #99)
 
 ## expltools 2025-05-29
 

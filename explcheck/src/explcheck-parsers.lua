@@ -1,5 +1,7 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
+local registered_prefixes = require("explcheck-latex3").prefixes
+
 local lpeg = require("lpeg")
 local C, Cc, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cc, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
 
@@ -56,7 +58,7 @@ end
 
 -- Intermediate parsers
 ---- Default expl3 category code table, corresponds to `\c_code_cctab` in expl3
-local expl3_endlinechar = ' '  -- luacheck: ignore expl3_endlinechar
+local expl3_endlinechar = ' '
 local expl3_catcodes = {
   [0] = backslash,  -- escape character
   [1] = lbrace,  -- begin grouping
@@ -230,15 +232,20 @@ local expl3_function_csname = (
   * argument_specifier^0  -- argspec
   * (eof + -letter)
 )
-local expl3_function = expl3_catcodes[0] * expl3_function_csname
 
 local any_type = (
   letter^1  -- type
-  * (eof + -letter)
+  * (
+    eof
+    + (
+      any
+      - letter
+      - underscore
+    )
+  )
 )
-local any_expl3_variable_or_constant = (
-  expl3_catcodes[0]
-  * S("cgl")  -- scope
+local any_expl3_variable_or_constant_csname = (
+  S("cgl")  -- scope
   * underscore
   * (
     letter * (letter + underscore * -#any_type)^0  -- just description
@@ -251,80 +258,122 @@ local any_expl3_variable_or_constant = (
 )
 
 local expl3like_material = (
-  expl3_function
-  + any_expl3_variable_or_constant
+  expl3_catcodes[0] * (
+    expl3_function_csname
+    + any_expl3_variable_or_constant_csname
+  )
 )
 
-local expl3_variable_or_constant_type = (
+local expl3_expandable_variable_or_constant_type = (
   P("bitset")
-  + S("hv")^-1 * P("box")
-  + P("bool")
-  + P("cctab")
   + P("clist")
-  + P("coffin")
   + P("dim")
-  + P("flag")
-  + P("fp") * P("array")^-1
-  + P("int") * P("array")^-1
-  + P("io") * S("rw")
+  + P("fp") * -#P("array")
+  + P("int") * -#P("array")
   + P("muskip")
-  + P("prop")
-  + P("regex")
-  + P("seq")
   + P("skip")
   + P("str")
   + P("tl")
 )
-
-local expl3_maybe_standard_library_csname = (
-  (
-    expl3_variable_or_constant_type
-    + P("benchmark")
-    + P("char")
-    + P("codepoint")
-    + S("hv") * P("coffin")
-    + P("color")
-    + P("cs")
-    + P("debug")
-    + P("draw")
-    + P("exp")
-    + P("file")
-    + P("graph")  -- part of the lt3graph package
-    + P("graphics")
-    + P("group")
-    + P("hook")  -- part of the lthooks module
-    + P("if")
-    + P("keys")
-    + P("keyval")
-    + P("legacy")
-    + P("lua")
-    + P("mark")  -- part of the ltmarks module
-    + P("mode")
-    + P("msg")
-    + P("opacity")
-    + P("para")  -- part of the ltpara module
-    + P("pdf")
-    + P("peek")
-    + P("prg")
-    + P("property")  -- part of the ltproperties module
-    + P("quark")
-    + P("reverse_if")
-    + P("scan")
-    + P("socket")  -- part of the ltsockets module
-    + P("sort")
-    + P("sys")
-    + P("tag")  -- part of the tagpdf package
-    + P("text")
-    + P("token")
-    + P("use")
-    + P("withargs")  -- part of the withargs package
-  )
-  * (
-    underscore
-    * (any - colon)^0
-  )^-1
-  * colon
+local expl3_unexpandable_variable_or_constant_type = (
+  P("bool")
+  + P("cctab")
+  + S("hv")^-1 * P("box")
+  + P("coffin")
+  + P("flag")
+  + P("fparray")
+  + P("intarray")
+  + P("io") * S("rw")
+  + P("prop")
+  + P("regex")
+  + P("seq")
 )
+
+local expl3_variable_or_constant_type = (
+  expl3_expandable_variable_or_constant_type
+  + expl3_unexpandable_variable_or_constant_type
+)
+
+local expl3_maybe_unexpandable_csname = (
+  (
+    -#(expl3_unexpandable_variable_or_constant_type * eof)
+    * (any - underscore)^0
+    * underscore
+  )^0
+  * expl3_unexpandable_variable_or_constant_type
+  * eof
+)
+
+local expl3_standard_library_prefixes = (
+  expl3_variable_or_constant_type
+  + P("benchmark")
+  + P("char")
+  + P("codepoint")
+  + S("hv") * P("coffin")
+  + P("color")
+  + P("cs")
+  + P("debug")
+  + P("draw")
+  + P("exp")
+  + P("file")
+  + P("graphics")
+  + P("graph")  -- part of the lt3graph package
+  + P("group")
+  + P("hook")  -- part of the lthooks module
+  + P("if")
+  + P("keys")
+  + P("keyval")
+  + P("legacy")
+  + P("lua")
+  + P("mark")  -- part of the ltmarks module
+  + P("mode")
+  + P("msg")
+  + P("opacity")
+  + P("para")  -- part of the ltpara module
+  + P("pdf")
+  * (
+    P("annot")  -- part of the l3pdfannot module
+    + P("dict")  -- part of the l3pdfdict module
+    + P("field")  -- part of the l3pdffield module
+    + P("file")  -- part of the l3pdffile module
+    + P("management")  -- part of the l3pdfmanagement module
+    + P("meta")  -- part of the l3pdfmeta module
+    + P("xform")  -- part of the l3pdfxform module
+  )^0
+  + P("peek")
+  + P("prg")
+  + P("property")  -- part of the ltproperties module
+  + P("quark")
+  + P("reverse_if")
+  + P("scan")
+  + P("socket")  -- part of the ltsockets module
+  + P("sort")
+  + P("sys")
+  + P("tag")  -- part of the tagpdf package
+  + P("text")
+  + P("token")
+  + P("use")
+  + P("withargs")  -- part of the withargs package
+)
+local function expl3_well_known_function_csname(other_prefix_texts)
+  local other_prefixes = fail
+  for _, prefix_text in ipairs(other_prefix_texts) do
+    other_prefixes = other_prefixes + P(prefix_text)
+  end
+  return (
+    P("__")^-1
+    * (
+      expl3_standard_library_prefixes * #(underscore + colon)
+      + registered_prefixes * #(underscore + colon)
+      + other_prefixes
+    )
+    * (
+      underscore
+      * (any - colon)^0
+    )^0
+    * colon
+  )
+end
 
 local expl3_variable_or_constant_csname = (
   S("cgl")  -- scope
@@ -347,20 +396,28 @@ local expl3_scratch_variable_csname = (
   * eof
 )
 
-local expl3like_csname = (
+local expl3like_function_with_underscores_csname = (
   underscore^0
   * letter^1
+  * underscore  -- a csname with at least one underscore in the middle
+  * (letter + underscore)^1
   * (
-    underscore  -- a csname with at least one underscore in the middle
-    * (letter + underscore)^1
-    * (
-      colon
-      * letter^0
-    )^-1
-    + (letter + underscore)^0
-    * colon  -- a csname with at least one colon at the end
+    colon
     * letter^0
-  )
+  )^-1
+  * eof
+)
+local expl3like_function_csname = (
+  underscore^0
+  * letter^1
+  * (letter + underscore)^0
+  * colon  -- a csname with at least one colon at the end
+  * letter^0
+  * eof
+)
+local expl3like_csname = (
+  expl3like_function_with_underscores_csname
+  + expl3like_function_csname
 )
 
 ---- Comments
@@ -604,67 +661,38 @@ local expl3_function_definition_type_signifier = (
 local expl3_direct_function_definition_csname = (
   (
     P("cs_") * Cc(false)  -- non-conditional function
-    * expl3_function_definition_type_signifier
-    * (P("_protected") * Cc(true) + Cc(false))
-    * (P("_nopar") * Cc(true) + Cc(false))
+    * (
+      P("generate_from_arg_count") * Cc(false)  -- indirect application of a creator function
+      + Cc(true) * expl3_function_definition_type_signifier  -- direct application of a creator function
+      * (P("_protected") * Cc(true) + Cc(false))
+      * (P("_nopar") * Cc(true) + Cc(false))
+    )
     + P("prg_") * Cc(true)  -- conditional function
+    * Cc(true)  -- conditional functions don't support indirect application of a creator function
     * expl3_function_definition_type_signifier
     * (P("_protected") * Cc(true) + Cc(false))
     * Cc(false)  -- conditional functions cannot be "nopar"
     * P("_conditional")
   )
-  * P(":N")
+  * colon
+  * argument_specifier
 )
 local expl3_indirect_function_definition_csname = (
   (
     P("cs_") * Cc(false)  -- non-conditional function
     * expl3_function_definition_type_signifier
     * P("_eq")
-    + P("prg") * Cc(true)  -- conditional function
+    + P("prg_") * Cc(true)  -- conditional function
     * expl3_function_definition_type_signifier
     * P("_eq_conditional")
   )
-  * P(":NN")
+  * colon
+  * argument_specifier
+  * argument_specifier
 )
 local expl3_function_definition_csname = Ct(
   Cc(true) * expl3_direct_function_definition_csname
   + Cc(false) * expl3_indirect_function_definition_csname
-)
-local expl3_function_definition_or_assignment_csname = (
-  (
-    -- A non-conditional function
-    P("cs")
-    * underscore
-    * (
-      (
-        P("new")
-        + P("g")^-1
-        * P("set")
-      )
-      * (
-        P("_eq")
-        + P("_protected")^-1
-        * P("_nopar")^-1
-      )
-      + P("generate_from_arg_count")
-    )
-    -- A conditional function
-    + P("prg")
-    * underscore
-    * (
-      (
-        P("new")
-        + P("g")^-1
-        * P("set")
-      )
-      * (
-        P("_eq")
-        + P("_protected")^-1
-      )
-    )
-    * P("_conditional")
-  )
-  * P(":N")
 )
 
 ---- Generating function variants
@@ -675,7 +703,8 @@ local expl3_function_variant_definition_csname = Ct(
     -- A conditional function
     + P("prg_generate_conditional_variant") * Cc(true)
   )
-  * P(":N")
+  * colon
+  * S("Nc")
 )
 
 ---- Function calls with Lua arguments
@@ -748,7 +777,6 @@ return {
   decimal_digit = decimal_digit,
   deprecated_argument_specifiers = deprecated_argument_specifiers,
   determine_expl3_catcode = determine_expl3_catcode,
-  do_not_use_argument_specifier = do_not_use_argument_specifier,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
   endinput = endinput,
@@ -759,16 +787,17 @@ return {
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
-  expl3_function_definition_or_assignment_csname = expl3_function_definition_or_assignment_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3like_csname = expl3like_csname,
+  expl3like_function_csname = expl3like_function_csname,
   expl3like_material = expl3like_material,
-  expl3_maybe_standard_library_csname = expl3_maybe_standard_library_csname,
+  expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl3_variable_or_constant_use_csname = expl3_variable_or_constant_use_csname,
+  expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   fail = fail,
@@ -780,12 +809,10 @@ return {
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
-  parameter_argument_specifier = parameter_argument_specifier,
   provides = provides,
   space = space,
   success = success,
   tab = tab,
   tex_lines = tex_lines,
   variant_argument_specifiers = variant_argument_specifiers,
-  weird_argument_specifier = weird_argument_specifier,
 }

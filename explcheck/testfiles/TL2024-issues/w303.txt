@@ -12,7 +12,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/databar.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/dataplot.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool-base.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/didec/didec.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/diffcoeff/diffcoeff4.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/els-cas-templates/cas-common.sty

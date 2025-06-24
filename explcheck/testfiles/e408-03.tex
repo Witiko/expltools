@@ -5,8 +5,8 @@
 \prg_generate_conditional_variant:Nnn
   \module_foo:n
   { V }
-  { TF }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \module_foo:n
-  { o, V }
-  { TF }
+  { T }
+\module_foo:VTF  % error on this line
+  \l_tmpa_tl
+  { foo }
+  { bar }

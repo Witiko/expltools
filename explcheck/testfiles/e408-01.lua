@@ -5,7 +5,7 @@ local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 
-local filename = "w407-02.tex"
+local filename = "e408-01.tex"
 
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
@@ -19,14 +19,14 @@ lexical_analysis.process(filename, content, issues, results, options)
 syntactic_analysis.process(filename, content, issues, results, options)
 semantic_analysis.process(filename, content, issues, results, options)
 
-assert(#issues.errors == 0)
-assert(#issues.warnings == 1)
+assert(#issues.errors == 1)
+assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{9, 12}}
-for index, warning in ipairs(issues.sort(issues.warnings)) do
-  assert(warning[1] == "w407")
-  assert(warning[2] == "multiply defined function variant")
-  local byte_range = warning[3]
+local expected_line_numbers = {{1, 1}}
+for index, err in ipairs(issues.sort(issues.errors)) do
+  assert(err[1] == "e408")
+  assert(err[2] == "calling an undefined function")
+  local byte_range = err[3]
   local start_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:start())
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index][1])

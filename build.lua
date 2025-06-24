@@ -28,7 +28,7 @@ local function dirzip(dir, zipname)
   for _, p in ipairs(tree(dir, "**")) do
     local src = p.src:sub(3) -- Strip ./
     if not (attributes(p.cwd, "mode") == "directory" or exclude(src) or src == zipname) then
-      zip:add(p.cwd, src, binfile(src), exefile(src))
+      zip:add(p.cwd, src, binfile(src), src:find('/explcheck%.lua'))
     end
   end
   return zip:close()

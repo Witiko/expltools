@@ -1,9 +1,13 @@
 -- The syntactic analysis step of static analysis converts TeX tokens into a tree of function calls.
 
-local token_types = require("explcheck-lexical-analysis").token_types
+local lexical_analysis = require("explcheck-lexical-analysis")
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
+
+local get_token_byte_range = lexical_analysis.get_token_byte_range
+local is_token_simple = lexical_analysis.is_token_simple
+local token_types = lexical_analysis.token_types
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -25,6 +29,28 @@ local call_types = {
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
+
+-- Get the token range for a given call.
+local function get_call_token_range(calls)
+  return function(call_number)
+    local token_range = calls[call_number].token_range
+    return token_range
+  end
+end
+
+-- Try and convert tokens from a range into a text.
+local function extract_text_from_tokens(token_range, tokens, map_forward)
+  local texts = {}
+  for _, token in token_range:enumerate(tokens, map_forward or identity) do
+    if not is_token_simple(token) then  -- complex material, give up
+      return nil
+    else  -- simple material
+      table.insert(texts, token.payload)
+    end
+  end
+  local text = table.concat(texts)
+  return text
+end
 
 -- Transform parameter tokens in a replacement text.
 local function transform_replacement_text_tokens(content, tokens, issues, num_parameters, replacement_text_token_range)
@@ -119,7 +145,7 @@ local function transform_replacement_text_tokens(content, tokens, issues, num_pa
 end
 
 -- Extract function calls from TeX tokens and groupings.
-local function get_calls(tokens, transformed_tokens, token_range, map_back, map_forward, issues, groupings)
+local function get_calls(tokens, transformed_tokens, token_range, map_back, map_forward, issues, groupings, content)
   local calls = {}
   if #token_range == 0 then
     return calls
@@ -143,12 +169,13 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
   end
 
   -- Count the number of parameters in a parameter text.
-  local function count_parameters_in_parameter_text(parameter_text_token_range)  -- the range is in transformed_tokens, not tokens
+  local function count_parameters_in_parameter_text(parameter_text_token_range)
     local num_parameters = 0
-    for token_number, token in parameter_text_token_range:enumerate(transformed_tokens) do  -- luacheck: ignore token_number
+    local parameter_token_range_end = map_forward(parameter_text_token_range:stop())
+    for token_number, token in parameter_text_token_range:enumerate(transformed_tokens, map_forward) do  -- luacheck: ignore token_number
       if token.type == CHARACTER and token.catcode == 6 then  -- parameter
         local next_token_number = token_number + 1
-        if next_token_number > parameter_text_token_range:stop() then  -- not followed by anything, the parameter text is invalid
+        if next_token_number > parameter_token_range_end then  -- not followed by anything, the parameter text is invalid
           return nil
         end
         local next_token = transformed_tokens[next_token_number]
@@ -281,13 +308,31 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
       local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
       if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
         local arguments = {}
+
+        local function record_argument(argument)
+          if argument.specifier == "V" then
+            for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
+              if argument_token.type == CONTROL_SEQUENCE and
+                  lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_token.payload) ~= nil then
+                issues:add('t305', 'expanding an unexpandable variable or constant', argument_token.byte_range)
+              end
+            end
+          elseif argument.specifier == "v" then
+            local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
+            if argument_text ~= nil and lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_text) ~= nil then
+              local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+              issues:add('t305', 'expanding an unexpandable variable or constant', argument_byte_range)
+            end
+          end
+          table.insert(arguments, argument)
+        end
+
         local next_grouping, parameter_text_start_token_number
         local num_parameters
-        local are_parameter_texts_valid = true
         for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
-          if lpeg.match(parsers.weird_argument_specifier, argument_specifier) then
+          if argument_specifier == "w" then
             goto skip_other_token  -- a "weird" argument specifier, skip the control sequence
-          elseif lpeg.match(parsers.do_not_use_argument_specifier, argument_specifier) then
+          elseif argument_specifier == "D" then
             goto skip_other_token  -- a "do not use" argument specifier, skip the control sequence
           end
           ::check_token::
@@ -310,7 +355,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             next_token_number = next_token_number + 1
             goto check_token
           end
-          if lpeg.match(parsers.parameter_argument_specifier, argument_specifier) then
+          if argument_specifier == "p" then
             parameter_text_start_token_number = next_token_number  -- a "TeX parameter" argument specifier, try to collect parameter text
             while next_token_number <= transformed_token_range_end do
               next_token = transformed_tokens[next_token_number]
@@ -326,13 +371,16 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 end
               elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, validate and record parameter text
                 next_token_number = next_token_number - 1
-                next_token_range
-                  = new_range(parameter_text_start_token_number, next_token_number, INCLUSIVE + MAYBE_EMPTY, #transformed_tokens)
+                next_token_range = new_range(
+                  parameter_text_start_token_number,
+                  next_token_number,
+                  INCLUSIVE + MAYBE_EMPTY,
+                  #transformed_tokens,
+                  map_back,
+                  #tokens
+                )
                 num_parameters = count_parameters_in_parameter_text(next_token_range)
-                if num_parameters == nil then
-                  are_parameter_texts_valid = false
-                end
-                table.insert(arguments, {
+                record_argument({
                   specifier = argument_specifier,
                   token_range = next_token_range,
                   num_parameters = num_parameters,
@@ -379,7 +427,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 )
                 if #next_token_range == 1 then  -- a single token, record it
                     issues:add('w303', 'braced N-type function call argument', next_token.byte_range)
-                    table.insert(arguments, {
+                    record_argument({
                       specifier = argument_specifier,
                       token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
                     })
@@ -426,7 +474,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               end
               -- an N-type argument, record it
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
-              table.insert(arguments, {
+              record_argument({
                 specifier = argument_specifier,
                 token_range = next_token_range,
               })
@@ -455,7 +503,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   map_back,
                   #tokens
                 )
-                table.insert(arguments, {
+                record_argument({
                   specifier = argument_specifier,
                   token_range = next_token_range,
                 })
@@ -483,7 +531,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
               -- an unbraced n-type argument, record it
               issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range)
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
-              table.insert(arguments, {
+              record_argument({
                 specifier = argument_specifier,
                 token_range = next_token_range,
               })
@@ -494,16 +542,12 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
           next_token_number = next_token_number + 1
         end
         next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
-        if are_parameter_texts_valid then  -- if all "TeX parameter" arguments are valid, record the call
-          table.insert(calls, {
-            type = CALL,
-            token_range = next_token_range,
-            csname = csname,
-            arguments = arguments,
-          })
-        else  -- otherwise, skip all tokens from the call
-          record_other_tokens(next_token_range)
-        end
+        table.insert(calls, {
+          type = CALL,
+          token_range = next_token_range,
+          csname = csname,
+          arguments = arguments,
+        })
         token_number = next_token_number
         goto continue
       else  -- a non-expl3 control sequence, skip it
@@ -547,7 +591,7 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
   for part_number, part_tokens in ipairs(results.tokens) do
     local part_groupings = results.groupings[part_number]
     local part_token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens)
-    local part_calls = get_calls(part_tokens, part_tokens, part_token_range, identity, identity, issues, part_groupings)
+    local part_calls = get_calls(part_tokens, part_tokens, part_token_range, identity, identity, issues, part_groupings, content)
     table.insert(calls, part_calls)
   end
 
@@ -556,7 +600,9 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
 end
 
 return {
+  extract_text_from_tokens = extract_text_from_tokens,
   get_calls = get_calls,
+  get_call_token_range = get_call_token_range,
   process = syntactic_analysis,
   call_types = call_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,

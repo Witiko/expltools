@@ -1,5 +1,5 @@
 #!/usr/bin/env texlua
--- A checker that reads the default configuration of the static analyzer explcheck and regression test results
+-- A checker that reads the user configuration of the static analyzer explcheck and regression test results
 -- and then tests which parts of the configuration can be removed without affecting the results of the static analysis.
 
 local kpse = require("kpse")
@@ -16,7 +16,7 @@ local get_suffix = utils.get_suffix
 local process_with_all_steps = utils.process_with_all_steps
 
 local default_config = config.default_config
-local default_config_pathname = config.default_config_pathname
+local get_user_config = config.get_user_config
 local get_package = config.get_package
 local get_filename = config.get_filename
 
@@ -58,10 +58,15 @@ local function read_results(results_pathname)
   return results
 end
 
--- For each file from regression test results, try to remove all options in the default configuration that apply to it and check
+-- For each file from regression test results, try to remove all options in the user configuration that apply to it and check
 -- whether this affects the results of the static analysis or not. Also check whether there exist sections that apply to no files
 -- that were used in regression tests.
 local function main(filelist_pathname, results_pathname)
+  -- Read the user config
+  local user_config, user_config_pathname = get_user_config()
+  assert(user_config ~= nil)
+  assert(user_config_pathname ~= nil)
+
   -- Read the list of all files and regression test results.
   local filelist = read_filelist(filelist_pathname)
   local results = read_results(results_pathname)
@@ -132,15 +137,15 @@ local function main(filelist_pathname, results_pathname)
     assert(expected_issues ~= nil)
     -- If the configuration specifies options for this filename, check them.
     local filename = get_filename(pathname)
-    if default_config.filename and default_config.filename[filename] ~= nil then
+    if user_config.filename and user_config.filename[filename] ~= nil then
       local options_location = string.format('section [filename."%s"]', filename)
-      try_to_remove_all_options(pathname, default_config.filename[filename], options_location, expected_issues)
+      try_to_remove_all_options(pathname, user_config.filename[filename], options_location, expected_issues)
     end
     -- If the configuration specifies options for this package, check them.
     local package = get_package(pathname)
-    if default_config.package and default_config.package[package] ~= nil then
+    if user_config.package and user_config.package[package] ~= nil then
       local options_location = string.format('section [package."%s"]', package)
-      try_to_remove_all_options(pathname, default_config.package[package], options_location, expected_issues)
+      try_to_remove_all_options(pathname, user_config.package[package], options_location, expected_issues)
     end
   end
 
@@ -151,16 +156,16 @@ local function main(filelist_pathname, results_pathname)
   }
   for _, pathname in ipairs(filelist) do
     local filename = get_filename(pathname)
-    if default_config.filename and default_config.filename[filename] ~= nil then
+    if user_config.filename and user_config.filename[filename] ~= nil then
       visited_sections.filename[filename] = true
     end
     local package = get_package(pathname)
-    if default_config.package and default_config.package[package] ~= nil then
+    if user_config.package and user_config.package[package] ~= nil then
       visited_sections.package[package] = true
     end
   end
   for key, _ in pairs(visited_sections) do
-    for value, _ in pairs(default_config[key]) do
+    for value, _ in pairs(user_config[key]) do
       if visited_sections[key][value] == nil then
         local options_location = string.format('Section [%s."%s"]', key, value)
         table.insert(key_locations.to_remove, options_location)
@@ -180,7 +185,7 @@ local function main(filelist_pathname, results_pathname)
   end
 
   -- Print the results.
-  io.write(string.format('Checked %d different options in file "%s"', num_options, default_config_pathname))
+  io.write(string.format('Checked %d different options in file "%s"', num_options, user_config_pathname))
   if #key_locations.to_remove == 0 then
     print(string.format(', none of which can be removed without affecting files listed in "%s".', results_pathname))
   else
@@ -197,7 +202,7 @@ end
 
 local function print_usage()
   print("Usage: " .. arg[0] .. " FILE_LIST TEST_RESULTS\n")
-  print("Test which parts of the default config file can be removed without affecting regression test results.")
+  print("Test which parts of the user config file can be removed without affecting regression test results.")
 end
 
 if #arg ~= 2 then

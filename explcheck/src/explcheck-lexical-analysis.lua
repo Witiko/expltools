@@ -2,7 +2,7 @@
 
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
-local obsolete = require("explcheck-obsolete")
+local obsolete = require("explcheck-latex3").obsolete
 local parsers = require("explcheck-parsers")
 
 local new_range = ranges.new_range
@@ -21,6 +21,41 @@ local token_types = {
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 local CHARACTER = token_types.CHARACTER
+local ARGUMENT = token_types.ARGUMENT
+
+local simple_text_catcodes = {
+  [3] = true,  -- math shift
+  [4] = true,  -- alignment tab
+  [5] = true,  -- end of line
+  [7] = true,  -- superscript
+  [8] = true,  -- subscript
+  [9] = true,  -- ignored character
+  [10] = true,  -- space
+  [11] = true,  -- letter
+  [12] = true,  -- other
+}
+
+-- Determine whether a token constitutes "simple text" [1, p. 383] with no expected side effects.
+--
+--  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
+--
+local function is_token_simple(token)
+  if token.type == CONTROL_SEQUENCE or token.type == ARGUMENT then
+    return false
+  elseif token.type == CHARACTER then
+    return simple_text_catcodes[token.catcode] ~= nil
+  else
+    error('Unexpected token type "' .. token.type .. '"')
+  end
+end
+
+-- Get the byte range for a given token.
+local function get_token_byte_range(tokens)
+  return function(token_number)
+    local byte_range = tokens[token_number].byte_range
+    return byte_range
+  end
+end
 
 -- Tokenize the content and register any issues.
 local function lexical_analysis(pathname, content, issues, results, options)
@@ -307,6 +342,9 @@ local function lexical_analysis(pathname, content, issues, results, options)
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
             issues:add('w200', '"do not use" argument specifiers', token.byte_range)
+            issues:ignore('s206', token.byte_range)
+            -- TODO: Add a configuration option that would allow us to express that w200 silences s206,
+            --       so that we don't need to do this manually.
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
             issues:add('e201', 'unknown argument specifiers', token.byte_range)
@@ -319,7 +357,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           local next_token = part_tokens[token_index + 1]
           if next_token.type == CONTROL_SEQUENCE then
             if (
-                  lpeg.match(parsers.expl3_function_definition_or_assignment_csname, token.payload) ~= nil
+                  lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil
                   and lpeg.match(parsers.expl3like_csname, next_token.payload) ~= nil
                   and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
                   and lpeg.match(parsers.expl3_function_csname, next_token.payload) == nil
@@ -354,6 +392,8 @@ local function lexical_analysis(pathname, content, issues, results, options)
 end
 
 return {
+  get_token_byte_range = get_token_byte_range,
+  is_token_simple = is_token_simple,
   process = lexical_analysis,
   token_types = token_types,
 }

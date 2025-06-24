@@ -1,0 +1,11 @@
+\cs_new:Nn
+  \module_foo:n
+  { bar~#1 }
+\cs_new_eq:NN
+  \module_bar:n
+  \module_foo:n
+\cs_new_eq:NN
+  \module_baz:n
+  \module_bar:n
+\module_baz:n
+  { foo }
