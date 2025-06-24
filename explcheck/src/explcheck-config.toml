@@ -9,6 +9,7 @@ max_line_length = 80
 min_simple_tokens_in_csname_pattern = 5
 min_expl3like_material = 5
 porcelain = false
+fail_fast = true
 terminal_width = 80
 verbose = false
 warnings_are_errors = false

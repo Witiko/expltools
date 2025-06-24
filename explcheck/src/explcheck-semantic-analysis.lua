@@ -1056,7 +1056,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
 end
 
 return {
+  csname_types = csname_types,
   process = semantic_analysis,
   statement_types = statement_types,
+  statement_confidences = statement_confidences,
   statement_subtypes = statement_subtypes,
 }

@@ -98,6 +98,10 @@ This version of explcheck has implemented the following new features:
 - Add command-line options `--config-file` and `--no-config-file`. (suggested
   by @muzimuzhi in #101, implemented in #99)
 
+- Add Lua option `fail_fast` that controls whether the processing of a file
+  stops after the first step that produced any errors. The default value is
+  `true`, which means that the processing stops after the first error. (#99)
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled

@@ -47,6 +47,7 @@ end
 
 -- Run all processing steps.
 local function process_with_all_steps(pathname, content, issues, analysis_results, options)
+  local get_option = require("explcheck-config").get_option
   local preprocessing = require("explcheck-preprocessing")
   local lexical_analysis = require("explcheck-lexical-analysis")
   local syntactic_analysis = require("explcheck-syntactic-analysis")
@@ -55,7 +56,7 @@ local function process_with_all_steps(pathname, content, issues, analysis_result
   for _, step in ipairs(steps) do
     step.process(pathname, content, issues, analysis_results, options)
     -- If a processing step ended with error, skip all following steps.
-    if #issues.errors > 0 then
+    if #issues.errors > 0 and get_option('fail_fast', options, pathname) then
       return
     end
   end
