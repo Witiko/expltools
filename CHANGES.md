@@ -4,6 +4,21 @@
 
 ### explcheck v0.12.0
 
+- Improve autodetection of expl3 for small example files. (c5ad7a4)
+
+  Previously, we added a new Lua option `min_expl3like_material`, which would
+  require at least 5 instances of expl3-like material for a file without
+  standard expl3 delimiters to be recognized as expl3. However, this penalizes
+  small example files, where there are only a few calls.
+
+  After this change, the option has been renamed to
+  `min_expl3like_material_count` and a new Lua option
+  `min_expl3like_material_ratio` has been added that specifies the minimum
+  portion of the file that must be occupied by expl3 material (defaults to 0.5,
+  i.e. 50%) before it is automatically recognized as expl3 regardless.
+
+#### Development
+
 ## expltools 2025-06-24
 
 ### explcheck v0.11.0
