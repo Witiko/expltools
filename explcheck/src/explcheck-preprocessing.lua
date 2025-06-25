@@ -112,9 +112,9 @@ local function preprocessing(pathname, content, issues, results, options)
 
   local function unexpected_pattern(pattern, code, message, test)
     return Ct(Cp() * pattern * Cp()) / function(range_table)
-      if not input_ended and (test == nil or test()) then
-        local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
-        local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
+      local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
+      local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
+      if not input_ended and (test == nil or test(range)) then
         issues:add(code, message, range)
       end
     end
@@ -176,7 +176,7 @@ local function preprocessing(pathname, content, issues, results, options)
     )
   end
 
-  local num_expl3like_material = 0
+  local expl3like_material_count, expl3like_material_bytes = 0, 0
   local analysis_grammar = P{
     "Root";
     Root = (
@@ -204,8 +204,9 @@ local function preprocessing(pathname, content, issues, results, options)
             parsers.expl3like_material,
             "e102",
             "expl3 material in non-expl3 parts",
-            function()
-              num_expl3like_material = num_expl3like_material + 1
+            function(byte_range)
+              expl3like_material_count = expl3like_material_count + 1
+              expl3like_material_bytes = expl3like_material_bytes + #byte_range
               return true
             end
           )
@@ -294,7 +295,12 @@ local function preprocessing(pathname, content, issues, results, options)
     elseif expl3_detection_strategy == "auto" then
       -- Use context clues to determine whether no part or the whole
       -- input file is in expl3.
-      if num_expl3like_material >= get_option('min_expl3like_material', options, pathname) then
+      local expl3like_material_ratio = 0
+      if #content > 0 then
+        expl3like_material_ratio = expl3like_material_bytes / #content
+      end
+      if expl3like_material_count >= get_option('min_expl3like_material_count', options, pathname)
+          or expl3like_material_ratio >= get_option('min_expl3like_material_ratio', options, pathname) then
         issues:add('w100', 'no standard delimiters')
         local range = new_range(1, #content, INCLUSIVE, #content)
         table.insert(expl_ranges, range)

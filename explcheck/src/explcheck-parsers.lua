@@ -230,7 +230,7 @@ local expl3_function_csname = (
   * letter * (letter + underscore)^0  -- description
   * colon
   * argument_specifier^0  -- argspec
-  * (eof + -letter)
+  * #(eof + -letter)
 )
 
 local any_type = (
