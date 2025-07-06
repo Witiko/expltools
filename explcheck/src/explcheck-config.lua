@@ -34,7 +34,9 @@ local function get_user_config(options)
   local pathname, must_exist
   if options_pathname ~= nil then
     pathname = options_pathname
-    must_exist = options_pathname ~= default_pathname  -- if the options specify a distinct pathname, it must exist
+    if options_pathname ~= "" and options_pathname ~= default_pathname then
+      must_exist = true  -- if the options specify a distinct pathname, it must exist
+    end
   else
     pathname = default_pathname
     must_exist = false
