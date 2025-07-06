@@ -4,6 +4,8 @@
 
 ### explcheck v0.12.0
 
+#### Development
+
 - Improve autodetection of expl3 for small example files. (c5ad7a4)
 
   Previously, we added a new Lua option `min_expl3like_material`, which would
@@ -17,7 +19,10 @@
   portion of the file that must be occupied by expl3 material (defaults to 0.5,
   i.e. 50%) before it is automatically recognized as expl3 regardless.
 
-#### Development
+#### Continuous integration
+
+- Rename GitHub Action `teatimeguest/setup-texlive-action@v3` to `TeX-Live/...`.
+  (reported by @pablogonz in markdown#576, fixed in 28ba10b5)
 
 ## expltools 2025-06-24
 
