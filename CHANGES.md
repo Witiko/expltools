@@ -19,6 +19,12 @@
   portion of the file that must be occupied by expl3 material (defaults to 0.5,
   i.e. 50%) before it is automatically recognized as expl3 regardless.
 
+#### Fixes
+
+- Prevent command-line option `--no-config-file` from raising the error
+  `Config file "" does not exist`.
+  (reported by @muzimuzhi in #107, fixed in 41446d0)
+
 #### Continuous integration
 
 - Rename GitHub Action `teatimeguest/setup-texlive-action@v3` to `TeX-Live/...`.
