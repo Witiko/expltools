@@ -22,7 +22,7 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends lua-check
       - name: Install TeX Live
-        uses: teatimeguest/setup-texlive-action@v3
+        uses: TeX-Live/setup-texlive-action@v3
         with:
           cache: false
           packages: |
@@ -44,7 +44,7 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: teatimeguest/setup-texlive-action@v3
+        uses: TeX-Live/setup-texlive-action@v3
         with:
           cache: false
           packages: |
@@ -77,7 +77,7 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: teatimeguest/setup-texlive-action@v3
+        uses: TeX-Live/setup-texlive-action@v3
         with:
           cache: false
           packages: |
@@ -116,7 +116,7 @@ jobs:
           submodules: true
       - name: Install TeX Live
         if: matrix.release != 'latest'
-        uses: teatimeguest/setup-texlive-action@v3
+        uses: TeX-Live/setup-texlive-action@v3
         with:
           cache: false
           packages: |
@@ -191,7 +191,7 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends parallel
       - name: Install TeX Live
-        uses: teatimeguest/setup-texlive-action@v3
+        uses: TeX-Live/setup-texlive-action@v3
         with:
           cache: false
           packages: |
@@ -231,7 +231,7 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: teatimeguest/setup-texlive-action@v3
+        uses: TeX-Live/setup-texlive-action@v3
         with:
           cache: false
           packages: |
