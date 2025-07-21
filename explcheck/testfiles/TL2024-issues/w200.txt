@@ -3,10 +3,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/generic/scontents/scontents-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/generic/scontents/scontents.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/base/atbegshi-ltx.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-generic.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-block.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-graphic.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty
@@ -76,10 +72,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/l3graphics/l3graphics.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/xgalley/l3galley.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/xgalley/xgalley.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/expl3-code.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/expl3-generic.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/expl3.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/l3doc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3packages/xparse/xparse-2018-04-12.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3packages/xparse/xparse-generic.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-block.sty
