@@ -502,6 +502,28 @@ Parameter tokens other than `#1`, `#2`, `#3`, and `#4` are specified in a messag
   { #5 }  % error on this line
 ```
 
+### Too few arguments supplied to message {.e #too-few-arguments-supplied-to-message}
+A message was supplied fewer arguments than there are parameters in the message text.
+
+``` tex
+\msg_new:nnn
+  { foo }
+  { bar }
+  { #1~#2 }
+\msg_info:nn  % error on this line
+  { foo }
+  { bar }
+\msg_info:nnn  % error on this line
+  { foo }
+  { bar }
+  { baz }
+\msg_info:nnnn
+  { foo }
+  { bar }
+  { baz }
+  { baz }
+```
+
 ## Sorting
 ### Comparison conditional without signature `:nnTF` {.e}
 A sorting function is called with a conditional that has a signature different than `:nnTF` [@latexteam2024interfaces, Section 15.5.4].
