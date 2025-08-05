@@ -116,6 +116,26 @@ local function humanize(number)
   end
 end
 
+-- Strip newlines and other whitespace and optionally shorten context.
+local function format_context(context, max_length)
+  local ellipsis = "..."
+  -- Strip any leading or trailing newlines and other whitespace.
+  context = context:gsub("^[%s\n]*", "")
+  context = context:gsub("[%s\n]*$", "")
+  -- Strip all text after the first newline.
+  if context:find("\n") ~= nil then
+    context = context:gsub("\n.*", "")
+    if #context + #ellipsis <= max_length then
+      return string.format("%s%s", context, ellipsis)
+    end
+  end
+  -- Strip all text that exceeds the max length.
+  if #context + #ellipsis > max_length then
+    return string.format("%s%s", context:sub(1, max_length - #ellipsis), ellipsis)
+  end
+  return context
+end
+
 -- Shorten a pathname, so that it does not exceed maximum length.
 local function format_pathname(pathname, max_length)
   -- First, replace path segments with `/.../`, keeping other segments.
@@ -424,9 +444,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
       end
       -- Display the warnings/errors.
       for _, issue in ipairs(issues.sort(warnings_or_errors)) do
-        local code = issue[1]
-        local message = issue[2]
-        local range = issue[3]
+        local code, message, range, context = table.unpack(issue)
         local start_line_number, start_column_number = 1, 1
         local end_line_number, end_column_number = 1, 1
         if range ~= nil then
@@ -434,14 +452,22 @@ local function print_results(pathname, issues, analysis_results, options, evalua
           end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:stop())
           end_column_number = end_column_number
         end
-        local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
-        local terminal_width = get_option('terminal_width', options, pathname)
-        local max_line_length = math.max(math.min(88, terminal_width), terminal_width - 16)
-        local reserved_position_length = 10
-        local reserved_suffix_length = 30
-        local label_indent = (" "):rep(4)
-        local suffix = code:upper() .. " " .. message
         if not porcelain then
+          local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
+          local terminal_width = get_option('terminal_width', options, pathname)
+          local max_line_length = math.max(math.min(88, terminal_width), terminal_width - 16)
+          local reserved_position_length = 10
+          local reserved_message_length = 30
+          local reserved_context_length = 20
+          local label_indent = (" "):rep(4)
+          local message = code:upper() .. " " .. message
+          if context ~= nil then
+            message = message .. ": "
+            context = format_context(context, reserved_context_length)
+            assert(#context <= reserved_context_length)
+          else
+            context = ""
+          end
           local formatted_pathname = format_pathname(
             pathname,
             math.max(
@@ -450,7 +476,8 @@ local function print_results(pathname, issues, analysis_results, options, evalua
                 - #label_indent
                 - reserved_position_length
                 - #(" ")
-                - math.max(#suffix, reserved_suffix_length)
+                - math.max(#message, reserved_message_length)
+                - reserved_context_length
               ), 1
             )
           )
@@ -465,12 +492,14 @@ local function print_results(pathname, issues, analysis_results, options, evalua
                   - #label_indent
                   - #formatted_pathname
                   - #decolorize(position)
-                  - math.max(#suffix, reserved_suffix_length)
+                  - math.max(#message, reserved_message_length)
+                  - reserved_context_length
                 ), 1
               )
             )
-            .. suffix
-            .. (" "):rep(math.max(reserved_suffix_length - #suffix, 0))
+            .. message
+            .. (" "):rep(math.max(reserved_message_length - #message, 0))
+            .. context
           )
           io.write("\n" .. line)
         else
