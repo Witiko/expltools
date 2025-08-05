@@ -86,7 +86,7 @@ end
 -- Convert a number to a string with thousand separators.
 local function separate_thousands(number)
   local initial_digit, following_digits = string.match(tostring(number), '^(%d)(%d*)$')
-	return initial_digit .. following_digits:reverse():gsub('(%d%d%d)', '%1,'):reverse()
+  return initial_digit .. following_digits:reverse():gsub('(%d%d%d)', '%1,'):reverse()
 end
 
 -- Transform short numbers to words and make long numbers more readable using thousand separators.
