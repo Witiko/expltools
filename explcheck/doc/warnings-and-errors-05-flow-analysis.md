@@ -749,6 +749,20 @@ Since a message can be redefined, we need to track the (possibly many) definitio
   { baz }
 ```
 
+### Multiply defined message {.e}
+A message is defined multiple times.
+
+``` tex
+\msg_new:nnn
+  { foo }
+  { bar }
+  { baz }
+\msg_new:nnn  % error on this line
+  { foo }
+  { bar }
+  { baz }
+```
+
 ## Input–output streams
 ### Using an unopened or closed stream {.e}
 A stream is used before it has been opened or after it has been closed.

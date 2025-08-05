@@ -475,20 +475,6 @@ A message is set but undefined.
   { baz }
 ```
 
-### Multiply defined message {.e}
-A message is defined multiple times.
-
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { baz }
-\msg_new:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-```
-
 ### Using an undefined message {.e #using-undefined-message}
 A message is used but undefined.
 
