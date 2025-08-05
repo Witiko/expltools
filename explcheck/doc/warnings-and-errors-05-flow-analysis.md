@@ -624,6 +624,25 @@ A variable or constant is used before it has been defined.
 
 This check is a stronger version of <#using-undefined-variable-or-constant> and should only be emitted if <#using-undefined-variable-or-constant> has not previously been emitted for this variable or constant.
 
+### Multiply declared variable or constant {.e}
+A variable or constant is declared multiple times.
+
+``` tex
+\tl_new:N
+  \g_example_tl
+\tl_new:N  % error on this line
+  \g_example_tl
+```
+
+``` tex
+\tl_const:Nn
+  \c_example_tl
+  { foo }
+\tl_const:Nn  % error on this line
+  \c_example_tl
+  { bar }
+```
+
 ## Messages
 
 ### Unused message {.w}

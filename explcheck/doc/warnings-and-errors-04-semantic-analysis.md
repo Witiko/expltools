@@ -155,25 +155,6 @@ Hello,~\seq_use:Nn \l_tmpa_seq { and } !
 
 Note that boolean and integer variables may be used without accessor functions in boolean and integer expressions, respectively. Therefore, we may want to initially exclude them from this check to prevent false positives.
 
-### Multiply declared variable or constant {.e}
-A variable or constant is declared multiple times.
-
-``` tex
-\tl_new:N
-  \g_example_tl
-\tl_new:N  % error on this line
-  \g_example_tl
-```
-
-``` tex
-\tl_const:Nn
-  \c_example_tl
-  { foo }
-\tl_const:Nn  % error on this line
-  \c_example_tl
-  { bar }
-```
-
 ### Using an undefined variable or constant {.e #using-undefined-variable-or-constant}
 A variable or constant is used but undeclared or undefined.
 
