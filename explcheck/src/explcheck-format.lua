@@ -460,9 +460,9 @@ local function print_results(pathname, issues, analysis_results, options, evalua
           local reserved_message_length = 30
           local reserved_context_length = 20
           local label_indent = (" "):rep(4)
-          local message = code:upper() .. " " .. message
+          local formatted_message = code:upper() .. " " .. message
           if context ~= nil then
-            message = message .. ": "
+            formatted_message = formatted_message .. ": "
             context = format_context(context, reserved_context_length)
             assert(#context <= reserved_context_length)
           else
@@ -476,7 +476,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
                 - #label_indent
                 - reserved_position_length
                 - #(" ")
-                - math.max(#message, reserved_message_length)
+                - math.max(#formatted_message, reserved_message_length)
                 - reserved_context_length
               ), 1
             )
@@ -492,13 +492,13 @@ local function print_results(pathname, issues, analysis_results, options, evalua
                   - #label_indent
                   - #formatted_pathname
                   - #decolorize(position)
-                  - math.max(#message, reserved_message_length)
+                  - math.max(#formatted_message, reserved_message_length)
                   - reserved_context_length
                 ), 1
               )
             )
-            .. message
-            .. (" "):rep(math.max(reserved_message_length - #message, 0))
+            .. formatted_message
+            .. (" "):rep(math.max(reserved_message_length - #formatted_message, 0))
             .. context
           )
           io.write("\n" .. line)
