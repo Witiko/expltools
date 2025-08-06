@@ -8,6 +8,7 @@ local identity = require("explcheck-utils").identity
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
+local format_token = lexical_analysis.format_token
 local format_tokens = lexical_analysis.format_tokens
 
 local new_range = ranges.new_range
@@ -532,7 +533,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 end
               end
               -- an unbraced n-type argument, record it
-              issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range)
+              issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range, format_token(next_token, content))
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               record_argument({
                 specifier = argument_specifier,
