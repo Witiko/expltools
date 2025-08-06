@@ -10,6 +10,7 @@ local identity = require("explcheck-utils").identity
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
+local format_csname = lexical_analysis.format_csname
 
 local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
 
@@ -980,7 +981,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, defined_private_function in ipairs(defined_private_functions) do
     local defined_csname, byte_range = table.unpack(defined_private_function)
     if not maybe_used_csname_texts[defined_csname] and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
-      issues:add('w401', 'unused private function', byte_range)
+      issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
     end
   end
 

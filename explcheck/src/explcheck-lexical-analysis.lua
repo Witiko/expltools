@@ -57,6 +57,11 @@ local function get_token_byte_range(tokens)
   end
 end
 
+-- Format a control sequence name as it appears in expl3 code.
+local function format_csname(csname)
+  return string.format("\\%s", csname)
+end
+
 -- Format a token as it appears in expl3 code.
 local function format_token(token, content)
   assert(#token.byte_range > 0)
@@ -407,6 +412,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
 end
 
 return {
+  format_csname = format_csname,
   format_token = format_token,
   format_tokens = format_tokens,
   get_token_byte_range = get_token_byte_range,
