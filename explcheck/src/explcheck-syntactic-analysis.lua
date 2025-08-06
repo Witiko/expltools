@@ -92,7 +92,7 @@ local function transform_replacement_text_tokens(content, tokens, issues, num_pa
           table.insert(deleted_token_numbers, next_token_number)
           next_token_number = next_token_number + 1
         else  -- an incorrect digit, the replacement text is invalid
-          issues:add('e304', 'unexpected parameter number', next_token.byte_range)
+          issues:add('e304', 'unexpected parameter number', next_token.byte_range, format_token(next_token, content))
           return nil
         end
       elseif next_token.type == ARGUMENT then  -- followed by a function call argument
@@ -189,7 +189,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
           if next_digit == num_parameters + 1 then  -- a correct digit, increment the number of parameters
             num_parameters = num_parameters + 1
           else  -- an incorrect digit, the parameter text is invalid
-            issues:add('e304', 'unexpected parameter number', next_token.byte_range)
+            issues:add('e304', 'unexpected parameter number', next_token.byte_range, format_token(next_token, content))
             return nil
           end
         elseif next_token.type == ARGUMENT then  -- followed by a function call argument
