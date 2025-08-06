@@ -121,18 +121,13 @@ local function strip(text)
   return text:gsub("^[%s\n]*", ""):gsub("[%s\n]*$", "")
 end
 
--- Strip leading and trailing whitespace and optionally shorten context.
+-- Strip leading and trailing whitespace, collapse internal whitespace and optionally shorten issue context.
 local function format_context(context, max_length)
   local ellipsis = "..."
   -- Strip any leading or trailing whitespace.
   context = strip(context)
-  -- Strip all text after the first newline.
-  if context:find("\n") ~= nil then
-    context = strip(context:gsub("\n.*", ""))
-    if #context + #ellipsis <= max_length then
-      return string.format("%s%s", context, ellipsis)
-    end
-  end
+  -- Collapse internal whitespace.
+  context = context:gsub("%s+", " ")
   -- Strip all text that exceeds the max length.
   if #context + #ellipsis > max_length then
     return string.format("%s%s", context:sub(1, max_length - #ellipsis), ellipsis)

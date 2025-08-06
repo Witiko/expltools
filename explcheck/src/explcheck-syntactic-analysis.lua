@@ -8,6 +8,7 @@ local identity = require("explcheck-utils").identity
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
+local format_tokens = lexical_analysis.format_tokens
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -300,7 +301,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
 
   while token_number <= transformed_token_range_end do
     local token = transformed_tokens[token_number]
-    local next_token, next_next_token, next_token_range
+    local next_token, next_next_token, next_token_range, context
     if token.type == CONTROL_SEQUENCE then  -- a control sequence
       local original_csname = token.payload
       local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
@@ -448,7 +449,8 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                     csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                     goto retry_control_sequence
                   else
-                    issues:add('e300', 'unexpected function call argument', next_token.byte_range)
+                    context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
+                    issues:add('e300', 'unexpected function call argument', next_token.byte_range, context)
                     goto skip_other_token
                   end
                 end
