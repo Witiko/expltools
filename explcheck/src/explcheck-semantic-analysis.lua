@@ -575,10 +575,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
               -- determine the defined csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, confidence = table.unpack(condition_table)
-                if condition == "p" and is_protected then
-                  issues:add("e404", "protected predicate function", byte_range)
-                end
                 local effectively_defined_csname = get_conditional_function_csname(defined_csname_stem, argument_specifiers, condition)
+                if condition == "p" and is_protected then
+                  issues:add("e404", "protected predicate function", byte_range, format_csname(effectively_defined_csname))
+                end
                 table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
               end
             else  -- non-conditional function
