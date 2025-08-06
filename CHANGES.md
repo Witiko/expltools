@@ -6,6 +6,9 @@
 
 #### Development
 
+- Include contextual information in human-readable issue descriptions.
+  (suggested by @u-fischer at TUG 2025, reported in #110, added in #112)
+
 - Improve autodetection of expl3 for small example files. (c5ad7a4)
 
   Previously, we added a new Lua option `min_expl3like_material`, which would
