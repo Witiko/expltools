@@ -316,14 +316,24 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
                   lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_token.payload) ~= nil then
-                issues:add('t305', 'expanding an unexpandable variable or constant', argument_token.byte_range)
+                issues:add(
+                  't305',
+                  'expanding an unexpandable variable or constant',
+                  argument_token.byte_range,
+                  format_token(argument_token, content)
+                )
               end
             end
           elseif argument.specifier == "v" then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
             if argument_text ~= nil and lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_text) ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
-              issues:add('t305', 'expanding an unexpandable variable or constant', argument_byte_range)
+              issues:add(
+                't305',
+                'expanding an unexpandable variable or constant',
+                argument_byte_range,
+                format_tokens(argument.outer_token_range or argument.token_range, tokens, content)
+              )
             end
           end
           table.insert(arguments, argument)
@@ -433,6 +443,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                     record_argument({
                       specifier = argument_specifier,
                       token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
+                      outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
                     })
                     next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
@@ -499,17 +510,10 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 end
                 goto skip_other_token
               else  -- a balanced text, record it
-                next_token_range = new_range(
-                  map_forward(next_grouping.start + 1),
-                  map_forward(next_grouping.stop - 1),
-                  INCLUSIVE + MAYBE_EMPTY,
-                  #transformed_tokens,
-                  map_back,
-                  #tokens
-                )
                 record_argument({
                   specifier = argument_specifier,
-                  token_range = next_token_range,
+                  token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens),
+                  outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
                 })
                 next_token_number = map_forward(next_grouping.stop)
               end
