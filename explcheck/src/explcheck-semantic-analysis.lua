@@ -1050,7 +1050,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         and lpeg.match(expl3_well_known_function_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and not lpeg.match(maybe_defined_csname_pattern, csname) then
-      issues:add('e411', 'indirect function definition from an undefined function', byte_range)
+      issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
     end
   end
 
