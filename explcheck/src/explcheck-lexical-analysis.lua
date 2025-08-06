@@ -57,6 +57,17 @@ local function get_token_byte_range(tokens)
   end
 end
 
+-- Format a control sequence name as it appears in expl3 code.
+local function format(token)
+  if token.type == CONTROL_SEQUENCE then
+    return string.format("\\%s", token.payload)
+  elseif token.type == CHARACTER then
+    return token.payload
+  else
+    error('Unexpected token type "' .. token.type .. '"')
+  end
+end
+
 -- Tokenize the content and register any issues.
 local function lexical_analysis(pathname, content, issues, results, options)
 
@@ -341,7 +352,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
         local _, _, argument_specifiers = token.payload:find(":([^:]*)")
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
-            issues:add('w200', '"do not use" argument specifiers', token.byte_range)
+            issues:add('w200', '"do not use" argument specifiers', token.byte_range, format(token))
             issues:ignore('s206', token.byte_range)
             -- TODO: Add a configuration option that would allow us to express that w200 silences s206,
             --       so that we don't need to do this manually.
