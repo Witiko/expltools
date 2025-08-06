@@ -453,8 +453,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
         end
         if not porcelain then
           local position = ":" .. tostring(start_line_number) .. ":" .. tostring(start_column_number) .. ":"
-          local terminal_width = get_option('terminal_width', options, pathname)
-          local max_line_length = math.max(math.min(88, terminal_width), terminal_width - 16)
+          local max_line_length = get_option('terminal_width', options, pathname)
           local reserved_position_length = 10
           local reserved_message_length = 30
           local reserved_context_length = 20
