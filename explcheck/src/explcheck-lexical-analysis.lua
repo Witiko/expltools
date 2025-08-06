@@ -358,7 +358,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
             --       so that we don't need to do this manually.
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
-            issues:add('e201', 'unknown argument specifiers', token.byte_range)
+            issues:add('e201', 'unknown argument specifiers', token.byte_range, format(token))
           end
         end
         if lpeg.match(obsolete.deprecated_csname, token.payload) ~= nil then
