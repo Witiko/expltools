@@ -624,6 +624,25 @@ A variable or constant is used before it has been defined.
 
 This check is a stronger version of <#using-undefined-variable-or-constant> and should only be emitted if <#using-undefined-variable-or-constant> has not previously been emitted for this variable or constant.
 
+### Multiply declared variable or constant {.e}
+A variable or constant is declared multiple times.
+
+``` tex
+\tl_new:N
+  \g_example_tl
+\tl_new:N  % error on this line
+  \g_example_tl
+```
+
+``` tex
+\tl_const:Nn
+  \c_example_tl
+  { foo }
+\tl_const:Nn  % error on this line
+  \c_example_tl
+  { bar }
+```
+
 ## Messages
 
 ### Unused message {.w}
@@ -676,29 +695,8 @@ A message is used before it has been defined.
 
 This check is a stronger version of <#using-undefined-message> and should only be emitted if <#using-undefined-message> has not previously been emitted for this message.
 
-### Too few arguments supplied to message {.e #too-few-arguments-supplied-to-message}
+### Too few arguments supplied to message {.e}
 A message was supplied fewer arguments than there are parameters in the message text.
-
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { #1~#2 }
-\msg_info:nn  % error on this line
-  { foo }
-  { bar }
-\msg_info:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-\msg_info:nnnn
-  { foo }
-  { bar }
-  { baz }
-  { baz }
-```
-
-Since a message can be redefined, we need to track the (possibly many) definitions that can be active when we display a message.
 
 ``` tex
 \msg_new:nnn
@@ -725,6 +723,22 @@ Since a message can be redefined, we need to track the (possibly many) definitio
   { bar }
   { baz }
 \msg_set:nnn
+  { foo }
+  { bar }
+  { baz }
+```
+
+This check is a stronger version of <#too-few-arguments-supplied-to-message> and should only be emitted if <#too-few-arguments-supplied-to-message> has not previously been emitted for this message.
+
+### Multiply defined message {.e}
+A message is defined multiple times.
+
+``` tex
+\msg_new:nnn
+  { foo }
+  { bar }
+  { baz }
+\msg_new:nnn  % error on this line
   { foo }
   { bar }
   { baz }

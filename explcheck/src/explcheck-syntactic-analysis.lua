@@ -8,6 +8,8 @@ local identity = require("explcheck-utils").identity
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
+local format_token = lexical_analysis.format_token
+local format_tokens = lexical_analysis.format_tokens
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -90,7 +92,7 @@ local function transform_replacement_text_tokens(content, tokens, issues, num_pa
           table.insert(deleted_token_numbers, next_token_number)
           next_token_number = next_token_number + 1
         else  -- an incorrect digit, the replacement text is invalid
-          issues:add('e304', 'unexpected parameter number', next_token.byte_range)
+          issues:add('e304', 'unexpected parameter number', next_token.byte_range, format_token(next_token, content))
           return nil
         end
       elseif next_token.type == ARGUMENT then  -- followed by a function call argument
@@ -187,7 +189,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
           if next_digit == num_parameters + 1 then  -- a correct digit, increment the number of parameters
             num_parameters = num_parameters + 1
           else  -- an incorrect digit, the parameter text is invalid
-            issues:add('e304', 'unexpected parameter number', next_token.byte_range)
+            issues:add('e304', 'unexpected parameter number', next_token.byte_range, format_token(next_token, content))
             return nil
           end
         elseif next_token.type == ARGUMENT then  -- followed by a function call argument
@@ -300,7 +302,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
 
   while token_number <= transformed_token_range_end do
     local token = transformed_tokens[token_number]
-    local next_token, next_next_token, next_token_range
+    local next_token, next_next_token, next_token_range, context
     if token.type == CONTROL_SEQUENCE then  -- a control sequence
       local original_csname = token.payload
       local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
@@ -314,14 +316,24 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
                   lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_token.payload) ~= nil then
-                issues:add('t305', 'expanding an unexpandable variable or constant', argument_token.byte_range)
+                issues:add(
+                  't305',
+                  'expanding an unexpandable variable or constant',
+                  argument_token.byte_range,
+                  format_token(argument_token, content)
+                )
               end
             end
           elseif argument.specifier == "v" then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
             if argument_text ~= nil and lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_text) ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
-              issues:add('t305', 'expanding an unexpandable variable or constant', argument_byte_range)
+              issues:add(
+                't305',
+                'expanding an unexpandable variable or constant',
+                argument_byte_range,
+                format_tokens(argument.outer_token_range or argument.token_range, tokens, content)
+              )
             end
           end
           table.insert(arguments, argument)
@@ -426,10 +438,12 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   #transformed_tokens
                 )
                 if #next_token_range == 1 then  -- a single token, record it
-                    issues:add('w303', 'braced N-type function call argument', next_token.byte_range)
+                    context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
+                    issues:add('w303', 'braced N-type function call argument', next_token.byte_range, context)
                     record_argument({
                       specifier = argument_specifier,
                       token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
+                      outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
                     })
                     next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
@@ -448,7 +462,8 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                     csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
                     goto retry_control_sequence
                   else
-                    issues:add('e300', 'unexpected function call argument', next_token.byte_range)
+                    context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
+                    issues:add('e300', 'unexpected function call argument', next_token.byte_range, context)
                     goto skip_other_token
                   end
                 end
@@ -495,17 +510,10 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 end
                 goto skip_other_token
               else  -- a balanced text, record it
-                next_token_range = new_range(
-                  map_forward(next_grouping.start + 1),
-                  map_forward(next_grouping.stop - 1),
-                  INCLUSIVE + MAYBE_EMPTY,
-                  #transformed_tokens,
-                  map_back,
-                  #tokens
-                )
                 record_argument({
                   specifier = argument_specifier,
-                  token_range = next_token_range,
+                  token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens),
+                  outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
                 })
                 next_token_number = map_forward(next_grouping.stop)
               end
@@ -529,7 +537,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                 end
               end
               -- an unbraced n-type argument, record it
-              issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range)
+              issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range, format_token(next_token, content))
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               record_argument({
                 specifier = argument_specifier,

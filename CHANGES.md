@@ -1,10 +1,13 @@
 # Changes
 
-## expltools 2025-07-XX
+## expltools 2025-08-XX
 
 ### explcheck v0.12.0
 
 #### Development
+
+- Include contextual information in human-readable issue descriptions.
+  (suggested by @u-fischer at TUG 2025, reported in #110, added in #112)
 
 - Improve autodetection of expl3 for small example files. (c5ad7a4)
 
@@ -29,6 +32,21 @@
 
 - Rename GitHub Action `teatimeguest/setup-texlive-action@v3` to `TeX-Live/...`.
   (reported by @pablogonz in markdown#576, fixed in 28ba10b5)
+
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Postpone planned issue E417 (Multiply declared variable or constant) to flow
+  analysis, under the identifier E519 and the same name. (#110, #112)
+
+- Postpone planned issue E242 (Multiply defined message) to flow analysis,
+  under the identifier E524 and the same name. (#110, #112)
+
+- Plan for a weaker version of issue E522 (Too few arguments supplied to
+  message) to semantic analysis under the identifier E425 and the same name.
+  (#110, #112)
 
 ## expltools 2025-06-24
 

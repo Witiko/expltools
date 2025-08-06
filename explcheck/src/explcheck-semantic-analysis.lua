@@ -10,6 +10,7 @@ local identity = require("explcheck-utils").identity
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
+local format_csname = lexical_analysis.format_csname
 
 local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
 
@@ -326,7 +327,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
                 argument_specifiers, base_argument_specifiers:sub(#argument_specifiers + 1)
               )
             else  -- variant argument specifiers are longer than base specifiers
-              issues:add("t403", "function variant of incompatible type", byte_range)
+              local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
+              issues:add("t403", "function variant of incompatible type", byte_range, context)
               return nil  -- give up
             end
           end
@@ -352,10 +354,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
                   break  -- skip further checks
                 end
               end
+              local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
               if any_deprecated_specifier then
-                issues:add("w410", "function variant of deprecated type", byte_range)
+                issues:add("w410", "function variant of deprecated type", byte_range, context)
               else
-                issues:add("t403", "function variant of incompatible type", byte_range)
+                issues:add("t403", "function variant of incompatible type", byte_range, context)
                 return nil  -- variant argument specifier is incompatible with base argument specifier, give up
               end
             end
@@ -572,10 +575,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
               -- determine the defined csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, confidence = table.unpack(condition_table)
-                if condition == "p" and is_protected then
-                  issues:add("e404", "protected predicate function", byte_range)
-                end
                 local effectively_defined_csname = get_conditional_function_csname(defined_csname_stem, argument_specifiers, condition)
+                if condition == "p" and is_protected then
+                  issues:add("e404", "protected predicate function", byte_range, format_csname(effectively_defined_csname))
+                end
                 table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
               end
             else  -- non-conditional function
@@ -797,7 +800,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   ---- Collect information about symbols that were definitely defined.
   local called_functions_and_variants = {}
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
-  local defined_private_function_variant_byte_ranges = {}
+  local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csnames, indirect_definition_base_csnames = {}, {}
 
   ---- Collect information about symbols that may have been defined.
@@ -914,17 +917,15 @@ local function semantic_analysis(pathname, content, issues, results, options)
         -- Record private function variant definitions.
         if statement.confidence == DEFINITELY and statement.is_private then
           table.insert(defined_private_function_variant_byte_ranges, byte_range)
-          local defined_private_function_variant = {
-            number = #defined_private_function_variant_byte_ranges,
-            csname = statement.defined_csname
-          }
+          table.insert(defined_private_function_variant_csnames, statement.defined_csname)
+          local private_function_variant_number = #defined_private_function_variant_byte_ranges
           if statement.defined_csname.type == TEXT then
-            table.insert(defined_private_function_variant_texts, defined_private_function_variant)
+            table.insert(defined_private_function_variant_texts, private_function_variant_number)
           elseif statement.defined_csname.type == PATTERN then
             defined_private_function_variant_pattern = (
               defined_private_function_variant_pattern
               + statement.defined_csname.payload
-              / defined_private_function_variant
+              / private_function_variant_number
             )
           else
             error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
@@ -980,7 +981,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, defined_private_function in ipairs(defined_private_functions) do
     local defined_csname, byte_range = table.unpack(defined_private_function)
     if not maybe_used_csname_texts[defined_csname] and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
-      issues:add('w401', 'unused private function', byte_range)
+      issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
     end
   end
 
@@ -989,11 +990,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for private_function_variant_number, _ in ipairs(defined_private_function_variant_byte_ranges) do
     used_private_function_variants[private_function_variant_number] = false
   end
-  for _, defined_private_function_variant in ipairs(defined_private_function_variant_texts) do
-    assert(defined_private_function_variant.csname.type == TEXT)
-    if maybe_used_csname_texts[defined_private_function_variant.csname.payload]
-        or lpeg.match(maybe_used_csname_pattern, defined_private_function_variant.csname.payload) ~= nil then
-      used_private_function_variants[defined_private_function_variant.number] = true
+  for _, private_function_variant_number in ipairs(defined_private_function_variant_texts) do
+    local csname = defined_private_function_variant_csnames[private_function_variant_number]
+    assert(csname.type == TEXT)
+    if maybe_used_csname_texts[csname.payload] or lpeg.match(maybe_used_csname_pattern, csname.payload) ~= nil then
+      used_private_function_variants[private_function_variant_number] = true
     end
   end
   for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
@@ -1003,15 +1004,18 @@ local function semantic_analysis(pathname, content, issues, results, options)
     -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
     -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
     -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
-    local defined_private_function_variant = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
-    if defined_private_function_variant ~= nil then
-      assert(defined_private_function_variant.csname.type == PATTERN)
-      used_private_function_variants[defined_private_function_variant.number] = true
+    local private_function_variant_number = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
+    if private_function_variant_number ~= nil then
+      local csname = defined_private_function_variant_csnames[private_function_variant_number]
+      assert(csname.type == PATTERN)
+      used_private_function_variants[private_function_variant_number] = true
     end
   end
   for private_function_variant_number, byte_range in ipairs(defined_private_function_variant_byte_ranges) do
+    local csname = defined_private_function_variant_csnames[private_function_variant_number]
+    assert(csname.type == TEXT or csname.type == PATTERN)
     if not used_private_function_variants[private_function_variant_number] then
-      issues:add('w402', 'unused private function variant', byte_range)
+      issues:add('w402', 'unused private function variant', byte_range, format_csname(csname.transcript))
     end
   end
 
@@ -1024,7 +1028,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
         and not maybe_defined_csname_texts[base_csname]
         and not lpeg.match(maybe_defined_csname_pattern, base_csname) then
-      issues:add('e405', 'function variant for an undefined function', byte_range)
+      issues:add('e405', 'function variant for an undefined function', byte_range, format_csname(base_csname))
     end
   end
 
@@ -1035,7 +1039,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         and lpeg.match(expl3_well_known_function_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and not lpeg.match(maybe_defined_csname_pattern, csname) then
-      issues:add('e408', 'calling an undefined function', byte_range)
+      issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
     end
   end
 
@@ -1046,7 +1050,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         and lpeg.match(expl3_well_known_function_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and not lpeg.match(maybe_defined_csname_pattern, csname) then
-      issues:add('e411', 'indirect function definition from an undefined function', byte_range)
+      issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
     end
   end
 

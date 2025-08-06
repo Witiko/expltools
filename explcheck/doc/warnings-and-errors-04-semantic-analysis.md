@@ -155,25 +155,6 @@ Hello,~\seq_use:Nn \l_tmpa_seq { and } !
 
 Note that boolean and integer variables may be used without accessor functions in boolean and integer expressions, respectively. Therefore, we may want to initially exclude them from this check to prevent false positives.
 
-### Multiply declared variable or constant {.e}
-A variable or constant is declared multiple times.
-
-``` tex
-\tl_new:N
-  \g_example_tl
-\tl_new:N  % error on this line
-  \g_example_tl
-```
-
-``` tex
-\tl_const:Nn
-  \c_example_tl
-  { foo }
-\tl_const:Nn  % error on this line
-  \c_example_tl
-  { bar }
-```
-
 ### Using an undefined variable or constant {.e #using-undefined-variable-or-constant}
 A variable or constant is used but undeclared or undefined.
 
@@ -494,20 +475,6 @@ A message is set but undefined.
   { baz }
 ```
 
-### Multiply defined message {.e}
-A message is defined multiple times.
-
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { baz }
-\msg_new:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-```
-
 ### Using an undefined message {.e #using-undefined-message}
 A message is used but undefined.
 
@@ -533,6 +500,28 @@ Parameter tokens other than `#1`, `#2`, `#3`, and `#4` are specified in a messag
   { bar }
   { #4 }
   { #5 }  % error on this line
+```
+
+### Too few arguments supplied to message {.e #too-few-arguments-supplied-to-message}
+A message was supplied fewer arguments than there are parameters in the message text.
+
+``` tex
+\msg_new:nnn
+  { foo }
+  { bar }
+  { #1~#2 }
+\msg_info:nn  % error on this line
+  { foo }
+  { bar }
+\msg_info:nnn  % error on this line
+  { foo }
+  { bar }
+  { baz }
+\msg_info:nnnn
+  { foo }
+  { bar }
+  { baz }
+  { baz }
 ```
 
 ## Sorting

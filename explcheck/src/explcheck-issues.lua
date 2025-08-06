@@ -34,7 +34,7 @@ function Issues:_get_issue_table(identifier)
 end
 
 -- Add an issue to the table of issues.
-function Issues:add(identifier, message, range)
+function Issues:add(identifier, message, range, context)
   identifier = self._normalize_identifier(identifier)
 
   -- Discard duplicate issues.
@@ -53,7 +53,7 @@ function Issues:add(identifier, message, range)
   end
 
   -- Construct the issue.
-  local issue = {identifier, message, range}
+  local issue = {identifier, message, range, context}
 
   -- Determine if the issue should be ignored.
   for _, ignore_issue in ipairs(self.ignored_issues) do
@@ -173,10 +173,7 @@ end
 function Issues.sort(warnings_and_errors)
   local sorted_warnings_and_errors = {}
   for _, issue in ipairs(warnings_and_errors) do
-    local identifier = issue[1]
-    local message = issue[2]
-    local range = issue[3]
-    table.insert(sorted_warnings_and_errors, {identifier, message, range})
+    table.insert(sorted_warnings_and_errors, issue)
   end
   table.sort(sorted_warnings_and_errors, function(a, b)
     local a_identifier, b_identifier = a[1], b[1]

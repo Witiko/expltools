@@ -57,6 +57,26 @@ local function get_token_byte_range(tokens)
   end
 end
 
+-- Format a control sequence name as it appears in expl3 code.
+local function format_csname(csname)
+  return string.format("\\%s", csname)
+end
+
+-- Format a token as it appears in expl3 code.
+local function format_token(token, content)
+  assert(#token.byte_range > 0)
+  return content:sub(token.byte_range:start(), token.byte_range:stop())
+end
+
+-- Format a range of tokens as they appear in expl3 code.
+local function format_tokens(token_range, tokens, content)
+  if token_range == 0 then
+    return ""
+  end
+  local byte_range = token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+  return content:sub(byte_range:start(), byte_range:stop())
+end
+
 -- Tokenize the content and register any issues.
 local function lexical_analysis(pathname, content, issues, results, options)
 
@@ -341,17 +361,17 @@ local function lexical_analysis(pathname, content, issues, results, options)
         local _, _, argument_specifiers = token.payload:find(":([^:]*)")
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
-            issues:add('w200', '"do not use" argument specifiers', token.byte_range)
+            issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_token(token, content))
             issues:ignore('s206', token.byte_range)
             -- TODO: Add a configuration option that would allow us to express that w200 silences s206,
             --       so that we don't need to do this manually.
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
-            issues:add('e201', 'unknown argument specifiers', token.byte_range)
+            issues:add('e201', 'unknown argument specifiers', token.byte_range, format_token(token, content))
           end
         end
         if lpeg.match(obsolete.deprecated_csname, token.payload) ~= nil then
-          issues:add('w202', 'deprecated control sequences', token.byte_range)
+          issues:add('w202', 'deprecated control sequences', token.byte_range, format_token(token, content))
         end
         if token_index + 1 <= #part_tokens then
           local next_token = part_tokens[token_index + 1]
@@ -362,7 +382,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
                   and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
                   and lpeg.match(parsers.expl3_function_csname, next_token.payload) == nil
                 ) then
-              issues:add('s205', 'malformed function name', next_token.byte_range)
+              issues:add('s205', 'malformed function name', next_token.byte_range, format_token(next_token, content))
             end
             if (
                   lpeg.match(parsers.expl3_variable_or_constant_use_csname, token.payload) ~= nil
@@ -371,14 +391,14 @@ local function lexical_analysis(pathname, content, issues, results, options)
                   and lpeg.match(parsers.expl3_scratch_variable_csname, next_token.payload) == nil
                   and lpeg.match(parsers.expl3_variable_or_constant_csname, next_token.payload) == nil
                 ) then
-              issues:add('s206', 'malformed variable or constant name', next_token.byte_range)
+              issues:add('s206', 'malformed variable or constant name', next_token.byte_range, format_token(next_token, content))
             end
             if (
                   lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, token.payload) ~= nil
                   and lpeg.match(parsers.expl3_quark_or_scan_mark_csname, next_token.payload) == nil
                   and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
                 ) then
-              issues:add('s207', 'malformed quark or scan mark name', next_token.byte_range)
+              issues:add('s207', 'malformed quark or scan mark name', next_token.byte_range, format_token(next_token, content))
             end
           end
         end
@@ -392,6 +412,9 @@ local function lexical_analysis(pathname, content, issues, results, options)
 end
 
 return {
+  format_csname = format_csname,
+  format_token = format_token,
+  format_tokens = format_tokens,
   get_token_byte_range = get_token_byte_range,
   is_token_simple = is_token_simple,
   process = lexical_analysis,
