@@ -327,7 +327,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
                 argument_specifiers, base_argument_specifiers:sub(#argument_specifiers + 1)
               )
             else  -- variant argument specifiers are longer than base specifiers
-              issues:add("t403", "function variant of incompatible type", byte_range)
+              local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
+              issues:add("t403", "function variant of incompatible type", byte_range, context)
               return nil  -- give up
             end
           end
@@ -356,7 +357,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
               if any_deprecated_specifier then
                 issues:add("w410", "function variant of deprecated type", byte_range)
               else
-                issues:add("t403", "function variant of incompatible type", byte_range)
+                local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
+                issues:add("t403", "function variant of incompatible type", byte_range, context)
                 return nil  -- variant argument specifier is incompatible with base argument specifier, give up
               end
             end
