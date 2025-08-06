@@ -354,10 +354,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
                   break  -- skip further checks
                 end
               end
+              local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
               if any_deprecated_specifier then
-                issues:add("w410", "function variant of deprecated type", byte_range)
+                issues:add("w410", "function variant of deprecated type", byte_range, context)
               else
-                local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
                 issues:add("t403", "function variant of incompatible type", byte_range, context)
                 return nil  -- variant argument specifier is incompatible with base argument specifier, give up
               end
