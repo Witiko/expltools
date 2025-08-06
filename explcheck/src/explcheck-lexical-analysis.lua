@@ -362,7 +362,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           end
         end
         if lpeg.match(obsolete.deprecated_csname, token.payload) ~= nil then
-          issues:add('w202', 'deprecated control sequences', token.byte_range)
+          issues:add('w202', 'deprecated control sequences', token.byte_range, format(token))
         end
         if token_index + 1 <= #part_tokens then
           local next_token = part_tokens[token_index + 1]
@@ -373,7 +373,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
                   and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
                   and lpeg.match(parsers.expl3_function_csname, next_token.payload) == nil
                 ) then
-              issues:add('s205', 'malformed function name', next_token.byte_range)
+              issues:add('s205', 'malformed function name', next_token.byte_range, format(next_token))
             end
             if (
                   lpeg.match(parsers.expl3_variable_or_constant_use_csname, token.payload) ~= nil

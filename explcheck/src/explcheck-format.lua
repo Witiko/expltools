@@ -116,15 +116,19 @@ local function humanize(number)
   end
 end
 
--- Strip newlines and other whitespace and optionally shorten context.
+-- Strip leading and trailing whitespace in a text string.
+local function strip(text)
+  return text:gsub("^[%s\n]*", ""):gsub("[%s\n]*$", "")
+end
+
+-- Strip leading and trailing whitespace and optionally shorten context.
 local function format_context(context, max_length)
   local ellipsis = "..."
-  -- Strip any leading or trailing newlines and other whitespace.
-  context = context:gsub("^[%s\n]*", "")
-  context = context:gsub("[%s\n]*$", "")
+  -- Strip any leading or trailing whitespace.
+  context = strip(context)
   -- Strip all text after the first newline.
   if context:find("\n") ~= nil then
-    context = context:gsub("\n.*", "")
+    context = strip(context:gsub("\n.*", ""))
     if #context + #ellipsis <= max_length then
       return string.format("%s%s", context, ellipsis)
     end
@@ -459,12 +463,12 @@ local function print_results(pathname, issues, analysis_results, options, evalua
           local reserved_position_length = 10
           local reserved_message_length = 30
           local reserved_context_length = 20
+          local max_context_length = 50
           local label_indent = (" "):rep(4)
           local formatted_message = code:upper() .. " " .. message
           if context ~= nil then
             formatted_message = formatted_message .. ": "
-            context = format_context(context, reserved_context_length)
-            assert(#context <= reserved_context_length)
+            context = format_context(context, max_context_length)
           else
             context = ""
           end
@@ -477,7 +481,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
                 - reserved_position_length
                 - #(" ")
                 - math.max(#formatted_message, reserved_message_length)
-                - reserved_context_length
+                - math.max(#context, reserved_context_length)
               ), 1
             )
           )
@@ -493,7 +497,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
                   - #formatted_pathname
                   - #decolorize(position)
                   - math.max(#formatted_message, reserved_message_length)
-                  - reserved_context_length
+                  - math.max(#context, reserved_context_length)
                 ), 1
               )
             )
