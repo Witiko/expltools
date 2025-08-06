@@ -1028,7 +1028,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
         and not maybe_defined_csname_texts[base_csname]
         and not lpeg.match(maybe_defined_csname_pattern, base_csname) then
-      issues:add('e405', 'function variant for an undefined function', byte_range)
+      issues:add('e405', 'function variant for an undefined function', byte_range, format_csname(base_csname))
     end
   end
 
