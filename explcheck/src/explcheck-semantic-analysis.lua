@@ -798,7 +798,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   ---- Collect information about symbols that were definitely defined.
   local called_functions_and_variants = {}
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
-  local defined_private_function_variant_byte_ranges = {}
+  local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csnames, indirect_definition_base_csnames = {}, {}
 
   ---- Collect information about symbols that may have been defined.
@@ -915,17 +915,15 @@ local function semantic_analysis(pathname, content, issues, results, options)
         -- Record private function variant definitions.
         if statement.confidence == DEFINITELY and statement.is_private then
           table.insert(defined_private_function_variant_byte_ranges, byte_range)
-          local defined_private_function_variant = {
-            number = #defined_private_function_variant_byte_ranges,
-            csname = statement.defined_csname
-          }
+          table.insert(defined_private_function_variant_csnames, statement.defined_csname)
+          local private_function_variant_number = #defined_private_function_variant_byte_ranges
           if statement.defined_csname.type == TEXT then
-            table.insert(defined_private_function_variant_texts, defined_private_function_variant)
+            table.insert(defined_private_function_variant_texts, private_function_variant_number)
           elseif statement.defined_csname.type == PATTERN then
             defined_private_function_variant_pattern = (
               defined_private_function_variant_pattern
               + statement.defined_csname.payload
-              / defined_private_function_variant
+              / private_function_variant_number
             )
           else
             error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
@@ -990,11 +988,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for private_function_variant_number, _ in ipairs(defined_private_function_variant_byte_ranges) do
     used_private_function_variants[private_function_variant_number] = false
   end
-  for _, defined_private_function_variant in ipairs(defined_private_function_variant_texts) do
-    assert(defined_private_function_variant.csname.type == TEXT)
-    if maybe_used_csname_texts[defined_private_function_variant.csname.payload]
-        or lpeg.match(maybe_used_csname_pattern, defined_private_function_variant.csname.payload) ~= nil then
-      used_private_function_variants[defined_private_function_variant.number] = true
+  for _, private_function_variant_number in ipairs(defined_private_function_variant_texts) do
+    local csname = defined_private_function_variant_csnames[private_function_variant_number]
+    assert(csname.type == TEXT)
+    if maybe_used_csname_texts[csname.payload] or lpeg.match(maybe_used_csname_pattern, csname.payload) ~= nil then
+      used_private_function_variants[private_function_variant_number] = true
     end
   end
   for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
@@ -1004,15 +1002,18 @@ local function semantic_analysis(pathname, content, issues, results, options)
     -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
     -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
     -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
-    local defined_private_function_variant = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
+    local private_function_variant_number = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
     if defined_private_function_variant ~= nil then
-      assert(defined_private_function_variant.csname.type == PATTERN)
-      used_private_function_variants[defined_private_function_variant.number] = true
+      local csname = defined_private_function_variant_csnames[private_function_variant_number]
+      assert(csname.type == PATTERN)
+      used_private_function_variants[private_function_variant_number] = true
     end
   end
   for private_function_variant_number, byte_range in ipairs(defined_private_function_variant_byte_ranges) do
+    local csname = defined_private_function_variant_csnames[private_function_variant_number]
+    assert(csname.type == TEXT or csname.type == PATTERN)
     if not used_private_function_variants[private_function_variant_number] then
-      issues:add('w402', 'unused private function variant', byte_range)
+      issues:add('w402', 'unused private function variant', byte_range, format_csname(csname.transcript))
     end
   end
 
