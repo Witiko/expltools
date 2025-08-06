@@ -1005,7 +1005,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
     -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
     local private_function_variant_number = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
-    if defined_private_function_variant ~= nil then
+    if private_function_variant_number ~= nil then
       local csname = defined_private_function_variant_csnames[private_function_variant_number]
       assert(csname.type == PATTERN)
       used_private_function_variants[private_function_variant_number] = true
