@@ -382,7 +382,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
                   and lpeg.match(parsers.expl3_scratch_variable_csname, next_token.payload) == nil
                   and lpeg.match(parsers.expl3_variable_or_constant_csname, next_token.payload) == nil
                 ) then
-              issues:add('s206', 'malformed variable or constant name', next_token.byte_range)
+              issues:add('s206', 'malformed variable or constant name', next_token.byte_range, format(next_token))
             end
             if (
                   lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, token.payload) ~= nil
