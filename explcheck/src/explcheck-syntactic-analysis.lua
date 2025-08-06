@@ -427,7 +427,8 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   #transformed_tokens
                 )
                 if #next_token_range == 1 then  -- a single token, record it
-                    issues:add('w303', 'braced N-type function call argument', next_token.byte_range)
+                    context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
+                    issues:add('w303', 'braced N-type function call argument', next_token.byte_range, context)
                     record_argument({
                       specifier = argument_specifier,
                       token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
