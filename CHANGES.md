@@ -57,6 +57,9 @@ This version of explcheck has made the following changes to the document titled
   message) to semantic analysis under the identifier E425 and the same name.
   (#110, #112)
 
+- Remove issues S205, S206, and S207 and replan them to semantic analysis.
+  (reported by @u-fischer in #109, added in #117)
+
 #### Distribution
 
 - Install Bash in the Docker image. (e8c4a08)
