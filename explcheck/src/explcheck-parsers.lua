@@ -375,27 +375,6 @@ local function expl3_well_known_function_csname(other_prefix_texts)
   )
 end
 
-local expl3_variable_or_constant_csname = (
-  S("cgl")  -- scope
-  * underscore
-  * (
-    underscore^-1 * letter^1  -- module
-    * underscore
-    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
-  )
-  * underscore
-  * expl3_variable_or_constant_type
-  * eof
-)
-local expl3_scratch_variable_csname = (
-  S("gl")
-  * underscore
-  * P("tmp") * S("ab")
-  * underscore
-  * expl3_variable_or_constant_type
-  * eof
-)
-
 local expl3like_function_with_underscores_csname = (
   underscore^0
   * letter^1
@@ -639,14 +618,6 @@ local latex_style_file_content = (
   * latex_style_file_csname
 )
 
----- Argument expansion functions from the module l3expan
-local expl3_expansion_csname = (
-  P("exp")
-  * underscore
-  * letter * (letter + underscore)^0
-  * colon
-)
-
 ---- Assigning functions
 local expl3_function_definition_type_signifier = (
   P("new") * Cc(false) * Cc(true)  -- definition
@@ -722,43 +693,6 @@ local expl3_function_call_with_lua_code_argument_csname = Ct(
   + success
 )
 
----- Using variables/constants
-local expl3_variable_or_constant_use_csname = (
-  expl3_variable_or_constant_type
-  * underscore
-  * (
-    P("const")
-    + P("new")
-    + P("g")^-1
-    * P("set")
-    * (
-      underscore
-      * (
-        P("eq")
-        + P("true")
-        + P("false")
-      )
-    )^-1
-    + P("use")
-    + P("show")
-  )
-  * P(":N")
-)
-
----- Defining quarks and scan marks
-local expl3_quark_or_scan_mark_definition_csname = (
-  (
-    P("quark")
-    + P("scan")
-  )
-  * P("_new:N")
-  * eof
-)
-local expl3_quark_or_scan_mark_csname = (
-  S("qs")
-  * underscore
-)
-
 ---- Conditions in a conditional function definition
 local condition = (
   P("p")
@@ -783,20 +717,13 @@ return {
   eof = eof,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
-  expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
-  expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3like_csname = expl3like_csname,
   expl3like_function_csname = expl3like_function_csname,
   expl3like_material = expl3like_material,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
-  expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
-  expl3_quark_or_scan_mark_definition_csname = expl3_quark_or_scan_mark_definition_csname,
-  expl3_scratch_variable_csname = expl3_scratch_variable_csname,
-  expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
-  expl3_variable_or_constant_use_csname = expl3_variable_or_constant_use_csname,
   expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
