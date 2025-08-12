@@ -41,11 +41,16 @@ local function preprocessing(pathname, content, issues, results, options)
     local transformed_index = 0
     local numbers_of_bytes_removed = {}
     local transformed_text_table = {}
+    local content_started = false
     for index, text_position in ipairs(lpeg.match(parsers.commented_lines, content)) do
       local span_size = text_position - transformed_index - 1
       if span_size > 0 then
         if index % 2 == 1 then  -- chunk of text
-          table.insert(transformed_text_table, content:sub(transformed_index + 1, text_position - 1))
+          local chunk_text = content:sub(transformed_index + 1, text_position - 1)
+          if content_started or chunk_text:find("%S") ~= nil then
+            content_started = true
+          end
+          table.insert(transformed_text_table, chunk_text)
         else  -- comment
           local comment_text = content:sub(transformed_index + 1, text_position - 1)
           local ignored_issues = lpeg.match(parsers.ignored_issues, comment_text)
@@ -53,18 +58,23 @@ local function preprocessing(pathname, content, issues, results, options)
           if ignored_issues ~= nil then
             local comment_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, transformed_index + 1)
             assert(comment_line_number <= #line_starting_byte_numbers)
-            local comment_range_start = line_starting_byte_numbers[comment_line_number]
-            local comment_range_end, comment_range
-            if(comment_line_number + 1 <= #line_starting_byte_numbers) then
-              comment_range_end = line_starting_byte_numbers[comment_line_number + 1]
-              comment_range = new_range(comment_range_start, comment_range_end, EXCLUSIVE, #content)
-            else
-              comment_range_end = #content
-              comment_range = new_range(comment_range_start, comment_range_end, INCLUSIVE, #content)
+            -- If the comment appears before any content other than indentation and comments, ignore all issues everywhere.
+            local comment_range = nil
+            -- Otherwise, ignore the issues only on this line, except for file-wide issues, which are always ignored everywhere.
+            if content_started then
+              local comment_range_start = line_starting_byte_numbers[comment_line_number]
+              local comment_range_end
+              if(comment_line_number + 1 <= #line_starting_byte_numbers) then
+                comment_range_end = line_starting_byte_numbers[comment_line_number + 1]
+                comment_range = new_range(comment_range_start, comment_range_end, EXCLUSIVE, #content)
+              else
+                comment_range_end = #content
+                comment_range = new_range(comment_range_start, comment_range_end, INCLUSIVE, #content)
+              end
             end
-            if #ignored_issues == 0 then  -- ignore all issues on this line
+            if #ignored_issues == 0 then  -- ignore all issues
               issues:ignore(nil, comment_range)
-            else  -- ignore specific issues on this line or everywhere (for file-wide issues)
+            else  -- ignore specific issues
               for _, identifier in ipairs(ignored_issues) do
                 issues:ignore(identifier, comment_range)
               end
