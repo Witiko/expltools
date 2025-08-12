@@ -79,7 +79,6 @@ expl3_detection_strategy = "never"
 expl3_detection_strategy = "precision"
 
 [filename."lltjp-unicode-math.sty"]
-expl3_detection_strategy = "always"
 max_line_length = 90
 
 [package.unravel]
@@ -355,24 +354,6 @@ ignored_issues = ["e304"]
 [package.pstool]
 ignored_issues = ["w302"]
 
-[package.notes2bib]
-ignored_issues = ["w401"]
-
-[package.plautopatch]
-ignored_issues = ["w401"]
-
-[filename."tagpdf-debug-lua.sty"]
-ignored_issues = ["w401"]
-
-[filename."lltjp-fontspec.sty"]
-ignored_issues = ["w401"]
-
-[filename."lltjp-siunitx.sty"]
-ignored_issues = ["w401"]
-
-[filename."lltjp-unicode-math.sty"]
-ignored_issues = ["w401"]
-
 [package.modiagram]
 ignored_issues = ["e405", "e408", "e411"]
 
@@ -402,9 +383,6 @@ ignored_issues = ["e405"]
 imported_prefixes = ["ctxdoc", "nju"]
 
 [package.semantex]
-ignored_issues = ["e405"]
-
-[package.tagpdf]
 ignored_issues = ["e405"]
 
 [package.witharrows]
