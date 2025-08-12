@@ -54,6 +54,10 @@ This version of explcheck has made the following changes to the document titled
   message) to semantic analysis under the identifier E425 and the same name.
   (#110, #112)
 
+#### Distribution
+
+- Install Bash in the Docker image. (e8c4a08)
+
 ## expltools 2025-06-24
 
 ### explcheck v0.11.0
