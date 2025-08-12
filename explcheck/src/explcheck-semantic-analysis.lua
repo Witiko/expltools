@@ -977,10 +977,15 @@ local function semantic_analysis(pathname, content, issues, results, options)
   defined_private_function_variant_pattern = defined_private_function_variant_pattern * parsers.eof
 
   --- Report issues apparent from the collected information.
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local expl3_well_known_function_csname = parsers.expl3_well_known_function_csname(imported_prefixes)
+
   ---- Report unused private functions.
   for _, defined_private_function in ipairs(defined_private_functions) do
     local defined_csname, byte_range = table.unpack(defined_private_function)
-    if not maybe_used_csname_texts[defined_csname] and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
+    if lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+        and not maybe_used_csname_texts[defined_csname]
+        and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
     end
   end
@@ -1019,15 +1024,12 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
 
-  local imported_prefixes = get_option('imported_prefixes', options, pathname)
-  local expl3_well_known_function_csname = parsers.expl3_well_known_function_csname(imported_prefixes)
-
   ---- Report function variants for undefined functions.
   for _, variant_base_csname in ipairs(variant_base_csnames) do
     local base_csname, byte_range = table.unpack(variant_base_csname)
     if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
         and not maybe_defined_csname_texts[base_csname]
-        and not lpeg.match(maybe_defined_csname_pattern, base_csname) then
+        and lpeg.match(maybe_defined_csname_pattern, base_csname) == nil then
       issues:add('e405', 'function variant for an undefined function', byte_range, format_csname(base_csname))
     end
   end
@@ -1038,7 +1040,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_function_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
-        and not lpeg.match(maybe_defined_csname_pattern, csname) then
+        and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
     end
   end
@@ -1049,7 +1051,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_function_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
-        and not lpeg.match(maybe_defined_csname_pattern, csname) then
+        and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
     end
   end
