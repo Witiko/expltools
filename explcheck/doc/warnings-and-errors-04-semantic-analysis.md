@@ -58,6 +58,8 @@ A function or conditional function is indirectly defined from an undefined funct
 ## Malformed function name {.s}
 Some function have names that are not in the format `\texttt{\textbackslash\meta{module}\_\meta{description}:\meta{arg-spec}}`{=tex} [@latexteam2024programming, Section 3.2].
 
+<!-- This issue was previously implemented as a part of the lexical analysis under the identifier S205, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
+
 ``` tex
 \cs_new:Nn
   \description:  % warning on this line
@@ -112,6 +114,8 @@ This also extends to conditional functions:
 ## Malformed variable or constant name {.s}
 Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
 
+<!-- This issue was previously implemented as a part of the lexical analysis under the identifier S206, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
+
 ``` tex
 \tl_new:N
   \g_description_tl  % warning on this line
@@ -148,6 +152,8 @@ An exception is made for scratch variables [@latexteam2024interfaces, Section 1.
 
 ## Malformed quark or scan mark name {.s}
 Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
+
+<!-- This issue was previously implemented as a part of the lexical analysis under the identifier S207, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
 
 ``` tex
 \quark_new:N
