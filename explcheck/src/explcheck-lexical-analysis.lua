@@ -362,9 +362,6 @@ local function lexical_analysis(pathname, content, issues, results, options)
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
             issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_token(token, content))
-            issues:ignore('s206', token.byte_range)
-            -- TODO: Add a configuration option that would allow us to express that w200 silences s206,
-            --       so that we don't need to do this manually.
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
             issues:add('e201', 'unknown argument specifiers', token.byte_range, format_token(token, content))
@@ -383,15 +380,6 @@ local function lexical_analysis(pathname, content, issues, results, options)
                   and lpeg.match(parsers.expl3_function_csname, next_token.payload) == nil
                 ) then
               issues:add('s205', 'malformed function name', next_token.byte_range, format_token(next_token, content))
-            end
-            if (
-                  lpeg.match(parsers.expl3_variable_or_constant_use_csname, token.payload) ~= nil
-                  and lpeg.match(parsers.expl3like_csname, next_token.payload) ~= nil
-                  and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
-                  and lpeg.match(parsers.expl3_scratch_variable_csname, next_token.payload) == nil
-                  and lpeg.match(parsers.expl3_variable_or_constant_csname, next_token.payload) == nil
-                ) then
-              issues:add('s206', 'malformed variable or constant name', next_token.byte_range, format_token(next_token, content))
             end
             if (
                   lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, token.payload) ~= nil

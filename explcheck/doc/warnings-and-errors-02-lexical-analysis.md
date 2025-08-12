@@ -42,16 +42,6 @@ This also extends to conditional functions:
  /s205-06.tex
  /s205-07.tex
 
-## Malformed variable or constant name {.s label=s206}
-Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
-
- /s206-01.tex
- /s206-02.tex
-
-An exception is made for scratch variables [@latexteam2024interfaces, Section 1.1.1]:
-
- /s206-03.tex
-
 ## Malformed quark or scan mark name {.s label=s207}
 Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
 

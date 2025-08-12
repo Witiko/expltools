@@ -57,6 +57,43 @@ A function or conditional function is indirectly defined from an undefined funct
 
 ## Variables and constants
 
+## Malformed variable or constant name {.s}
+Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
+
+``` tex
+\tl_new:N
+  \g_description_tl  % warning on this line
+\box_new:N
+  \l__description_box  % warning on this line
+\int_const:Nn
+  \c_description  % warning on this line
+  { 123 }
+```
+
+``` tex
+\regex_new:N
+  \g_module_description_regex
+\coffin_new:N
+  \l_module_description_coffin
+\str_const:Nn
+  \c__module_description_str
+  { foo }
+```
+
+An exception is made for scratch variables [@latexteam2024interfaces, Section 1.1.1]:
+
+``` tex
+\tl_use:N
+  \l_tmpa_tl
+\int_gset:Nn
+  \g_tmpb_int
+  { 1 + 2 }
+\str_show:N
+  \g_tmpa_str
+\bool_set_true:N
+  \l_tmpa_bool
+```
+
 ### Unused variable or constant {.w #unused-variable-or-constant}
 A variable or a constant is declared and perhaps defined but unused.
 
