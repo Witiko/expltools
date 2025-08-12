@@ -28,10 +28,16 @@
   `Config file "" does not exist`.
   (reported by @muzimuzhi in #107, fixed in 41446d0)
 
+- Do not report issue W401 (Unused private function) for well-known and
+  imported prefixes. (#115)
+
 #### Continuous integration
 
 - Rename GitHub Action `teatimeguest/setup-texlive-action@v3` to `TeX-Live/...`.
   (reported by @pablogonz in markdown#576, fixed in 28ba10b5)
+
+- Bump actions/checkout and actions/download-artifact from 4 to 5.
+  (contributed by @dependabot in #113 and #114)
 
 #### Warnings and errors
 
