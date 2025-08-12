@@ -370,19 +370,6 @@ local function lexical_analysis(pathname, content, issues, results, options)
         if lpeg.match(obsolete.deprecated_csname, token.payload) ~= nil then
           issues:add('w202', 'deprecated control sequences', token.byte_range, format_token(token, content))
         end
-        if token_index + 1 <= #part_tokens then
-          local next_token = part_tokens[token_index + 1]
-          if next_token.type == CONTROL_SEQUENCE then
-            if (
-                  lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil
-                  and lpeg.match(parsers.expl3like_csname, next_token.payload) ~= nil
-                  and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
-                  and lpeg.match(parsers.expl3_function_csname, next_token.payload) == nil
-                ) then
-              issues:add('s205', 'malformed function name', next_token.byte_range, format_token(next_token, content))
-            end
-          end
-        end
       end
     end
   end

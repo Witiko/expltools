@@ -55,6 +55,58 @@ A function or conditional function is indirectly defined from an undefined funct
  /e411-03.tex
  /e411-04.tex
 
+## Malformed function name {.s}
+Some function have names that are not in the format `\texttt{\textbackslash\meta{module}\_\meta{description}:\meta{arg-spec}}`{=tex} [@latexteam2024programming, Section 3.2].
+
+``` tex
+\cs_new:Nn
+  \description:  % warning on this line
+  { foo }
+```
+
+``` tex
+\cs_gset:Npn
+  \module__description:  % warning on this line
+  { foo }
+```
+
+``` tex
+\cs_set_eq:NN
+  \_module_description:  % warning on this line
+  \example_foo:
+```
+
+``` tex
+\cs_generate_from_arg_count:NNnn
+  \__module_description:
+  \cs_new:Npn
+  { 0 }
+  { foo }
+```
+
+This also extends to conditional functions:
+
+``` tex
+\prg_new_conditional:Nn
+  \description:  % warning on this line
+  { p, T, F, TF }
+  { foo }
+```
+
+``` tex
+\prg_gset_conditional:Npn
+  \module__description:  % warning on this line
+  { p, T, F, TF }
+  { foo }
+```
+
+``` tex
+\prg_set_eq_conditional:NNn
+  \_module_description:  % warning on this line
+  \example_foo:
+  { p, T, F, TF }
+```
+
 ## Variables and constants
 
 ## Malformed variable or constant name {.s}
