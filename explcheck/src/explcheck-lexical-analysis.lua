@@ -356,7 +356,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
 
   -- Record issues that are apparent after the lexical analysis.
   for _, part_tokens in ipairs(tokens) do
-    for token_index, token in ipairs(part_tokens) do
+    for _, token in ipairs(part_tokens) do
       if token.type == CONTROL_SEQUENCE then
         local _, _, argument_specifiers = token.payload:find(":([^:]*)")
         if argument_specifiers ~= nil then
