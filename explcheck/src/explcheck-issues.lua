@@ -86,9 +86,12 @@ function Issues:ignore(identifier, range)
   end
 
   local ignore_issue, issue_tables
-  if identifier == nil then
+  if identifier == nil and range == nil then
+    -- Prevent any issues.
+    issue_tables = {self.warnings, self.errors}
+    ignore_issue = function() return true end
+  elseif identifier == nil then
     -- Prevent any issues within the given range.
-    assert(range ~= nil)
     issue_tables = {self.warnings, self.errors}
     ignore_issue = function(issue)
       local issue_range = issue[3]

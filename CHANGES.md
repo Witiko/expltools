@@ -22,6 +22,9 @@
   portion of the file that must be occupied by expl3 material (defaults to 0.5,
   i.e. 50%) before it is automatically recognized as expl3 regardless.
 
+- Make `% noqa` comments at the beginning of a file silence issues everywhere.
+  (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
+
 #### Fixes
 
 - Prevent command-line option `--no-config-file` from raising the error
