@@ -94,6 +94,29 @@ An exception is made for scratch variables [@latexteam2024interfaces, Section 1.
   \l_tmpa_bool
 ```
 
+## Malformed quark or scan mark name {.s}
+Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
+
+``` tex
+\quark_new:N
+  \foo_bar  % error on this line
+```
+
+``` tex
+\quark_new:N
+  \q_foo_bar
+```
+
+``` tex
+\scan_new:N
+  \foo_bar  % error on this line
+```
+
+``` tex
+\scan_new:N
+  \s_foo_bar
+```
+
 ### Unused variable or constant {.w #unused-variable-or-constant}
 A variable or a constant is declared and perhaps defined but unused.
 

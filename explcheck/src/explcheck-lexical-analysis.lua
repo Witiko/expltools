@@ -381,13 +381,6 @@ local function lexical_analysis(pathname, content, issues, results, options)
                 ) then
               issues:add('s205', 'malformed function name', next_token.byte_range, format_token(next_token, content))
             end
-            if (
-                  lpeg.match(parsers.expl3_quark_or_scan_mark_definition_csname, token.payload) ~= nil
-                  and lpeg.match(parsers.expl3_quark_or_scan_mark_csname, next_token.payload) == nil
-                  and lpeg.match(parsers.expl3_expansion_csname, next_token.payload) == nil
-                ) then
-              issues:add('s207', 'malformed quark or scan mark name', next_token.byte_range, format_token(next_token, content))
-            end
           end
         end
       end
