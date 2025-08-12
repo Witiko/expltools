@@ -28,38 +28,6 @@ Some control sequences and curly braces are not surrounded by whitespaces [@late
 
  /s204.tex
 
-## Malformed function name {.s label=s205}
-Some function have names that are not in the format `\texttt{\textbackslash\meta{module}\_\meta{description}:\meta{arg-spec}}`{=tex} [@latexteam2024programming, Section 3.2].
-
- /s205-01.tex
- /s205-02.tex
- /s205-03.tex
- /s205-04.tex
-
-This also extends to conditional functions:
-
- /s205-05.tex
- /s205-06.tex
- /s205-07.tex
-
-## Malformed variable or constant name {.s label=s206}
-Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
-
- /s206-01.tex
- /s206-02.tex
-
-An exception is made for scratch variables [@latexteam2024interfaces, Section 1.1.1]:
-
- /s206-03.tex
-
-## Malformed quark or scan mark name {.s label=s207}
-Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
-
- /s207-01.tex
- /s207-02.tex
- /s207-03.tex
- /s207-04.tex
-
 ## Too many closing braces {.e label=e208}
 An expl3 part of the input file contains too many closing braces.
 
