@@ -48,7 +48,7 @@ local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
 local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
 local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
---local VARIABLE_USE = statement_types.VARIABLE_USE
+local VARIABLE_USE = statement_types.VARIABLE_USE
 
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
 local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
@@ -428,6 +428,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
         local variable_declaration = lpeg.match(parsers.expl3_variable_declaration, call.csname)
         local variable_definition = lpeg.match(parsers.expl3_variable_definition, call.csname)
+        local variable_use = lpeg.match(parsers.expl3_variable_use, call.csname)
 
         -- Process a function variant definition.
         if function_variant_definition ~= nil then
@@ -762,6 +763,27 @@ local function semantic_analysis(pathname, content, issues, results, options)
           goto continue
         end
 
+        -- Process a variable declaration.
+        if variable_use ~= nil then
+          local variable_type = table.unpack(variable_use)
+          -- determine the name of the used variable
+          local used_csname_argument = call.arguments[1]
+          local used_csname = extract_csname_from_argument(used_csname_argument)
+          if used_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          local statement = {
+            type = VARIABLE_USE,
+            call_range = call_range,
+            confidence = DEFINITELY,
+            -- The following attributes are specific to the type.
+            used_csname = used_csname,
+            variable_type = variable_type,
+          }
+          table.insert(statements, statement)
+          goto continue
+        end
+
         ::other_statement::
         local statement = {
           type = OTHER_STATEMENT,
@@ -1041,6 +1063,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Process an unrecognized statement.
       elseif statement.type == VARIABLE_DECLARATION  -- TODO: Process a variable declaration.
           or statement.type == VARIABLE_DEFINITION  -- TODO: Process a variable or constant definition.
+          or statement.type == VARIABLE_USE  -- TODO: Process a variable or constant use.
           or statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment_calls) do

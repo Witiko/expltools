@@ -735,6 +735,17 @@ local expl3_variable_definition = Ct(
   * P(":N")
 )
 
+------ Variable and constant use
+local expl3_variable_use = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * (
+    P("use")
+    + P("show")
+  )
+  * P(":N")
+)
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
@@ -761,6 +772,7 @@ return {
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_variable_declaration = expl3_variable_declaration,
   expl3_variable_definition = expl3_variable_definition,
+  expl3_variable_use = expl3_variable_use,
   expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
