@@ -1,8 +1,10 @@
 -- A registry of warnings and errors identified by different processing steps.
 
+local get_option = require("explcheck-config").get_option
+
 local Issues = {}
 
-function Issues.new(cls)
+function Issues.new(cls, pathname, options)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
@@ -11,7 +13,15 @@ function Issues.new(cls)
   self.errors = {}
   self.warnings = {}
   self.seen_issues = {}
+  self.suppressed_issue_map = {}
+  for issue_identifier, suppressed_issues in pairs(get_option("suppressed_issue_map", options, pathname)) do
+    issue_identifier = self._normalize_identifier(issue_identifier)
+    self.suppressed_issue_map[issue_identifier] = suppressed_issues
+  end
   self.ignored_issues = {}
+  for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
+    self:ignore(issue_identifier)
+  end
   return self
 end
 
@@ -50,6 +60,14 @@ function Issues:add(identifier, message, range, context)
     self.seen_issues[identifier][range_start][range_end] = true
   else
     return
+  end
+
+  -- Suppress any dependent issues.
+  if self.suppressed_issue_map[identifier] ~= nil then
+    for _, suppressed_issue_identifier in ipairs(self.suppressed_issue_map[identifier]) do
+      suppressed_issue_identifier = self._normalize_identifier(suppressed_issue_identifier)
+      self:ignore(suppressed_issue_identifier, range)
+    end
   end
 
   -- Construct the issue.
@@ -186,6 +204,6 @@ function Issues.sort(warnings_and_errors)
   return sorted_warnings_and_errors
 end
 
-return function()
-  return Issues:new()
+return function(...)
+  return Issues:new(...)
 end

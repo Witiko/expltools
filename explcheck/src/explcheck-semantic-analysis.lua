@@ -479,14 +479,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
           -- Process a direct function definition.
           if is_direct then
             -- determine the properties of the defined function
+            local defined_csname_argument = call.arguments[1]
             local _, _, is_creator_function = table.unpack(function_definition)
             local is_conditional, maybe_redefinition, is_global, is_protected, is_nopar
-            local defined_csname_argument, num_parameters
+            local num_parameters
             if is_creator_function == true then  -- direct application of a creator function
-              defined_csname_argument = call.arguments[1]
               _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
             else  -- indirect application of a creator function
-              defined_csname_argument = call.arguments[2]
               local num_parameter_argument = call.arguments[3]
               if num_parameter_argument ~= nil and num_parameter_argument.specifier == "n" then
                 local num_parameters_text = extract_text_from_argument(num_parameter_argument)
@@ -494,7 +493,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
                   num_parameters = tonumber(num_parameters_text)
                 end
               end
-              local creator_function_csname = extract_csname_from_argument(call.arguments[1])
+              local creator_function_csname = extract_csname_from_argument(call.arguments[2])
               if creator_function_csname == nil then  -- couldn't determine the name of the creator function, give up
                 goto other_statement
               end
@@ -799,6 +798,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
   ---- Collect information about symbols that were definitely defined.
   local called_functions_and_variants = {}
+  local defined_csname_texts = {}
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csnames, indirect_definition_base_csnames = {}, {}
@@ -908,6 +908,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         maybe_used_csname_texts[statement.base_csname] = true
         -- Record control sequence name definitions.
         if statement.defined_csname.type == TEXT then
+          table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = maybe_defined_csname_pattern + statement.defined_csname.payload
@@ -940,6 +941,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
         end
         -- Record control sequence name usage and definitions.
         maybe_defined_csname_texts[statement.defined_csname] = true
+        table.insert(defined_csname_texts, {statement.defined_csname, byte_range})
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_number == nil then
           process_argument_tokens(statement.replacement_text_argument)
         end
@@ -987,6 +989,16 @@ local function semantic_analysis(pathname, content, issues, results, options)
         and not maybe_used_csname_texts[defined_csname]
         and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
+    end
+  end
+
+  ---- Report malformed function names.
+  for _, defined_csname_text in ipairs(defined_csname_texts) do
+    local defined_csname, byte_range = table.unpack(defined_csname_text)
+    if lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
+        and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+        and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil then
+      issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
     end
   end
 
