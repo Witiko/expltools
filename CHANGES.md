@@ -25,6 +25,25 @@
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
+- Add more support for semantic analysis. (#99)
+
+  This adds support for the following new issues from Section 4 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+  1. S412 (Malformed function name, #117, #118)
+
+- Add Lua option `suppressed_issue_map`.
+
+  This Lua option defines a mapping between issues that suppress one or more
+  other issues. At this point, this option only maps issue W200 ("Do not use"
+  argument specifiers) to issue S412 (Malformed function name), so that
+  defining functions with a malformed name and a "do not use" specifier (`:D`)
+  only produces the issue W200 and not also S412.
+
+  In the future, this option will be highly used for issues from the flow
+  analysis that have a weaker version in the semantic analysis. In these cases,
+  the weaker version will always suppress the stronger version of an issue.
+
 #### Fixes
 
 - Prevent command-line option `--no-config-file` from raising the error
@@ -33,6 +52,9 @@
 
 - Do not report issue W401 (Unused private function) for well-known and
   imported prefixes. (#115)
+
+- Correctly parse indirect applications of creator functions via
+  `\cs_generate_from_arg_count:NNnn`. (#118)
 
 #### Continuous integration
 
