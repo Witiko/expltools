@@ -724,7 +724,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
           end
           local statement
           if is_direct then
+            -- determine the definition text
             local definition_text_argument = call.arguments[2]
+            if definition_text_argument == nil then  -- we couldn't extract the definition text, give up
+              goto other_statement
+            end
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
