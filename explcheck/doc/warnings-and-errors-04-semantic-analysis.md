@@ -79,7 +79,7 @@ Some expl3 variables and constants have names that are not in the format `\textt
 ``` tex
 \tl_new:N
   \g_description_tl  % warning on this line
-\box_new:N
+\box_use:N
   \l__description_box  % warning on this line
 \int_const:Nn
   \c_description  % warning on this line
