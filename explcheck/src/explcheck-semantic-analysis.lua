@@ -479,14 +479,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
           -- Process a direct function definition.
           if is_direct then
             -- determine the properties of the defined function
+            local defined_csname_argument = call.arguments[1]
             local _, _, is_creator_function = table.unpack(function_definition)
             local is_conditional, maybe_redefinition, is_global, is_protected, is_nopar
-            local defined_csname_argument, num_parameters
+            local num_parameters
             if is_creator_function == true then  -- direct application of a creator function
-              defined_csname_argument = call.arguments[1]
               _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
             else  -- indirect application of a creator function
-              defined_csname_argument = call.arguments[2]
               local num_parameter_argument = call.arguments[3]
               if num_parameter_argument ~= nil and num_parameter_argument.specifier == "n" then
                 local num_parameters_text = extract_text_from_argument(num_parameter_argument)
@@ -494,7 +493,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
                   num_parameters = tonumber(num_parameters_text)
                 end
               end
-              local creator_function_csname = extract_csname_from_argument(call.arguments[1])
+              local creator_function_csname = extract_csname_from_argument(call.arguments[2])
               if creator_function_csname == nil then  -- couldn't determine the name of the creator function, give up
                 goto other_statement
               end
