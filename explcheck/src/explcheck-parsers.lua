@@ -620,6 +620,14 @@ local latex_style_file_content = (
   * latex_style_file_csname
 )
 
+---- Argument expansion functions from the module l3expan
+local expl3_expansion_csname = (
+  P("exp")
+  * underscore
+  * letter * (letter + underscore)^0
+  * colon
+)
+
 ---- Functions and conditional functions
 ------ Function definitions
 local expl3_function_definition_type_signifier = (
@@ -792,6 +800,7 @@ return {
   expl3like_material = expl3like_material,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
+  expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,

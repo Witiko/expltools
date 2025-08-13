@@ -701,6 +701,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
           if declared_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
+          if lpeg.match(parsers.expl3_expansion_csname, declared_csname) ~= nil then  -- there appear to be expansion commands, give up
+            goto other_statement
+          end
           local statement = {
             type = VARIABLE_DECLARATION,
             call_range = call_range,
@@ -720,6 +723,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
           local defined_csname_argument = call.arguments[1]
           local defined_csname = extract_csname_from_argument(defined_csname_argument)
           if defined_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          if lpeg.match(parsers.expl3_expansion_csname, defined_csname) ~= nil then  -- there appear to be expansion commands, give up
             goto other_statement
           end
           local statement
@@ -774,6 +780,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
           local used_csname_argument = call.arguments[1]
           local used_csname = extract_csname_from_argument(used_csname_argument)
           if used_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          if lpeg.match(parsers.expl3_expansion_csname, used_csname) ~= nil then  -- there appear to be expansion commands, give up
             goto other_statement
           end
           local statement = {
