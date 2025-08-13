@@ -996,6 +996,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, defined_csname_text in ipairs(defined_csname_texts) do
     local defined_csname, byte_range = table.unpack(defined_csname_text)
     if lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
+        and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
         and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil then
       issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
     end
