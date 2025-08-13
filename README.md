@@ -132,15 +132,29 @@ You may also configure the tool from within your Lua code.
 For example, here is how you would apply the same configuration in the Lua example from the previous section:
 
 ``` lua
+-- Process file "code.tex" and print warnings and errors.
+local filename = "code.tex"
 local options = {
   max_line_length = 120,
   ignored_issues = ["w100", "S204"],
 }
+local issues = issues = new_issues(filename, options)
+local results = {}
+
+local file = assert(io.open(filename, "r"))
+local content = assert(file:read("*a"))
+assert(file:close())
 
 preprocessing.process(filename, content, issues, results, options)
 lexical_analysis.process(filename, content, issues, results, options)
 syntactic_analysis.process(filename, content, issues, results, options)
 semantic_analysis.process(filename, content, issues, results, options)
+
+print(
+  "There were " .. #issues.warnings .. " warnings, "
+  .. "and " .. #issues.errors .. " errors "
+  .. "in the file " .. filename .. "."
+)
 ```
 
 Command-line options, configuration files, and Lua code allow you to ignore certain warnings and errors everywhere.
