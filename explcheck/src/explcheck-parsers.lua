@@ -285,7 +285,9 @@ local expl3_unexpandable_variable_or_constant_type = (
   + P("intarray")
   + P("io") * S("rw")
   + P("prop")
+  + P("quark")
   + P("regex")
+  + P("scan")
   + P("seq")
 )
 
