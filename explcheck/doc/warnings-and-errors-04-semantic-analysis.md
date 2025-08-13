@@ -184,6 +184,15 @@ An undeclared variable is set.
   { bar }
 ```
 
+### Setting a variable as a constant {.e}
+A variable is set as though it were a constant.
+
+``` tex
+\tl_const:Nn  % error on this line
+  \g_example_tl
+  { bar }
+```
+
 ### Setting a constant {.e}
 A constant is set.
 
