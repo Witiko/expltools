@@ -35,6 +35,9 @@ local lpeg = require("lpeg")
 local statement_types = {
   FUNCTION_DEFINITION = "function definition",
   FUNCTION_VARIANT_DEFINITION = "function variant definition",
+  VARIABLE_DECLARATION = "variable declaration",
+  VARIABLE_DEFINITION = "variable or constant definition",
+  VARIABLE_USE = "variable or constant use",
   OTHER_STATEMENT = "other statement",
   OTHER_TOKENS_SIMPLE = "block of other simple tokens",
   OTHER_TOKENS_COMPLEX = "block of other complex tokens",
@@ -42,19 +45,31 @@ local statement_types = {
 
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
+
+local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
+local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
+local VARIABLE_USE = statement_types.VARIABLE_USE
+
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
 local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
 
 local statement_subtypes = {
   FUNCTION_DEFINITION = {
-    DIRECT = "direct function definition",
-    INDIRECT = "indirect function definition",
-  }
+    DIRECT = "direct " .. FUNCTION_DEFINITION,
+    INDIRECT = "indirect " .. FUNCTION_DEFINITION,
+  },
+  VARIABLE_DEFINITION = {
+    DIRECT = "direct " .. VARIABLE_DEFINITION,
+    INDIRECT = "indirect " .. VARIABLE_DEFINITION,
+  },
 }
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDIRECT
+
+local VARIABLE_DEFINITION_DIRECT = statement_subtypes.VARIABLE_DEFINITION.DIRECT
+local VARIABLE_DEFINITION_INDIRECT = statement_subtypes.VARIABLE_DEFINITION.INDIRECT
 
 local statement_confidences = {
   DEFINITELY = 1,
@@ -411,6 +426,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
         local function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, call.csname)
         local function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
 
+        local variable_declaration = lpeg.match(parsers.expl3_variable_declaration, call.csname)
+        local variable_definition = lpeg.match(parsers.expl3_variable_definition, call.csname)
+        local variable_use = lpeg.match(parsers.expl3_variable_use, call.csname)
+
         -- Process a function variant definition.
         if function_variant_definition ~= nil then
           local is_conditional = table.unpack(function_variant_definition)
@@ -673,6 +692,111 @@ local function semantic_analysis(pathname, content, issues, results, options)
           goto continue
         end
 
+        -- Process a variable declaration.
+        if variable_declaration ~= nil then
+          local variable_type = table.unpack(variable_declaration)
+          -- determine the name of the declared variable
+          local declared_csname_argument = call.arguments[1]
+          local declared_csname = extract_csname_from_argument(declared_csname_argument)
+          if declared_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          if lpeg.match(parsers.expl3_expansion_csname, declared_csname) ~= nil then  -- there appear to be expansion commands, give up
+            goto other_statement
+          end
+          local statement = {
+            type = VARIABLE_DECLARATION,
+            call_range = call_range,
+            confidence = DEFINITELY,
+            -- The following attributes are specific to the type.
+            declared_csname = declared_csname,
+            variable_type = variable_type,
+          }
+          table.insert(statements, statement)
+          goto continue
+        end
+
+        -- Process a variable or constant definition.
+        if variable_definition ~= nil then
+          local variable_type, is_constant, is_global, is_direct = table.unpack(variable_definition)
+          -- determine the name of the declared variable
+          local defined_csname_argument = call.arguments[1]
+          local defined_csname = extract_csname_from_argument(defined_csname_argument)
+          if defined_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          if lpeg.match(parsers.expl3_expansion_csname, defined_csname) ~= nil then  -- there appear to be expansion commands, give up
+            goto other_statement
+          end
+          local statement
+          if is_direct then
+            -- determine the definition text
+            local definition_text_argument = call.arguments[2]
+            if definition_text_argument == nil then  -- we couldn't extract the definition text, give up
+              goto other_statement
+            end
+            statement = {
+              type = VARIABLE_DEFINITION,
+              call_range = call_range,
+              confidence = DEFINITELY,
+              -- The following attributes are specific to the type.
+              subtype = VARIABLE_DEFINITION_DIRECT,
+              variable_type = variable_type,
+              is_constant = is_constant,
+              is_global = is_global,
+              defined_csname = defined_csname,
+              -- The following attributes are specific to the subtype.
+              definition_text_argument = definition_text_argument,
+            }
+          else
+            -- determine the name of the base variable or constant
+            local base_csname_argument = call.arguments[2]
+            local base_csname = extract_csname_from_argument(base_csname_argument)
+            if base_csname == nil then  -- we couldn't extract the csname, give up
+              goto other_statement
+            end
+            statement = {
+              type = VARIABLE_DEFINITION,
+              call_range = call_range,
+              confidence = DEFINITELY,
+              -- The following attributes are specific to the type.
+              subtype = VARIABLE_DEFINITION_INDIRECT,
+              variable_type = variable_type,
+              is_constant = is_constant,
+              is_global = is_global,
+              defined_csname = defined_csname,
+              -- The following attributes are specific to the subtype.
+              base_csname = base_csname,
+            }
+          end
+          table.insert(statements, statement)
+          goto continue
+        end
+
+        -- Process a variable declaration.
+        if variable_use ~= nil then
+          local variable_type = table.unpack(variable_use)
+          -- determine the name of the used variable
+          local used_csname_argument = call.arguments[1]
+          local used_csname = extract_csname_from_argument(used_csname_argument)
+          if used_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          if lpeg.match(parsers.expl3_expansion_csname, used_csname) ~= nil then  -- there appear to be expansion commands, give up
+            goto other_statement
+          end
+          local statement = {
+            type = VARIABLE_USE,
+            call_range = call_range,
+            confidence = DEFINITELY,
+            -- The following attributes are specific to the type.
+            used_csname = used_csname,
+            variable_type = variable_type,
+          }
+          table.insert(statements, statement)
+          goto continue
+        end
+
         ::other_statement::
         local statement = {
           type = OTHER_STATEMENT,
@@ -802,6 +926,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csnames, indirect_definition_base_csnames = {}, {}
+  local declared_defined_and_used_variable_csname_texts = {}
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
@@ -949,6 +1074,22 @@ local function semantic_analysis(pathname, content, issues, results, options)
         if statement.confidence == DEFINITELY and statement.is_private then
           table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
+      -- Process a variable declaration.
+      elseif statement.type == VARIABLE_DECLARATION then
+        -- Record variable names.
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.declared_csname, byte_range})
+      -- Process a variable or constant definition.
+      elseif statement.type == VARIABLE_DEFINITION then
+        -- Record variable names.
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.defined_csname, byte_range})
+        -- Record control sequence name usage and definitions.
+        if statement.subtype == VARIABLE_DEFINITION_DIRECT then
+          process_argument_tokens(statement.definition_text_argument)
+        end
+      -- Process a variable or constant use.
+      elseif statement.type == VARIABLE_USE then
+        -- Record variable names.
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.used_csname, byte_range})
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
@@ -995,10 +1136,30 @@ local function semantic_analysis(pathname, content, issues, results, options)
   ---- Report malformed function names.
   for _, defined_csname_text in ipairs(defined_csname_texts) do
     local defined_csname, byte_range = table.unpack(defined_csname_text)
-    if lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
-        and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
-        and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil then
+    if (
+          lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
+          and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+          and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil
+        ) then
       issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
+    end
+  end
+
+  ---- Report malformed variable and constant names.
+  for _, declared_defined_and_used_variable_csname_text in ipairs(declared_defined_and_used_variable_csname_texts) do
+    local variable_type, variable_csname, byte_range = table.unpack(declared_defined_and_used_variable_csname_text)
+    if variable_type == "quark" or variable_type == "scan" then
+      if lpeg.match(parsers.expl3_quark_or_scan_mark_csname, variable_csname) == nil then
+        issues:add('s414', 'malformed quark or scan mark name', byte_range, format_csname(variable_csname))
+      end
+    else
+      if (
+            lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+            and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
+            and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
+          ) then
+        issues:add('s413', 'malformed variable or constant', byte_range, format_csname(variable_csname))
+      end
     end
   end
 

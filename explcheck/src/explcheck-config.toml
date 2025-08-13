@@ -11,7 +11,7 @@ min_expl3like_material_count = 5
 min_expl3like_material_ratio = 0.5
 min_simple_tokens_in_csname_pattern = 5
 porcelain = false
-suppressed_issue_map = { w200 = ["s412"] }
+suppressed_issue_map = { w200 = ["s412", "s413", "s414"] }
 terminal_width = 80
 verbose = false
 warnings_are_errors = false

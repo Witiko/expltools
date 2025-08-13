@@ -71,69 +71,20 @@ This also extends to conditional functions:
 
 ## Variables and constants
 
-### Malformed variable or constant name {.s}
+### Malformed variable or constant name {.s label=s413}
 Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
 
-<!-- This issue was previously implemented as a part of the lexical analysis under the identifier S206, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
+ /s413-01.tex
+ /s413-02.tex
+ /s413-03.tex
 
-``` tex
-\tl_new:N
-  \g_description_tl  % warning on this line
-\box_new:N
-  \l__description_box  % warning on this line
-\int_const:Nn
-  \c_description  % warning on this line
-  { 123 }
-```
-
-``` tex
-\regex_new:N
-  \g_module_description_regex
-\coffin_new:N
-  \l_module_description_coffin
-\str_const:Nn
-  \c__module_description_str
-  { foo }
-```
-
-An exception is made for scratch variables [@latexteam2024interfaces, Section 1.1.1]:
-
-``` tex
-\tl_use:N
-  \l_tmpa_tl
-\int_gset:Nn
-  \g_tmpb_int
-  { 1 + 2 }
-\str_show:N
-  \g_tmpa_str
-\bool_set_true:N
-  \l_tmpa_bool
-```
-
-### Malformed quark or scan mark name {.s}
+### Malformed quark or scan mark name {.s label=s414}
 Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
 
-<!-- This issue was previously implemented as a part of the lexical analysis under the identifier S207, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
-
-``` tex
-\quark_new:N
-  \foo_bar  % error on this line
-```
-
-``` tex
-\quark_new:N
-  \q_foo_bar
-```
-
-``` tex
-\scan_new:N
-  \foo_bar  % error on this line
-```
-
-``` tex
-\scan_new:N
-  \s_foo_bar
-```
+ /s414-01.tex
+ /s414-02.tex
+ /s414-03.tex
+ /s414-04.tex
 
 ### Unused variable or constant {.w #unused-variable-or-constant}
 A variable or a constant is declared and perhaps defined but unused.
@@ -180,6 +131,15 @@ An undeclared variable is set.
 
 ``` tex
 \tl_gset:Nn  % warning on this line
+  \g_example_tl
+  { bar }
+```
+
+### Setting a variable as a constant {.e}
+A variable is set as though it were a constant.
+
+``` tex
+\tl_const:Nn  % error on this line
   \g_example_tl
   { bar }
 ```

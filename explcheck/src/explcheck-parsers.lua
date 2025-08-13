@@ -285,7 +285,9 @@ local expl3_unexpandable_variable_or_constant_type = (
   + P("intarray")
   + P("io") * S("rw")
   + P("prop")
+  + P("quark")
   + P("regex")
+  + P("scan")
   + P("seq")
 )
 
@@ -618,7 +620,16 @@ local latex_style_file_content = (
   * latex_style_file_csname
 )
 
----- Assigning functions
+---- Argument expansion functions from the module l3expan
+local expl3_expansion_csname = (
+  P("exp")
+  * underscore
+  * letter * (letter + underscore)^0
+  * colon
+)
+
+---- Functions and conditional functions
+------ Function definitions
 local expl3_function_definition_type_signifier = (
   P("new") * Cc(false) * Cc(true)  -- definition
   + (  -- assignment
@@ -666,7 +677,7 @@ local expl3_function_definition_csname = Ct(
   + Cc(false) * expl3_indirect_function_definition_csname
 )
 
----- Generating function variants
+------ Generating function variants
 local expl3_function_variant_definition_csname = Ct(
   (
     -- A non-conditional function
@@ -678,7 +689,7 @@ local expl3_function_variant_definition_csname = Ct(
   * S("Nc")
 )
 
----- Function calls with Lua arguments
+------ Function calls with Lua arguments
 local expl3_function_call_with_lua_code_argument_csname = Ct(
   P("lua")
   * underscore
@@ -693,13 +704,82 @@ local expl3_function_call_with_lua_code_argument_csname = Ct(
   + success
 )
 
----- Conditions in a conditional function definition
+------ Conditions in a conditional function definition
 local condition = (
   P("p")
   + P("T") * P("F")^-1
   + P("F")
 )
 local conditions = comma_list(condition)
+
+---- Variables and constants
+------ Variable declarations
+local expl3_variable_declaration = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * P("new:N")
+)
+
+------ Variable and constant definitions
+local expl3_variable_definition = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * (
+    P("const") * Cc(true)^-3  -- constant definition
+    + Cc(false)  -- variable definition
+    * (
+      P("gset") * Cc(true)  -- global
+      + P("set") * Cc(false)  -- local
+    )
+    * (
+      underscore
+      * (
+        P("eq")
+        + P("from_")
+        * expl3_variable_or_constant_type
+      )
+      * Cc(false)  -- indirect
+      + Cc(true)  -- direct
+    )
+  )
+  * P(":N")
+)
+
+------ Variable and constant use
+local expl3_variable_use = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * (
+    P("use")
+    + P("show")
+  )
+  * P(":N")
+)
+
+local expl3_variable_or_constant_csname = (
+  S("cgl")  -- scope
+  * underscore
+  * (
+    underscore^-1 * letter^1  -- module
+    * underscore
+    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
+  )
+  * underscore
+  * expl3_variable_or_constant_type
+  * eof
+)
+local expl3_scratch_variable_csname = (
+  S("gl")
+  * underscore
+  * P("tmp") * S("ab")
+  * underscore
+  * expl3_variable_or_constant_type
+  * eof
+)
+local expl3_quark_or_scan_mark_csname = (
+  S("qs")
+  * underscore
+)
 
 return {
   any = any,
@@ -711,20 +791,27 @@ return {
   decimal_digit = decimal_digit,
   deprecated_argument_specifiers = deprecated_argument_specifiers,
   determine_expl3_catcode = determine_expl3_catcode,
-  do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
+  do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   endinput = endinput,
   eof = eof,
+  expl3like_csname = expl3like_csname,
+  expl3like_function_csname = expl3like_function_csname,
+  expl3like_material = expl3like_material,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
+  expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
-  expl3like_csname = expl3like_csname,
-  expl3like_function_csname = expl3like_function_csname,
-  expl3like_material = expl3like_material,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
+  expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
+  expl3_scratch_variable_csname = expl3_scratch_variable_csname,
+  expl3_variable_declaration = expl3_variable_declaration,
+  expl3_variable_definition = expl3_variable_definition,
+  expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
+  expl3_variable_use = expl3_variable_use,
   expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
@@ -735,8 +822,8 @@ return {
   newline = newline,
   N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
-  n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
+  n_type_argument_specifier = n_type_argument_specifier,
   provides = provides,
   space = space,
   success = success,
