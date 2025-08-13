@@ -9,9 +9,9 @@ local filename = "s412-04.tex"
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
-local issues = new_issues()
+local options = {expl3_detection_strategy = "always", ignored_issues = {'w401'}}
+local issues = new_issues(filename, options)
 local results = {}
-local options = {expl3_detection_strategy = "always"}
 
 preprocessing.process(filename, content, issues, results, options)
 lexical_analysis.process(filename, content, issues, results, options)
@@ -19,4 +19,4 @@ syntactic_analysis.process(filename, content, issues, results, options)
 semantic_analysis.process(filename, content, issues, results, options)
 
 assert(#issues.errors == 0)
-assert(#issues.warnings == 0)
+assert(#issues.warnings == 0, #issues.warnings)

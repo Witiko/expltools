@@ -7,9 +7,9 @@ local filename = "s103.tex"
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
-local issues = new_issues()
-local results = {}
 local options = {expl3_detection_strategy = "recall"}
+local issues = new_issues(filename, options)
+local results = {}
 
 preprocessing.process(filename, content, issues, results, options)
 

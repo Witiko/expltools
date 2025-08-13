@@ -132,10 +132,10 @@ You may also configure the tool from within your Lua code.
 For example, here is how you would apply the same configuration in the Lua example from the previous section:
 
 ``` lua
-local options = { max_line_length = 120 }
-
-issues:ignore("w100")
-issues:ignore("S204")
+local options = {
+  max_line_length = 120,
+  ignored_issues = ["w100", "S204"],
+}
 
 preprocessing.process(filename, content, issues, results, options)
 lexical_analysis.process(filename, content, issues, results, options)

@@ -73,10 +73,7 @@ local function main(pathnames, options)
     local is_ok, error_message = xpcall(function()
 
       -- Set up the issue registry.
-      local issues = new_issues()
-      for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
-        issues:ignore(issue_identifier)
-      end
+      local issues = new_issues(pathname, options)
 
       -- Load an input file.
       local file = assert(io.open(pathname, "r"))

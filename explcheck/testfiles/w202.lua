@@ -8,9 +8,9 @@ local filename = "w202.tex"
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
-local issues = new_issues()
-local results = {}
 local options = {expl3_detection_strategy = "always"}
+local issues = new_issues(filename, options)
+local results = {}
 
 preprocessing.process(filename, content, issues, results, options)
 lexical_analysis.process(filename, content, issues, results, options)

@@ -1,16 +1,17 @@
 [defaults]
 config_file = ".explcheckrc"
-expl3_detection_strategy = "auto"
 error_format = "%f:%l:%c: %t%n %m"
+expl3_detection_strategy = "auto"
+fail_fast = true
 ignored_issues = []
 imported_prefixes = []
 make_at_letter = "auto"
 max_line_length = 80
-min_simple_tokens_in_csname_pattern = 5
 min_expl3like_material_count = 5
 min_expl3like_material_ratio = 0.5
+min_simple_tokens_in_csname_pattern = 5
 porcelain = false
-fail_fast = true
+suppressed_issue_map = { w200 = ["s412"] }
 terminal_width = 80
 verbose = false
 warnings_are_errors = false
