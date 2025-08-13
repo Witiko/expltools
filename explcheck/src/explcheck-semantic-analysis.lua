@@ -913,6 +913,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csnames, indirect_definition_base_csnames = {}, {}
+  local declared_defined_and_used_variable_csname_texts = {}
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
@@ -1060,11 +1061,24 @@ local function semantic_analysis(pathname, content, issues, results, options)
         if statement.confidence == DEFINITELY and statement.is_private then
           table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
+      -- Process a variable declaration.
+      elseif statement.type == VARIABLE_DECLARATION then
+        -- Record variable names.
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.defined_csname, byte_range})
+      -- Process a variable or constant definition.
+      elseif statement.type == VARIABLE_DEFINITION then
+        -- Record variable names.
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.defined_csname, byte_range})
+        -- Record control sequence name usage and definitions.
+        if statement.subtype == VARIABLE_DEFINITION_DIRECT then
+          process_argument_tokens(statement.definition_text_argument)
+        end
+      -- Process a variable or constant use.
+      elseif statement.type == VARIABLE_USE then
+        -- Record variable names.
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.defined_csname, byte_range})
       -- Process an unrecognized statement.
-      elseif statement.type == VARIABLE_DECLARATION  -- TODO: Process a variable declaration.
-          or statement.type == VARIABLE_DEFINITION  -- TODO: Process a variable or constant definition.
-          or statement.type == VARIABLE_USE  -- TODO: Process a variable or constant use.
-          or statement.type == OTHER_STATEMENT then
+      elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csname_texts[call.csname] = true
