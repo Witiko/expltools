@@ -1138,7 +1138,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
   ---- Report malformed variable and constant names.
   for _, declared_defined_and_used_variable_csname_text in ipairs(declared_defined_and_used_variable_csname_texts) do
-    local varible_type, variable_csname, byte_range = table.unpack(declared_defined_and_used_variable_csname_text)
+    local variable_type, variable_csname, byte_range = table.unpack(declared_defined_and_used_variable_csname_text)
     if variable_type == "quark" or variable_type == "scan" then
       if lpeg.match(parsers.expl3_quark_or_scan_mark_csname, variable_csname) == nil then
         issues:add('s414', 'malformed quark or scan mark name', byte_range, format_csname(variable_csname))
