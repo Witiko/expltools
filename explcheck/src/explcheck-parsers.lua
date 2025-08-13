@@ -618,7 +618,8 @@ local latex_style_file_content = (
   * latex_style_file_csname
 )
 
----- Assigning functions
+---- Functions and conditional functions
+------ Function definitions
 local expl3_function_definition_type_signifier = (
   P("new") * Cc(false) * Cc(true)  -- definition
   + (  -- assignment
@@ -666,7 +667,7 @@ local expl3_function_definition_csname = Ct(
   + Cc(false) * expl3_indirect_function_definition_csname
 )
 
----- Generating function variants
+------ Generating function variants
 local expl3_function_variant_definition_csname = Ct(
   (
     -- A non-conditional function
@@ -678,7 +679,7 @@ local expl3_function_variant_definition_csname = Ct(
   * S("Nc")
 )
 
----- Function calls with Lua arguments
+------ Function calls with Lua arguments
 local expl3_function_call_with_lua_code_argument_csname = Ct(
   P("lua")
   * underscore
@@ -693,7 +694,7 @@ local expl3_function_call_with_lua_code_argument_csname = Ct(
   + success
 )
 
----- Conditions in a conditional function definition
+------ Conditions in a conditional function definition
 local condition = (
   P("p")
   + P("T") * P("F")^-1
@@ -701,11 +702,37 @@ local condition = (
 )
 local conditions = comma_list(condition)
 
----- Variable and constant declarations
+---- Variables and constants
+------ Variable declarations
 local expl3_variable_declaration = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
   * P("new:N")
+)
+
+------ Variable and constant definitions
+local expl3_variable_definition = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * (
+    P("const") * Cc(true)^-3  -- constant definition
+    + Cc(false)  -- variable definition
+    * (
+      P("gset") * Cc(true)  -- global
+      + P("set") * Cc(false)  -- local
+    )
+    * (
+      underscore
+      * (
+        P("eq")
+        + P("from_")
+        * expl3_variable_or_constant_type
+      )
+      * Cc(false)  -- indirect
+      + Cc(true)  -- direct
+    )
+  )
+  * P(":N")
 )
 
 return {
@@ -733,6 +760,7 @@ return {
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_variable_declaration = expl3_variable_declaration,
+  expl3_variable_definition = expl3_variable_definition,
   expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,

@@ -47,7 +47,7 @@ local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
 local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
---local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
+local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
 --local VARIABLE_USE = statement_types.VARIABLE_USE
 
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
@@ -56,13 +56,20 @@ local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
 
 local statement_subtypes = {
   FUNCTION_DEFINITION = {
-    DIRECT = "direct function definition",
-    INDIRECT = "indirect function definition",
-  }
+    DIRECT = "direct " .. FUNCTION_DEFINITION,
+    INDIRECT = "indirect " .. FUNCTION_DEFINITION,
+  },
+  VARIABLE_DEFINITION = {
+    DIRECT = "direct " .. VARIABLE_DEFINITION,
+    INDIRECT = "indirect " .. VARIABLE_DEFINITION,
+  },
 }
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDIRECT
+
+local VARIABLE_DECLARATION_DIRECT = statement_subtypes.VARIABLE_DEFINITION.DIRECT
+local VARIABLE_DECLARATION_INDIRECT = statement_subtypes.VARIABLE_DEFINITION.INDIRECT
 
 local statement_confidences = {
   DEFINITELY = 1,
@@ -418,7 +425,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
         local function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, call.csname)
         local function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
+
         local variable_declaration = lpeg.match(parsers.expl3_variable_declaration, call.csname)
+        local variable_definition = lpeg.match(parsers.expl3_variable_definition, call.csname)
 
         -- Process a function variant definition.
         if function_variant_definition ~= nil then
@@ -703,6 +712,56 @@ local function semantic_analysis(pathname, content, issues, results, options)
           goto continue
         end
 
+        -- Process a variable or constant definition.
+        if variable_definition ~= nil then
+          local variable_type, is_constant, is_global, is_direct = table.unpack(variable_definition)
+          -- determine the name of the declared variable
+          local defined_csname_argument = call.arguments[1]
+          local defined_csname = extract_csname_from_argument(defined_csname_argument)
+          if defined_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          local statement
+          if is_direct then
+            local definition_text_argument = call.arguments[2]
+            statement = {
+              type = VARIABLE_DEFINITION,
+              call_range = call_range,
+              confidence = DEFINITELY,
+              -- The following attributes are specific to the type.
+              subtype = VARIABLE_DEFINITION_DIRECT,
+              variable_type = variable_type,
+              is_constant = is_constant,
+              is_global = is_global,
+              defined_csname = defined_csname,
+              -- The following attributes are specific to the subtype.
+              definition_text_argument = definition_text_argument,
+            }
+          else
+            -- determine the name of the base variable or constant
+            local base_csname_argument = call.arguments[2]
+            local base_csname = extract_csname_from_argument(base_csname_argument)
+            if base_csname == nil then  -- we couldn't extract the csname, give up
+              goto other_statement
+            end
+            statement = {
+              type = VARIABLE_DEFINITION,
+              call_range = call_range,
+              confidence = DEFINITELY,
+              -- The following attributes are specific to the type.
+              subtype = VARIABLE_DEFINITION_INDIRECT,
+              variable_type = variable_type,
+              is_constant = is_constant,
+              is_global = is_global,
+              defined_csname = defined_csname,
+              -- The following attributes are specific to the subtype.
+              base_csname = base_csname,
+            }
+          end
+          table.insert(statements, statement)
+          goto continue
+        end
+
         ::other_statement::
         local statement = {
           type = OTHER_STATEMENT,
@@ -981,6 +1040,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
         end
       -- Process a variable declarations.
       elseif statement.type == VARIABLE_DECLARATION then
+        -- TODO
+      elseif statement.type == VARIABLE_DEFINITION then
         -- TODO
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
