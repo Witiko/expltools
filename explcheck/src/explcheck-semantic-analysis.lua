@@ -1068,11 +1068,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Process a variable declaration.
       elseif statement.type == VARIABLE_DECLARATION then
         -- Record variable names.
-        table.insert(declared_defined_and_used_variable_csname_texts, {statement.defined_csname, byte_range})
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.declared_csname, byte_range})
       -- Process a variable or constant definition.
       elseif statement.type == VARIABLE_DEFINITION then
         -- Record variable names.
-        table.insert(declared_defined_and_used_variable_csname_texts, {statement.defined_csname, byte_range})
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.defined_csname, byte_range})
         -- Record control sequence name usage and definitions.
         if statement.subtype == VARIABLE_DEFINITION_DIRECT then
           process_argument_tokens(statement.definition_text_argument)
@@ -1080,7 +1080,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Process a variable or constant use.
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
-        table.insert(declared_defined_and_used_variable_csname_texts, {statement.defined_csname, byte_range})
+        table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.used_csname, byte_range})
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
@@ -1127,10 +1127,30 @@ local function semantic_analysis(pathname, content, issues, results, options)
   ---- Report malformed function names.
   for _, defined_csname_text in ipairs(defined_csname_texts) do
     local defined_csname, byte_range = table.unpack(defined_csname_text)
-    if lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
-        and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
-        and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil then
+    if (
+          lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
+          and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+          and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil
+        ) then
       issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
+    end
+  end
+
+  ---- Report malformed variable and constant names.
+  for _, declared_defined_and_used_variable_csname_text in ipairs(declared_defined_and_used_variable_csname_texts) do
+    local varible_type, variable_csname, byte_range = table.unpack(declared_defined_and_used_variable_csname_text)
+    if variable_type == "quark" or variable_type == "scan" then
+      if lpeg.match(parsers.expl3_quark_or_scan_mark_csname, variable_csname) == nil then
+        issues:add('s414', 'malformed quark or scan mark name', byte_range, format_csname(variable_csname))
+      end
+    else
+      if (
+            lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+            and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
+            and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
+          ) then
+        issues:add('s413', 'malformed variable or constant', byte_range, format_csname(variable_csname))
+      end
     end
   end
 

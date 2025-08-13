@@ -748,6 +748,31 @@ local expl3_variable_use = Ct(
   * P(":N")
 )
 
+local expl3_variable_or_constant_csname = (
+  S("cgl")  -- scope
+  * underscore
+  * (
+    underscore^-1 * letter^1  -- module
+    * underscore
+    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
+  )
+  * underscore
+  * expl3_variable_or_constant_type
+  * eof
+)
+local expl3_scratch_variable_csname = (
+  S("gl")
+  * underscore
+  * P("tmp") * S("ab")
+  * underscore
+  * expl3_variable_or_constant_type
+  * eof
+)
+local expl3_quark_or_scan_mark_csname = (
+  S("qs")
+  * underscore
+)
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
@@ -772,8 +797,11 @@ return {
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
+  expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
+  expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_variable_declaration = expl3_variable_declaration,
   expl3_variable_definition = expl3_variable_definition,
+  expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl3_variable_use = expl3_variable_use,
   expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
