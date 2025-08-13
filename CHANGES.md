@@ -25,12 +25,14 @@
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
-- Add more support for semantic analysis. (#99)
+- Add more support for semantic analysis. (#117, #118)
 
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
-  1. S412 (Malformed function name, #117, #118)
+  1. S412 (Malformed function name)
+  2. S413 (Malformed function name)
+  3. S414 (Malformed quark or scan mark name)
 
 - Add Lua option `suppressed_issue_map`.
 
@@ -81,6 +83,8 @@ This version of explcheck has made the following changes to the document titled
 
 - Remove issues S205, S206, and S207 and replan them to semantic analysis.
   (reported by @u-fischer in #109, added in #117)
+
+- Plan for a new issue E417 (Setting a variable as a constant). (#119)
 
 #### Distribution
 
