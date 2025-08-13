@@ -35,6 +35,9 @@ local lpeg = require("lpeg")
 local statement_types = {
   FUNCTION_DEFINITION = "function definition",
   FUNCTION_VARIANT_DEFINITION = "function variant definition",
+  VARIABLE_DECLARATION = "variable or constant declaration",
+  VARIABLE_DEFINITION = "variable or constant definition",
+  VARIABLE_USE = "variable or constant use",
   OTHER_STATEMENT = "other statement",
   OTHER_TOKENS_SIMPLE = "block of other simple tokens",
   OTHER_TOKENS_COMPLEX = "block of other complex tokens",
@@ -42,6 +45,11 @@ local statement_types = {
 
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
+
+--local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
+--local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
+--local VARIABLE_USE = statement_types.VARIABLE_USE
+
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
 local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
