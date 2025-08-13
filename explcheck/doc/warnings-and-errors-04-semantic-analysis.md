@@ -78,30 +78,13 @@ Some expl3 variables and constants have names that are not in the format `\textt
  /s413-02.tex
  /s413-03.tex
 
-### Malformed quark or scan mark name {.s}
+### Malformed quark or scan mark name {.s label=s414}
 Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
 
-<!-- This issue was previously implemented as a part of the lexical analysis under the identifier S207, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
-
-``` tex
-\quark_new:N
-  \foo_bar  % error on this line
-```
-
-``` tex
-\quark_new:N
-  \q_foo_bar
-```
-
-``` tex
-\scan_new:N
-  \foo_bar  % error on this line
-```
-
-``` tex
-\scan_new:N
-  \s_foo_bar
-```
+ /s414-01.tex
+ /s414-02.tex
+ /s414-03.tex
+ /s414-04.tex
 
 ### Unused variable or constant {.w #unused-variable-or-constant}
 A variable or a constant is declared and perhaps defined but unused.
