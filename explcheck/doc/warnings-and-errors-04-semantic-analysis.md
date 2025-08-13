@@ -55,63 +55,23 @@ A function or conditional function is indirectly defined from an undefined funct
  /e411-03.tex
  /e411-04.tex
 
-## Malformed function name {.s}
+### Malformed function name {.s label=s412}
 Some function have names that are not in the format `\texttt{\textbackslash\meta{module}\_\meta{description}:\meta{arg-spec}}`{=tex} [@latexteam2024programming, Section 3.2].
 
-<!-- This issue was previously implemented as a part of the lexical analysis under the identifier S205, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
-
-``` tex
-\cs_new:Nn
-  \description:  % warning on this line
-  { foo }
-```
-
-``` tex
-\cs_gset:Npn
-  \module__description:  % warning on this line
-  { foo }
-```
-
-``` tex
-\cs_set_eq:NN
-  \_module_description:  % warning on this line
-  \example_foo:
-```
-
-``` tex
-\cs_generate_from_arg_count:NNnn
-  \__module_description:
-  \cs_new:Npn
-  { 0 }
-  { foo }
-```
+ /s412-01.tex
+ /s412-02.tex
+ /s412-03.tex
+ /s412-04.tex
 
 This also extends to conditional functions:
 
-``` tex
-\prg_new_conditional:Nn
-  \description:  % warning on this line
-  { p, T, F, TF }
-  { foo }
-```
-
-``` tex
-\prg_gset_conditional:Npn
-  \module__description:  % warning on this line
-  { p, T, F, TF }
-  { foo }
-```
-
-``` tex
-\prg_set_eq_conditional:NNn
-  \_module_description:  % warning on this line
-  \example_foo:
-  { p, T, F, TF }
-```
+ /s412-05.tex
+ /s412-06.tex
+ /s412-07.tex
 
 ## Variables and constants
 
-## Malformed variable or constant name {.s}
+### Malformed variable or constant name {.s}
 Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
 
 <!-- This issue was previously implemented as a part of the lexical analysis under the identifier S206, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
@@ -150,7 +110,7 @@ An exception is made for scratch variables [@latexteam2024interfaces, Section 1.
   \l_tmpa_bool
 ```
 
-## Malformed quark or scan mark name {.s}
+### Malformed quark or scan mark name {.s}
 Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s_`, respectively [@latexteam2024programming, Chapter 19].
 
 <!-- This issue was previously implemented as a part of the lexical analysis under the identifier S207, see https://github.com/witiko/expltools/pull/117 to see the previous implementation. -->
