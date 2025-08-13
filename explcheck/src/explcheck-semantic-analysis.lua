@@ -1038,13 +1038,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
         if statement.confidence == DEFINITELY and statement.is_private then
           table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
-      -- Process a variable declarations.
-      elseif statement.type == VARIABLE_DECLARATION then
-        -- TODO
-      elseif statement.type == VARIABLE_DEFINITION then
-        -- TODO
       -- Process an unrecognized statement.
-      elseif statement.type == OTHER_STATEMENT then
+      elseif statement.type == VARIABLE_DECLARATION  -- TODO: Process a variable declaration.
+          or statement.type == VARIABLE_DEFINITION  -- TODO: Process a variable or constant definition.
+          or statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csname_texts[call.csname] = true
