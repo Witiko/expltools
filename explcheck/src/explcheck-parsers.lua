@@ -701,6 +701,13 @@ local condition = (
 )
 local conditions = comma_list(condition)
 
+---- Variable and constant declarations
+local expl3_variable_declaration = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * P("new:N")
+)
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
@@ -711,20 +718,21 @@ return {
   decimal_digit = decimal_digit,
   deprecated_argument_specifiers = deprecated_argument_specifiers,
   determine_expl3_catcode = determine_expl3_catcode,
-  do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   double_superscript_convention = double_superscript_convention,
+  do_not_use_argument_specifiers = do_not_use_argument_specifiers,
   endinput = endinput,
   eof = eof,
+  expl3like_csname = expl3like_csname,
+  expl3like_function_csname = expl3like_function_csname,
+  expl3like_material = expl3like_material,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
-  expl3like_csname = expl3like_csname,
-  expl3like_function_csname = expl3like_function_csname,
-  expl3like_material = expl3like_material,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
+  expl3_variable_declaration = expl3_variable_declaration,
   expl3_well_known_function_csname = expl3_well_known_function_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
@@ -735,8 +743,8 @@ return {
   newline = newline,
   N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
-  n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
+  n_type_argument_specifier = n_type_argument_specifier,
   provides = provides,
   space = space,
   success = success,

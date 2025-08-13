@@ -35,7 +35,7 @@ local lpeg = require("lpeg")
 local statement_types = {
   FUNCTION_DEFINITION = "function definition",
   FUNCTION_VARIANT_DEFINITION = "function variant definition",
-  VARIABLE_DECLARATION = "variable or constant declaration",
+  VARIABLE_DECLARATION = "variable declaration",
   VARIABLE_DEFINITION = "variable or constant definition",
   VARIABLE_USE = "variable or constant use",
   OTHER_STATEMENT = "other statement",
@@ -46,7 +46,7 @@ local statement_types = {
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
---local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
+local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
 --local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
 --local VARIABLE_USE = statement_types.VARIABLE_USE
 
@@ -418,6 +418,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
         local function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, call.csname)
         local function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
+        local variable_declaration = lpeg.match(parsers.expl3_variable_declaration, call.csname)
 
         -- Process a function variant definition.
         if function_variant_definition ~= nil then
@@ -678,6 +679,27 @@ local function semantic_analysis(pathname, content, issues, results, options)
               table.insert(statements, statement)
             end
           end
+          goto continue
+        end
+
+        -- Process a variable declaration.
+        if variable_declaration ~= nil then
+          local variable_type = table.unpack(variable_declaration)
+          -- determine the name of the declared variable
+          local declared_csname_argument = call.arguments[1]
+          local declared_csname = extract_csname_from_argument(declared_csname_argument)
+          if declared_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          local statement = {
+            type = VARIABLE_DECLARATION,
+            call_range = call_range,
+            confidence = DEFINITELY,
+            -- The following attributes are specific to the type.
+            declared_csname = declared_csname,
+            variable_type = variable_type,
+          }
+          table.insert(statements, statement)
           goto continue
         end
 
@@ -957,6 +979,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
         if statement.confidence == DEFINITELY and statement.is_private then
           table.insert(defined_private_functions, {statement.defined_csname, byte_range})
         end
+      -- Process a variable declarations.
+      elseif statement.type == VARIABLE_DECLARATION then
+        -- TODO
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
