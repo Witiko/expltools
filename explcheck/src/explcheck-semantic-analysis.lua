@@ -926,7 +926,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csnames, indirect_definition_base_csnames = {}, {}
+
   local declared_defined_and_used_variable_csname_texts = {}
+  local declared_variable_csname_texts, used_variable_csname_texts = {}, {}
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
@@ -1078,10 +1080,14 @@ local function semantic_analysis(pathname, content, issues, results, options)
       elseif statement.type == VARIABLE_DECLARATION then
         -- Record variable names.
         table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.declared_csname, byte_range})
+        table.insert(declared_variable_csname_texts, {statement.declared_csname, byte_range})
       -- Process a variable or constant definition.
       elseif statement.type == VARIABLE_DEFINITION then
         -- Record variable names.
         table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.defined_csname, byte_range})
+        if statement.is_constant then
+          table.insert(declared_variable_csname_texts, {statement.defined_csname, byte_range})
+        end
         -- Record control sequence name usage and definitions.
         if statement.subtype == VARIABLE_DEFINITION_DIRECT then
           process_argument_tokens(statement.definition_text_argument)
@@ -1090,6 +1096,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
         table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.used_csname, byte_range})
+        used_variable_csname_texts[statement.used_csname] = true
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
@@ -1130,36 +1137,6 @@ local function semantic_analysis(pathname, content, issues, results, options)
         and not maybe_used_csname_texts[defined_csname]
         and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
-    end
-  end
-
-  ---- Report malformed function names.
-  for _, defined_csname_text in ipairs(defined_csname_texts) do
-    local defined_csname, byte_range = table.unpack(defined_csname_text)
-    if (
-          lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
-          and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
-          and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil
-        ) then
-      issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
-    end
-  end
-
-  ---- Report malformed variable and constant names.
-  for _, declared_defined_and_used_variable_csname_text in ipairs(declared_defined_and_used_variable_csname_texts) do
-    local variable_type, variable_csname, byte_range = table.unpack(declared_defined_and_used_variable_csname_text)
-    if variable_type == "quark" or variable_type == "scan" then
-      if lpeg.match(parsers.expl3_quark_or_scan_mark_csname, variable_csname) == nil then
-        issues:add('s414', 'malformed quark or scan mark name', byte_range, format_csname(variable_csname))
-      end
-    else
-      if (
-            lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
-            and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
-            and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
-          ) then
-        issues:add('s413', 'malformed variable or constant', byte_range, format_csname(variable_csname))
-      end
     end
   end
 
@@ -1226,6 +1203,48 @@ local function semantic_analysis(pathname, content, issues, results, options)
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
+    end
+  end
+
+  ---- Report malformed function names.
+  for _, defined_csname_text in ipairs(defined_csname_texts) do
+    local defined_csname, byte_range = table.unpack(defined_csname_text)
+    if (
+          lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
+          and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+          and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil
+        ) then
+      issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
+    end
+  end
+
+  ---- Report malformed variable and constant names.
+  for _, declared_defined_and_used_variable_csname_text in ipairs(declared_defined_and_used_variable_csname_texts) do
+    local variable_type, variable_csname, byte_range = table.unpack(declared_defined_and_used_variable_csname_text)
+    if variable_type == "quark" or variable_type == "scan" then
+      if lpeg.match(parsers.expl3_quark_or_scan_mark_csname, variable_csname) == nil then
+        issues:add('s414', 'malformed quark or scan mark name', byte_range, format_csname(variable_csname))
+      end
+    else
+      if (
+            lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+            and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
+            and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
+          ) then
+        issues:add('s413', 'malformed variable or constant', byte_range, format_csname(variable_csname))
+      end
+    end
+  end
+
+  ---- Report unused variables and constants.
+  for _, declared_variable_csname_texts in ipairs(declared_variable_csname_texts) do
+    local variable_csname, byte_range = table.unpack(declared_variable_csname_texts)
+    if (
+          not used_variable_csname_texts[variable_csname]
+          and not maybe_used_csname_texts[variable_csname]
+          and lpeg.match(maybe_used_csname_pattern, variable_csname) == nil
+        ) then
+      issues:add('w415', 'unused variable or constant', byte_range, format_csname(variable_csname))
     end
   end
 

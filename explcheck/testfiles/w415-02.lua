@@ -5,12 +5,12 @@ local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 
-local filename = "s413-01.tex"
+local filename = "w415-02.tex"
 
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
-local options = {expl3_detection_strategy = "always", ignored_issues = {"w415"}}
+local options = {expl3_detection_strategy = "always"}
 local issues = new_issues(filename, options)
 local results = {}
 
@@ -20,12 +20,12 @@ syntactic_analysis.process(filename, content, issues, results, options)
 semantic_analysis.process(filename, content, issues, results, options)
 
 assert(#issues.errors == 0)
-assert(#issues.warnings == 3)
+assert(#issues.warnings == 1)
 
-local expected_line_numbers = {{1, 2}, {3, 4}, {5, 6}}
+local expected_line_numbers = {{1, 2}}
 for index, warning in ipairs(issues.sort(issues.errors)) do
-  assert(warning[1] == "s413")
-  assert(warning[2] == "malformed variable or constant name")
+  assert(warning[1] == "w415")
+  assert(warning[2] == "unused variable or constant")
   local byte_range = warning[3]
   local start_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:start())
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
