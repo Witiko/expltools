@@ -1019,7 +1019,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
           if csname.type == TEXT then
             maybe_used_csname_texts[csname.payload] = true
           elseif csname.type == PATTERN then
-            maybe_used_csname_pattern = maybe_used_csname_pattern + csname.payload
+            maybe_used_csname_pattern = (
+              maybe_used_csname_pattern
+              + #(csname.payload * parsers.eof)
+              * csname.payload
+            )
           end
         end
       end
@@ -1063,7 +1067,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
           table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
-          maybe_defined_csname_pattern = maybe_defined_csname_pattern + statement.defined_csname.payload
+          maybe_defined_csname_pattern = (
+            maybe_defined_csname_pattern
+            + #(statement.defined_csname.payload * parsers.eof)
+            * statement.defined_csname.payload
+          )
         else
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
@@ -1077,7 +1085,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
           elseif statement.defined_csname.type == PATTERN then
             defined_private_function_variant_pattern = (
               defined_private_function_variant_pattern
-              + statement.defined_csname.payload
+              + #(statement.defined_csname.payload * parsers.eof)
+              * statement.defined_csname.payload
               / private_function_variant_number
             )
           else
@@ -1145,11 +1154,6 @@ local function semantic_analysis(pathname, content, issues, results, options)
       end
     end
   end
-
-  -- Finalize PEG patterns.
-  maybe_defined_csname_pattern = maybe_defined_csname_pattern * parsers.eof
-  maybe_used_csname_pattern = maybe_used_csname_pattern * parsers.eof
-  defined_private_function_variant_pattern = defined_private_function_variant_pattern * parsers.eof
 
   --- Report issues apparent from the collected information.
   local imported_prefixes = get_option('imported_prefixes', options, pathname)
