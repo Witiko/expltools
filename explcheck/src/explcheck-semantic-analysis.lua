@@ -107,6 +107,77 @@ local function semantic_analysis(pathname, content, issues, results, options)
     return OTHER_TOKENS_SIMPLE  -- simple material
   end
 
+  -- Convert tokens from a range into a PEG pattern.
+  local function extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
+    -- First, extract subpatterns and text transcripts for the simple material.
+    local subpatterns, subpattern, transcripts, num_simple_tokens = {}, parsers.success, {}, 0
+    local previous_token_was_simple = true
+    for _, token in token_range:enumerate(transformed_tokens, map_forward) do
+      if is_token_simple(token) then  -- simple material
+        subpattern = subpattern * lpeg.P(token.payload)
+        table.insert(transcripts, token.payload)
+        num_simple_tokens = num_simple_tokens + 1
+        previous_token_was_simple = true
+      else  -- complex material
+        if previous_token_was_simple then
+          table.insert(subpatterns, subpattern)
+          subpattern = parsers.success
+          table.insert(transcripts, "*")
+        end
+        previous_token_was_simple = false
+      end
+    end
+    if previous_token_was_simple then
+      table.insert(subpatterns, subpattern)
+    end
+    local transcript = table.concat(transcripts)
+    -- Next, build up the pattern from the back, simulating lazy `.*?` using negative lookaheads.
+    local subpattern_separators = {}
+    for subpattern_number = #subpatterns, 2, -1 do
+      local rest = subpatterns[subpattern_number]
+      for separator_number = 1, #subpattern_separators do
+        rest = rest * subpattern_separators[#subpattern_separators - separator_number + 1]
+        rest = rest * subpatterns[subpattern_number + separator_number]
+      end
+      local separator = (parsers.any - #rest)^0
+      table.insert(subpattern_separators, separator)
+    end
+    local pattern = parsers.success
+    for subpattern_number = 1, #subpatterns do
+      pattern = pattern * subpatterns[subpattern_number]
+      if subpattern_number < #subpatterns then
+        pattern = pattern * subpattern_separators[#subpattern_separators - subpattern_number + 1]
+      elseif not previous_token_was_simple then
+        pattern = pattern * parsers.any^0
+      end
+    end
+    return pattern, transcript, num_simple_tokens
+  end
+
+  -- Try and convert tokens from a range into a csname.
+  local function _extract_csname_from_tokens(token_range, transformed_tokens, map_forward)
+    local text = extract_text_from_tokens(token_range, transformed_tokens, map_forward)
+    local csname
+    if text ~= nil then  -- simple material
+      csname = {
+        payload = text,
+        transcript = text,
+        type = TEXT
+      }
+    else  -- complex material
+      local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
+      if num_simple_tokens < get_option("min_simple_tokens_in_csname_pattern", options, pathname) then  -- too few simple tokens, give up
+        return nil
+      end
+      csname = {
+        payload = pattern,
+        transcript = transcript,
+        type = PATTERN
+      }
+    end
+    return csname
+  end
+
   -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
   local function record_statements_and_replacement_texts(tokens, transformed_tokens, calls, first_map_back, first_map_forward)
     local statements = {}
@@ -122,8 +193,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
         return extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
       end
 
+      -- Try and convert tokens from a range into a csname.
+      local function extract_csname_from_tokens(token_range)
+        return _extract_csname_from_tokens(token_range, transformed_tokens, first_map_forward)
+      end
+
       -- Extract the name of a control sequence from a call argument.
-      local function extract_csname_from_argument(argument)
+      local function extract_csname_from_argument(argument, allow_patterns)
         local csname
         if argument.specifier == "N" then
           local csname_token = transformed_tokens[first_map_forward(argument.token_range:start())]
@@ -132,7 +208,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
           end
           csname = csname_token.payload
         elseif argument.specifier == "c" then
-          csname = extract_text_from_argument(argument)
+          if allow_patterns then
+            csname = extract_csname_from_tokens(argument.token_range)
+          else
+            csname = extract_text_from_argument(argument)
+          end
           if csname == nil then  -- the c-type argument contains complex material, give up
             return nil
           end
@@ -778,7 +858,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           local variable_type = table.unpack(variable_use)
           -- determine the name of the used variable
           local used_csname_argument = call.arguments[1]
-          local used_csname = extract_csname_from_argument(used_csname_argument)
+          local used_csname = extract_csname_from_argument(used_csname_argument, true)
           if used_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
@@ -928,7 +1008,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local variant_base_csnames, indirect_definition_base_csnames = {}, {}
 
   local declared_defined_and_used_variable_csname_texts = {}
-  local declared_variable_csname_texts, used_variable_csname_texts = {}, {}
+  local declared_variable_csname_texts, used_variable_csname_texts, used_variable_csname_pattern = {}, {}, parsers.fail
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
@@ -938,75 +1018,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local segment_calls = call_segments[segment_number]
     local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
 
-    -- Convert tokens from a range into a PEG pattern.
-    local function extract_pattern_from_tokens(token_range)
-      -- First, extract subpatterns and text transcripts for the simple material.
-      local subpatterns, subpattern, transcripts, num_simple_tokens = {}, parsers.success, {}, 0
-      local previous_token_was_simple = true
-      for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
-        if is_token_simple(token) then  -- simple material
-          subpattern = subpattern * lpeg.P(token.payload)
-          table.insert(transcripts, token.payload)
-          num_simple_tokens = num_simple_tokens + 1
-          previous_token_was_simple = true
-        else  -- complex material
-          if previous_token_was_simple then
-            table.insert(subpatterns, subpattern)
-            subpattern = parsers.success
-            table.insert(transcripts, "*")
-          end
-          previous_token_was_simple = false
-        end
-      end
-      if previous_token_was_simple then
-        table.insert(subpatterns, subpattern)
-      end
-      local transcript = table.concat(transcripts)
-      -- Next, build up the pattern from the back, simulating lazy `.*?` using negative lookaheads.
-      local subpattern_separators = {}
-      for subpattern_number = #subpatterns, 2, -1 do
-        local rest = subpatterns[subpattern_number]
-        for separator_number = 1, #subpattern_separators do
-          rest = rest * subpattern_separators[#subpattern_separators - separator_number + 1]
-          rest = rest * subpatterns[subpattern_number + separator_number]
-        end
-        local separator = (parsers.any - #rest)^0
-        table.insert(subpattern_separators, separator)
-      end
-      local pattern = parsers.success
-      for subpattern_number = 1, #subpatterns do
-        pattern = pattern * subpatterns[subpattern_number]
-        if subpattern_number < #subpatterns then
-          pattern = pattern * subpattern_separators[#subpattern_separators - subpattern_number + 1]
-        elseif not previous_token_was_simple then
-          pattern = pattern * parsers.any^0
-        end
-      end
-      return pattern, transcript, num_simple_tokens
-    end
-
     -- Try and convert tokens from a range into a csname.
     local function extract_csname_from_tokens(token_range)
-      local text = extract_text_from_tokens(token_range, segment_transformed_tokens, map_forward)
-      local csname
-      if text ~= nil then  -- simple material
-        csname = {
-          payload = text,
-          transcript = text,
-          type = TEXT
-        }
-      else  -- complex material
-        local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range)
-        if num_simple_tokens < get_option("min_simple_tokens_in_csname_pattern", options, pathname) then  -- too few simple tokens, give up
-          return nil
-        end
-        csname = {
-          payload = pattern,
-          transcript = transcript,
-          type = PATTERN
-        }
-      end
-      return csname
+      return _extract_csname_from_tokens(token_range, segment_transformed_tokens, map_forward)
     end
 
     -- Process an argument and record control sequence name usage and definitions.
@@ -1129,8 +1143,27 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Process a variable or constant use.
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
-        table.insert(declared_defined_and_used_variable_csname_texts, {statement.variable_type, statement.used_csname, byte_range})
-        used_variable_csname_texts[statement.used_csname] = true
+        if type(statement.used_csname) == "string" then
+          table.insert(
+            declared_defined_and_used_variable_csname_texts,
+            {statement.variable_type, statement.used_csname, byte_range}
+          )
+          used_variable_csname_texts[statement.used_csname] = true
+        elseif statement.used_csname.type == TEXT then
+          table.insert(
+            declared_defined_and_used_variable_csname_texts,
+            {statement.variable_type, statement.used_csname.payload, byte_range}
+          )
+          used_variable_csname_texts[statement.used_csname] = true
+        elseif statement.used_csname.type == PATTERN then
+          used_variable_csname_pattern = (
+            used_variable_csname_pattern
+            + #(statement.used_csname.payload * parsers.eof)
+            * statement.used_csname.payload
+          )
+        else
+          error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
+        end
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
@@ -1270,6 +1303,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
           not used_variable_csname_texts[variable_csname]
+          and lpeg.match(used_variable_csname_pattern, variable_csname) == nil
           and not maybe_used_csname_texts[variable_csname]
           and lpeg.match(maybe_used_csname_pattern, variable_csname) == nil
         ) then
