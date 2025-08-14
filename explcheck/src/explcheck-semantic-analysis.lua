@@ -940,23 +940,48 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
     -- Convert tokens from a range into a PEG pattern.
     local function extract_pattern_from_tokens(token_range)
-      local pattern, transcripts, num_simple_tokens = parsers.success, {}, 0
+      -- First, extract subpatterns and text transcripts for the simple material.
+      local subpatterns, subpattern, transcripts, num_simple_tokens = {}, parsers.success, {}, 0
       local previous_token_was_simple = true
       for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
         if is_token_simple(token) then  -- simple material
-          pattern = pattern * lpeg.P(token.payload)
+          subpattern = subpattern * lpeg.P(token.payload)
           table.insert(transcripts, token.payload)
           num_simple_tokens = num_simple_tokens + 1
           previous_token_was_simple = true
         else  -- complex material
           if previous_token_was_simple then
-            pattern = pattern * parsers.any^0
+            table.insert(subpatterns, subpattern)
+            subpattern = parsers.success
             table.insert(transcripts, "*")
           end
           previous_token_was_simple = false
         end
       end
+      if previous_token_was_simple then
+        table.insert(subpatterns, subpattern)
+      end
       local transcript = table.concat(transcripts)
+      -- Next, build up the pattern from the back, simulating lazy `.*?` using negative lookaheads.
+      local subpattern_separators = {}
+      for subpattern_number = #subpatterns, 2, -1 do
+        local rest = subpatterns[subpattern_number]
+        for separator_number = 1, #subpattern_separators do
+          rest = rest * subpattern_separators[#subpattern_separators - separator_number + 1]
+          rest = rest * subpatterns[subpattern_number + separator_number]
+        end
+        local separator = (parsers.any - #rest)^0
+        table.insert(subpattern_separators, separator)
+      end
+      local pattern = parsers.success
+      for subpattern_number = 1, #subpatterns do
+        pattern = pattern * subpatterns[subpattern_number]
+        if subpattern_number < #subpatterns then
+          pattern = pattern * subpattern_separators[#subpattern_separators - subpattern_number + 1]
+        elseif not previous_token_was_simple then
+          pattern = pattern * parsers.any^0
+        end
+      end
       return pattern, transcript, num_simple_tokens
     end
 
