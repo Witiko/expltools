@@ -1237,8 +1237,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
   end
 
   ---- Report unused variables and constants.
-  for _, declared_variable_csname_texts in ipairs(declared_variable_csname_texts) do
-    local variable_csname, byte_range = table.unpack(declared_variable_csname_texts)
+  for _, declared_variable_csname_text in ipairs(declared_variable_csname_texts) do
+    local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
           not used_variable_csname_texts[variable_csname]
           and not maybe_used_csname_texts[variable_csname]
