@@ -86,45 +86,14 @@ Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s
  /s414-03.tex
  /s414-04.tex
 
-### Unused variable or constant {.w #unused-variable-or-constant}
+### Unused variable or constant {.w label=w415 #unused-variable-or-constant}
 A variable or a constant is declared and perhaps defined but unused.
 
-``` tex
-\tl_new:N  % warning on this line
-  \g_declared_but_undefined_tl
-```
-
-``` tex
-\tl_new:N  % warning on this line
-  \g_defined_but_unused_tl
-\tl_gset:Nn
-  \g_defined_but_unused_tl
-  { foo }
-```
-
-``` tex
-\tl_new:N
-  \g_defined_but_unused_tl
-\tl_gset:Nn
-  \g_defined_but_unused_tl
-  { foo }
-\tl_use:N
-  \g_defined_but_unused_tl
-```
-
-``` tex
-\tl_const:Nn  % warning on this line
-  \c_defined_but_unused_tl
-  { foo }
-```
-
-``` tex
-\tl_const:Nn
-  \c_defined_but_unused_tl
-  { foo }
-\tl_use:N
-  \c_defined_but_unused_tl
-```
+ /w415-01.tex
+ /w415-02.tex
+ /w415-03.tex
+ /w415-04.tex
+ /w415-05.tex
 
 ### Setting an undeclared variable {.w #setting-undeclared-variable}
 An undeclared variable is set.

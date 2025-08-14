@@ -16,17 +16,14 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-math.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-question.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-symbols.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-textfigure.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/grading-scheme/grading-scheme.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/hustthesis/hustthesis-doc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/hustthesis/hustthesis.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/indextra/indextra.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/scrlfile-hook-3.34.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/scrlfile-hook.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/lambdax/lambdax.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/letterswitharrows/letterswitharrows.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/mathcommand/mathcommand.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/nwafuthesis/nwafuthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/paresse/paresse.sty

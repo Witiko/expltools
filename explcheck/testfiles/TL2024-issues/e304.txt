@@ -1,2 +1,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/jsonparse/jsonparse.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/polyglossia/polyglossia.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/tabularray/tabularray-2021.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/tabularray/tabularray.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzlings/tikzlings-addons.sty
+/usr/local/texlive/2024/texmf-dist/tex/xetex/xetexko/xetexko.sty
