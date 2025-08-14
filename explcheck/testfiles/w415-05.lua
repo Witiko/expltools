@@ -1,5 +1,4 @@
 local new_issues = require("explcheck-issues")
-local utils = require("explcheck-utils")
 local preprocessing = require("explcheck-preprocessing")
 local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
