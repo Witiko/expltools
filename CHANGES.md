@@ -4,6 +4,26 @@
 
 ### explcheck v0.12.0
 
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Postpone planned issue E417 (Multiply declared variable or constant) to flow
+  analysis, under the identifier E519 and the same name. (#110, #112)
+
+- Postpone planned issue E242 (Multiply defined message) to flow analysis,
+  under the identifier E524 and the same name. (#110, #112)
+
+- Plan for a weaker version of issue E522 (Too few arguments supplied to
+  message) to semantic analysis under the identifier E425 and the same name.
+  (#110, #112)
+
+- Remove issues S205, S206, and S207 and replan them to semantic analysis.
+  (reported by @u-fischer in #109, added in #117)
+
+- Plan for a new issue E417 (Setting a variable as a constant). (#119)
+
 #### Development
 
 - Include contextual information in human-readable issue descriptions.
@@ -25,7 +45,7 @@
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
-- Add more support for semantic analysis. (#117, #118, #119)
+- Add more support for semantic analysis. (#117..#120)
 
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
@@ -33,6 +53,7 @@
   1. S412 (Malformed function name)
   2. S413 (Malformed function name)
   3. S414 (Malformed quark or scan mark name)
+  4. W415 (Unused variable or constant)
 
 - Add Lua option `suppressed_issue_map`.
 
@@ -58,6 +79,16 @@
 - Correctly parse indirect applications of creator functions via
   `\cs_generate_from_arg_count:NNnn`. (#118)
 
+- Properly use lazy matching and backtracking in control sequence name patterns
+  produced during the semantic analysis. (#120)
+
+  Previously, only wildcards at the end of a name would function properly (lazy
+  matching) and any partial matches by previous patterns would prevent any
+  potential matches by future patterns (backtracking). Both properties
+  limitations were due to parsing expression grammars (PEGs) being greedy and
+  non-backtracking by default. As a result, many wildcards would not match even
+  though they should have.
+
 #### Continuous integration
 
 - Rename GitHub Action `teatimeguest/setup-texlive-action@v3` to `TeX-Live/...`.
@@ -65,26 +96,6 @@
 
 - Bump actions/checkout and actions/download-artifact from 4 to 5.
   (contributed by @dependabot in #113 and #114)
-
-#### Warnings and errors
-
-This version of explcheck has made the following changes to the document titled
-[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
-
-- Postpone planned issue E417 (Multiply declared variable or constant) to flow
-  analysis, under the identifier E519 and the same name. (#110, #112)
-
-- Postpone planned issue E242 (Multiply defined message) to flow analysis,
-  under the identifier E524 and the same name. (#110, #112)
-
-- Plan for a weaker version of issue E522 (Too few arguments supplied to
-  message) to semantic analysis under the identifier E425 and the same name.
-  (#110, #112)
-
-- Remove issues S205, S206, and S207 and replan them to semantic analysis.
-  (reported by @u-fischer in #109, added in #117)
-
-- Plan for a new issue E417 (Setting a variable as a constant). (#119)
 
 #### Distribution
 
