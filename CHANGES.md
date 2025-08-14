@@ -59,9 +59,9 @@ This version of explcheck has made the following changes to the document titled
 
   This Lua option defines a mapping between issues that suppress one or more
   other issues. At this point, this option only maps issue W200 ("Do not use"
-  argument specifiers) to issue S412 (Malformed function name), so that
-  defining functions with a malformed name and a "do not use" specifier (`:D`)
-  only produces the issue W200 and not also S412.
+  argument specifiers) to issues S412, S413, and S414, so that defining
+  functions, variables, and constants with malformed names and a "do not use"
+  specifier (`:D`) only produces issue W200 and not also S412, S413, and S414.
 
   In the future, this option will be highly used for issues from the flow
   analysis that have a weaker version in the semantic analysis. In these cases,
