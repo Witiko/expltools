@@ -798,10 +798,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
               ) then
             goto other_statement
           end
+          local confidence = declared_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_DECLARATION,
             call_range = call_range,
-            confidence = DEFINITELY,
+            confidence = confidence,
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
             variable_type = variable_type,
@@ -825,6 +826,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
               ) then
             goto other_statement
           end
+          local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
           local statement
           if is_direct then
             -- determine the definition text
@@ -835,7 +837,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
-              confidence = DEFINITELY,
+              confidence = confidence,
               -- The following attributes are specific to the type.
               subtype = VARIABLE_DEFINITION_DIRECT,
               variable_type = variable_type,
@@ -855,7 +857,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
-              confidence = DEFINITELY,
+              confidence = confidence,
               -- The following attributes are specific to the type.
               subtype = VARIABLE_DEFINITION_INDIRECT,
               variable_type = variable_type,
@@ -885,10 +887,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
               ) then
             goto other_statement
           end
+          local confidence = used_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_USE,
             call_range = call_range,
-            confidence = DEFINITELY,
+            confidence = confidence,
             -- The following attributes are specific to the type.
             used_csname = used_csname,
             variable_type = variable_type,
@@ -1023,14 +1026,15 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local defined_private_function_texts = {}
   local called_functions_and_variants = {}
   local defined_csname_texts = {}
-  local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
+  local defined_private_function_variant_texts = {}
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
 
   local declared_defined_and_used_variable_csname_texts = {}
-  local declared_variable_csname_texts, used_variable_csname_texts, used_variable_csname_pattern = {}, {}, parsers.fail
+  local declared_variable_csname_texts, used_variable_csname_texts = {}, {}
 
   ---- Collect information about symbols that may have been defined.
+  local maybe_defined_private_function_variant_pattern, maybe_used_variable_csname_pattern = parsers.fail, parsers.fail
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
@@ -1122,22 +1126,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
         -- Record private function variant definitions.
-        if statement.confidence == DEFINITELY and statement.is_private then
+        if statement.defined_csname.type == TEXT and statement.is_private then
           table.insert(defined_private_function_variant_byte_ranges, byte_range)
           table.insert(defined_private_function_variant_csnames, statement.defined_csname)
           local private_function_variant_number = #defined_private_function_variant_byte_ranges
-          if statement.defined_csname.type == TEXT then
-            table.insert(defined_private_function_variant_texts, private_function_variant_number)
-          elseif statement.defined_csname.type == PATTERN then
-            defined_private_function_variant_pattern = (
-              defined_private_function_variant_pattern
-              + #(statement.defined_csname.payload * parsers.eof)
-              * statement.defined_csname.payload
-              / private_function_variant_number
-            )
-          else
-            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
-          end
+          table.insert(defined_private_function_variant_texts, private_function_variant_number)
         end
       -- Process a function definition.
       elseif statement.type == FUNCTION_DEFINITION then
@@ -1165,7 +1158,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           process_argument_tokens(statement.replacement_text_argument)
         end
         -- Record private function defition.
-        if statement.confidence == DEFINITELY and statement.is_private and statement.defined_csname.type == TEXT then
+        if statement.defined_csname.type == TEXT and statement.is_private then
           table.insert(defined_private_function_texts, {statement.defined_csname.payload, byte_range})
         end
       -- Process a variable declaration.
@@ -1204,8 +1197,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
           )
           used_variable_csname_texts[statement.used_csname.payload] = true
         elseif statement.used_csname.type == PATTERN then
-          used_variable_csname_pattern = (
-            used_variable_csname_pattern
+          maybe_used_variable_csname_pattern = (
+            maybe_used_variable_csname_pattern
             + #(statement.used_csname.payload * parsers.eof)
             * statement.used_csname.payload
           )
@@ -1263,13 +1256,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
   for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
-    -- NOTE: Although we might want to also test whether "defined_private_function_variant_pattern" and
+    -- NOTE: Although we might want to also test whether "maybe_defined_private_function_variant_pattern" and
     -- "maybe_used_csname_pattern" overlap, intersection is undecideable for parsing expression languages (PELs). In
     -- theory, we could use regular expressions instead of PEG patterns, since intersection is decideable for regular
     -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
     -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
     -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
-    local private_function_variant_number = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
+    local private_function_variant_number = lpeg.match(maybe_defined_private_function_variant_pattern, maybe_used_csname)
     if private_function_variant_number ~= nil then
       local csname = defined_private_function_variant_csnames[private_function_variant_number]
       assert(csname.type == PATTERN)
@@ -1351,7 +1344,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
           not used_variable_csname_texts[variable_csname]
-          and lpeg.match(used_variable_csname_pattern, variable_csname) == nil
+          and lpeg.match(maybe_used_variable_csname_pattern, variable_csname) == nil
           and not maybe_used_csname_texts[variable_csname]
           and lpeg.match(maybe_used_csname_pattern, variable_csname) == nil
         ) then
