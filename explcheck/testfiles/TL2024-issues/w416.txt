@@ -70,7 +70,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/sjtutex/sjtuarticle.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/sjtutex/sjtureport.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/sjtutex/sjtuthesis.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/skrapport/skrapport.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/songproj/songproj.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/soup/soup.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/spbmark/spbmark.sty
