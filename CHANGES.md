@@ -45,7 +45,7 @@ This version of explcheck has made the following changes to the document titled
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
-- Add more support for semantic analysis. (#117..#120)
+- Add more support for semantic analysis. (#117..#121)
 
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
@@ -54,6 +54,7 @@ This version of explcheck has made the following changes to the document titled
   2. S413 (Malformed function name)
   3. S414 (Malformed quark or scan mark name)
   4. W415 (Unused variable or constant)
+  5. W416 (Setting an undeclared variable)
 
 - Add Lua option `suppressed_issue_map`.
 
