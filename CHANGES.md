@@ -55,6 +55,8 @@ This version of explcheck has made the following changes to the document titled
   3. S414 (Malformed quark or scan mark name)
   4. W415 (Unused variable or constant)
   5. W416 (Setting an undeclared variable)
+  6. E417 (Setting a variable as a constant)
+  7. E418 (Setting a constant)
 
 - Add Lua option `suppressed_issue_map`.
 
