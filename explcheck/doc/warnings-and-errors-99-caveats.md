@@ -26,30 +26,26 @@ The warnings and errors in this documents do not cover the complete expl3 langua
     - `\iow_wrap_allow_break:` and `\iow_indent:n`
       outside wrapped message text
       [@latexteam2024interfaces, Section 12.1.4]
+    - Token list and string variables without accessor
+      functions `\tl_use:N` and `\str_use:N`
     - Boolean variable without an accessor function
       `\bool_to_str:N` outside boolean expressions
       [@latexteam2024interfaces, Section 21.4]
-      (see <#using-variables-without-accessors>)
     - Integer variable without an accessor function
       `\int_use:N` outside integer or floating point
       expressions [@latexteam2024interfaces, Section 21.4]
-      (see <#using-variables-without-accessors>)
     - Dimension variable without an accessor function
       `\dim_use:N` outside dimension or floating point
       expressions [@latexteam2024interfaces, Section 26.7]
-      (see <#using-variables-without-accessors>)
     - Skip variable without an accessor function
       `\skip_use:N` outside skip or floating point expressions
       [@latexteam2024interfaces, Section 26.14]
-      (see <#using-variables-without-accessors>)
     - Muskip variable without an accessor function
       `\muskip_use:N` outside muskip or floating point
       expressions [@latexteam2024interfaces, Section 26.21]
-      (see <#using-variables-without-accessors>)
     - Floating point variable without an accessor function
       `\fp_use:N` outside floating point
       expressions [@latexteam2024interfaces, Section 29.3]
-      (see <#using-variables-without-accessors>)
     - Box variable without accessor functions
       `\box_use(_drop)?:N` or `\[hv]box_unpack(_drop)?:N`,
       or without a measuring function
@@ -60,6 +56,8 @@ The warnings and errors in this documents do not cover the complete expl3 langua
       `\coffin_typeset:Nnnnn` outside dimension or
       floating point expressions
       [@latexteam2024interfaces, Section 36.4]
+    - Lonely variables of other types that may or may not
+      have accessor functions
 - Validation of literal expressions:
     - Comparison expressions in functions
       `\*_compare(_p:n|:nT?F?)`

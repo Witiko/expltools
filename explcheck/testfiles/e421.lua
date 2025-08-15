@@ -5,12 +5,12 @@ local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 
-local filename = "e408-02.tex"
+local filename = "e421.tex"
 
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
-local options = {expl3_detection_strategy = "always", ignored_issues = {"w416"}}
+local options = {expl3_detection_strategy = "always", ignored_issues = {"s413", "w415"}}
 local issues = new_issues(filename, options)
 local results = {}
 
@@ -22,10 +22,10 @@ semantic_analysis.process(filename, content, issues, results, options)
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{7, 8}}
+local expected_line_numbers = {{3, 5}}
 for index, err in ipairs(issues.sort(issues.errors)) do
-  assert(err[1] == "e408")
-  assert(err[2] == "calling an undefined function")
+  assert(err[1] == "e421")
+  assert(err[2] == "globally setting a local variable")
   local byte_range = err[3]
   local start_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:start())
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())

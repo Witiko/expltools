@@ -798,10 +798,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
               ) then
             goto other_statement
           end
+          local confidence = declared_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_DECLARATION,
             call_range = call_range,
-            confidence = DEFINITELY,
+            confidence = confidence,
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
             variable_type = variable_type,
@@ -825,6 +826,21 @@ local function semantic_analysis(pathname, content, issues, results, options)
               ) then
             goto other_statement
           end
+          -- detect mutability mismatches
+          local defined_csname_prefix = defined_csname.transcript:sub(1, 2)
+          if is_constant and (defined_csname_prefix == "g_" or defined_csname_prefix == "l_") then
+            issues:add('e417', 'setting a variable as a constant', byte_range, format_csname(defined_csname.transcript))
+          end
+          if not is_constant and defined_csname_prefix == "c_" then
+            issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
+          end
+          if not is_global and defined_csname_prefix == "g_" then
+            issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
+          end
+          if is_global and defined_csname_prefix == "l_" then
+            issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+          end
+          local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
           local statement
           if is_direct then
             -- determine the definition text
@@ -835,7 +851,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
-              confidence = DEFINITELY,
+              confidence = confidence,
               -- The following attributes are specific to the type.
               subtype = VARIABLE_DEFINITION_DIRECT,
               variable_type = variable_type,
@@ -855,7 +871,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
-              confidence = DEFINITELY,
+              confidence = confidence,
               -- The following attributes are specific to the type.
               subtype = VARIABLE_DEFINITION_INDIRECT,
               variable_type = variable_type,
@@ -885,10 +901,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
               ) then
             goto other_statement
           end
+          local confidence = used_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_USE,
             call_range = call_range,
-            confidence = DEFINITELY,
+            confidence = confidence,
             -- The following attributes are specific to the type.
             used_csname = used_csname,
             variable_type = variable_type,
@@ -1023,16 +1040,24 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local defined_private_function_texts = {}
   local called_functions_and_variants = {}
   local defined_csname_texts = {}
-  local defined_private_function_variant_texts, defined_private_function_variant_pattern = {}, parsers.fail
+  local defined_private_function_variant_texts = {}
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
 
   local declared_defined_and_used_variable_csname_texts = {}
-  local declared_variable_csname_texts, used_variable_csname_texts, used_variable_csname_pattern = {}, {}, parsers.fail
+  local declared_variable_csname_texts = {}
+  local defined_variable_csname_texts = {}
+  local used_variable_csname_texts = {}
 
   ---- Collect information about symbols that may have been defined.
+  local maybe_defined_private_function_variant_pattern = parsers.fail
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
+
+  local maybe_declared_variable_csname_texts = {}
+  local maybe_declared_variable_csname_pattern, maybe_defined_variable_csname_pattern = parsers.fail, parsers.fail
+  local maybe_used_variable_csname_texts = {}
+  local maybe_used_variable_csname_pattern = parsers.fail
 
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
@@ -1122,22 +1147,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
         -- Record private function variant definitions.
-        if statement.confidence == DEFINITELY and statement.is_private then
+        if statement.defined_csname.type == TEXT and statement.is_private then
           table.insert(defined_private_function_variant_byte_ranges, byte_range)
           table.insert(defined_private_function_variant_csnames, statement.defined_csname)
           local private_function_variant_number = #defined_private_function_variant_byte_ranges
-          if statement.defined_csname.type == TEXT then
-            table.insert(defined_private_function_variant_texts, private_function_variant_number)
-          elseif statement.defined_csname.type == PATTERN then
-            defined_private_function_variant_pattern = (
-              defined_private_function_variant_pattern
-              + #(statement.defined_csname.payload * parsers.eof)
-              * statement.defined_csname.payload
-              / private_function_variant_number
-            )
-          else
-            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
-          end
+          table.insert(defined_private_function_variant_texts, private_function_variant_number)
         end
       -- Process a function definition.
       elseif statement.type == FUNCTION_DEFINITION then
@@ -1165,7 +1179,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           process_argument_tokens(statement.replacement_text_argument)
         end
         -- Record private function defition.
-        if statement.confidence == DEFINITELY and statement.is_private and statement.defined_csname.type == TEXT then
+        if statement.defined_csname.type == TEXT and statement.is_private then
           table.insert(defined_private_function_texts, {statement.defined_csname.payload, byte_range})
         end
       -- Process a variable declaration.
@@ -1177,6 +1191,15 @@ local function semantic_analysis(pathname, content, issues, results, options)
             {statement.variable_type, statement.declared_csname.payload, byte_range}
           )
           table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, byte_range})
+          maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
+        elseif statement.declared_csname.type == PATTERN then
+          maybe_declared_variable_csname_pattern = (
+            maybe_declared_variable_csname_pattern
+            + #(statement.declared_csname.payload * parsers.eof)
+            * statement.declared_csname.payload
+          )
+        else
+          error('Unexpected csname type "' .. statement.base_csname.type .. '"')
         end
       -- Process a variable or constant definition.
       elseif statement.type == VARIABLE_DEFINITION then
@@ -1185,10 +1208,25 @@ local function semantic_analysis(pathname, content, issues, results, options)
           table.insert(
             declared_defined_and_used_variable_csname_texts,
             {statement.variable_type, statement.defined_csname.payload, byte_range})
-
+          table.insert(
+            defined_variable_csname_texts,
+            {statement.defined_csname.payload, byte_range}
+          )
           if statement.is_constant then
-            table.insert(declared_variable_csname_texts, {statement.defined_csname.payload, byte_range})
+            maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
+            table.insert(
+              declared_variable_csname_texts,
+              {statement.defined_csname.payload, byte_range}
+            )
           end
+        elseif statement.declared_csname.type == PATTERN then
+          maybe_defined_variable_csname_pattern = (
+            maybe_defined_variable_csname_pattern
+            + #(statement.declared_csname.payload * parsers.eof)
+            * statement.declared_csname.payload
+          )
+        else
+          error('Unexpected csname type "' .. statement.base_csname.type .. '"')
         end
         -- Record control sequence name usage and definitions.
         if statement.subtype == VARIABLE_DEFINITION_DIRECT then
@@ -1202,10 +1240,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
             declared_defined_and_used_variable_csname_texts,
             {statement.variable_type, statement.used_csname.payload, byte_range}
           )
-          used_variable_csname_texts[statement.used_csname.payload] = true
+          table.insert(used_variable_csname_texts, {statement.used_csname.payload, byte_range})
+          maybe_used_variable_csname_texts[statement.used_csname.payload] = true
         elseif statement.used_csname.type == PATTERN then
-          used_variable_csname_pattern = (
-            used_variable_csname_pattern
+          maybe_used_variable_csname_pattern = (
+            maybe_used_variable_csname_pattern
             + #(statement.used_csname.payload * parsers.eof)
             * statement.used_csname.payload
           )
@@ -1238,12 +1277,12 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
   --- Report issues apparent from the collected information.
   local imported_prefixes = get_option('imported_prefixes', options, pathname)
-  local expl3_well_known_function_csname = parsers.expl3_well_known_function_csname(imported_prefixes)
+  local expl3_well_known_csname = parsers.expl3_well_known_csname(imported_prefixes)
 
   ---- Report unused private functions.
   for _, defined_private_function_text in ipairs(defined_private_function_texts) do
     local defined_csname, byte_range = table.unpack(defined_private_function_text)
-    if lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+    if lpeg.match(expl3_well_known_csname, defined_csname) == nil
         and not maybe_used_csname_texts[defined_csname]
         and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
@@ -1263,13 +1302,13 @@ local function semantic_analysis(pathname, content, issues, results, options)
     end
   end
   for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
-    -- NOTE: Although we might want to also test whether "defined_private_function_variant_pattern" and
+    -- NOTE: Although we might want to also test whether "maybe_defined_private_function_variant_pattern" and
     -- "maybe_used_csname_pattern" overlap, intersection is undecideable for parsing expression languages (PELs). In
     -- theory, we could use regular expressions instead of PEG patterns, since intersection is decideable for regular
     -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
     -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
     -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
-    local private_function_variant_number = lpeg.match(defined_private_function_variant_pattern, maybe_used_csname)
+    local private_function_variant_number = lpeg.match(maybe_defined_private_function_variant_pattern, maybe_used_csname)
     if private_function_variant_number ~= nil then
       local csname = defined_private_function_variant_csnames[private_function_variant_number]
       assert(csname.type == PATTERN)
@@ -1287,7 +1326,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   ---- Report function variants for undefined functions.
   for _, variant_base_csname_text in ipairs(variant_base_csname_texts) do
     local base_csname, byte_range = table.unpack(variant_base_csname_text)
-    if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
+    if lpeg.match(expl3_well_known_csname, base_csname) == nil
         and not maybe_defined_csname_texts[base_csname]
         and lpeg.match(maybe_defined_csname_pattern, base_csname) == nil then
       issues:add('e405', 'function variant for an undefined function', byte_range, format_csname(base_csname))
@@ -1298,7 +1337,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, called_function_or_variant in ipairs(called_functions_and_variants) do
     local csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
-        and lpeg.match(expl3_well_known_function_csname, csname) == nil
+        and lpeg.match(expl3_well_known_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
@@ -1309,7 +1348,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, indirect_definition_base_csname_text in ipairs(indirect_definition_base_csname_texts) do
     local csname, byte_range = table.unpack(indirect_definition_base_csname_text)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
-        and lpeg.match(expl3_well_known_function_csname, csname) == nil
+        and lpeg.match(expl3_well_known_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
@@ -1321,7 +1360,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local defined_csname, byte_range = table.unpack(defined_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
-          and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+          and lpeg.match(expl3_well_known_csname, defined_csname) == nil
           and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil
         ) then
       issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
@@ -1350,12 +1389,41 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, declared_variable_csname_text in ipairs(declared_variable_csname_texts) do
     local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
-          not used_variable_csname_texts[variable_csname]
-          and lpeg.match(used_variable_csname_pattern, variable_csname) == nil
+          lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+          and not maybe_used_variable_csname_texts[variable_csname]
+          and lpeg.match(maybe_used_variable_csname_pattern, variable_csname) == nil
           and not maybe_used_csname_texts[variable_csname]
           and lpeg.match(maybe_used_csname_pattern, variable_csname) == nil
         ) then
       issues:add('w415', 'unused variable or constant', byte_range, format_csname(variable_csname))
+    end
+  end
+
+  ---- Report undeclared variables.
+  for _, defined_variable_csname_text in ipairs(defined_variable_csname_texts) do
+    local variable_csname, byte_range = table.unpack(defined_variable_csname_text)
+    if (
+          lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+          and lpeg.match(expl3_well_known_csname, variable_csname) == nil
+          and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
+          and not maybe_declared_variable_csname_texts[variable_csname]
+          and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
+        ) then
+      issues:add('w416', 'setting an undeclared variable', byte_range, format_csname(variable_csname))
+    end
+  end
+
+  ---- Report using undefined variables or constants.
+  for _, used_variable_csname_text in ipairs(used_variable_csname_texts) do
+    local variable_csname, byte_range = table.unpack(used_variable_csname_text)
+    if (
+          lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+          and lpeg.match(expl3_well_known_csname, variable_csname) == nil
+          and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
+          and not maybe_declared_variable_csname_texts[variable_csname]
+          and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
+        ) then
+      issues:add('w419', 'using an undeclared variable or constant', byte_range, format_csname(variable_csname))
     end
   end
 

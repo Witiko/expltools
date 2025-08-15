@@ -1,0 +1,16 @@
+/usr/local/texlive/2024/texmf-dist/tex/latex/changelog/changelog.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/decision-table/decision-table.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/easybook/easybase.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-symbols.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/genealogy-profiles/genealogy-profiles.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/indextra/indextra.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/kanbun/kanbun.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/linearregression/linearregression.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-simplebnf.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/matapli/matapli.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/mdframed/ltxmdf.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/pangram/pangram.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaexercise.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaleaflet.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaposter.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/zennote/zennote.sty

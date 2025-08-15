@@ -95,132 +95,39 @@ A variable or a constant is declared and perhaps defined but unused.
  /w415-04.tex
  /w415-05.tex
 
-### Setting an undeclared variable {.w #setting-undeclared-variable}
+### Setting an undeclared variable {.w label=w416 #setting-undeclared-variable}
 An undeclared variable is set.
 
-``` tex
-\tl_gset:Nn  % warning on this line
-  \g_example_tl
-  { bar }
-```
+ /w416.tex
 
-### Setting a variable as a constant {.e}
+### Setting a variable as a constant {.e label=e417}
 A variable is set as though it were a constant.
 
-``` tex
-\tl_const:Nn  % error on this line
-  \g_example_tl
-  { bar }
-```
+ /e417.tex
 
-### Setting a constant {.e}
+### Setting a constant {.e label=e418}
 A constant is set.
 
-``` tex
-\tl_gset:Nn  % error on this line
-  \c_example_tl
-  { bar }
-```
+ /e418.tex
 
-### Using a token list variable or constant without an accessor {.w}
-A token list variable or constant is used without an accessor function.
-
-``` tex
-\tl_set:Nn
-  \l_tmpa_tl
-  { world }
-Hello,~\l_tmpa_tl!  % warning on this line
-Hello,~\tl_use:N \l_tmpa_tl !
-```
-
-This also applies to subtypes of token lists such as strings
-and comma-lists:
-
-``` tex
-\str_set:Nn
-  \l_tmpa_str
-  { world }
-Hello,~\l_tmpa_str!  % warning on this line
-Hello,~\str_use:N \l_tmpa_str !
-```
-
-``` tex
-\clist_set:Nn
-  \l_tmpa_clist
-  { world }
-Hello,~\l_tmpa_clist!  % warning on this line
-Hello,~\clist_use:Nn \l_tmpa_clist { and } !
-```
-
-### Using non-token-list variable or constant without an accessor {.e #using-variables-without-accessors}
-A non-token-list variable or constant is used without an accessor function.
-
-``` tex
-Hello,~\l_tmpa_seq!  % error on this line
-Hello,~\seq_use:Nn \l_tmpa_seq { and } !
-```
-
-Note that boolean and integer variables may be used without accessor functions in boolean and integer expressions, respectively. Therefore, we may want to initially exclude them from this check to prevent false positives.
-
-### Using an undefined variable or constant {.e #using-undefined-variable-or-constant}
+### Using an undeclared variable or constant {.w label=w419 #using-undeclared-variable-or-constant}
 A variable or constant is used but undeclared or undefined.
 
-``` tex
-\tl_use:N  % error on this line
-  \g_undeclared_tl
-```
+ /w419-01.tex
+ /w419-02.tex
+ /w419-03.tex
+ /w419-04.tex
+ /w419-05.tex
 
-``` tex
-\tl_new:N
-  \g_declared_but_undefined_tl
-\tl_use:N  % error on this line
-  \g_declared_but_undefined_tl
-```
-
-``` tex
-\tl_new:N
-  \g_defined_tl
-\tl_gset:Nn
-  \g_defined_tl
-  { foo }
-\tl_use:N
-  \g_defined_tl
-```
-
-``` tex
-\tl_use:N  % error on this line
-  \c_undefined_tl
-```
-
-``` tex
-\tl_const:Nn
-  \c_defined_tl
-  { foo }
-\tl_use:N
-  \c_defined_tl
-```
-
-### Locally setting a global variable {.e}
+### Locally setting a global variable {.e label=e420}
 A global variable is locally set.
 
-``` tex
-\tl_new:N
-  \g_example_tl
-\tl_set:Nn  % error on this line
-  \g_example_tl
-  { foo }
-```
+ /e420.tex
 
-### Globally setting a local variable {.e}
+### Globally setting a local variable {.e label=e421}
 A local variable is globally set.
 
-``` tex
-\tl_new:N
-  \l_example_tl
-\tl_gset:Nn  % error on this line
-  \l_example_tl
-  { foo }
-```
+ /e421.tex
 
 ### Using a variable of an incompatible type {.t}
 A variable of one type is used where a variable of a different type should be used.

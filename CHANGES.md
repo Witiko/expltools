@@ -24,6 +24,14 @@ This version of explcheck has made the following changes to the document titled
 
 - Plan for a new issue E417 (Setting a variable as a constant). (#119)
 
+- Unplan issues W419 (Using a token list variable or constant without
+  an accessor) and E420 (Using non-token-list variable or constant without
+  an accessor). (#121)
+
+- Rename planned issues E421 and E518 (Using an undefined variable or
+  constant) to W421 and W518 (Using an undeclared variable or constant),
+  respectively. (#121)
+
 #### Development
 
 - Include contextual information in human-readable issue descriptions.
@@ -45,15 +53,21 @@ This version of explcheck has made the following changes to the document titled
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
-- Add more support for semantic analysis. (#117..#120)
+- Add more support for semantic analysis. (#117..#121)
 
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
-  1. S412 (Malformed function name)
-  2. S413 (Malformed function name)
-  3. S414 (Malformed quark or scan mark name)
-  4. W415 (Unused variable or constant)
+   1. S412 (Malformed function name)
+   2. S413 (Malformed function name)
+   3. S414 (Malformed quark or scan mark name)
+   4. W415 (Unused variable or constant)
+   5. W416 (Setting an undeclared variable)
+   6. E417 (Setting a variable as a constant)
+   7. E418 (Setting a constant)
+   8. W419 (Using an undeclared variable or constant)
+   9. E420 (Locally setting a global variable)
+  10. E421 (Globally setting a local variable)
 
 - Add Lua option `suppressed_issue_map`.
 
