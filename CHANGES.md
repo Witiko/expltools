@@ -24,6 +24,10 @@ This version of explcheck has made the following changes to the document titled
 
 - Plan for a new issue E417 (Setting a variable as a constant). (#119)
 
+- Unplan issues W419 (Using a token list variable or constant without
+  an accessor) and E420 (Using non-token-list variable or constant without
+  an accessor). (#121)
+
 #### Development
 
 - Include contextual information in human-readable issue descriptions.

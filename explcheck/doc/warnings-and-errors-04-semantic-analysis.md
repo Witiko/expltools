@@ -110,46 +110,6 @@ A constant is set.
 
  /e418.tex
 
-### Using a token list variable or constant without an accessor {.w}
-A token list variable or constant is used without an accessor function.
-
-``` tex
-\tl_set:Nn
-  \l_tmpa_tl
-  { world }
-Hello,~\l_tmpa_tl!  % warning on this line
-Hello,~\tl_use:N \l_tmpa_tl !
-```
-
-This also applies to subtypes of token lists such as strings
-and comma-lists:
-
-``` tex
-\str_set:Nn
-  \l_tmpa_str
-  { world }
-Hello,~\l_tmpa_str!  % warning on this line
-Hello,~\str_use:N \l_tmpa_str !
-```
-
-``` tex
-\clist_set:Nn
-  \l_tmpa_clist
-  { world }
-Hello,~\l_tmpa_clist!  % warning on this line
-Hello,~\clist_use:Nn \l_tmpa_clist { and } !
-```
-
-### Using non-token-list variable or constant without an accessor {.e #using-variables-without-accessors}
-A non-token-list variable or constant is used without an accessor function.
-
-``` tex
-Hello,~\l_tmpa_seq!  % error on this line
-Hello,~\seq_use:Nn \l_tmpa_seq { and } !
-```
-
-Note that boolean and integer variables may be used without accessor functions in boolean and integer expressions, respectively. Therefore, we may want to initially exclude them from this check to prevent false positives.
-
 ### Using an undefined variable or constant {.e #using-undefined-variable-or-constant}
 A variable or constant is used but undeclared or undefined.
 
