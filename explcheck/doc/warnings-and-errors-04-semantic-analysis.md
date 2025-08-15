@@ -119,27 +119,15 @@ A variable or constant is used but undeclared or undefined.
  /w419-04.tex
  /w419-05.tex
 
-### Locally setting a global variable {.e}
+### Locally setting a global variable {.e label=e420}
 A global variable is locally set.
 
-``` tex
-\tl_new:N
-  \g_example_tl
-\tl_set:Nn  % error on this line
-  \g_example_tl
-  { foo }
-```
+ /e420.tex
 
-### Globally setting a local variable {.e}
+### Globally setting a local variable {.e label=e421}
 A local variable is globally set.
 
-``` tex
-\tl_new:N
-  \l_example_tl
-\tl_gset:Nn  % error on this line
-  \l_example_tl
-  { foo }
-```
+ /e421.tex
 
 ### Using a variable of an incompatible type {.t}
 A variable of one type is used where a variable of a different type should be used.

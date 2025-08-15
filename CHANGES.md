@@ -58,14 +58,16 @@ This version of explcheck has made the following changes to the document titled
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
-  1. S412 (Malformed function name)
-  2. S413 (Malformed function name)
-  3. S414 (Malformed quark or scan mark name)
-  4. W415 (Unused variable or constant)
-  5. W416 (Setting an undeclared variable)
-  6. E417 (Setting a variable as a constant)
-  7. E418 (Setting a constant)
-  8. W419 (Using an undeclared variable or constant)
+   1. S412 (Malformed function name)
+   2. S413 (Malformed function name)
+   3. S414 (Malformed quark or scan mark name)
+   4. W415 (Unused variable or constant)
+   5. W416 (Setting an undeclared variable)
+   6. E417 (Setting a variable as a constant)
+   7. E418 (Setting a constant)
+   8. W419 (Using an undeclared variable or constant)
+   9. E420 (Locally setting a global variable)
+  10. E421 (Globally setting a local variable)
 
 - Add Lua option `suppressed_issue_map`.
 

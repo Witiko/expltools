@@ -834,6 +834,12 @@ local function semantic_analysis(pathname, content, issues, results, options)
           if not is_constant and defined_csname_prefix == "c_" then
             issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
           end
+          if not is_global and defined_csname_prefix == "g_" then
+            issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
+          end
+          if is_global and defined_csname_prefix == "l_" then
+            issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+          end
           local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
           local statement
           if is_direct then
