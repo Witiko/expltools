@@ -20,7 +20,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/els-cas-templates/cas-common.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/elsarticle/elsarticle.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/emotion/emotion.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-chinese-english.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-question.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/figput/figput.sty
@@ -32,7 +31,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq-trimmarks.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/kanbun/kanbun.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/kfupm-math-exam/kfupm-math-exam.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/knowledge/knowledge.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/kotex-oblivoir/memhangul-common/obchaptertoc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/kotex-oblivoir/memhangul-common/oblivoir-misc.sty
@@ -51,10 +49,8 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimalist-flow.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimalist-plain.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimalist-stream.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/mitthesis/mitthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/modiagram/modiagram.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/naive-ebnf/naive-ebnf.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/non-decimal-units/non-decimal-units.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/numerica/numerica.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/nwafuthesis/nwafuthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/ocgx2/ocgx2.sty
