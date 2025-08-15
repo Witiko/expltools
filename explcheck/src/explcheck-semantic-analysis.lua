@@ -1048,7 +1048,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
-  local maybe_declared_variable_csname_texts, maybe_defined_variable_csname_texts = {}, {}
+  local maybe_declared_variable_csname_texts = {}
   local maybe_declared_variable_csname_pattern, maybe_defined_variable_csname_pattern = parsers.fail, parsers.fail
   local maybe_used_variable_csname_texts = {}
   local maybe_used_variable_csname_pattern = parsers.fail
@@ -1202,7 +1202,6 @@ local function semantic_analysis(pathname, content, issues, results, options)
           table.insert(
             declared_defined_and_used_variable_csname_texts,
             {statement.variable_type, statement.defined_csname.payload, byte_range})
-          maybe_defined_variable_csname_texts[statement.defined_csname.payload] = true
           table.insert(
             defined_variable_csname_texts,
             {statement.defined_csname.payload, byte_range}
@@ -1414,10 +1413,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
           lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
           and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
-          and not maybe_defined_variable_csname_texts[variable_csname]
-          and lpeg.match(maybe_defined_variable_csname_pattern, variable_csname) == nil
+          and not maybe_declared_variable_csname_texts[variable_csname]
+          and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
         ) then
-      issues:add('e419', 'using an undefined variable or constant', byte_range, format_csname(variable_csname))
+      issues:add('w419', 'using an undeclared variable or constant', byte_range, format_csname(variable_csname))
     end
   end
 

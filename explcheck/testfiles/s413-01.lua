@@ -10,7 +10,7 @@ local filename = "s413-01.tex"
 local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
-local options = {expl3_detection_strategy = "always", ignored_issues = {"w415", "e419"}}
+local options = {expl3_detection_strategy = "always", ignored_issues = {"w415", "w419"}}
 local issues = new_issues(filename, options)
 local results = {}
 

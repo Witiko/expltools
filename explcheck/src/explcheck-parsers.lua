@@ -729,6 +729,14 @@ local conditions = comma_list(condition)
 local expl3_variable_declaration = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
+  * (
+    P("g")^-1
+    * (
+      P("zero")
+      + P("clear")
+    )
+    * underscore
+  )^-1
   * P("new:N")
 )
 

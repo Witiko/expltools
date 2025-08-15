@@ -110,14 +110,14 @@ A constant is set.
 
  /e418.tex
 
-### Using an undefined variable or constant {.e label=e419 #using-undefined-variable-or-constant}
+### Using an undeclared variable or constant {.w label=w419 #using-undeclared-variable-or-constant}
 A variable or constant is used but undeclared or undefined.
 
- /e419-01.tex
- /e419-02.tex
- /e419-03.tex
- /e419-04.tex
- /e419-05.tex
+ /w419-01.tex
+ /w419-02.tex
+ /w419-03.tex
+ /w419-04.tex
+ /w419-05.tex
 
 ### Locally setting a global variable {.e}
 A global variable is locally set.

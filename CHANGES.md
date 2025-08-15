@@ -28,6 +28,10 @@ This version of explcheck has made the following changes to the document titled
   an accessor) and E420 (Using non-token-list variable or constant without
   an accessor). (#121)
 
+- Rename planned issues E421 and E518 (Using an undefined variable or
+  constant) to W421 and W518 (Using an undeclared variable or constant),
+  respectively. (#121)
+
 #### Development
 
 - Include contextual information in human-readable issue descriptions.
@@ -61,7 +65,7 @@ This version of explcheck has made the following changes to the document titled
   5. W416 (Setting an undeclared variable)
   6. E417 (Setting a variable as a constant)
   7. E418 (Setting a constant)
-  8. E419 (Using an undefined variable or constant)
+  8. W419 (Using an undeclared variable or constant)
 
 - Add Lua option `suppressed_issue_map`.
 

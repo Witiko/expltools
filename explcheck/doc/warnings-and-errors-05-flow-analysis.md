@@ -609,20 +609,25 @@ A variable is set before it has been declared.
 
 This check is a stronger version of <#setting-undeclared-variable> and should prevent <#setting-undeclared-variable> from being emitted for this variable.
 
-### Using an undefined variable or constant {.e}
-A variable or constant is used before it has been defined.
+### Using an undeclared variable or constant {.w}
+A variable or constant is used before it has been declared.
 
 ``` tex
-\tl_new:N
-  \g_example_tl
 \tl_use:N  % error on this line
   \g_example_tl
-\tl_gset:Nn
+\tl_new:N
   \g_example_tl
+```
+
+``` tex
+\tl_use:N  % error on this line
+  \c_example_tl
+\tl_const:N
+  \c_example_tl
   { foo }
 ```
 
-This check is a stronger version of <#using-undefined-variable-or-constant> and should only be emitted if <#using-undefined-variable-or-constant> has not previously been emitted for this variable or constant.
+This check is a stronger version of <#using-undeclared-variable-or-constant> and should only be emitted if <#using-undeclared-variable-or-constant> has not previously been emitted for this variable or constant.
 
 ### Multiply declared variable or constant {.e}
 A variable or constant is declared multiple times.
