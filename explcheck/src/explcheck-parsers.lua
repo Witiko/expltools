@@ -357,23 +357,35 @@ local expl3_standard_library_prefixes = (
   + P("use")
   + P("withargs")  -- part of the withargs package
 )
-local function expl3_well_known_function_csname(other_prefix_texts)
+local function expl3_well_known_csname(other_prefix_texts)
   local other_prefixes = fail
   for _, prefix_text in ipairs(other_prefix_texts) do
     other_prefixes = other_prefixes + P(prefix_text)
   end
-  return (
+  local prefix = (
+    expl3_standard_library_prefixes * #(underscore + colon)
+    + registered_prefixes * #(underscore + colon)
+    + other_prefixes
+  )
+  local well_known_function_csname = (
     P("__")^-1
-    * (
-      expl3_standard_library_prefixes * #(underscore + colon)
-      + registered_prefixes * #(underscore + colon)
-      + other_prefixes
-    )
+    * prefix
     * (
       underscore
       * (any - colon)^0
     )^0
     * colon
+  )
+  local well_known_variable_or_constant_csname = (
+    S("cgl")  -- scope
+    * underscore
+    * underscore^-1
+    * prefix
+    * underscore
+  )
+  return (
+    well_known_function_csname
+    + well_known_variable_or_constant_csname
   )
 end
 
@@ -812,7 +824,7 @@ return {
   expl3_variable_definition = expl3_variable_definition,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl3_variable_use = expl3_variable_use,
-  expl3_well_known_function_csname = expl3_well_known_function_csname,
+  expl3_well_known_csname = expl3_well_known_csname,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   fail = fail,

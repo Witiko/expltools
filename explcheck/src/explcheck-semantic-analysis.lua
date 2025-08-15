@@ -1246,12 +1246,12 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
   --- Report issues apparent from the collected information.
   local imported_prefixes = get_option('imported_prefixes', options, pathname)
-  local expl3_well_known_function_csname = parsers.expl3_well_known_function_csname(imported_prefixes)
+  local expl3_well_known_csname = parsers.expl3_well_known_csname(imported_prefixes)
 
   ---- Report unused private functions.
   for _, defined_private_function_text in ipairs(defined_private_function_texts) do
     local defined_csname, byte_range = table.unpack(defined_private_function_text)
-    if lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+    if lpeg.match(expl3_well_known_csname, defined_csname) == nil
         and not maybe_used_csname_texts[defined_csname]
         and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
@@ -1295,7 +1295,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   ---- Report function variants for undefined functions.
   for _, variant_base_csname_text in ipairs(variant_base_csname_texts) do
     local base_csname, byte_range = table.unpack(variant_base_csname_text)
-    if lpeg.match(expl3_well_known_function_csname, base_csname) == nil
+    if lpeg.match(expl3_well_known_csname, base_csname) == nil
         and not maybe_defined_csname_texts[base_csname]
         and lpeg.match(maybe_defined_csname_pattern, base_csname) == nil then
       issues:add('e405', 'function variant for an undefined function', byte_range, format_csname(base_csname))
@@ -1306,7 +1306,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, called_function_or_variant in ipairs(called_functions_and_variants) do
     local csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
-        and lpeg.match(expl3_well_known_function_csname, csname) == nil
+        and lpeg.match(expl3_well_known_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
@@ -1317,7 +1317,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, indirect_definition_base_csname_text in ipairs(indirect_definition_base_csname_texts) do
     local csname, byte_range = table.unpack(indirect_definition_base_csname_text)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
-        and lpeg.match(expl3_well_known_function_csname, csname) == nil
+        and lpeg.match(expl3_well_known_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
@@ -1329,7 +1329,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local defined_csname, byte_range = table.unpack(defined_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
-          and lpeg.match(expl3_well_known_function_csname, defined_csname) == nil
+          and lpeg.match(expl3_well_known_csname, defined_csname) == nil
           and lpeg.match(parsers.expl3_function_csname, defined_csname) == nil
         ) then
       issues:add('s412', 'malformed function name', byte_range, format_csname(defined_csname))
@@ -1372,7 +1372,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local variable_csname, byte_range = table.unpack(defined_variable_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
-          and lpeg.match(expl3_well_known_function_csname, variable_csname) == nil
+          and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
           and not maybe_declared_variable_csname_texts[variable_csname]
           and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
