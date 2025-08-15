@@ -95,14 +95,10 @@ A variable or a constant is declared and perhaps defined but unused.
  /w415-04.tex
  /w415-05.tex
 
-### Setting an undeclared variable {.w #setting-undeclared-variable}
+### Setting an undeclared variable {.w label=w416 #setting-undeclared-variable}
 An undeclared variable is set.
 
-``` tex
-\tl_gset:Nn  % warning on this line
-  \g_example_tl
-  { bar }
-```
+ /w416.tex
 
 ### Setting a variable as a constant {.e}
 A variable is set as though it were a constant.
