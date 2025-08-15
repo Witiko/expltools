@@ -61,6 +61,7 @@ This version of explcheck has made the following changes to the document titled
   5. W416 (Setting an undeclared variable)
   6. E417 (Setting a variable as a constant)
   7. E418 (Setting a constant)
+  8. E419 (Using an undefined variable or constant)
 
 - Add Lua option `suppressed_issue_map`.
 

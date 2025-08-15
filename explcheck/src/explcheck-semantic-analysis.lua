@@ -1048,8 +1048,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
-  local maybe_declared_variable_csname_texts = {}
-  local maybe_declared_variable_csname_pattern = parsers.fail
+  local maybe_declared_variable_csname_texts, maybe_defined_variable_csname_texts = {}, {}
+  local maybe_declared_variable_csname_pattern, maybe_defined_variable_csname_pattern = parsers.fail, parsers.fail
+  local maybe_used_variable_csname_texts = {}
   local maybe_used_variable_csname_pattern = parsers.fail
 
   for segment_number, segment_statements in ipairs(statement_segments) do
@@ -1201,10 +1202,26 @@ local function semantic_analysis(pathname, content, issues, results, options)
           table.insert(
             declared_defined_and_used_variable_csname_texts,
             {statement.variable_type, statement.defined_csname.payload, byte_range})
+          maybe_defined_variable_csname_texts[statement.defined_csname.payload] = true
           table.insert(
-            statement.is_constant and declared_variable_csname_texts or defined_variable_csname_texts,
+            defined_variable_csname_texts,
             {statement.defined_csname.payload, byte_range}
           )
+          if statement.is_constant then
+            maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
+            table.insert(
+              declared_variable_csname_texts,
+              {statement.defined_csname.payload, byte_range}
+            )
+          end
+        elseif statement.declared_csname.type == PATTERN then
+          maybe_defined_variable_csname_pattern = (
+            maybe_defined_variable_csname_pattern
+            + #(statement.declared_csname.payload * parsers.eof)
+            * statement.declared_csname.payload
+          )
+        else
+          error('Unexpected csname type "' .. statement.base_csname.type .. '"')
         end
         -- Record control sequence name usage and definitions.
         if statement.subtype == VARIABLE_DEFINITION_DIRECT then
@@ -1218,7 +1235,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
             declared_defined_and_used_variable_csname_texts,
             {statement.variable_type, statement.used_csname.payload, byte_range}
           )
-          used_variable_csname_texts[statement.used_csname.payload] = true
+          table.insert(used_variable_csname_texts, {statement.used_csname.payload, byte_range})
+          maybe_used_variable_csname_texts[statement.used_csname.payload] = true
         elseif statement.used_csname.type == PATTERN then
           maybe_used_variable_csname_pattern = (
             maybe_used_variable_csname_pattern
@@ -1366,7 +1384,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, declared_variable_csname_text in ipairs(declared_variable_csname_texts) do
     local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
-          not used_variable_csname_texts[variable_csname]
+          not maybe_used_variable_csname_texts[variable_csname]
           and lpeg.match(maybe_used_variable_csname_pattern, variable_csname) == nil
           and not maybe_used_csname_texts[variable_csname]
           and lpeg.match(maybe_used_csname_pattern, variable_csname) == nil
@@ -1386,6 +1404,20 @@ local function semantic_analysis(pathname, content, issues, results, options)
           and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
         ) then
       issues:add('w416', 'setting an undeclared variable', byte_range, format_csname(variable_csname))
+    end
+  end
+
+  ---- Report using undefined variables or constants.
+  for _, used_variable_csname_text in ipairs(used_variable_csname_texts) do
+    local variable_csname, byte_range = table.unpack(used_variable_csname_text)
+    if (
+          lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+          and lpeg.match(expl3_well_known_csname, variable_csname) == nil
+          and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
+          and not maybe_defined_variable_csname_texts[variable_csname]
+          and lpeg.match(maybe_defined_variable_csname_pattern, variable_csname) == nil
+        ) then
+      issues:add('e419', 'using an undefined variable or constant', byte_range, format_csname(variable_csname))
     end
   end
 

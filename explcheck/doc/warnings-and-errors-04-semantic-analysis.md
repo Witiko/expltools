@@ -110,43 +110,14 @@ A constant is set.
 
  /e418.tex
 
-### Using an undefined variable or constant {.e #using-undefined-variable-or-constant}
+### Using an undefined variable or constant {.e label=e419 #using-undefined-variable-or-constant}
 A variable or constant is used but undeclared or undefined.
 
-``` tex
-\tl_use:N  % error on this line
-  \g_undeclared_tl
-```
-
-``` tex
-\tl_new:N
-  \g_declared_but_undefined_tl
-\tl_use:N  % error on this line
-  \g_declared_but_undefined_tl
-```
-
-``` tex
-\tl_new:N
-  \g_defined_tl
-\tl_gset:Nn
-  \g_defined_tl
-  { foo }
-\tl_use:N
-  \g_defined_tl
-```
-
-``` tex
-\tl_use:N  % error on this line
-  \c_undefined_tl
-```
-
-``` tex
-\tl_const:Nn
-  \c_defined_tl
-  { foo }
-\tl_use:N
-  \c_defined_tl
-```
+ /e419-01.tex
+ /e419-02.tex
+ /e419-03.tex
+ /e419-04.tex
+ /e419-05.tex
 
 ### Locally setting a global variable {.e}
 A global variable is locally set.
