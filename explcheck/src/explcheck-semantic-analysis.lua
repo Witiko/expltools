@@ -826,6 +826,14 @@ local function semantic_analysis(pathname, content, issues, results, options)
               ) then
             goto other_statement
           end
+          -- detect mutability mismatches
+          local defined_csname_prefix = defined_csname.transcript:sub(1, 2)
+          if is_constant and (defined_csname_prefix == "g_" or defined_csname_prefix == "l_") then
+            issues:add('e417', 'setting a variable as a constant', byte_range, format_csname(defined_csname.transcript))
+          end
+          if not is_constant and defined_csname_prefix == "c_" then
+            issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
+          end
           local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
           local statement
           if is_direct then

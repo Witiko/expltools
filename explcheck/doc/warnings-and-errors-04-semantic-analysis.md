@@ -100,23 +100,15 @@ An undeclared variable is set.
 
  /w416.tex
 
-### Setting a variable as a constant {.e}
+### Setting a variable as a constant {.e label=e417}
 A variable is set as though it were a constant.
 
-``` tex
-\tl_const:Nn  % error on this line
-  \g_example_tl
-  { bar }
-```
+ /e417.tex
 
-### Setting a constant {.e}
+### Setting a constant {.e label=e418}
 A constant is set.
 
-``` tex
-\tl_gset:Nn  % error on this line
-  \c_example_tl
-  { bar }
-```
+ /e418.tex
 
 ### Using a token list variable or constant without an accessor {.w}
 A token list variable or constant is used without an accessor function.
