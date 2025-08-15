@@ -1383,7 +1383,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, declared_variable_csname_text in ipairs(declared_variable_csname_texts) do
     local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
-          not maybe_used_variable_csname_texts[variable_csname]
+          lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+          and not maybe_used_variable_csname_texts[variable_csname]
           and lpeg.match(maybe_used_variable_csname_pattern, variable_csname) == nil
           and not maybe_used_csname_texts[variable_csname]
           and lpeg.match(maybe_used_csname_pattern, variable_csname) == nil
