@@ -1489,6 +1489,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
       -- For declarations, we require that the the declaration type <= the variable type.
+      -- For example, `\str_new:N \g_example_tl` is OK but `\tl_new:N \g_example_str` is not.
       local subtype, supertype = declaration_type, csname_type
       if not is_subtype(subtype, supertype) then
         local context = string.format("!(%s <= %s)", subtype, supertype)
@@ -1500,7 +1501,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local definition_type, csname_transcript, byte_range = table.unpack(maybe_defined_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
-      -- For definitions, we require that the definition type <= defined variable type.
+      -- For definitions, we require that the definition type <= the defined variable type.
+      -- For example, `\clist_gset:Nn \g_example_tl ...` is OK but `\tl_gset:Nn \g_example_clist ...` is not.
       local subtype, supertype = definition_type, csname_type
       if not is_subtype(subtype, supertype) then
         local context = string.format("!(%s <= %s)", subtype, supertype)
@@ -1512,7 +1514,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local definition_type, csname_transcript, byte_range = table.unpack(maybe_defined_variable_base_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
-      -- Additionally, for indirect definitions, we also require that base variable type <= definition type.
+      -- Additionally, for indirect definitions, we also require that the base variable type <= the definition type.
+      -- For example, `\tl_gset_eq:NN ... \g_example_str` is OK but `\str_gset_eq:NN ... \g_example_tl` is not.
       local subtype, supertype = csname_type, definition_type
       if not is_subtype(subtype, supertype) then
         local context = string.format("!(%s <= %s)", subtype, supertype)
@@ -1524,6 +1527,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local use_type, csname_transcript, byte_range = table.unpack(maybe_used_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     -- For uses, we require a potential compatibility between the use type and the variable type.
+    -- For example, both `\str_count:N \g_example_tl` and `\tl_count:N \g_example_str` are OK.
     if csname_type ~= nil and not is_maybe_compatible_type(use_type, csname_type) then
       local context = string.format("!(%s ~= %s)", use_type, csname_type)
       issues:add('t422', 'using a variable of an incompatible type', byte_range, context)
