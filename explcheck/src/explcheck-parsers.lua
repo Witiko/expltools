@@ -786,7 +786,17 @@ local expl3_variable_or_constant_csname = (
     * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
   )
   * underscore
-  * expl3_variable_or_constant_type
+  * expl3_variable_or_constant_type  -- type
+  * eof
+)
+local expl3_variable_or_constant_csname_scope = (
+  C(S("cgl"))  -- scope
+  * underscore
+)
+local expl3_variable_or_constant_csname_type = (
+  (any - #(underscore * expl3_variable_or_constant_type * eof))^0  -- scope, module, and description
+  * underscore
+  * C(expl3_variable_or_constant_type)  -- type
   * eof
 )
 local expl3_scratch_variable_csname = (
@@ -832,6 +842,8 @@ return {
   expl3_variable_declaration = expl3_variable_declaration,
   expl3_variable_definition = expl3_variable_definition,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
+  expl3_variable_or_constant_csname_scope = expl3_variable_or_constant_csname_scope,
+  expl3_variable_or_constant_csname_type = expl3_variable_or_constant_csname_type,
   expl3_variable_use = expl3_variable_use,
   expl3_well_known_csname = expl3_well_known_csname,
   expl_syntax_off = expl_syntax_off,

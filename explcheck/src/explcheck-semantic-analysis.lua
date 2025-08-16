@@ -827,18 +827,20 @@ local function semantic_analysis(pathname, content, issues, results, options)
             goto other_statement
           end
           -- detect mutability mismatches
-          local defined_csname_prefix = defined_csname.transcript:sub(1, 2)
-          if is_constant and (defined_csname_prefix == "g_" or defined_csname_prefix == "l_") then
-            issues:add('e417', 'setting a variable as a constant', byte_range, format_csname(defined_csname.transcript))
-          end
-          if not is_constant and defined_csname_prefix == "c_" then
-            issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
-          end
-          if not is_global and defined_csname_prefix == "g_" then
-            issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
-          end
-          if is_global and defined_csname_prefix == "l_" then
-            issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+          local defined_csname_scope = lpeg.match(parsers.expl3_variable_or_constant_csname_scope, defined_csname.transcript)
+          if defined_csname_scope ~= nil then
+            if is_constant and (defined_csname_scope == "g" or defined_csname_scope == "l") then
+              issues:add('e417', 'setting a variable as a constant', byte_range, format_csname(defined_csname.transcript))
+            end
+            if not is_constant and defined_csname_scope == "c" then
+              issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
+            end
+            if not is_global and defined_csname_scope == "g" then
+              issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
+            end
+            if is_global and defined_csname_scope == "l" then
+              issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+            end
           end
           local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
           local statement
