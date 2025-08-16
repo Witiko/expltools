@@ -93,9 +93,7 @@ local PATTERN = csname_types.PATTERN
 local function is_subtype(subtype, supertype)
   if subtype == supertype then
     return true
-  elseif subtype == "str" and supertype == "tl" then
-    return true
-  elseif subtype == "clist" and supertype == "tl" then
+  elseif (subtype == "str" or subtype == "clist") and supertype == "tl" then
     return true
   elseif (subtype == "ior" or subtype == "iow") and supertype == "int" then
     return true
