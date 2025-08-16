@@ -53,7 +53,7 @@ This version of explcheck has made the following changes to the document titled
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
-- Add more support for semantic analysis. (#117..#121)
+- Add more support for semantic analysis. (#117..#122)
 
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
