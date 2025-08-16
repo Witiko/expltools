@@ -1502,7 +1502,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local definition_type, csname_transcript, byte_range = table.unpack(maybe_defined_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
-      -- For direct definitions, we require that the definition type <= defined variable type.
+      -- For definitions, we require that the definition type <= defined variable type.
       local subtype, supertype = definition_type, csname_type
       if not is_subtype(subtype, supertype) then
         local context = string.format("!(%s <= %s)", subtype, supertype)
@@ -1525,7 +1525,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, maybe_used_variable_csname_transcript in ipairs(maybe_used_variable_csname_transcripts) do
     local use_type, csname_transcript, byte_range = table.unpack(maybe_used_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
-    -- For uses, we require a compatibility match between the use type and the variable type.
+    -- For uses, we require a potential compatibility between the use type and the variable type.
     if csname_type ~= nil and not is_maybe_compatible_type(use_type, csname_type) then
       local context = string.format("!(%s ~= %s)", use_type, csname_type)
       issues:add('t422', 'using a variable of an incompatible type', byte_range, context)
