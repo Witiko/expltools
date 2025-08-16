@@ -752,13 +752,13 @@ local expl3_variable_definition = Ct(
       + P("set") * Cc(false)  -- local
     )
     * (
-      underscore
+      Cc(false)  -- indirect
+      * underscore
       * (
         P("eq")
         + P("from_")
-        * expl3_variable_or_constant_type
+        * C(expl3_variable_or_constant_type)
       )
-      * Cc(false)  -- indirect
       + Cc(true)  -- direct
     )
   )
@@ -770,8 +770,10 @@ local expl3_variable_use = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
   * (
-    P("use")
+    P("count")
+    + P("open")
     + P("show")
+    + P("use")
   )
   * P(":N")
 )
@@ -785,7 +787,20 @@ local expl3_variable_or_constant_csname = (
     * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
   )
   * underscore
-  * expl3_variable_or_constant_type
+  * expl3_variable_or_constant_type  -- type
+  * eof
+)
+local expl3_variable_or_constant_csname_scope = (
+  C(S("cgl"))  -- scope
+  * underscore
+)
+local expl3_variable_or_constant_csname_type = (
+  (any - underscore)^0  -- scope
+  * underscore^1
+  * (any - underscore)^1  -- module and description
+  * (any - #(underscore * expl3_variable_or_constant_type * eof))^0
+  * underscore
+  * C(expl3_variable_or_constant_type)  -- type
   * eof
 )
 local expl3_scratch_variable_csname = (
@@ -831,6 +846,8 @@ return {
   expl3_variable_declaration = expl3_variable_declaration,
   expl3_variable_definition = expl3_variable_definition,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
+  expl3_variable_or_constant_csname_scope = expl3_variable_or_constant_csname_scope,
+  expl3_variable_or_constant_csname_type = expl3_variable_or_constant_csname_type,
   expl3_variable_use = expl3_variable_use,
   expl3_well_known_csname = expl3_well_known_csname,
   expl_syntax_off = expl_syntax_off,

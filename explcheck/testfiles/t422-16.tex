@@ -1,0 +1,19 @@
+\tl_new:N
+  \l_example_tl
+\str_new:N
+  \l_example_str
+\str_set:Nn
+  \l_example_str
+  { foo }
+\tl_set_eq:NN
+  \l_example_tl
+  \l_example_str
+\str_set_eq:NN
+  \l_example_tl
+  \l_example_str
+\tl_set_eq:NN  % error on this line
+  \l_example_str
+  \l_example_tl
+\str_set_eq:NN  % error on this line
+  \l_example_str
+  \l_example_tl

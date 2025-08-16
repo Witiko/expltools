@@ -68,6 +68,12 @@ This version of explcheck has made the following changes to the document titled
    8. W419 (Using an undeclared variable or constant)
    9. E420 (Locally setting a global variable)
   10. E421 (Globally setting a local variable)
+  11. T422 (Using a variable of an incompatible type)
+
+  This concludes all planned issues from sections 4.1 (Functions and
+  conditional functions) and 4.2 (Variables and constants) from this document,
+  leaving only sections 4.3 (Messages) and 4.4 (Sorting) to finish Section 4
+  (Semantic analysis).
 
 - Add Lua option `suppressed_issue_map`.
 
