@@ -770,8 +770,9 @@ local expl3_variable_use = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
   * (
-    P("use")
+    P("count")
     + P("show")
+    + P("use")
   )
   * P(":N")
 )
