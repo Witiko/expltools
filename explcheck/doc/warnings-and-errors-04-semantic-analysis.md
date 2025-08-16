@@ -129,222 +129,27 @@ A local variable is globally set.
 
  /e421.tex
 
-### Using a variable of an incompatible type {.t}
+### Using a variable of an incompatible type {.t label=t422}
 A variable of one type is used where a variable of a different type should be used.
 
-``` tex
-\tl_new:N
-  \l_example_str  % error on this line
-```
-
-``` tex
-\tl_new:N
-  \l_example_tl
-\tl_count:N
-  \l_example_tl
-\str_count:N
-  \l_example_tl
-\seq_count:N
-  \l_example_tl  % error on this line
-\clist_count:N
-  \l_example_tl  % error on this line
-\prop_count:N
-  \l_example_tl  % error on this line
-\intarray_count:N
-  \l_example_tl  % error on this line
-\fparray_count:N
-  \l_example_tl  % error on this line
-```
-
-``` tex
-\str_new:N
-  \l_example_str
-\tl_count:N
-  \l_example_str
-\str_count:N
-  \l_example_str
-\seq_count:N
-  \l_example_str  % error on this line
-\clist_count:N
-  \l_example_str  % error on this line
-\prop_count:N
-  \l_example_str  % error on this line
-\intarray_count:N
-  \l_example_str  % error on this line
-\fparray_count:N
-  \l_example_str  % error on this line
-```
-
-``` tex
-\int_new:N
-  \l_example_int
-\tl_count:N
-  \l_example_int  % error on this line
-\str_count:N
-  \l_example_int  % error on this line
-\seq_count:N
-  \l_example_int  % error on this line
-\clist_count:N
-  \l_example_int  % error on this line
-\prop_count:N
-  \l_example_int  % error on this line
-\intarray_count:N
-  \l_example_int  % error on this line
-\fparray_count:N
-  \l_example_int  % error on this line
-```
-
-``` tex
-\seq_new:N
-  \l_example_seq
-\tl_count:N
-  \l_example_seq  % error on this line
-\str_count:N
-  \l_example_seq  % error on this line
-\seq_count:N
-  \l_example_seq
-\clist_count:N
-  \l_example_seq  % error on this line
-\prop_count:N
-  \l_example_seq  % error on this line
-\intarray_count:N
-  \l_example_seq  % error on this line
-\fparray_count:N
-  \l_example_seq  % error on this line
-```
-
-``` tex
-\clist_new:N
-  \l_example_clist
-\tl_count:N
-  \l_example_clist  % error on this line
-\str_count:N
-  \l_example_clist  % error on this line
-\seq_count:N
-  \l_example_clist  % error on this line
-\clist_count:N
-  \l_example_clist
-\prop_count:N
-  \l_example_clist  % error on this line
-\intarray_count:N
-  \l_example_clist  % error on this line
-\fparray_count:N
-  \l_example_clist  % error on this line
-```
-
-``` tex
-\clist_new:N
-  \l_example_prop
-\tl_count:N
-  \l_example_prop  % error on this line
-\str_count:N
-  \l_example_prop  % error on this line
-\seq_count:N
-  \l_example_prop  % error on this line
-\clist_count:N
-  \l_example_prop  % error on this line
-\prop_count:N
-  \l_example_prop
-\intarray_count:N
-  \l_example_prop  % error on this line
-\fparray_count:N
-  \l_example_prop  % error on this line
-```
-
-``` tex
-\intarray_new:Nn
-  \g_example_intarray
-  { 5 }
-\tl_count:N
-  \g_example_intarray  % error on this line
-\str_count:N
-  \g_example_intarray  % error on this line
-\seq_count:N
-  \g_example_intarray  % error on this line
-\clist_count:N
-  \g_example_intarray  % error on this line
-\prop_count:N
-  \g_example_intarray  % error on this line
-\intarray_count:N
-  \g_example_intarray
-\fparray_count:N
-  \g_example_intarray  % error on this line
-```
-
-``` tex
-\fparray_new:Nn
-  \g_example_fparray
-  { 5 }
-\tl_count:N
-  \g_example_fparray  % error on this line
-\str_count:N
-  \g_example_fparray  % error on this line
-\seq_count:N
-  \g_example_fparray  % error on this line
-\clist_count:N
-  \g_example_fparray  % error on this line
-\prop_count:N
-  \g_example_fparray  % error on this line
-\intarray_count:N
-  \g_example_fparray  % error on this line
-\fparray_count:N
-  \g_example_fparray
-```
-
-``` tex
-\ior_new:N
-  \l_example_ior
-\iow_open:Nn
-  \l_example_ior  % error on this line
-  { example }
-```
-
-``` tex
-\clist_new:N
-  \l_example_clist
-\tl_set:Nn
-  \l_tmpa_tl
-  { foo }
-\clist_set_eq:NN
-  \l_example_clist
-  \l_tmpa_tl  % error on this line
-```
-
-``` tex
-\tl_set:Nn
-  \l_tmpa_tl
-  { foo }
-\seq_set_from_clist:NN
-  \l_tmpa_seq
-  \l_tmpa_tl  % error on this line
-```
-
-``` tex
-\tl_set:Nn
-  \l_tmpa_tl
-  { foo }
-\regex_set:Nn
-  \l_tmpa_regex
-  { foo }
-\int_set:Nn
-  \l_tmpa_int
-  { 1 + 2 }
-\regex_show:N
-  \l_tmpa_tl
-\regex_show:N
-  \l_tmpa_regex
-\regex_show:N
-  \l_tmpa_int  % error on this line
-```
-
-``` tex
-\tl_set:Nn
-  \l_tmpa_tl
-  { foo }
-\int_set_eq:NN
-  \l_tmpa_int
-  \l_tmpa_tl  % error on this line
-```
+ /t422-01.tex
+ /t422-02.tex
+ /t422-03.tex
+ /t422-04.tex
+ /t422-05.tex
+ /t422-06.tex
+ /t422-07.tex
+ /t422-08.tex
+ /t422-09.tex
+ /t422-10.tex
+ /t422-11.tex
+ /t422-12.tex
+ /t422-13.tex
+ /t422-14.tex
+ /t422-15.tex
+ /t422-16.tex
+ /t422-17.tex
+ /t422-18.tex
 
 ## Messages
 

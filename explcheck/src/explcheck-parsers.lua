@@ -752,13 +752,13 @@ local expl3_variable_definition = Ct(
       + P("set") * Cc(false)  -- local
     )
     * (
-      underscore
+      Cc(false)  -- indirect
+      * underscore
       * (
         P("eq")
         + P("from_")
-        * expl3_variable_or_constant_type
+        * C(expl3_variable_or_constant_type)
       )
-      * Cc(false)  -- indirect
       + Cc(true)  -- direct
     )
   )
@@ -771,6 +771,7 @@ local expl3_variable_use = Ct(
   * underscore
   * (
     P("count")
+    + P("open")
     + P("show")
     + P("use")
   )
@@ -794,7 +795,10 @@ local expl3_variable_or_constant_csname_scope = (
   * underscore
 )
 local expl3_variable_or_constant_csname_type = (
-  (any - #(underscore * expl3_variable_or_constant_type * eof))^0  -- scope, module, and description
+  (any - underscore)^0  -- scope
+  * underscore^1
+  * (any - underscore)^1  -- module and description
+  * (any - #(underscore * expl3_variable_or_constant_type * eof))^0
   * underscore
   * C(expl3_variable_or_constant_type)  -- type
   * eof

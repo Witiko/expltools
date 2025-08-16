@@ -1,0 +1,8 @@
+\clist_new:N
+  \l_example_clist
+\tl_set:Nn
+  \l_tmpa_tl
+  { foo }
+\clist_set_eq:NN  % error on this line
+  \l_example_clist
+  \l_tmpa_tl

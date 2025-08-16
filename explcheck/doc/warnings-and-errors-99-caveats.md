@@ -134,4 +134,5 @@ The warnings and errors in this documents do not cover the complete expl3 langua
       `.value_required:n` and never set keys with
       property `.value_forbidden:n`?
 - Horizontal box operation on a vertical box or vice
-  versa [@latexteam2024interfaces, Chapter 35]
+  versa [@latexteam2024interfaces, Chapter 35], similarly for
+  coffins

@@ -89,6 +89,33 @@ local csname_types = {
 local TEXT = csname_types.TEXT
 local PATTERN = csname_types.PATTERN
 
+-- Determine whether an expl3 type is a subtype of another type.
+local function is_subtype(subtype, supertype)
+  if subtype == supertype then
+    return true
+  elseif subtype == "str" and supertype == "tl" then
+    return true
+  elseif subtype == "clist" and supertype == "tl" then
+    return true
+  elseif (subtype == "ior" or subtype == "iow") and supertype == "int" then
+    return true
+  -- Without tracking the data flow, we can't distinguish between h?box and v?box, we just know !(hbox <= vbox) and !(vbox <= hbox).
+  elseif subtype:sub(-3) == "box" and supertype:sub(-3) == "box" and math.min(#subtype, #supertype) == 3 then
+    return true
+  -- Without tracking the data flow, we can't distinguish between h?coffin and v?coffin, we just know !(hcoffin <= vcoffin)
+  -- and !(vcoffin <= hcoffin).
+  elseif subtype:sub(-6) == "coffin" and supertype:sub(-6) == "coffin" and math.min(#subtype, #supertype) == 6 then
+    return true
+  else
+    return false
+  end
+end
+
+-- Determine whether an expl3 type can perhaps be used by a function of another type.
+local function is_maybe_compatible_type(first_type, second_type)
+  return is_subtype(first_type, second_type) or is_subtype(second_type, first_type)
+end
+
 -- Determine the meaning of function calls and register any issues.
 local function semantic_analysis(pathname, content, issues, results, options)
 
@@ -864,6 +891,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
               definition_text_argument = definition_text_argument,
             }
           else
+            local base_variable_type = variable_definition[5] or variable_type
             -- determine the name of the base variable or constant
             local base_csname_argument = call.arguments[2]
             local base_csname = extract_csname_from_argument(base_csname_argument)
@@ -882,6 +910,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
               defined_csname = defined_csname,
               -- The following attributes are specific to the subtype.
               base_csname = base_csname,
+              base_variable_type = base_variable_type,
             }
           end
           table.insert(statements, statement)
@@ -1056,8 +1085,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
-  local maybe_declared_variable_csname_texts = {}
+  local maybe_declared_variable_csname_texts, maybe_declared_variable_csname_transcripts = {}, {}
   local maybe_declared_variable_csname_pattern, maybe_defined_variable_csname_pattern = parsers.fail, parsers.fail
+  local maybe_used_variable_csname_transcripts = {}
+  local maybe_defined_variable_csname_transcripts, maybe_defined_variable_base_csname_transcripts = {}, {}
   local maybe_used_variable_csname_texts = {}
   local maybe_used_variable_csname_pattern = parsers.fail
 
@@ -1187,6 +1218,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Process a variable declaration.
       elseif statement.type == VARIABLE_DECLARATION then
         -- Record variable names.
+        table.insert(
+          maybe_declared_variable_csname_transcripts,
+          {statement.variable_type, statement.declared_csname.transcript, byte_range}
+        )
         if statement.declared_csname.type == TEXT then
           table.insert(
             declared_defined_and_used_variable_csname_texts,
@@ -1206,6 +1241,23 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Process a variable or constant definition.
       elseif statement.type == VARIABLE_DEFINITION then
         -- Record variable names.
+        if statement.is_constant then
+          table.insert(
+            maybe_declared_variable_csname_transcripts,
+            {statement.variable_type, statement.defined_csname.transcript, byte_range}
+          )
+        else
+          table.insert(
+            maybe_defined_variable_csname_transcripts,
+            {statement.variable_type, statement.defined_csname.transcript, byte_range}
+          )
+          if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
+            table.insert(
+              maybe_defined_variable_base_csname_transcripts,
+              {statement.base_variable_type, statement.base_csname.transcript, byte_range}
+            )
+          end
+        end
         if statement.defined_csname.type == TEXT then
           table.insert(
             declared_defined_and_used_variable_csname_texts,
@@ -1237,6 +1289,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Process a variable or constant use.
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
+        table.insert(
+          maybe_used_variable_csname_transcripts,
+          {statement.variable_type, statement.used_csname.transcript, byte_range}
+        )
         if statement.used_csname.type == TEXT then
           table.insert(
             declared_defined_and_used_variable_csname_texts,
@@ -1426,6 +1482,53 @@ local function semantic_analysis(pathname, content, issues, results, options)
           and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
         ) then
       issues:add('w419', 'using an undeclared variable or constant', byte_range, format_csname(variable_csname))
+    end
+  end
+
+  ---- Report using variables and constants of incompatible types.
+  for _, maybe_declared_variable_csname_transcript in ipairs(maybe_declared_variable_csname_transcripts) do
+    local declaration_type, csname_transcript, byte_range = table.unpack(maybe_declared_variable_csname_transcript)
+    local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
+    if csname_type ~= nil then
+      -- For declarations, we require that the the declaration type <= the variable type.
+      local subtype, supertype = declaration_type, csname_type
+      if not is_subtype(subtype, supertype) then
+        local context = string.format("!(%s <= %s)", subtype, supertype)
+        issues:add('t422', 'using a variable of an incompatible type', byte_range, context)
+      end
+    end
+  end
+  for _, maybe_defined_variable_csname_transcript in ipairs(maybe_defined_variable_csname_transcripts) do
+    local definition_type, csname_transcript, byte_range = table.unpack(maybe_defined_variable_csname_transcript)
+    local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
+    if csname_type ~= nil then
+      -- For direct definitions, we require that the definition type <= defined variable type.
+      local subtype, supertype = definition_type, csname_type
+      if not is_subtype(subtype, supertype) then
+        local context = string.format("!(%s <= %s)", subtype, supertype)
+        issues:add('t422', 'using a variable of an incompatible type', byte_range, context)
+      end
+    end
+  end
+  for _, maybe_defined_variable_base_csname_transcript in ipairs(maybe_defined_variable_base_csname_transcripts) do
+    local definition_type, csname_transcript, byte_range = table.unpack(maybe_defined_variable_base_csname_transcript)
+    local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
+    if csname_type ~= nil then
+      -- Additionally, for indirect definitions, we also require that base variable type <= definition type.
+      local subtype, supertype = csname_type, definition_type
+      if not is_subtype(subtype, supertype) then
+        local context = string.format("!(%s <= %s)", subtype, supertype)
+        issues:add('t422', 'using a variable of an incompatible type', byte_range, context)
+      end
+    end
+  end
+  for _, maybe_used_variable_csname_transcript in ipairs(maybe_used_variable_csname_transcripts) do
+    local use_type, csname_transcript, byte_range = table.unpack(maybe_used_variable_csname_transcript)
+    local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
+    -- For uses, we require a compatibility match between the use type and the variable type.
+    if csname_type ~= nil and not is_maybe_compatible_type(use_type, csname_type) then
+      local context = string.format("!(%s ~= %s)", use_type, csname_type)
+      issues:add('t422', 'using a variable of an incompatible type', byte_range, context)
     end
   end
 

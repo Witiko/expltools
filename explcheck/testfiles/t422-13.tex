@@ -1,0 +1,15 @@
+\tl_set:Nn
+  \l_tmpa_tl
+  { foo }
+\regex_set:Nn
+  \l_tmpa_regex
+  { foo }
+\int_set:Nn
+  \l_tmpa_int
+  { 1 + 2 }
+\regex_show:N  % error on this line
+  \l_tmpa_tl
+\regex_show:N
+  \l_tmpa_regex
+\regex_show:N  % error on this line
+  \l_tmpa_int
