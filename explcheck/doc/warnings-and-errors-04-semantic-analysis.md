@@ -186,22 +186,30 @@ A message is used but undefined.
 Parameter tokens other than `#1`, `#2`, `#3`, and `#4` are specified in a message text.
 
 ``` tex
-\msg_new:nnn
+\msg_new:nnn  % error on this line
   { foo }
   { bar }
-  { #5 }  % error on this line
+  { #5 }
+```
+
+``` tex
+\msg_new:nnnn  % error on this line
+  { foo }
+  { bar }
+  { #4 }
+  { #5 }
 ```
 
 ``` tex
 \msg_new:nnnn
   { foo }
   { bar }
-  { #4 }
-  { #5 }  % error on this line
+  { #1~#2 }
+  { #3~#4 }
 ```
 
-### Too few arguments supplied to message {.e #too-few-arguments-supplied-to-message}
-A message was supplied fewer arguments than there are parameters in the message text.
+### Incorrect number of arguments supplied to message {.w #incorrect-number-of-arguments-supplied-to-message}
+A message was supplied fewer or more arguments than there are parameters in the message text.
 
 ``` tex
 \msg_new:nnn
@@ -214,11 +222,17 @@ A message was supplied fewer arguments than there are parameters in the message 
 \msg_info:nnn  % error on this line
   { foo }
   { bar }
-  { baz }
+  { foo }
 \msg_info:nnnn
   { foo }
   { bar }
-  { baz }
+  { foo }
+  { bar }
+\msg_info:nnnn  % error on this line
+  { foo }
+  { bar }
+  { foo }
+  { bar }
   { baz }
 ```
 

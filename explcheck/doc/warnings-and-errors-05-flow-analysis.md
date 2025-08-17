@@ -684,8 +684,8 @@ A message is used before it has been defined.
 
 This check is a stronger version of <#using-undefined-message> and should only be emitted if <#using-undefined-message> has not previously been emitted for this message.
 
-### Too few arguments supplied to message {.e}
-A message was supplied fewer arguments than there are parameters in the message text.
+### Incorrect number of arguments supplied to message {.w}
+A message was supplied fewer or more arguments than there are parameters in the message text.
 
 ``` tex
 \msg_new:nnn
@@ -717,7 +717,7 @@ A message was supplied fewer arguments than there are parameters in the message 
   { baz }
 ```
 
-This check is a stronger version of <#too-few-arguments-supplied-to-message> and should only be emitted if <#too-few-arguments-supplied-to-message> has not previously been emitted for this message.
+This check is a stronger version of <#incorrect-number-of-arguments-supplied-to-message> and should only be emitted if <#incorrect-number-of-arguments-supplied-to-message> has not previously been emitted for this message.
 
 ### Multiply defined message {.e}
 A message is defined multiple times.

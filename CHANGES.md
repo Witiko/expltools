@@ -35,6 +35,10 @@ This version of explcheck has made the following changes to the document titled
 
 - Unplan issues W424 and E521 (Setting an undefined message). (#127)
 
+- Reclassify and rename the planned errors E426 and E522 (Too few arguments
+  supplied to message) to W426 and W522 (Incorrect number of arguments supplied
+  to message), respectively. (#127)
+
 #### Development
 
 - Include contextual information in human-readable issue descriptions.
