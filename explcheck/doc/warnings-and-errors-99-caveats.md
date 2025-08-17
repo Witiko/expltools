@@ -6,7 +6,7 @@ The warnings and errors in this documents do not cover the complete expl3 langua
   [@latexteam2024interfaces, sections 5.4–5.10]
 - Validation of parameters in (inline) functions
   (c.f. <#invalid-parameters-in-message-text>
-   and <#too-few-arguments-supplied-to-message>)
+   and <#incorrect-number-of-arguments-supplied-to-message>)
 - Shorthands such as `\~` and `\\` in message texts
   [@latexteam2024interfaces, sections 11.4 and 12.1.3]
 - Quotes in shell commands and file names
