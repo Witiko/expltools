@@ -48,16 +48,24 @@ end
 -- Run all processing steps.
 local function process_with_all_steps(pathname, content, issues, analysis_results, options)
   local get_option = require("explcheck-config").get_option
-  local preprocessing = require("explcheck-preprocessing")
-  local lexical_analysis = require("explcheck-lexical-analysis")
-  local syntactic_analysis = require("explcheck-syntactic-analysis")
-  local semantic_analysis = require("explcheck-semantic-analysis")
-  local steps = {preprocessing, lexical_analysis, syntactic_analysis, semantic_analysis}
-  for _, step in ipairs(steps) do
+  local fail_fast = get_option('fail_fast', options, pathname)
+  local stop_after = get_option('stop_after', options, pathname)
+  local stop_early_when_confused = get_option('stop_early_when_confused', options, pathname)
+  local step_names = {'preprocessing', 'lexical-analysis', 'syntactic-analysis', 'semantic-analysis'}
+  for _, step_name in ipairs(step_names) do
+    local step = require(string.format('explcheck-%s', step_name))
+    -- If a processing step is confused, skip it and all following steps.
+    if stop_early_when_confused and step.is_confused(pathname, analysis_results, options) then
+      break
+    end
     step.process(pathname, content, issues, analysis_results, options)
     -- If a processing step ended with error, skip all following steps.
-    if #issues.errors > 0 and get_option('fail_fast', options, pathname) then
-      return
+    if fail_fast and #issues.errors > 0 then
+      break
+    end
+    -- If a processing step is supposed to be the last step, skip all following steps.
+    if stop_after == step_name then
+      break
     end
   end
 end
