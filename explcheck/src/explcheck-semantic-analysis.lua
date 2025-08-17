@@ -161,7 +161,7 @@ local function is_confused(pathname, results, options)
     local min_other_complex_tokens_ratio = get_option('min_other_complex_tokens_ratio', options, pathname)
     if num_other_complex_tokens >= min_other_complex_tokens_count and other_complex_token_ratio >= min_other_complex_tokens_ratio then
       local reason = string.format(
-        "too much complex material (%s > %s) wasn't recognized as calls",
+        "too much complex material (%s >= %s) wasn't recognized as calls",
         format_percentage(100.0 * other_complex_token_ratio),
         format_percentage(100.0 * min_other_complex_tokens_ratio)
       )

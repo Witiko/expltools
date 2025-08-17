@@ -161,7 +161,7 @@ local function is_confused(pathname, results, options)
     local min_unclosed_grouping_ratio = get_option('min_unclosed_grouping_ratio', options, pathname)
     if num_unclosed_groupings >= min_unclosed_grouping_count and unclosed_grouping_ratio >= min_unclosed_grouping_ratio then
       local reason = string.format(
-        "there were too many unclosed groupings (%s > %s)",
+        "there were too many unclosed groupings (%s >= %s)",
         format_percentage(100.0 * unclosed_grouping_ratio),
         format_percentage(100.0 * min_unclosed_grouping_ratio)
       )
@@ -177,7 +177,7 @@ local function is_confused(pathname, results, options)
     local min_invalid_character_ratio = get_option('min_invalid_character_ratio', options, pathname)
     if num_invalid_characters >= min_invalid_character_count and invalid_character_ratio >= min_invalid_character_ratio then
       local reason = string.format(
-        "there were too many invalid characters (%s > %s)",
+        "there were too many invalid characters (%s >= %s)",
         format_percentage(100.0 * invalid_character_ratio),
         format_percentage(100.0 * min_invalid_character_ratio)
       )
