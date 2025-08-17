@@ -114,23 +114,65 @@ local function is_maybe_compatible_type(first_type, second_type)
   return is_subtype(first_type, second_type) or is_subtype(second_type, first_type)
 end
 
--- Determine the meaning of function calls and register any issues.
-local function semantic_analysis(pathname, content, issues, results, options)
+-- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
+-- a more complex material that may have side effects and presents a boundary between chunks of well-understood
+-- expl3 statements.
+--
+--  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
+--
+local function classify_tokens(tokens, token_range)
+  local num_complex_tokens = 0
+  for _, token in token_range:enumerate(tokens) do
+    if not is_token_simple(token) then
+      num_complex_tokens = num_complex_tokens + 1
+    end
+  end
+  if num_complex_tokens > 0 then
+    return OTHER_TOKENS_COMPLEX, num_complex_tokens  -- context material
+  else
+    return OTHER_TOKENS_SIMPLE, 0  -- simple material
+  end
+end
 
-  -- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
-  -- a more complex material that may have side effects and presents a boundary between chunks of well-understood
-  -- expl3 statements.
-  --
-  --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
-  --
-  local function classify_tokens(tokens, token_range)
-    for _, token in token_range:enumerate(tokens) do
-      if not is_token_simple(token) then  -- complex material
-        return OTHER_TOKENS_COMPLEX
+-- Determine whether the semantic analysis step is too confused by the results
+-- of the previous steps to run.
+local function is_confused(pathname, results, options)
+  local format_percentage = require("explcheck-format").format_percentage
+  local evaluation = require("explcheck-evaluation")
+  local count_tokens = evaluation.count_tokens
+  local num_tokens = count_tokens(results)
+  assert(num_tokens ~= nil)
+  assert(results.tokens ~= nil and results.calls ~= nil)
+  local num_other_complex_tokens = 0
+  for part_number, part_calls in ipairs(results.calls) do
+    local part_tokens = results.tokens[part_number]
+    for _, call in ipairs(part_calls) do
+      if call.type == OTHER_TOKENS then
+        local token_type, num_complex_tokens = classify_tokens(part_tokens, call.token_range)
+        if token_type == OTHER_TOKENS_COMPLEX then
+          num_other_complex_tokens = num_other_complex_tokens + num_complex_tokens
+        end
       end
     end
-    return OTHER_TOKENS_SIMPLE  -- simple material
   end
+  if num_tokens > 0 then
+    local other_complex_token_ratio = num_other_complex_tokens / num_tokens
+    local min_other_complex_tokens_count = get_option('min_other_complex_tokens_count', options, pathname)
+    local min_other_complex_tokens_ratio = get_option('min_other_complex_tokens_ratio', options, pathname)
+    if num_other_complex_tokens >= min_other_complex_tokens_count and other_complex_token_ratio >= min_other_complex_tokens_ratio then
+      local reason = string.format(
+        "too much complex material (%s >= %s) wasn't recognized as calls",
+        format_percentage(100.0 * other_complex_token_ratio),
+        format_percentage(100.0 * min_other_complex_tokens_ratio)
+      )
+      return true, reason
+    end
+  end
+  return false
+end
+
+-- Determine the meaning of function calls and register any issues.
+local function semantic_analysis(pathname, content, issues, results, options)
 
   -- Convert tokens from a range into a PEG pattern.
   local function extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
@@ -1541,6 +1583,8 @@ end
 
 return {
   csname_types = csname_types,
+  is_confused = is_confused,
+  name = "semantic analysis",
   process = semantic_analysis,
   statement_types = statement_types,
   statement_confidences = statement_confidences,

@@ -192,6 +192,16 @@ local function decolorize(text)
   return text:gsub("\27%[[0-9]+m", "")
 end
 
+-- Format a number as a percentage.
+local function format_percentage(percentage)
+  local formatted_percentage = string.format("%.0f%%", percentage)
+  if percentage > 0 and formatted_percentage == "0%" then
+    return "<1%"
+  else
+    return formatted_percentage
+  end
+end
+
 -- Format a ratio as a percentage.
 local function format_ratio(numerator, denominator)
   assert(numerator <= denominator)
@@ -199,12 +209,7 @@ local function format_ratio(numerator, denominator)
     return "100%"
   else
     assert(denominator > 0)
-    local formatted_percentage = string.format("%.0f%%", 100.0 * numerator / denominator)
-    if numerator > 0 and formatted_percentage == "0%" then
-      return "<1%"
-    else
-      return formatted_percentage
-    end
+    return format_percentage(100.0 * numerator / denominator)
   end
 end
 
@@ -534,184 +539,212 @@ local function print_results(pathname, issues, analysis_results, options, evalua
 
   -- Display additional information.
   if verbose and not porcelain then
-    local line_indent = (" "):rep(4)
-    print()
-    -- Display pre-evaluation information.
-    local num_total_bytes = evaluation_results.num_total_bytes
-    if num_total_bytes == 0 then
-      io.write(string.format("\n%sEmpty file", line_indent))
-      goto skip_remaining_additional_information
-    end
-    local formatted_file_size = string.format("%s %s", titlecase(humanize(num_total_bytes)), pluralize("byte", num_total_bytes))
-    io.write(string.format("\n%s%s %s", line_indent, colorize("File size:", BOLD), formatted_file_size))
-    -- Evaluate the evalution results of the preprocessing.
-    io.write(string.format("\n\n%s%s", line_indent, colorize("Preprocessing results:", BOLD)))
-    local seems_like_latex_style_file = analysis_results.seems_like_latex_style_file
-    if seems_like_latex_style_file ~= nil then
-      if seems_like_latex_style_file then
-        io.write(string.format("\n%s- Seems like a LaTeX style file", line_indent))
-      else
-        io.write(string.format("\n%s- Doesn't seem like a LaTeX style file", line_indent))
+  local line_indent = (" "):rep(4)
+    do
+      print()
+      -- Display pre-evaluation information.
+      local num_total_bytes = evaluation_results.num_total_bytes
+      if num_total_bytes == 0 then
+        io.write(string.format("\n%sEmpty file", line_indent))
+        goto skip_remaining_additional_information
       end
-    end
-    local num_expl_bytes = evaluation_results.num_expl_bytes
-    if num_expl_bytes == 0 or num_expl_bytes == nil then
-      io.write(string.format("\n%s- No expl3 material", line_indent))
-      goto skip_remaining_additional_information
-    end
-    local expl_ranges = analysis_results.expl_ranges
-    assert(expl_ranges ~= nil)
-    assert(#expl_ranges > 0)
-    io.write(string.format("\n%s- %s %s spanning ", line_indent, titlecase(humanize(#expl_ranges)), pluralize("expl3 part", #expl_ranges)))
-    if num_expl_bytes == num_total_bytes then
-      io.write("the whole file")
-    else
-      local formatted_expl_bytes = string.format("%s %s", humanize(num_expl_bytes), pluralize("byte", num_expl_bytes))
-      local formatted_expl_ratio = format_ratio(num_expl_bytes, num_total_bytes)
-      io.write(string.format("%s (%s of file size)", formatted_expl_bytes, formatted_expl_ratio))
-    end
-    if not (#expl_ranges == 1 and #expl_ranges[1] == num_total_bytes) then
-      io.write(":")
-      for part_number, range in ipairs(expl_ranges) do
-        local start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())
-        local end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:stop())
-        local formatted_range_start = string.format("%d:%d", start_line_number, start_column_number)
-        local formatted_range_end = string.format("%d:%d", end_line_number, end_column_number)
-        io.write(string.format("\n%s%d. Between ", line_indent:rep(2), part_number))
-        io.write(string.format("%s and %s", formatted_range_start, formatted_range_end))
-      end
-    end
-    -- Evaluate the evalution results of the lexical analysis.
-    local num_tokens = evaluation_results.num_tokens
-    if num_tokens == nil then
-      goto skip_remaining_additional_information
-    end
-    io.write(string.format("\n\n%s%s", line_indent, colorize("Lexical analysis results:", BOLD)))
-    if num_tokens == 0 then
-      io.write(string.format("\n%s- No tokens in expl3 parts", line_indent))
-      goto skip_remaining_additional_information
-    end
-    io.write(string.format("\n%s- %s %s in expl3 parts", line_indent, titlecase(humanize(num_tokens)), pluralize("token", num_tokens)))
-    local num_groupings = evaluation_results.num_groupings
-    if num_groupings ~= nil and num_groupings > 0 then
-      io.write(string.format("\n%s- %s %s", line_indent, titlecase(humanize(num_groupings)), pluralize("grouping", num_groupings)))
-      io.write(" in expl3 parts")
-      local num_unclosed_groupings = evaluation_results.num_unclosed_groupings
-      assert(num_unclosed_groupings ~= nil)
-      if num_unclosed_groupings > 0 then
-        local formatted_grouping_ratio = format_ratio(num_unclosed_groupings, num_groupings)
-        io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
-      end
-    end
-    -- Evaluate the evalution results of the syntactic analysis.
-    if evaluation_results.num_calls == nil then
-      goto skip_remaining_additional_information
-    end
-    io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
-    if evaluation_results.num_calls_total == 0 then
-      io.write(string.format("\n%s- No top-level %s", line_indent, pluralize("call")))
-      goto skip_remaining_additional_information
-    end
-    for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
-      local num_calls = evaluation_results.num_calls[call_type]
-      assert(num_calls ~= nil)
-      assert(num_calls > 0)
-      assert(num_call_tokens ~= nil)
-      assert(num_call_tokens > 0)
-      io.write(string.format("\n%s- %s top-level %s ", line_indent, titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
-      io.write("spanning ")
-      if num_call_tokens == num_tokens then
-        io.write("all tokens")
-      else
-        local formatted_call_tokens = string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens))
-        local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
-        if num_expl_bytes == num_total_bytes then
-            io.write(string.format("%s (%s of file size)", formatted_call_tokens, formatted_token_ratio))
+      local formatted_file_size = string.format("%s %s", titlecase(humanize(num_total_bytes)), pluralize("byte", num_total_bytes))
+      io.write(string.format("\n%s%s %s", line_indent, colorize("File size:", BOLD), formatted_file_size))
+      -- Evaluate the evalution results of the preprocessing.
+      io.write(string.format("\n\n%s%s", line_indent, colorize("Preprocessing results:", BOLD)))
+      local seems_like_latex_style_file = analysis_results.seems_like_latex_style_file
+      if seems_like_latex_style_file ~= nil then
+        if seems_like_latex_style_file then
+          io.write(string.format("\n%s- Seems like a LaTeX style file", line_indent))
         else
-          local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
-          io.write(string.format("%s (%s of tokens, ~%s of file size)", formatted_call_tokens, formatted_token_ratio, formatted_byte_ratio))
+          io.write(string.format("\n%s- Doesn't seem like a LaTeX style file", line_indent))
         end
       end
-    end
-    if evaluation_results.num_calls_total == nil or evaluation_results.num_calls_total == 0 then
-      goto skip_remaining_additional_information
-    end
-    -- Evaluate the evalution results of the semantic analysis.
-    if evaluation_results.num_statement_tokens == nil then
-      goto skip_remaining_additional_information
-    end
-    io.write(string.format("\n\n%s%s", line_indent, colorize("Semantic analysis results:", BOLD)))
-    if evaluation_results.num_statements_total == 0 then
-      io.write(string.format("\n%s- No top-level %s", line_indent, pluralize("statement")))
-      goto skip_remaining_additional_information
-    end
-    for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens) do
-      local num_statements = evaluation_results.num_statements[statement_type]
-      assert(num_statements ~= nil)
-      assert(num_statements > 0)
-      assert(num_statement_tokens ~= nil)
-      assert(num_statement_tokens > 0)
-      io.write(string.format("\n%s- %s top-level ", line_indent, titlecase(humanize(num_statements))))
-      io.write(string.format("%s spanning ", pluralize(statement_type, num_statements)))
-      if num_statement_tokens == num_tokens then
-        io.write("all tokens")
+      local num_expl_bytes = evaluation_results.num_expl_bytes
+      if num_expl_bytes == 0 or num_expl_bytes == nil then
+        io.write(string.format("\n%s- No expl3 material", line_indent))
+        goto skip_remaining_additional_information
+      end
+      local expl_ranges = analysis_results.expl_ranges
+      assert(expl_ranges ~= nil)
+      assert(#expl_ranges > 0)
+      io.write(
+        string.format(
+          "\n%s- %s %s spanning ",
+          line_indent,
+          titlecase(humanize(#expl_ranges)),
+          pluralize("expl3 part", #expl_ranges)
+        )
+      )
+      if num_expl_bytes == num_total_bytes then
+        io.write("the whole file")
       else
-        local formatted_statement_tokens = string.format(
-          "%s %s", humanize(num_statement_tokens), pluralize("token", num_statement_tokens))
-        local formatted_token_ratio = format_ratio(num_statement_tokens, num_tokens)
-        if num_expl_bytes == num_total_bytes then
-          io.write(string.format("%s (%s of file size)", formatted_statement_tokens, formatted_token_ratio))
-        else
-          local formatted_byte_ratio = format_ratio(num_expl_bytes * num_statement_tokens, num_total_bytes * num_tokens)
-          io.write(string.format(
-            "%s (%s of tokens, ~%s of file size)", formatted_statement_tokens, formatted_token_ratio, formatted_byte_ratio))
+        local formatted_expl_bytes = string.format("%s %s", humanize(num_expl_bytes), pluralize("byte", num_expl_bytes))
+        local formatted_expl_ratio = format_ratio(num_expl_bytes, num_total_bytes)
+        io.write(string.format("%s (%s of file size)", formatted_expl_bytes, formatted_expl_ratio))
+      end
+      if not (#expl_ranges == 1 and #expl_ranges[1] == num_total_bytes) then
+        io.write(":")
+        for part_number, range in ipairs(expl_ranges) do
+          local start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())
+          local end_line_number, end_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:stop())
+          local formatted_range_start = string.format("%d:%d", start_line_number, start_column_number)
+          local formatted_range_end = string.format("%d:%d", end_line_number, end_column_number)
+          io.write(string.format("\n%s%d. Between ", line_indent:rep(2), part_number))
+          io.write(string.format("%s and %s", formatted_range_start, formatted_range_end))
         end
       end
-      if statement_type == FUNCTION_DEFINITION and evaluation_results.num_replacement_text_statements_total > 0 then
-        local seen_nested_function_definition = false
-        for nested_statement_type, num_nested_statement_tokens in
-            pairs_sorted_by_descending_values(evaluation_results.num_replacement_text_statement_tokens) do
-          local num_nested_statements = evaluation_results.num_replacement_text_statements[nested_statement_type]
-          local max_nesting_depth = evaluation_results.replacement_text_max_nesting_depth[nested_statement_type]
-          assert(num_nested_statements ~= nil)
-          assert(num_nested_statements > 0)
-          assert(num_nested_statement_tokens ~= nil)
-          assert(num_nested_statement_tokens > 0)
-          assert(max_nesting_depth ~= nil)
-          assert(max_nesting_depth > 0)
-          if nested_statement_type == FUNCTION_DEFINITION then
-            seen_nested_function_definition = true
-          end
-          io.write(string.format("\n%s- %s nested ", line_indent:rep(2), titlecase(humanize(num_nested_statements))))
-          io.write(string.format("%s ", pluralize(nested_statement_type, num_nested_statements)))
-          if max_nesting_depth > 1 and nested_statement_type == FUNCTION_DEFINITION then
-            io.write(string.format("with a maximum nesting depth of %s, ", humanize(max_nesting_depth)))
-          end
-          io.write(string.format(
-            "spanning %s %s", humanize(num_nested_statement_tokens), pluralize("token", num_nested_statement_tokens)
-          ))
-          if max_nesting_depth > 1 and nested_statement_type ~= FUNCTION_DEFINITION then
-            local num_nested_function_definition_statements = evaluation_results.num_replacement_text_statements[FUNCTION_DEFINITION]
-            assert(num_nested_function_definition_statements > 0)
-            io.write(string.format(
-              ", some in %s",
-              add_article(
-                pluralize(string.format("nested %s", FUNCTION_DEFINITION), num_nested_function_definition_statements),
-                num_nested_function_definition_statements,
-                seen_nested_function_definition,
-                false
+      -- Evaluate the evalution results of the lexical analysis.
+      local num_tokens = evaluation_results.num_tokens
+      if num_tokens == nil then
+        goto skip_remaining_additional_information
+      end
+      io.write(string.format("\n\n%s%s", line_indent, colorize("Lexical analysis results:", BOLD)))
+      if num_tokens == 0 then
+        io.write(string.format("\n%s- No tokens in expl3 parts", line_indent))
+        goto skip_remaining_additional_information
+      end
+      io.write(string.format("\n%s- %s %s in expl3 parts", line_indent, titlecase(humanize(num_tokens)), pluralize("token", num_tokens)))
+      local num_groupings = evaluation_results.num_groupings
+      if num_groupings ~= nil and num_groupings > 0 then
+        io.write(string.format("\n%s- %s %s", line_indent, titlecase(humanize(num_groupings)), pluralize("grouping", num_groupings)))
+        io.write(" in expl3 parts")
+        local num_unclosed_groupings = evaluation_results.num_unclosed_groupings
+        assert(num_unclosed_groupings ~= nil)
+        if num_unclosed_groupings > 0 then
+          local formatted_grouping_ratio = format_ratio(num_unclosed_groupings, num_groupings)
+          io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
+        end
+      end
+      -- Evaluate the evalution results of the syntactic analysis.
+      if evaluation_results.num_calls == nil then
+        goto skip_remaining_additional_information
+      end
+      io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
+      if evaluation_results.num_calls_total == 0 then
+        io.write(string.format("\n%s- No top-level %s", line_indent, pluralize("call")))
+        goto skip_remaining_additional_information
+      end
+      for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
+        local num_calls = evaluation_results.num_calls[call_type]
+        assert(num_calls ~= nil)
+        assert(num_calls > 0)
+        assert(num_call_tokens ~= nil)
+        assert(num_call_tokens > 0)
+        io.write(string.format("\n%s- %s top-level %s ", line_indent, titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
+        io.write("spanning ")
+        if num_call_tokens == num_tokens then
+          io.write("all tokens")
+        else
+          local formatted_call_tokens = string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens))
+          local formatted_token_ratio = format_ratio(num_call_tokens, num_tokens)
+          if num_expl_bytes == num_total_bytes then
+              io.write(string.format("%s (%s of file size)", formatted_call_tokens, formatted_token_ratio))
+          else
+            local formatted_byte_ratio = format_ratio(num_expl_bytes * num_call_tokens, num_total_bytes * num_tokens)
+            io.write(
+              string.format(
+                "%s (%s of tokens, ~%s of file size)",
+                formatted_call_tokens,
+                formatted_token_ratio,
+                formatted_byte_ratio
               )
-            ))
+            )
           end
         end
       end
+      if evaluation_results.num_calls_total == nil or evaluation_results.num_calls_total == 0 then
+        goto skip_remaining_additional_information
+      end
+      -- Evaluate the evalution results of the semantic analysis.
+      if evaluation_results.num_statement_tokens == nil then
+        goto skip_remaining_additional_information
+      end
+      io.write(string.format("\n\n%s%s", line_indent, colorize("Semantic analysis results:", BOLD)))
+      if evaluation_results.num_statements_total == 0 then
+        io.write(string.format("\n%s- No top-level %s", line_indent, pluralize("statement")))
+        goto skip_remaining_additional_information
+      end
+      for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens) do
+        local num_statements = evaluation_results.num_statements[statement_type]
+        assert(num_statements ~= nil)
+        assert(num_statements > 0)
+        assert(num_statement_tokens ~= nil)
+        assert(num_statement_tokens > 0)
+        io.write(string.format("\n%s- %s top-level ", line_indent, titlecase(humanize(num_statements))))
+        io.write(string.format("%s spanning ", pluralize(statement_type, num_statements)))
+        if num_statement_tokens == num_tokens then
+          io.write("all tokens")
+        else
+          local formatted_statement_tokens = string.format(
+            "%s %s", humanize(num_statement_tokens), pluralize("token", num_statement_tokens))
+          local formatted_token_ratio = format_ratio(num_statement_tokens, num_tokens)
+          if num_expl_bytes == num_total_bytes then
+            io.write(string.format("%s (%s of file size)", formatted_statement_tokens, formatted_token_ratio))
+          else
+            local formatted_byte_ratio = format_ratio(num_expl_bytes * num_statement_tokens, num_total_bytes * num_tokens)
+            io.write(string.format(
+              "%s (%s of tokens, ~%s of file size)", formatted_statement_tokens, formatted_token_ratio, formatted_byte_ratio))
+          end
+        end
+        if statement_type == FUNCTION_DEFINITION and evaluation_results.num_replacement_text_statements_total > 0 then
+          local seen_nested_function_definition = false
+          for nested_statement_type, num_nested_statement_tokens in
+              pairs_sorted_by_descending_values(evaluation_results.num_replacement_text_statement_tokens) do
+            local num_nested_statements = evaluation_results.num_replacement_text_statements[nested_statement_type]
+            local max_nesting_depth = evaluation_results.replacement_text_max_nesting_depth[nested_statement_type]
+            assert(num_nested_statements ~= nil)
+            assert(num_nested_statements > 0)
+            assert(num_nested_statement_tokens ~= nil)
+            assert(num_nested_statement_tokens > 0)
+            assert(max_nesting_depth ~= nil)
+            assert(max_nesting_depth > 0)
+            if nested_statement_type == FUNCTION_DEFINITION then
+              seen_nested_function_definition = true
+            end
+            io.write(string.format("\n%s- %s nested ", line_indent:rep(2), titlecase(humanize(num_nested_statements))))
+            io.write(string.format("%s ", pluralize(nested_statement_type, num_nested_statements)))
+            if max_nesting_depth > 1 and nested_statement_type == FUNCTION_DEFINITION then
+              io.write(string.format("with a maximum nesting depth of %s, ", humanize(max_nesting_depth)))
+            end
+            io.write(string.format(
+              "spanning %s %s", humanize(num_nested_statement_tokens), pluralize("token", num_nested_statement_tokens)
+            ))
+            if max_nesting_depth > 1 and nested_statement_type ~= FUNCTION_DEFINITION then
+              local num_nested_function_definition_statements = evaluation_results.num_replacement_text_statements[FUNCTION_DEFINITION]
+              assert(num_nested_function_definition_statements > 0)
+              io.write(string.format(
+                ", some in %s",
+                add_article(
+                  pluralize(string.format("nested %s", FUNCTION_DEFINITION), num_nested_function_definition_statements),
+                  num_nested_function_definition_statements,
+                  seen_nested_function_definition,
+                  false
+                )
+              ))
+            end
+          end
+        end
+      end
+      if evaluation_results.num_statements_total == nil or evaluation_results.num_statements_total == 0 then
+        goto skip_remaining_additional_information
+      end
     end
-    if evaluation_results.num_statements_total == nil or evaluation_results.num_statements_total == 0 then
-      goto skip_remaining_additional_information
+
+    ::skip_remaining_additional_information::
+
+    -- Display early stopping information.
+    if analysis_results.stopped_early then
+      io.write(
+        string.format(
+          '\n\n%sProcessing stopped %s because %s.',
+          line_indent,
+          analysis_results.stopped_early.when,
+          analysis_results.stopped_early.reason
+        )
+      )
     end
   end
-
-  ::skip_remaining_additional_information::
 
   if not porcelain and not is_last_file and (#all_issues > 0 or verbose) then
     print()
@@ -719,6 +752,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
 end
 
 return {
+  format_percentage = format_percentage,
   pluralize = pluralize,
   print_results = print_results,
   print_summary = print_summary,

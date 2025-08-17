@@ -77,6 +77,15 @@ local function format_tokens(token_range, tokens, content)
   return content:sub(byte_range:start(), byte_range:stop())
 end
 
+-- Determine whether the lexical analysis step is too confused by the results
+-- of the previous steps to run.
+local function is_confused(_, results, _)
+  if #results.expl_ranges == 0 then
+    return true, "no expl3 material was detected"
+  end
+  return false
+end
+
 -- Tokenize the content and register any issues.
 local function lexical_analysis(pathname, content, issues, results, options)
 
@@ -134,6 +143,8 @@ local function lexical_analysis(pathname, content, issues, results, options)
     local groupings = {}
     local current_grouping = groupings
     local parent_grouping
+
+    local num_invalid_characters = 0
 
     local state
 
@@ -279,6 +290,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
           character_index = #line_text + 1
         else
           if catcode == 15 then  -- invalid character
+            num_invalid_characters = num_invalid_characters + 1
             issues:add('e209', 'invalid characters', range)
           end
           if catcode == 1 or catcode == 2 then  -- begin/end grouping
@@ -334,11 +346,11 @@ local function lexical_analysis(pathname, content, issues, results, options)
       current_grouping.parent = nil
       current_grouping = parent_grouping
     end
-    return tokens, groupings
+    return tokens, groupings, num_invalid_characters
   end
 
   -- Tokenize the content.
-  local tokens, groupings = {}, {}
+  local tokens, groupings, num_invalid_characters = {}, {}, 0
   for _, range in ipairs(results.expl_ranges) do
     local lines = (function()
       local co = coroutine.create(function()
@@ -349,9 +361,10 @@ local function lexical_analysis(pathname, content, issues, results, options)
         return line_text, map_back
       end
     end)()
-    local part_tokens, part_groupings = get_tokens(lines)
+    local part_tokens, part_groupings, part_num_invalid_characters = get_tokens(lines)
     table.insert(tokens, part_tokens)
     table.insert(groupings, part_groupings)
+    num_invalid_characters = num_invalid_characters + part_num_invalid_characters
   end
 
   -- Record issues that are apparent after the lexical analysis.
@@ -377,6 +390,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
   -- Store the intermediate results of the analysis.
   results.tokens = tokens
   results.groupings = groupings
+  results.num_invalid_characters = num_invalid_characters
 end
 
 return {
@@ -384,7 +398,9 @@ return {
   format_token = format_token,
   format_tokens = format_tokens,
   get_token_byte_range = get_token_byte_range,
+  is_confused = is_confused,
   is_token_simple = is_token_simple,
+  name = "lexical analysis",
   process = lexical_analysis,
   token_types = token_types,
 }

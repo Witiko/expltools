@@ -330,27 +330,29 @@ local function preprocessing(pathname, content, issues, results, options)
     local offset = expl_range:start() - 1
 
     local function line_too_long(range_start, range_end)
-        local range = new_range(offset + range_start, offset + range_end, EXCLUSIVE, #transformed_content, map_back, #content)
-        issues:add('s103', 'line too long', range)
-      end
-
-      local overline_lines_grammar = (
-        (
-          Cp() * parsers.linechar^(get_option('max_line_length', options, pathname) + 1) * Cp() / line_too_long
-          + parsers.linechar^0
-        )
-        * parsers.newline
-      )^0
-
-      lpeg.match(overline_lines_grammar, transformed_content:sub(expl_range:start(), expl_range:stop()))
+      local range = new_range(offset + range_start, offset + range_end, EXCLUSIVE, #transformed_content, map_back, #content)
+      issues:add('s103', 'line too long', range)
     end
 
-    -- Store the intermediate results of the analysis.
-    results.line_starting_byte_numbers = line_starting_byte_numbers
-    results.expl_ranges = expl_ranges
-    results.seems_like_latex_style_file = seems_like_latex_style_file
+    local overline_lines_grammar = (
+      (
+        Cp() * parsers.linechar^(get_option('max_line_length', options, pathname) + 1) * Cp() / line_too_long
+        + parsers.linechar^0
+      )
+      * parsers.newline
+    )^0
+
+    lpeg.match(overline_lines_grammar, transformed_content:sub(expl_range:start(), expl_range:stop()))
   end
 
-  return {
-  process = preprocessing
+  -- Store the intermediate results of the analysis.
+  results.line_starting_byte_numbers = line_starting_byte_numbers
+  results.expl_ranges = expl_ranges
+  results.seems_like_latex_style_file = seems_like_latex_style_file
+end
+
+return {
+  is_confused = function() return false end,
+  name = "preprocessing",
+  process = preprocessing,
 }
