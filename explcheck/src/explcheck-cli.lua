@@ -130,7 +130,7 @@ local function print_usage()
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
     .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
-    .. "\t--ignored-issues=ISSUES    A comma-list of warning and error identifiers that should not be reported.\n\n"
+    .. "\t--ignored-issues=ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
     .. "\t--make-at-letter[={true|false|auto}]\n\n"
     .. '\t                           How the at sign ("@") should be tokenized:\n\n'
     .. '\t                           - empty or "true": Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n'

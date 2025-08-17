@@ -86,9 +86,9 @@ function Issues:add(identifier, message, range, context)
 end
 
 -- Prevent issues from being present in the table of issues.
-function Issues:ignore(identifier, range)
-  if identifier ~= nil then
-    identifier = self._normalize_identifier(identifier)
+function Issues:ignore(identifier_prefix, range)
+  if identifier_prefix ~= nil then
+    identifier_prefix = self._normalize_identifier(identifier_prefix)
   end
 
   -- Determine which issues should be ignored.
@@ -100,15 +100,16 @@ function Issues:ignore(identifier, range)
     )
   end
   local function match_issue_identifier(issue_identifier)
-    return issue_identifier == identifier
+    -- Match the prefix of an issue, allowing us to ignore whole sets of issues with prefixes like "s" or "w4".
+    return issue_identifier:sub(1, #identifier_prefix) == identifier_prefix
   end
 
   local ignore_issue, issue_tables
-  if identifier == nil and range == nil then
+  if identifier_prefix == nil and range == nil then
     -- Prevent any issues.
     issue_tables = {self.warnings, self.errors}
     ignore_issue = function() return true end
-  elseif identifier == nil then
+  elseif identifier_prefix == nil then
     -- Prevent any issues within the given range.
     issue_tables = {self.warnings, self.errors}
     ignore_issue = function(issue)
@@ -121,16 +122,16 @@ function Issues:ignore(identifier, range)
     end
   elseif range == nil then
     -- Prevent any issues with the given identifier.
-    assert(identifier ~= nil)
-    issue_tables = {self:_get_issue_table(identifier)}
+    assert(identifier_prefix ~= nil)
+    issue_tables = {self:_get_issue_table(identifier_prefix)}
     ignore_issue = function(issue)
       local issue_identifier = issue[1]
       return match_issue_identifier(issue_identifier)
     end
   else
     -- Prevent any issues with the given identifier that are also either within the given range or file-wide.
-    assert(range ~= nil and identifier ~= nil)
-    issue_tables = {self:_get_issue_table(identifier)}
+    assert(range ~= nil and identifier_prefix ~= nil)
+    issue_tables = {self:_get_issue_table(identifier_prefix)}
     ignore_issue = function(issue)
       local issue_identifier = issue[1]
       local issue_range = issue[3]

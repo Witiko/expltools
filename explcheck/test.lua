@@ -90,13 +90,13 @@ local function run_tests(test_directory, support_files, test_files)
       -- A TeX file with no associated Lua file. Check it and see if any issues were detected.
       assert(seen_lua_stems[get_stem(filename)] == nil)
       check_function = function()
-        local issues = require("explcheck-issues")()
-        issues:ignore('w100')
+        local options = {ignored_issues = {'w100'}}
+        local issues = require("explcheck-issues")(filename, options)
         local file = assert(io.open(basename, "r"))
         local content = assert(file:read("*a"))
         assert(file:close())
         local analysis_results = {}
-        require("explcheck-utils").process_with_all_steps(filename, content, issues, analysis_results)
+        require("explcheck-utils").process_with_all_steps(filename, content, issues, analysis_results, options)
         assert(#issues.warnings == 0)
         assert(#issues.errors == 0)
       end

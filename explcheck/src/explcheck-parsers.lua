@@ -481,11 +481,9 @@ local commented_lines = Ct(
 )
 
 ------ Explcheck issues
-local issue_code = (
+local issue_code_prefix = (
   S("EeSsTtWw")
-  * decimal_digit
-  * decimal_digit
-  * decimal_digit
+  * decimal_digit^-3
 )
 local ignored_issues = Ct(
   (
@@ -498,12 +496,12 @@ local ignored_issues = Ct(
     P(":")
     * optional_spaces
     * (
-      Cs(issue_code)
+      Cs(issue_code_prefix)
       * optional_spaces
       * comma
       * optional_spaces
     )^0
-    * Cs(issue_code)
+    * Cs(issue_code_prefix)
     * optional_spaces
     + optional_spaces
   )
