@@ -19,8 +19,10 @@ This version of explcheck has made the following changes to the document titled
   message) to semantic analysis under the identifier E425 and the same name.
   (#110, #112)
 
-- Remove issues S205, S206, and S207 and replan them to semantic analysis.
-  (reported by @u-fischer in #109, added in #117)
+- Remove issues S205 (Malformed function name), S206 (Malformed variable or
+  constant name), and S207 (Malformed quark or scan mark name) and replan them
+  to semantic analysis under the identifiers S412, S413, and S414, respectively,
+  and the same names. (reported by @u-fischer in #109, added in #117)
 
 - Plan for a new issue E417 (Setting a variable as a constant). (#119)
 
@@ -28,9 +30,8 @@ This version of explcheck has made the following changes to the document titled
   an accessor) and E420 (Using non-token-list variable or constant without
   an accessor). (#121)
 
-- Rename planned issues E421 and E518 (Using an undefined variable or
-  constant) to W421 and W518 (Using an undeclared variable or constant),
-  respectively. (#121)
+- Reclassify the planned errors E421 and E518 (Using an undefined variable or
+  constant) as warnings W421 and W518, respectively. (#121)
 
 #### Development
 
