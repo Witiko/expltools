@@ -31,7 +31,7 @@ jobs:
         run: tlmgr install --reinstall --with-doc l3kernel
       - name: Generate file "explcheck-obsolete.lua"
         run: l3build tag
-      - name: Extract Lua code blocks from README.md
+      - name: Extract Lua code blocks from file "README.md"
         run: |
           awk '
             BEGIN { inblock=0; count=0 }
