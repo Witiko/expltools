@@ -153,34 +153,16 @@ A variable of one type is used where a variable of a different type should be us
 
 ## Messages
 
-### Unused message {.w #unused-message}
+### Unused message {.w label=w423 #unused-message}
 A message is defined but unused.
 
-``` tex
-\msg_new:nnn  % warning on this line
-  { foo }
-  { bar }
-  { baz }
-```
+ /w423-01.tex
+ /w423-02.tex
 
-``` tex
-\msg_new:nnn
-  { bar }
-  { bar }
-  { baz }
-\msg_info:nn
-  { bar }
-  { bar }
-```
-
-### Using an undefined message {.e #using-undefined-message}
+### Using an undefined message {.e label=e424 #using-undefined-message}
 A message is used but undefined.
 
-``` tex
-\msg_info:nn  % error on this line
-  { foo }
-  { bar }
-```
+ /e424.tex
 
 ### Incorrect parameters in message text {.e #invalid-parameters-in-message-text}
 Parameter tokens other than `#1`, `#2`, `#3`, and `#4` are specified in a message text.

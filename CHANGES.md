@@ -76,6 +76,8 @@ This version of explcheck has made the following changes to the document titled
    9. E420 (Locally setting a global variable)
   10. E421 (Globally setting a local variable)
   11. T422 (Using a variable of an incompatible type)
+  12. W423 (Unused message)
+  13. E424 (Using an undefined message)
 
   This concludes all planned issues from sections 4.1 (Functions and
   conditional functions) and 4.2 (Variables and constants) from this document,

@@ -1188,6 +1188,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local defined_variable_csname_texts = {}
   local used_variable_csname_texts = {}
 
+  local defined_message_name_texts = {}
+  local used_message_name_texts = {}
+
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_private_function_variant_pattern = parsers.fail
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
@@ -1200,9 +1203,46 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local maybe_used_variable_csname_texts = {}
   local maybe_used_variable_csname_pattern = parsers.fail
 
+  local maybe_defined_message_name_texts, maybe_defined_message_name_pattern = {}, parsers.fail
+  local maybe_used_message_name_texts, maybe_used_message_name_pattern = {}, parsers.fail
+
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
     local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
+
+    -- Merge a module name and a message name into a combined fully qualified name.
+    local function combine_module_and_message_names(module_name, message_name)
+      local transcript = string.format("%s/%s", module_name.transcript, message_name.transcript)
+      if module_name.type == TEXT and message_name.type == TEXT then
+        return {
+          payload = string.format("%s/%s", module_name.payload, message_name.payload),
+          transcript = transcript,
+          type = TEXT,
+        }
+      else
+        local message_name_pattern
+        if module_name.type == TEXT then
+          message_name_pattern = lpeg.P(module_name.payload)
+        elseif module_name.type == PATTERN then
+          message_name_pattern = module_name.payload
+        else
+          error('Unexpected message name type "' .. module_name.type .. '"')
+        end
+        message_name_pattern = message_name_pattern * lpeg.P("/")
+        if message_name.type == TEXT then
+          message_name_pattern = message_name_pattern * lpeg.P(message_name.payload)
+        elseif message_name.type == PATTERN then
+          message_name_pattern = message_name_pattern * message_name.payload
+        else
+          error('Unexpected message name type "' .. message_name.type .. '"')
+        end
+        return {
+          payload = message_name_pattern,
+          transcript = transcript,
+          type = PATTERN,
+        }
+      end
+    end
 
     -- Try and convert tokens from a range into a csname.
     local function extract_name_from_tokens(token_range)
@@ -1222,7 +1262,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             maybe_used_csname_pattern = (
               maybe_used_csname_pattern
               + #(csname.payload * parsers.eof)
-              * csname.payload
+              * lpeg.Cc(true)
             )
           else
             error('Unexpected csname type "' .. csname.type .. '"')
@@ -1269,7 +1309,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           maybe_used_csname_pattern = (
             maybe_used_csname_pattern
             + #(statement.base_csname.payload * parsers.eof)
-            * statement.base_csname.payload
+            * lpeg.Cc(true)
           )
         else
           error('Unexpected csname type "' .. statement.base_csname.type .. '"')
@@ -1282,7 +1322,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           maybe_defined_csname_pattern = (
             maybe_defined_csname_pattern
             + #(statement.defined_csname.payload * parsers.eof)
-            * statement.defined_csname.payload
+            * lpeg.Cc(true)
           )
         else
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
@@ -1305,7 +1345,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             maybe_used_csname_pattern = (
               maybe_used_csname_pattern
               + #(statement.base_csname.payload * parsers.eof)
-              * statement.base_csname.payload
+              * lpeg.Cc(true)
             )
           else
             error('Unexpected csname type "' .. statement.base_csname.type .. '"')
@@ -1341,7 +1381,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           maybe_declared_variable_csname_pattern = (
             maybe_declared_variable_csname_pattern
             + #(statement.declared_csname.payload * parsers.eof)
-            * statement.declared_csname.payload
+            * lpeg.Cc(true)
           )
         else
           error('Unexpected csname type "' .. statement.base_csname.type .. '"')
@@ -1385,7 +1425,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           maybe_defined_variable_csname_pattern = (
             maybe_defined_variable_csname_pattern
             + #(statement.declared_csname.payload * parsers.eof)
-            * statement.declared_csname.payload
+            * lpeg.Cc(true)
           )
         else
           error('Unexpected csname type "' .. statement.base_csname.type .. '"')
@@ -1412,17 +1452,54 @@ local function semantic_analysis(pathname, content, issues, results, options)
           maybe_used_variable_csname_pattern = (
             maybe_used_variable_csname_pattern
             + #(statement.used_csname.payload * parsers.eof)
-            * statement.used_csname.payload
+            * lpeg.Cc(true)
           )
         else
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
+      -- Process a message definition.
+      elseif statement.type == MESSAGE_DEFINITION then
+        -- Record message names.
+        local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
+        if message_name.type == TEXT then
+          maybe_defined_message_name_texts[message_name.payload] = true
+          table.insert(defined_message_name_texts, {message_name.payload, byte_range})
+        elseif message_name.type == PATTERN then
+          maybe_defined_message_name_pattern = (
+            maybe_defined_message_name_pattern
+            + #(message_name.payload * parsers.eof)
+            * lpeg.Cc(true)
+          )
+        else
+          error('Unexpected message name type "' .. message_name.type .. '"')
+        end
+        -- Record control sequence name usage and definitions.
+        process_argument_tokens(statement.text_argument)
+        if statement.more_text_argument ~= nil then
+          process_argument_tokens(statement.more_text_argument)
+        end
+      -- Process a message use.
+      elseif statement.type == MESSAGE_USE then
+        -- Record message names.
+        local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
+        if message_name.type == TEXT then
+          maybe_used_message_name_texts[message_name.payload] = true
+          table.insert(used_message_name_texts, {message_name.payload, byte_range})
+        elseif message_name.type == PATTERN then
+          maybe_used_message_name_pattern = (
+            maybe_used_message_name_pattern
+            + #(message_name.payload * parsers.eof)
+            * lpeg.Cc(true)
+          )
+        else
+          error('Unexpected message name type "' .. message_name.type .. '"')
+        end
+        -- Record control sequence name usage and definitions.
+        for _, argument in ipairs(statement.text_arguments) do
+          process_argument_tokens(argument)
+        end
       -- Process an unrecognized statement.
-      elseif (
-            statement.type == MESSAGE_DEFINITION
-            or statement.type == MESSAGE_USE
-            or statement.type == OTHER_STATEMENT
-          ) then
+      elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csname_texts[call.csname] = true
@@ -1645,6 +1722,28 @@ local function semantic_analysis(pathname, content, issues, results, options)
     if csname_type ~= nil and not is_maybe_compatible_type(use_type, csname_type) then
       local context = string.format("!(%s ~= %s)", use_type, csname_type)
       issues:add('t422', 'using a variable of an incompatible type', byte_range, context)
+    end
+  end
+
+  -- Report unused messages.
+  for _, defined_message_name_text in ipairs(defined_message_name_texts) do
+    local message_name_text, byte_range = table.unpack(defined_message_name_text)
+    if (
+          not maybe_used_message_name_texts[message_name_text]
+          and lpeg.match(maybe_used_message_name_pattern, message_name_text) == nil
+        ) then
+      issues:add('w423', 'unused message', byte_range, message_name_text)
+    end
+  end
+
+  -- Report using an undefined message.
+  for _, used_message_name_text in ipairs(used_message_name_texts) do
+    local message_name_text, byte_range = table.unpack(used_message_name_text)
+    if (
+          not maybe_defined_message_name_texts[message_name_text]
+          and lpeg.match(maybe_defined_message_name_pattern, message_name_text) == nil
+        ) then
+      issues:add('e424', 'using an undefined message', byte_range, message_name_text)
     end
   end
 
