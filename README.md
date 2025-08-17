@@ -132,13 +132,27 @@ You may also configure the tool from within your Lua code.
 For example, here is how you would apply the same configuration in the Lua example from the previous section:
 
 ``` lua
+-- LuaTeX users must initialize Kpathsea Lua module searchers first.
+local using_luatex, kpse = pcall(require, "kpse")
+if using_luatex then
+  kpse.set_program_name("texlua", "explcheck")
+end
+
+-- Import explcheck.
+local new_issues = require("explcheck-issues")
+
+local preprocessing = require("explcheck-preprocessing")
+local lexical_analysis = require("explcheck-lexical-analysis")
+local syntactic_analysis = require("explcheck-syntactic-analysis")
+local semantic_analysis = require("explcheck-semantic-analysis")
+
 -- Process file "code.tex" and print warnings and errors.
 local filename = "code.tex"
 local options = {
   max_line_length = 120,
-  ignored_issues = ["w100", "S204"],
+  ignored_issues = {"w100", "S204"},
 }
-local issues = issues = new_issues(filename, options)
+local issues = new_issues(filename, options)
 local results = {}
 
 local file = assert(io.open(filename, "r"))

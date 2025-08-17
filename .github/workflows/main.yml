@@ -31,9 +31,29 @@ jobs:
         run: tlmgr install --reinstall --with-doc l3kernel
       - name: Generate file "explcheck-obsolete.lua"
         run: l3build tag
+      - name: Extract Lua code blocks from README.md
+        run: |
+          awk '
+            BEGIN { inblock=0; count=0 }
+            /^```+\s*lua\s*$/ {
+              inblock=1
+              count++
+              fname = sprintf("README-%02d.lua", count)
+              next
+            }
+            /^```$/ {
+              if (inblock) {
+                inblock=0
+              }
+              next
+            }
+            inblock {
+              print > fname
+            }
+          ' README.md
       - name: Run luacheck
         run: |
-          find explcheck -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec \
+          find explcheck README-*.lua -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec \
             luacheck {} +
   explcheck:
     name: Check code style (expl3)
