@@ -38,6 +38,8 @@ local statement_types = {
   VARIABLE_DECLARATION = "variable declaration",
   VARIABLE_DEFINITION = "variable or constant definition",
   VARIABLE_USE = "variable or constant use",
+  MESSAGE_DEFINITION = "message definition",
+  MESSAGE_USE = "message use",
   OTHER_STATEMENT = "other statement",
   OTHER_TOKENS_SIMPLE = "block of other simple tokens",
   OTHER_TOKENS_COMPLEX = "block of other complex tokens",
@@ -49,6 +51,9 @@ local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
 local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
 local VARIABLE_USE = statement_types.VARIABLE_USE
+
+local MESSAGE_DEFINITION = statement_types.MESSAGE_DEFINITION
+local MESSAGE_USE = statement_types.MESSAGE_USE
 
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
 local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
@@ -222,7 +227,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   end
 
   -- Try and convert tokens from a range into a csname.
-  local function _extract_csname_from_tokens(token_range, transformed_tokens, map_forward)
+  local function _extract_name_from_tokens(token_range, transformed_tokens, map_forward)
     local text = extract_text_from_tokens(token_range, transformed_tokens, map_forward)
     local csname
     if text ~= nil then  -- simple material
@@ -261,8 +266,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
       end
 
       -- Try and convert tokens from a range into a csname.
-      local function extract_csname_from_tokens(token_range)
-        return _extract_csname_from_tokens(token_range, transformed_tokens, first_map_forward)
+      local function extract_name_from_tokens(token_range)
+        return _extract_name_from_tokens(token_range, transformed_tokens, first_map_forward)
       end
 
       -- Extract the name of a control sequence from a call argument.
@@ -279,7 +284,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             type = TEXT
           }
         elseif argument.specifier == "c" then
-          csname = extract_csname_from_tokens(argument.token_range)
+          csname = extract_name_from_tokens(argument.token_range)
           if csname == nil then  -- the c-type argument contains complex material, give up
             return nil
           end
@@ -577,6 +582,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
         local variable_declaration = lpeg.match(parsers.expl3_variable_declaration, call.csname)
         local variable_definition = lpeg.match(parsers.expl3_variable_definition, call.csname)
         local variable_use = lpeg.match(parsers.expl3_variable_use, call.csname)
+
+        local message_definition = lpeg.match(parsers.expl3_message_definition, call.csname)
+        local message_use = lpeg.match(parsers.expl3_message_use, call.csname)
 
         -- Process a function variant definition.
         if function_variant_definition ~= nil then
@@ -985,6 +993,66 @@ local function semantic_analysis(pathname, content, issues, results, options)
           goto continue
         end
 
+        -- Process a message definition.
+        if message_definition ~= nil then
+          if #call.arguments < 3 or #call.arguments > 4 then  -- we couldn't find the expected number of arguments, give up
+            goto other_statement
+          end
+          local module_argument, message_argument, text_argument, more_text_argument = table.unpack(call.arguments)
+          local module_name = extract_name_from_tokens(module_argument.token_range)
+          if module_name == nil then  -- we couldn't parse the module name, give up
+            goto other_statement
+          end
+          local message_name = extract_name_from_tokens(message_argument.token_range)
+          if message_name == nil then  -- we couldn't parse the message name, give up
+            goto other_statement
+          end
+          local confidence = module_name.type == TEXT and message_name.type == TEXT and DEFINITELY or MAYBE
+          local statement = {
+            type = MESSAGE_DEFINITION,
+            call_range = call_range,
+            confidence = confidence,
+            -- The following attributes are specific to the type.
+            module_name = module_name,
+            message_name = message_name,
+            text_argument = text_argument,
+            more_text_argument = more_text_argument,
+          }
+          table.insert(statements, statement)
+          goto continue
+        end
+
+        if message_use ~= nil then
+          if #call.arguments < 2 or #call.arguments > 6 then  -- we couldn't find the expected number of arguments, give up
+            goto other_statement
+          end
+          local module_argument, message_argument = table.unpack(call.arguments)
+          local module_name = extract_name_from_tokens(module_argument.token_range)
+          if module_name == nil then  -- we couldn't parse the module name, give up
+            goto other_statement
+          end
+          local message_name = extract_name_from_tokens(message_argument.token_range)
+          if message_name == nil then  -- we couldn't parse the message name, give up
+            goto other_statement
+          end
+          local text_arguments = {}
+          for i = 3, #call.arguments do
+            table.insert(text_arguments, call.arguments[i])
+          end
+          local confidence = module_name.type == TEXT and message_name.type == TEXT and DEFINITELY or MAYBE
+          local statement = {
+            type = MESSAGE_USE,
+            call_range = call_range,
+            confidence = confidence,
+            -- The following attributes are specific to the type.
+            module_name = module_name,
+            message_name = message_name,
+            text_arguments = text_arguments,
+          }
+          table.insert(statements, statement)
+          goto continue
+        end
+
         ::other_statement::
         local statement = {
           type = OTHER_STATEMENT,
@@ -1137,8 +1205,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
 
     -- Try and convert tokens from a range into a csname.
-    local function extract_csname_from_tokens(token_range)
-      return _extract_csname_from_tokens(token_range, segment_transformed_tokens, map_forward)
+    local function extract_name_from_tokens(token_range)
+      return _extract_name_from_tokens(token_range, segment_transformed_tokens, map_forward)
     end
 
     -- Process an argument and record control sequence name usage and definitions.
@@ -1146,7 +1214,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
       -- Record control sequence name usage.
       --- Extract text from tokens within c- and v-type arguments.
       if argument.specifier == "c" or argument.specifier == "v" then
-        local csname = extract_csname_from_tokens(argument.token_range)
+        local csname = extract_name_from_tokens(argument.token_range)
         if csname ~= nil then
           if csname.type == TEXT then
             maybe_used_csname_texts[csname.payload] = true
@@ -1350,7 +1418,11 @@ local function semantic_analysis(pathname, content, issues, results, options)
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
       -- Process an unrecognized statement.
-      elseif statement.type == OTHER_STATEMENT then
+      elseif (
+            statement.type == MESSAGE_DEFINITION
+            or statement.type == MESSAGE_USE
+            or statement.type == OTHER_STATEMENT
+          ) then
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csname_texts[call.csname] = true

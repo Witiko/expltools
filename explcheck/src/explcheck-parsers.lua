@@ -776,6 +776,7 @@ local expl3_variable_use = Ct(
   * P(":N")
 )
 
+------ Variable and constant names
 local expl3_variable_or_constant_csname = (
   S("cgl")  -- scope
   * underscore
@@ -814,6 +815,38 @@ local expl3_quark_or_scan_mark_csname = (
   * underscore
 )
 
+---- Messages
+------ Message definitions
+local expl3_message_definition = (
+  P("msg")
+  * underscore
+  * (
+    P("new")
+    + P("set")
+  )
+  * colon
+)
+
+------ Message use
+local expl3_message_use = (
+  P("msg")
+  * underscore
+  * (
+    P("none")
+    + P("show")
+    + P("term")
+    + P("log")
+    + P("info")
+    + P("note")
+    + P("warning")
+    + P("error")
+    + P("expandable_error")
+    + P("critical")
+    + P("fatal")
+  )
+  * colon
+)
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
@@ -839,6 +872,8 @@ return {
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
+  expl3_message_definition = expl3_message_definition,
+  expl3_message_use = expl3_message_use,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_variable_declaration = expl3_variable_declaration,
