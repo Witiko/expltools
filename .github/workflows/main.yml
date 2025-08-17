@@ -41,7 +41,7 @@ jobs:
               fname = sprintf("README-%02d.lua", count)
               next
             }
-            /^```$/ {
+            /^```+$/ {
               if (inblock) {
                 inblock=0
               }
