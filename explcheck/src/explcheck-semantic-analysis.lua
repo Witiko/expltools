@@ -121,12 +121,17 @@ end
 --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
 --
 local function classify_tokens(tokens, token_range)
+  local num_complex_tokens = 0
   for _, token in token_range:enumerate(tokens) do
-    if not is_token_simple(token) then  -- complex material
-      return OTHER_TOKENS_COMPLEX
+    if not is_token_simple(token) then
+      num_complex_tokens = num_complex_tokens + 1
     end
   end
-  return OTHER_TOKENS_SIMPLE  -- simple material
+  if num_complex_tokens > 0 then
+    return OTHER_TOKENS_COMPLEX, num_complex_tokens  -- context material
+  else
+    return OTHER_TOKENS_SIMPLE, 0  -- simple material
+  end
 end
 
 -- Determine whether the semantic analysis step is too confused by the results
@@ -134,17 +139,22 @@ end
 local function is_confused(pathname, results, options)
   local format_percentage = require("explcheck-format").format_percentage
   local evaluation = require("explcheck-evaluation")
-  local count_tokens, count_top_level_calls = evaluation.count_tokens, evaluation.count_top_level_calls
+  local count_tokens = evaluation.count_tokens
   local num_tokens = count_tokens(results)
-  local _, num_call_tokens = count_top_level_calls(results, function(call, tokens)
-    -- Only include blocks of other complex material in the tally.
-    if call.type == OTHER_TOKENS then
-      return classify_tokens(tokens, call.token_range) == OTHER_TOKENS_COMPLEX
+  assert(num_tokens ~= nil)
+  assert(results.tokens ~= nil and results.calls ~= nil)
+  local num_other_complex_tokens = 0
+  for part_number, part_calls in ipairs(results.calls) do
+    local part_tokens = results.tokens[part_number]
+    for _, call in ipairs(part_calls) do
+      if call.type == OTHER_TOKENS then
+        local token_type, num_complex_tokens = classify_tokens(part_tokens, call.token_range)
+        if token_type == OTHER_TOKENS_COMPLEX then
+          num_other_complex_tokens = num_other_complex_tokens + num_complex_tokens
+        end
+      end
     end
-    return true
-  end)
-  assert(num_tokens ~= nil and num_call_tokens ~= nil)
-  local num_other_complex_tokens = num_call_tokens[OTHER_TOKENS] or 0
+  end
   if num_tokens > 0 then
     local other_complex_token_ratio = num_other_complex_tokens / num_tokens
     local min_other_complex_tokens_count = get_option('min_other_complex_tokens_count', options, pathname)

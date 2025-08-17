@@ -59,16 +59,13 @@ local function count_tokens(analysis_results)
 end
 
 -- Count the number of all top-level calls in analysis results.
-local function count_top_level_calls(analysis_results, filter)
+local function count_top_level_calls(analysis_results)
   local num_calls, num_call_tokens, num_calls_total
   if analysis_results.calls ~= nil then
     num_calls, num_call_tokens = {}, {}
     num_calls_total = 0
-    for part_number, part_calls in ipairs(analysis_results.calls) do
+    for _, part_calls in ipairs(analysis_results.calls) do
       for _, call in ipairs(part_calls) do
-        if filter ~= nil and not filter(call, analysis_results.tokens[part_number]) then
-          goto continue
-        end
         if num_calls[call.type] == nil then
           assert(num_call_tokens[call.type] == nil)
           num_calls[call.type] = 0
@@ -77,7 +74,6 @@ local function count_top_level_calls(analysis_results, filter)
         num_calls[call.type] = num_calls[call.type] + 1
         num_call_tokens[call.type] = num_call_tokens[call.type] + #call.token_range
         num_calls_total = num_calls_total + 1
-        ::continue::
       end
     end
   end
@@ -273,7 +269,6 @@ return {
   count_expl3_bytes = count_expl3_bytes,
   count_groupings = count_groupings,
   count_tokens = count_tokens,
-  count_top_level_calls = count_top_level_calls,
   new_file_results = function(...)
     return FileEvaluationResults:new(...)
   end,
