@@ -117,6 +117,8 @@ This version of explcheck has made the following changes to the document titled
 - Bump actions/checkout and actions/download-artifact from 4 to 5.
   (contributed by @dependabot in #113 and #114)
 
+- Check Lua code blocks in `README.md` with luacheck. (1d21b97)
+
 #### Distribution
 
 - Install Bash in the Docker image. (e8c4a08)
