@@ -173,32 +173,11 @@ A message is defined but unused.
   { bar }
 ```
 
-### Setting an undefined message {.w #setting-undefined-message}
-A message is set but undefined.
-
-``` tex
-\msg_set:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-```
-
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { baz }
-\msg_set:nnn
-  { foo }
-  { bar }
-  { baz }
-```
-
 ### Using an undefined message {.e #using-undefined-message}
 A message is used but undefined.
 
 ``` tex
-\msg_info:nn
+\msg_info:nn  % error on this line
   { foo }
   { bar }
 ```

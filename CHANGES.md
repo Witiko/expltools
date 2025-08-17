@@ -33,6 +33,8 @@ This version of explcheck has made the following changes to the document titled
 - Reclassify the planned errors E421 and E518 (Using an undefined variable or
   constant) as warnings W421 and W518, respectively. (#121)
 
+- Unplan issues W424 and E521 (Setting an undefined message). (#127)
+
 #### Development
 
 - Include contextual information in human-readable issue descriptions.

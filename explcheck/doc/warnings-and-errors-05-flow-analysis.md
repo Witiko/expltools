@@ -669,22 +669,6 @@ A message is defined but all its uses are unreachable.
 
 This check is a stronger version of <#unused-message> and should only be emitted if <#unused-message> has not previously been emitted for this message.
 
-### Setting an undefined message {.e}
-A message is set before it has been defined.
-
-``` tex
-\msg_set:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-\msg_new:nnn
-  { foo }
-  { bar }
-  { baz }
-```
-
-This check is a stronger version of <#setting-undefined-message> and should prevent <#setting-undefined-message> from being emitted for this message.
-
 ### Using an undefined message {.e}
 A message is used before it has been defined.
 
