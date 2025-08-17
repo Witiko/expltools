@@ -88,6 +88,14 @@ This version of explcheck has made the following changes to the document titled
   analysis that have a weaker version in the semantic analysis. In these cases,
   the weaker version will always suppress the stronger version of an issue.
 
+- Make the Lua option `ignored_options`, the command-line option
+  `--ignored-options`, the TeX comments `% noqa` and the Lua function
+  `issues:ignore()` treat the issue identifiers as prefixes. (#123, #125)
+
+  This allows you to e.g. ignore all style warnings on the current line with
+  `% noqa: s`, all general warnings that originate from the semantic analysis
+  with `--ignored-issues=W4`, etc.
+
 #### Fixes
 
 - Prevent command-line option `--no-config-file` from raising the error
