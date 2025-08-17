@@ -78,7 +78,7 @@ This version of explcheck has made the following changes to the document titled
 
 - Add Lua option `suppressed_issue_map`.
 
-  This Lua option defines a mapping between issues that suppress one or more
+  This option defines a mapping between issues that suppress one or more
   other issues. At this point, this option only maps issue W200 ("Do not use"
   argument specifiers) to issues S412, S413, and S414, so that defining
   functions, variables, and constants with malformed names and a "do not use"
@@ -95,6 +95,21 @@ This version of explcheck has made the following changes to the document titled
   This allows you to e.g. ignore all style warnings on the current line with
   `% noqa: s`, all general warnings that originate from the semantic analysis
   with `--ignored-issues=W4`, etc.
+
+- Add Lua option `stop_after`. (#124, #126)
+
+  This option allows you to specify after which processing step the analysis
+  should stop. If an advanced processing step reports false positive issues
+  on a complex expl3 file, this option can be used to reduce the number of
+  false positive detections.
+
+- Add Lua option `stop_early_when_confused`. (#124, #126)
+
+  This option, which is enabled by default, allows the processing steps to
+  indicate that they are confused by the results of the previous processing
+  steps and stop any further processing. If an advanced processing step reports
+  false positive issues, then this option should stop the step from running
+  and reduce the number of false positive detections.
 
 #### Fixes
 
