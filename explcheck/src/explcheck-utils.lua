@@ -51,20 +51,36 @@ local function process_with_all_steps(pathname, content, issues, analysis_result
   local fail_fast = get_option('fail_fast', options, pathname)
   local stop_after = get_option('stop_after', options, pathname)
   local stop_early_when_confused = get_option('stop_early_when_confused', options, pathname)
-  local step_names = {'preprocessing', 'lexical-analysis', 'syntactic-analysis', 'semantic-analysis'}
-  for _, step_name in ipairs(step_names) do
-    local step = require(string.format('explcheck-%s', step_name))
+  local step_filenames = {'preprocessing', 'lexical-analysis', 'syntactic-analysis', 'semantic-analysis'}
+  for step_number, step_filename in ipairs(step_filenames) do
+    local step = require(string.format('explcheck-%s', step_filename))
     -- If a processing step is confused, skip it and all following steps.
-    if stop_early_when_confused and step.is_confused(pathname, analysis_results, options) then
-      break
+    if stop_early_when_confused then
+      local is_confused, reason = step.is_confused(pathname, analysis_results, options)
+      if is_confused then
+        assert(reason ~= nil)
+        analysis_results.stopped_early = {
+          when = string.format("before %s", step.name),
+          reason = reason,
+        }
+        break
+      end
     end
     step.process(pathname, content, issues, analysis_results, options)
     -- If a processing step ended with error, skip all following steps.
     if fail_fast and #issues.errors > 0 then
+      analysis_results.stopped_early = {
+        when = string.format("after %s", step.name),
+        reason = "it ended with errors and the option `fail_fast` was enabled",
+      }
       break
     end
     -- If a processing step is supposed to be the last step, skip all following steps.
-    if stop_after == step_name then
+    if step_number < #step_filenames and (stop_after == step_filename or stop_after == step.name) then
+      analysis_results.stopped_early = {
+        when = string.format("after %s", step.name),
+        reason = "it was the last step to run according to the option `stop_after`",
+      }
       break
     end
   end

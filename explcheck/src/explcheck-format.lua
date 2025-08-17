@@ -192,6 +192,16 @@ local function decolorize(text)
   return text:gsub("\27%[[0-9]+m", "")
 end
 
+-- Format a number as a percentage.
+local function format_percentage(percentage)
+  local formatted_percentage = string.format("%.0f%%", percentage)
+  if percentage > 0 and formatted_percentage == "0%" then
+    return "<1%"
+  else
+    return formatted_percentage
+  end
+end
+
 -- Format a ratio as a percentage.
 local function format_ratio(numerator, denominator)
   assert(numerator <= denominator)
@@ -199,12 +209,7 @@ local function format_ratio(numerator, denominator)
     return "100%"
   else
     assert(denominator > 0)
-    local formatted_percentage = string.format("%.0f%%", 100.0 * numerator / denominator)
-    if numerator > 0 and formatted_percentage == "0%" then
-      return "<1%"
-    else
-      return formatted_percentage
-    end
+    return format_percentage(100.0 * numerator / denominator)
   end
 end
 
@@ -536,6 +541,18 @@ local function print_results(pathname, issues, analysis_results, options, evalua
   if verbose and not porcelain then
     local line_indent = (" "):rep(4)
     print()
+    -- Display early stopping information.
+    if analysis_results.stopped_early then
+      io.write(
+        string.format(
+          '\n%sProcessing stopped %s because %s.',
+          line_indent,
+          analysis_results.stopped_early.when,
+          analysis_results.stopped_early.reason
+        )
+      )
+      print()
+    end
     -- Display pre-evaluation information.
     local num_total_bytes = evaluation_results.num_total_bytes
     if num_total_bytes == 0 then
@@ -719,6 +736,7 @@ local function print_results(pathname, issues, analysis_results, options, evalua
 end
 
 return {
+  format_percentage = format_percentage,
   pluralize = pluralize,
   print_results = print_results,
   print_summary = print_summary,

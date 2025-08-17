@@ -150,26 +150,39 @@ end
 -- Determine whether the syntactic analysis step is too confused by the results
 -- of the previous steps to run.
 local function is_confused(pathname, results, options)
+  local format_percentage = require("explcheck-format").format_percentage
   local evaluation = require("explcheck-evaluation")
   local count_groupings = evaluation.count_groupings
   local num_groupings, num_unclosed_groupings = count_groupings(results)
   assert(num_groupings ~= nil and num_unclosed_groupings ~= nil)
-  if (
-        num_groupings > 0
-        and num_unclosed_groupings >= get_option('min_unclosed_grouping_count', options, pathname)
-        and num_unclosed_groupings / num_groupings >= get_option('min_unclosed_grouping_ratio', options, pathname)
-      ) then
-    return true, "too many unclosed groupings"
+  if num_groupings > 0 then
+    local unclosed_grouping_ratio = num_unclosed_groupings / num_groupings
+    local min_unclosed_grouping_count = get_option('min_unclosed_grouping_count', options, pathname)
+    local min_unclosed_grouping_ratio = get_option('min_unclosed_grouping_ratio', options, pathname)
+    if num_unclosed_groupings >= min_unclosed_grouping_count and unclosed_grouping_ratio >= min_unclosed_grouping_ratio then
+      local reason = string.format(
+        "there were too many unclosed groupings (%s > %s)",
+        format_percentage(100.0 * unclosed_grouping_ratio),
+        format_percentage(100.0 * min_unclosed_grouping_ratio)
+      )
+      return true, reason
+    end
   end
   local count_expl3_bytes = evaluation.count_expl3_bytes
   local num_characters, num_invalid_characters = count_expl3_bytes(results), results.num_invalid_characters
   assert(num_characters ~= nil and num_invalid_characters ~= nil)
-  if (
-        num_characters > 0
-        and num_invalid_characters >= get_option('min_invalid_character_count', options, pathname)
-        and num_invalid_characters / num_characters >= get_option('min_invalid_character_ratio', options, pathname)
-      ) then
-    return true, "too many invalid characters"
+  if num_characters > 0 then
+    local invalid_character_ratio = num_invalid_characters / num_characters
+    local min_invalid_character_count = get_option('min_invalid_character_count', options, pathname)
+    local min_invalid_character_ratio = get_option('min_invalid_character_ratio', options, pathname)
+    if num_invalid_characters >= min_invalid_character_count and invalid_character_ratio >= min_invalid_character_ratio then
+      local reason = string.format(
+        "there were too many invalid characters (%s > %s)",
+        format_percentage(100.0 * invalid_character_ratio),
+        format_percentage(100.0 * min_invalid_character_ratio)
+      )
+      return true, reason
+    end
   end
   return false
 end
@@ -640,6 +653,7 @@ return {
   get_calls = get_calls,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
+  name = "syntactic analysis",
   process = syntactic_analysis,
   call_types = call_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,

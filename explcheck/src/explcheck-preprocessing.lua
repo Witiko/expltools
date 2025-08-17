@@ -353,5 +353,6 @@ end
 
 return {
   is_confused = function() return false end,
+  name = "preprocessing",
   process = preprocessing,
 }

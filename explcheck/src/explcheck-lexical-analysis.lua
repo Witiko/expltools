@@ -400,6 +400,7 @@ return {
   get_token_byte_range = get_token_byte_range,
   is_confused = is_confused,
   is_token_simple = is_token_simple,
+  name = "lexical analysis",
   process = lexical_analysis,
   token_types = token_types,
 }

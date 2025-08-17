@@ -132,6 +132,7 @@ end
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
 local function is_confused(pathname, results, options)
+  local format_percentage = require("explcheck-format").format_percentage
   local evaluation = require("explcheck-evaluation")
   local count_tokens, count_top_level_calls = evaluation.count_tokens, evaluation.count_top_level_calls
   local num_tokens = count_tokens(results)
@@ -144,12 +145,18 @@ local function is_confused(pathname, results, options)
   end)
   assert(num_tokens ~= nil and num_call_tokens ~= nil)
   local num_other_complex_tokens = num_call_tokens[OTHER_TOKENS] or 0
-  if (
-        num_tokens > 0
-        and num_other_complex_tokens >= get_option('min_other_complex_tokens_count', options, pathname)
-        and num_other_complex_tokens / num_tokens >= get_option('min_other_complex_tokens_ratio', options, pathname)
-      ) then
-    return true, "too much complex material that wasn't recognized as calls"
+  if num_tokens > 0 then
+    local other_complex_token_ratio = num_other_complex_tokens / num_tokens
+    local min_other_complex_tokens_count = get_option('min_other_complex_tokens_count', options, pathname)
+    local min_other_complex_tokens_ratio = get_option('min_other_complex_tokens_ratio', options, pathname)
+    if num_other_complex_tokens >= min_other_complex_tokens_count and other_complex_token_ratio >= min_other_complex_tokens_ratio then
+      local reason = string.format(
+        "too much complex material (%s > %s) wasn't recognized as calls",
+        format_percentage(100.0 * other_complex_token_ratio),
+        format_percentage(100.0 * min_other_complex_tokens_ratio)
+      )
+      return true, reason
+    end
   end
   return false
 end
@@ -1567,6 +1574,7 @@ end
 return {
   csname_types = csname_types,
   is_confused = is_confused,
+  name = "semantic analysis",
   process = semantic_analysis,
   statement_types = statement_types,
   statement_confidences = statement_confidences,
