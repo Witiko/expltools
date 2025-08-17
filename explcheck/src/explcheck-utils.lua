@@ -60,7 +60,7 @@ local function process_with_all_steps(pathname, content, issues, analysis_result
       if is_confused then
         assert(reason ~= nil)
         analysis_results.stopped_early = {
-          when = string.format("before %s", step.name),
+          when = string.format("before the %s", step.name),
           reason = reason,
         }
         break
@@ -79,7 +79,7 @@ local function process_with_all_steps(pathname, content, issues, analysis_result
     if step_number < #step_filenames and (stop_after == step_filename or stop_after == step.name) then
       analysis_results.stopped_early = {
         when = string.format("after %s", step.name),
-        reason = "it was the last step to run according to the option `stop_after`",
+        reason = "that was the final step according to the option `stop_after`",
       }
       break
     end

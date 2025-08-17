@@ -81,7 +81,7 @@ end
 -- of the previous steps to run.
 local function is_confused(_, results, _)
   if #results.expl_ranges == 0 then
-    return true, "no expl3 parts were detected"
+    return true, "no expl3 material was detected"
   end
   return false
 end
