@@ -1,5 +1,6 @@
 -- The syntactic analysis step of static analysis converts TeX tokens into a tree of function calls.
 
+local get_option = require("explcheck-config").get_option
 local lexical_analysis = require("explcheck-lexical-analysis")
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
@@ -144,6 +145,33 @@ local function transform_replacement_text_tokens(content, tokens, issues, num_pa
   end
 
   return transformed_tokens, map_back, map_forward
+end
+
+-- Determine whether the syntactic analysis step is too confused by the results
+-- of the previous steps to run.
+local function is_confused(pathname, results, options)
+  local evaluation = require("explcheck-evaluation")
+  local count_groupings = evaluation.count_groupings
+  local num_groupings, num_unclosed_groupings = count_groupings(results)
+  assert(num_groupings ~= nil and num_unclosed_groupings ~= nil)
+  if (
+        num_groupings > 0
+        and num_unclosed_groupings >= get_option('min_unclosed_grouping_count', options, pathname)
+        and num_unclosed_groupings / num_groupings >= get_option('min_unclosed_grouping_ratio', options, pathname)
+      ) then
+    return true, "too many unclosed groupings"
+  end
+  local count_expl3_bytes = evaluation.count_expl3_bytes
+  local num_characters, num_invalid_characters = count_expl3_bytes(results), results.num_invalid_characters
+  assert(num_characters ~= nil and num_invalid_characters ~= nil)
+  if (
+        num_characters > 0
+        and num_invalid_characters >= get_option('min_invalid_character_count', options, pathname)
+        and num_invalid_characters / num_characters >= get_option('min_invalid_character_ratio', options, pathname)
+      ) then
+    return true, "too many invalid characters"
+  end
+  return false
 end
 
 -- Extract function calls from TeX tokens and groupings.
@@ -611,6 +639,7 @@ return {
   extract_text_from_tokens = extract_text_from_tokens,
   get_calls = get_calls,
   get_call_token_range = get_call_token_range,
+  is_confused = is_confused,
   process = syntactic_analysis,
   call_types = call_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,

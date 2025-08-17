@@ -14,18 +14,8 @@ local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
 
--- Create a new evaluation results for the analysis results of an individual file.
-function FileEvaluationResults.new(cls, content, analysis_results, issues)
-  -- Instantiate the class.
-  local self = {}
-  setmetatable(self, cls)
-  cls.__index = cls
-  -- Evaluate the pre-analysis information.
-  local num_total_bytes = #content
-  -- Evaluate the issues.
-  local num_warnings = #issues.warnings
-  local num_errors = #issues.errors
-  -- Evaluate the results of the preprocessing.
+-- Count the number of all expl3 bytes in analysis results.
+local function count_expl3_bytes(analysis_results)
   local num_expl_bytes
   if analysis_results.expl_ranges ~= nil then
     num_expl_bytes = 0
@@ -33,17 +23,11 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
       num_expl_bytes = num_expl_bytes + #range
     end
   end
-  -- Evaluate the results of the lexical analysis.
-  local num_tokens
-  if analysis_results.tokens ~= nil then
-    num_tokens = 0
-    for _, part_tokens in ipairs(analysis_results.tokens) do
-      for _, token in ipairs(part_tokens) do
-        assert(token.type ~= ARGUMENT)
-        num_tokens = num_tokens + 1
-      end
-    end
-  end
+  return num_expl_bytes
+end
+
+-- Count the number of all and unclosed groupings in analysis results.
+local function count_groupings(analysis_results)
   local num_groupings, num_unclosed_groupings
   if analysis_results.groupings ~= nil then
     num_groupings, num_unclosed_groupings = 0, 0
@@ -56,14 +40,35 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
       end
     end
   end
-  -- Evaluate the results of the syntactic analysis.
-  local num_calls, num_call_tokens
-  local num_calls_total
+  return num_groupings, num_unclosed_groupings
+end
+
+-- Count the number of all tokens in analysis results.
+local function count_tokens(analysis_results)
+  local num_tokens
+  if analysis_results.tokens ~= nil then
+    num_tokens = 0
+    for _, part_tokens in ipairs(analysis_results.tokens) do
+      for _, token in ipairs(part_tokens) do
+        assert(token.type ~= ARGUMENT)
+        num_tokens = num_tokens + 1
+      end
+    end
+  end
+  return num_tokens
+end
+
+-- Count the number of all top-level calls in analysis results.
+local function count_top_level_calls(analysis_results, filter)
+  local num_calls, num_call_tokens, num_calls_total
   if analysis_results.calls ~= nil then
     num_calls, num_call_tokens = {}, {}
     num_calls_total = 0
-    for _, part_calls in ipairs(analysis_results.calls) do
+    for part_number, part_calls in ipairs(analysis_results.calls) do
       for _, call in ipairs(part_calls) do
+        if filter ~= nil and not filter(call, analysis_results.tokens[part_number]) then
+          goto continue
+        end
         if num_calls[call.type] == nil then
           assert(num_call_tokens[call.type] == nil)
           num_calls[call.type] = 0
@@ -72,9 +77,31 @@ function FileEvaluationResults.new(cls, content, analysis_results, issues)
         num_calls[call.type] = num_calls[call.type] + 1
         num_call_tokens[call.type] = num_call_tokens[call.type] + #call.token_range
         num_calls_total = num_calls_total + 1
+        ::continue::
       end
     end
   end
+  return num_calls, num_call_tokens, num_calls_total
+end
+
+-- Create a new evaluation results for the analysis results of an individual file.
+function FileEvaluationResults.new(cls, content, analysis_results, issues)
+  -- Instantiate the class.
+  local self = {}
+  setmetatable(self, cls)
+  cls.__index = cls
+  -- Evaluate the pre-analysis information.
+  local num_total_bytes = #content
+  -- Evaluate the issues.
+  local num_warnings = #issues.warnings
+  local num_errors = #issues.errors
+  -- Evaluate the results of the preprocessing.
+  local num_expl_bytes = count_expl3_bytes(analysis_results)
+  -- Evaluate the results of the lexical analysis.
+  local num_tokens = count_tokens(analysis_results)
+  local num_groupings, num_unclosed_groupings = count_groupings(analysis_results)
+  -- Evaluate the results of the syntactic analysis.
+  local num_calls, num_call_tokens, num_calls_total = count_top_level_calls(analysis_results)
   local num_replacement_text_calls, num_replacement_text_call_tokens
   local num_replacement_text_calls_total
   if analysis_results.replacement_texts ~= nil then
@@ -243,10 +270,14 @@ function AggregateEvaluationResults:add(evaluation_results)
 end
 
 return {
+  count_expl3_bytes = count_expl3_bytes,
+  count_groupings = count_groupings,
+  count_tokens = count_tokens,
+  count_top_level_calls = count_top_level_calls,
   new_file_results = function(...)
     return FileEvaluationResults:new(...)
   end,
   new_aggregate_results = function(...)
     return AggregateEvaluationResults:new(...)
-  end
+  end,
 }

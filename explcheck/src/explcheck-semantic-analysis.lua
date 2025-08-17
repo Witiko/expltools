@@ -114,23 +114,48 @@ local function is_maybe_compatible_type(first_type, second_type)
   return is_subtype(first_type, second_type) or is_subtype(second_type, first_type)
 end
 
+-- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
+-- a more complex material that may have side effects and presents a boundary between chunks of well-understood
+-- expl3 statements.
+--
+--  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
+--
+local function classify_tokens(tokens, token_range)
+  for _, token in token_range:enumerate(tokens) do
+    if not is_token_simple(token) then  -- complex material
+      return OTHER_TOKENS_COMPLEX
+    end
+  end
+  return OTHER_TOKENS_SIMPLE  -- simple material
+end
+
+-- Determine whether the semantic analysis step is too confused by the results
+-- of the previous steps to run.
+local function is_confused(pathname, results, options)
+  local evaluation = require("explcheck-evaluation")
+  local count_tokens, count_top_level_calls = evaluation.count_tokens, evaluation.count_top_level_calls
+  local num_tokens = count_tokens(results)
+  local _, num_call_tokens = count_top_level_calls(results, function(call, tokens)
+    -- Only include blocks of other complex material in the tally.
+    if call.type == OTHER_TOKENS then
+      return classify_tokens(tokens, call.token_range) == OTHER_TOKENS_COMPLEX
+    end
+    return true
+  end)
+  assert(num_tokens ~= nil and num_call_tokens ~= nil)
+  local num_other_complex_tokens = num_call_tokens[OTHER_TOKENS] or 0
+  if (
+        num_tokens > 0
+        and num_other_complex_tokens >= get_option('min_other_complex_tokens_count', options, pathname)
+        and num_other_complex_tokens / num_tokens >= get_option('min_other_complex_tokens_ratio', options, pathname)
+      ) then
+    return true, "too much complex material that wasn't recognized as calls"
+  end
+  return false
+end
+
 -- Determine the meaning of function calls and register any issues.
 local function semantic_analysis(pathname, content, issues, results, options)
-
-  -- Determine the type of a span of tokens as either "simple text" [1, p. 383] with no expected side effects or
-  -- a more complex material that may have side effects and presents a boundary between chunks of well-understood
-  -- expl3 statements.
-  --
-  --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
-  --
-  local function classify_tokens(tokens, token_range)
-    for _, token in token_range:enumerate(tokens) do
-      if not is_token_simple(token) then  -- complex material
-        return OTHER_TOKENS_COMPLEX
-      end
-    end
-    return OTHER_TOKENS_SIMPLE  -- simple material
-  end
 
   -- Convert tokens from a range into a PEG pattern.
   local function extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
@@ -1541,6 +1566,7 @@ end
 
 return {
   csname_types = csname_types,
+  is_confused = is_confused,
   process = semantic_analysis,
   statement_types = statement_types,
   statement_confidences = statement_confidences,
