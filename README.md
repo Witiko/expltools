@@ -111,10 +111,10 @@ jobs:
 
 You may configure the tool using command-line options.
 
-For example, the following command-line options would increase the maximum line length before the warning S103 (Line too long) is produced from 80 to 120 characters and also disable the warnings W100 (No standard delimiters) and S204 (Missing stylistic whitespaces).
+For example, the following command-line options would increase the maximum line length before the warning S103 (Line too long) is produced from 80 to 120 characters and also disable the warnings W100 (No standard delimiters) and all style warnings S\*.
 
 ``` sh
-$ explcheck --max-line-length=120 --ignored-issues=w100,S204 *.tex
+$ explcheck --max-line-length=120 --ignored-issues=w100,S *.tex
 ```
 
 Use the command `explcheck --help` to list the available options.
@@ -125,7 +125,7 @@ For example, here is a configuration file that applies the same configuration as
 ``` toml
 [defaults]
 max_line_length = 120
-ignored_issues = ["w100", "S204"]
+ignored_issues = ["w100", "S"]
 ```
 
 You may also configure the tool from within your Lua code.
@@ -150,7 +150,7 @@ local semantic_analysis = require("explcheck-semantic-analysis")
 local filename = "code.tex"
 local options = {
   max_line_length = 120,
-  ignored_issues = {"w100", "S204"},
+  ignored_issues = {"w100", "S"},
 }
 local issues = new_issues(filename, options)
 local results = {}
@@ -175,7 +175,7 @@ Command-line options, configuration files, and Lua code allow you to ignore cert
 To ignore them in just some of your expl3 code, you may use TeX comments.
 
 For example, a comment `% noqa` will ignore any issues on the current line.
-As another example, a comment `% noqa: w100, S204` will ignore the file-wide warning W100 and also the warning S204 on the current line.
+As another example, a comment `% noqa: w100, S` will ignore the file-wide warning W100 and also all style warnings on the current line.
 
 A list of all currently supported issues is available [here][10].
 
