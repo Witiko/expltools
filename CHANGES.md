@@ -78,6 +78,7 @@ This version of explcheck has made the following changes to the document titled
   11. T422 (Using a variable of an incompatible type)
   12. W423 (Unused message)
   13. E424 (Using an undefined message)
+  14. E425 (Incorrect parameters in message text)
 
   This concludes all planned issues from sections 4.1 (Functions and
   conditional functions) and 4.2 (Variables and constants) from this document,
