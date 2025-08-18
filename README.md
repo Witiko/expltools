@@ -16,8 +16,8 @@ These devlog posts chronicle the latest updates and progress in the ongoing deve
 6. [A flurry of releases, CSTUG talk, and what's next][9] from December 19, 2024
 7. [Lexical analysis and a public website listing issues in current TeX Live][12] from February 24, 2025
 8. [Syntactic analysis][13] from March 27, 2025
-9. [Two][15] [posts][16] about semantic analysis from April 25 and May 29, 2025
-10. [Expltools goes to India][17] from July 22, 2025
+9. [Semantic analysis][15] from August 18, 2025
+10. [Expltools goes to India][16] from July 22, 2025
 
 The article [Expltools: Development tools for expl3 programmers][14], forthcoming in TUGboat 46(2) or (3), is a work in progress that summarizes the devlog posts and provides a coherent overview of the current state of the tool.
 
@@ -37,9 +37,8 @@ In the future, this repository may also contain the code of other useful develop
  [12]: https://witiko.github.io/Expl3-Linter-7/
  [13]: https://witiko.github.io/Expl3-Linter-8/
  [14]: https://github.com/Witiko/expltools-tug25-paper
- [15]: https://witiko.github.io/Expl3-Linter-8.5/
- [16]: https://witiko.github.io/Expl3-Linter-8.75/
- [17]: https://witiko.github.io/Expl3-Linter-10/
+ [15]: https://witiko.github.io/Expl3-Linter-9/
+ [16]: https://witiko.github.io/Expl3-Linter-10/
 
 ## Usage
 
