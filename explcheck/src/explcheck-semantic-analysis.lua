@@ -12,6 +12,7 @@ local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
 local format_csname = lexical_analysis.format_csname
 
+local count_parameters_in_replacement_text = syntactic_analysis.count_parameters_in_replacement_text
 local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
@@ -255,6 +256,16 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
       local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+
+      -- Map a token range from the tokens to the transformed tokens.
+      local function transform_token_range(token_range)
+        return new_range(
+          first_map_forward(token_range:start()),
+          first_map_forward(token_range:stop()),
+          INCLUSIVE + MAYBE_EMPTY,
+          #transformed_tokens
+        )
+      end
 
       -- Try and convert tokens from an argument into a text.
       local function extract_text_from_argument(argument)
@@ -715,18 +726,12 @@ local function semantic_analysis(pathname, content, issues, results, options)
                 goto skip_replacement_text  -- record partial information
               end
               -- parse the replacement text and record the function definition
-              local mapped_replacement_text_token_range = new_range(
-                first_map_forward(replacement_text_argument.token_range:start()),
-                first_map_forward(replacement_text_argument.token_range:stop()),
-                INCLUSIVE + MAYBE_EMPTY,
-                #transformed_tokens
-              )
               local doubly_transformed_tokens, second_map_back, second_map_forward = transform_replacement_text_tokens(
                 content,
                 transformed_tokens,
                 issues,
                 num_parameters,
-                mapped_replacement_text_token_range
+                transform_token_range(replacement_text_argument.token_range)
               )
               if doubly_transformed_tokens == nil then  -- we couldn't parse the replacement text
                 goto skip_replacement_text  -- record partial information
@@ -996,6 +1001,30 @@ local function semantic_analysis(pathname, content, issues, results, options)
             goto other_statement
           end
           local module_argument, message_argument, text_argument, more_text_argument = table.unpack(call.arguments)
+          -- check the number of parameters in the message text
+          local num_text_argument_parameters
+            = count_parameters_in_replacement_text(transformed_tokens, transform_token_range(text_argument.token_range))
+          if num_text_argument_parameters > 4 then  -- too many parameters, register an error
+            issues:add(
+              'e425',
+              'incorrect parameters in message text',
+              byte_range,
+              string.format('#%d', num_text_argument_parameters)
+            )
+          end
+          if more_text_argument ~= nil then
+            local num_more_text_argument_parameters
+              = count_parameters_in_replacement_text(transformed_tokens, transform_token_range(more_text_argument.token_range))
+            if num_more_text_argument_parameters > 4 then  -- too many parameters, register an error
+              issues:add(
+                'e425',
+                'incorrect parameters in message text',
+                byte_range,
+                string.format('#%d', num_more_text_argument_parameters)
+              )
+            end
+          end
+          -- parse the module and message names
           local module_name = extract_name_from_tokens(module_argument.token_range)
           if module_name == nil then  -- we couldn't parse the module name, give up
             goto other_statement
@@ -1023,6 +1052,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           if #call.arguments < 2 or #call.arguments > 6 then  -- we couldn't find the expected number of arguments, give up
             goto other_statement
           end
+          -- parse the module and message names
           local module_argument, message_argument = table.unpack(call.arguments)
           local module_name = extract_name_from_tokens(module_argument.token_range)
           if module_name == nil then  -- we couldn't parse the module name, give up
@@ -1032,6 +1062,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
           if message_name == nil then  -- we couldn't parse the message name, give up
             goto other_statement
           end
+          -- collect the text arguments
           local text_arguments = {}
           for i = 3, #call.arguments do
             table.insert(text_arguments, call.arguments[i])

@@ -164,31 +164,12 @@ A message is used but undefined.
 
  /e424.tex
 
-### Incorrect parameters in message text {.e #invalid-parameters-in-message-text}
+### Incorrect parameters in message text {.e label=e425 #invalid-parameters-in-message-text}
 Parameter tokens other than `#1`, `#2`, `#3`, and `#4` are specified in a message text.
 
-``` tex
-\msg_new:nnn  % error on this line
-  { foo }
-  { bar }
-  { #5 }
-```
-
-``` tex
-\msg_new:nnnn  % error on this line
-  { foo }
-  { bar }
-  { #4 }
-  { #5 }
-```
-
-``` tex
-\msg_new:nnnn
-  { foo }
-  { bar }
-  { #1~#2 }
-  { #3~#4 }
-```
+ /e425-01.tex
+ /e425-02.tex
+ /e425-03.tex
 
 ### Incorrect number of arguments supplied to message {.w #incorrect-number-of-arguments-supplied-to-message}
 A message was supplied fewer or more arguments than there are parameters in the message text.
