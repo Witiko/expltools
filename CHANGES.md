@@ -62,7 +62,7 @@ This version of explcheck has made the following changes to the document titled
 
 - Add more support for semantic analysis. (#117..#122, #127)
 
-  This adds support for the following new issues from Section 4 of the document
+  This adds support for all remaining issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
    1. S412 (Malformed function name)
@@ -80,11 +80,7 @@ This version of explcheck has made the following changes to the document titled
   13. E424 (Using an undefined message)
   14. E425 (Incorrect parameters in message text)
   15. W426 (Incorrect number of arguments supplied to message)
-
-  This concludes all planned issues from sections 4.1 (Functions and
-  conditional functions), 4.2 (Variables and constants), and 4.3 (Messages)
-  from this document, leaving only section 4.4 (Sorting) to finish Section 4
-  (Semantic analysis).
+  16. E427 (Comparison conditional without signature `:nnTF`)
 
 - Add Lua option `suppressed_issue_map`.
 

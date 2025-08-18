@@ -177,14 +177,8 @@ A message was supplied fewer or more arguments than there are parameters in the 
  /w426.tex
 
 ## Sorting
-### Comparison conditional without signature `:nnTF` {.e}
+### Comparison conditional without signature `:nnTF` {.e label=e427}
 A sorting function is called with a conditional that has a signature different than `:nnTF` [@latexteam2024interfaces, Section 15.5.4].
 
-``` tex
-\cs_new:Nn
-  \example_foo:
-  { \prg_return_true: }
-\tl_sort:nN
-  { { foo } { bar } }
-  \example_foo:TF
-```
+ /e427-01.tex
+ /e427-02.tex

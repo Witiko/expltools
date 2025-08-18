@@ -575,12 +575,26 @@ local function semantic_analysis(pathname, content, issues, results, options)
       end
 
       if call.type == CALL then  -- a function call
+
         -- Ignore error S204 (Missing stylistic whitespaces) in Lua code.
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
           local lua_code_argument = call.arguments[arguments_number]
           if #lua_code_argument.token_range > 0 then
             local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
             issues:ignore('s204', lua_code_byte_range)
+          end
+        end
+
+        -- Report using a comparison conditional without the signature `:nnTF`.
+        if call.csname == 'tl_sort:nN' and #call.arguments == 2 then
+          -- determine the name of the comparison conditional
+          local csname_argument = call.arguments[2]
+          local csname = extract_csname_from_argument(csname_argument)
+          if csname ~= nil then
+            local _, argument_specifiers = parse_expl3_csname(csname)
+            if argument_specifiers ~= nil and argument_specifiers.type == TEXT and argument_specifiers.payload ~= 'nnTF' then
+              issues:add('e427', 'comparison conditional without signature `:nnTF`', byte_range, argument_specifiers.payload)
+            end
           end
         end
 

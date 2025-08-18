@@ -1,0 +1,6 @@
+\cs_new:Nn
+  \example_foo:
+  { \prg_return_true: }
+\tl_sort:nN  % error on this line
+  { { foo } { bar } }
+  \example_foo:nnT
