@@ -1,5 +1,9 @@
 # Changes
 
+## expltools 2025-09-XX
+
+### explcheck v0.13.0
+
 ## expltools 2025-08-18
 
 ### explcheck v0.12.0
@@ -40,6 +44,8 @@ This version of explcheck has made the following changes to the document titled
   to message), respectively. (#127)
 
 #### Development
+
+This version of explcheck has implemented the following new features:
 
 - Include contextual information in human-readable issue descriptions.
   (suggested by @u-fischer at TUG 2025, reported in #110, added in #112)
@@ -119,6 +125,8 @@ This version of explcheck has made the following changes to the document titled
 
 #### Fixes
 
+This version of explcheck has fixed the following bugs:
+
 - Prevent command-line option `--no-config-file` from raising the error
   `Config file "" does not exist`.
   (reported by @muzimuzhi in #107, fixed in 41446d0)
@@ -134,12 +142,15 @@ This version of explcheck has made the following changes to the document titled
 
   Previously, only wildcards at the end of a name would function properly (lazy
   matching) and any partial matches by previous patterns would prevent any
-  potential matches by future patterns (backtracking). Both properties
-  limitations were due to parsing expression grammars (PEGs) being greedy and
-  non-backtracking by default. As a result, many wildcards would not match even
-  though they should have.
+  potential matches by future patterns (backtracking). Both limitations were
+  due to parsing expression grammars (PEGs) being greedy and non-backtracking
+  by default. As a result, many wildcards would not match even though they
+  should have.
 
 #### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
 
 - Rename GitHub Action `teatimeguest/setup-texlive-action@v3` to `TeX-Live/...`.
   (reported by @pablogonz in markdown#576, fixed in 28ba10b5)
@@ -150,6 +161,8 @@ This version of explcheck has made the following changes to the document titled
 - Check Lua code blocks in `README.md` with luacheck. (1d21b97, 42f7504, 7b97271)
 
 #### Distribution
+
+This version of explcheck has made the following changes to our distribution:
 
 - Install Bash in the Docker image. (e8c4a08)
 
