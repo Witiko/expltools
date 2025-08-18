@@ -6,7 +6,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/indextra/indextra.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/kanbun/kanbun.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/linearregression/linearregression.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-simplebnf.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/matapli/matapli.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/mdframed/ltxmdf.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/pangram/pangram.sty
