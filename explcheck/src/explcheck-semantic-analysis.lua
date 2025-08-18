@@ -126,17 +126,12 @@ end
 --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
 --
 local function classify_tokens(tokens, token_range)
-  local num_complex_tokens = 0
   for _, token in token_range:enumerate(tokens) do
     if not is_token_simple(token) then
-      num_complex_tokens = num_complex_tokens + 1
+      return OTHER_TOKENS_COMPLEX  -- context material
     end
   end
-  if num_complex_tokens > 0 then
-    return OTHER_TOKENS_COMPLEX, num_complex_tokens  -- context material
-  else
-    return OTHER_TOKENS_SIMPLE, 0  -- simple material
-  end
+  return OTHER_TOKENS_SIMPLE  -- simple material
 end
 
 -- Determine whether the semantic analysis step is too confused by the results
@@ -153,9 +148,10 @@ local function is_confused(pathname, results, options)
     local part_tokens = results.tokens[part_number]
     for _, call in ipairs(part_calls) do
       if call.type == OTHER_TOKENS then
-        local token_type, num_complex_tokens = classify_tokens(part_tokens, call.token_range)
-        if token_type == OTHER_TOKENS_COMPLEX then
-          num_other_complex_tokens = num_other_complex_tokens + num_complex_tokens
+        for _, token in call.token_range:enumerate(part_tokens) do
+          if not is_token_simple(token) then
+            num_other_complex_tokens = num_other_complex_tokens + 1
+          end
         end
       end
     end
