@@ -171,33 +171,10 @@ Parameter tokens other than `#1`, `#2`, `#3`, and `#4` are specified in a messag
  /e425-02.tex
  /e425-03.tex
 
-### Incorrect number of arguments supplied to message {.w #incorrect-number-of-arguments-supplied-to-message}
+### Incorrect number of arguments supplied to message {.w label=w426 #incorrect-number-of-arguments-supplied-to-message}
 A message was supplied fewer or more arguments than there are parameters in the message text.
 
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { #1~#2 }
-\msg_info:nn  % error on this line
-  { foo }
-  { bar }
-\msg_info:nnn  % error on this line
-  { foo }
-  { bar }
-  { foo }
-\msg_info:nnnn
-  { foo }
-  { bar }
-  { foo }
-  { bar }
-\msg_info:nnnn  % error on this line
-  { foo }
-  { bar }
-  { foo }
-  { bar }
-  { baz }
-```
+ /w426.tex
 
 ## Sorting
 ### Comparison conditional without signature `:nnTF` {.e}

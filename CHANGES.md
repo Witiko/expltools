@@ -60,7 +60,7 @@ This version of explcheck has made the following changes to the document titled
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
-- Add more support for semantic analysis. (#117..#122)
+- Add more support for semantic analysis. (#117..#122, #127)
 
   This adds support for the following new issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
@@ -79,10 +79,11 @@ This version of explcheck has made the following changes to the document titled
   12. W423 (Unused message)
   13. E424 (Using an undefined message)
   14. E425 (Incorrect parameters in message text)
+  15. W426 (Incorrect number of arguments supplied to message)
 
   This concludes all planned issues from sections 4.1 (Functions and
-  conditional functions) and 4.2 (Variables and constants) from this document,
-  leaving only sections 4.3 (Messages) and 4.4 (Sorting) to finish Section 4
+  conditional functions), 4.2 (Variables and constants), and 4.3 (Messages)
+  from this document, leaving only section 4.4 (Sorting) to finish Section 4
   (Semantic analysis).
 
 - Add Lua option `suppressed_issue_map`.

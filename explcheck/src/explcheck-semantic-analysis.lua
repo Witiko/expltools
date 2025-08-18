@@ -1001,28 +1001,17 @@ local function semantic_analysis(pathname, content, issues, results, options)
             goto other_statement
           end
           local module_argument, message_argument, text_argument, more_text_argument = table.unpack(call.arguments)
-          -- check the number of parameters in the message text
-          local num_text_argument_parameters
+          -- determine the number of parameters in the message text
+          local num_text_parameters
             = count_parameters_in_replacement_text(transformed_tokens, transform_token_range(text_argument.token_range))
-          if num_text_argument_parameters > 4 then  -- too many parameters, register an error
-            issues:add(
-              'e425',
-              'incorrect parameters in message text',
-              byte_range,
-              string.format('#%d', num_text_argument_parameters)
+          if more_text_argument ~= nil then
+            num_text_parameters = math.max(
+              num_text_parameters,
+              count_parameters_in_replacement_text(transformed_tokens, transform_token_range(more_text_argument.token_range))
             )
           end
-          if more_text_argument ~= nil then
-            local num_more_text_argument_parameters
-              = count_parameters_in_replacement_text(transformed_tokens, transform_token_range(more_text_argument.token_range))
-            if num_more_text_argument_parameters > 4 then  -- too many parameters, register an error
-              issues:add(
-                'e425',
-                'incorrect parameters in message text',
-                byte_range,
-                string.format('#%d', num_more_text_argument_parameters)
-              )
-            end
+          if num_text_parameters > 4 then  -- too many parameters, register an error
+            issues:add('e425', 'incorrect parameters in message text', byte_range, string.format('#%d', num_text_parameters))
           end
           -- parse the module and message names
           local module_name = extract_name_from_tokens(module_argument.token_range)
@@ -1043,6 +1032,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
             message_name = message_name,
             text_argument = text_argument,
             more_text_argument = more_text_argument,
+            num_text_parameters = num_text_parameters,
           }
           table.insert(statements, statement)
           goto continue
@@ -1227,8 +1217,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local defined_variable_csname_transcripts, defined_variable_base_csname_transcripts = {}, {}
   local used_variable_csname_texts, used_variable_csname_transcripts = {}, {}
 
-  local defined_message_name_texts = {}
-  local used_message_name_texts = {}
+  local defined_message_name_texts, defined_message_nums_text_parameters = {}, {}
+  local used_message_name_texts, used_message_nums_text_arguments = {}, {}
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_private_function_variant_pattern = parsers.fail
@@ -1586,6 +1576,24 @@ local function semantic_analysis(pathname, content, issues, results, options)
         else
           error('Unexpected message name type "' .. message_name.type .. '"')
         end
+        -- Record numbers of text parameters.
+        if message_name.type == TEXT then
+          if defined_message_nums_text_parameters[message_name.payload] == nil then
+            defined_message_nums_text_parameters[message_name.payload] = {
+              min = statement.num_text_parameters,
+              max = statement.num_text_parameters,
+            }
+          else
+            defined_message_nums_text_parameters[message_name.payload].min = math.min(
+              defined_message_nums_text_parameters[message_name.payload].min,
+              statement.num_text_parameters
+            )
+            defined_message_nums_text_parameters[message_name.payload].max = math.max(
+              defined_message_nums_text_parameters[message_name.payload].max,
+              statement.num_text_parameters
+            )
+          end
+        end
         -- Record control sequence name usage and definitions.
         process_argument_tokens(statement.text_argument)
         if statement.more_text_argument ~= nil then
@@ -1606,6 +1614,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
           )
         else
           error('Unexpected message name type "' .. message_name.type .. '"')
+        end
+        -- Record numbers of text parameters.
+        if message_name.type == TEXT then
+          table.insert(used_message_nums_text_arguments, {message_name.payload, #statement.text_arguments, byte_range})
         end
         -- Record control sequence name usage and definitions.
         for _, argument in ipairs(statement.text_arguments) do
@@ -1859,6 +1871,21 @@ local function semantic_analysis(pathname, content, issues, results, options)
           and lpeg.match(maybe_defined_message_name_pattern, message_name_text) == nil
         ) then
       issues:add('e424', 'using an undefined message', byte_range, message_name_text)
+    end
+  end
+
+  -- Report supplying incorrect numbers of arguments to a message.
+  for _, used_message_num_text_arguments in ipairs(used_message_nums_text_arguments) do
+    local message_name_text, num_arguments, byte_range = table.unpack(used_message_num_text_arguments)
+    local num_parameters = defined_message_nums_text_parameters[message_name_text]
+    if num_parameters ~= nil and (num_arguments < num_parameters.min or num_arguments > num_parameters.max) then
+      local context
+      if num_arguments < num_parameters.min then
+        context = string.format('%d < %d', num_arguments, num_parameters.min)
+      else
+        context = string.format('%d > %d', num_arguments, num_parameters.max)
+      end
+      issues:add('w426', 'incorrect number of arguments supplied to message', byte_range, context)
     end
   end
 
