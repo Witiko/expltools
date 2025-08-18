@@ -15,6 +15,7 @@ local format_csname = lexical_analysis.format_csname
 local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
+local CHARACTER = token_types.CHARACTER
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -575,9 +576,9 @@ local function semantic_analysis(pathname, content, issues, results, options)
         local function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, call.csname)
         local function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
 
-        local variable_declaration = lpeg.match(parsers.expl3_variable_declaration, call.csname)
-        local variable_definition = lpeg.match(parsers.expl3_variable_definition, call.csname)
-        local variable_use = lpeg.match(parsers.expl3_variable_use, call.csname)
+        local variable_declaration = lpeg.match(parsers.expl3_variable_declaration_csname, call.csname)
+        local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, call.csname)
+        local variable_use = lpeg.match(parsers.expl3_variable_use_csname, call.csname)
 
         local message_definition = lpeg.match(parsers.expl3_message_definition, call.csname)
         local message_use = lpeg.match(parsers.expl3_message_use, call.csname)
@@ -1157,15 +1158,25 @@ local function semantic_analysis(pathname, content, issues, results, options)
     local part_statements = statements[part_number]
     table.insert(call_segments, part_calls)
     table.insert(statement_segments, part_statements)
+    local part_groupings = results.groupings[part_number]
     local part_tokens = results.tokens[part_number]
-    table.insert(token_segments, {part_tokens, part_tokens, identity})
+    table.insert(token_segments, {part_groupings, part_tokens, part_tokens, identity, identity})
     local part_replacement_texts = replacement_texts[part_number]
     for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls) do
       local nested_statements = part_replacement_texts.statements[replacement_text_number]
       table.insert(call_segments, nested_calls)
       table.insert(statement_segments, nested_statements)
       local replacement_text_tokens = part_replacement_texts.tokens[replacement_text_number]
-      table.insert(token_segments, {part_tokens, replacement_text_tokens.transformed_tokens, replacement_text_tokens.map_forward})
+      table.insert(
+        token_segments,
+        {
+          part_groupings,
+          part_tokens,
+          replacement_text_tokens.transformed_tokens,
+          replacement_text_tokens.map_forward,
+          replacement_text_tokens.map_back,
+        }
+      )
     end
   end
 
@@ -1180,9 +1191,10 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
 
   local declared_defined_and_used_variable_csname_texts = {}
-  local declared_variable_csname_texts = {}
+  local declared_variable_csname_texts, declared_variable_csname_transcripts = {}, {}
   local defined_variable_csname_texts = {}
-  local used_variable_csname_texts = {}
+  local defined_variable_csname_transcripts, defined_variable_base_csname_transcripts = {}, {}
+  local used_variable_csname_texts, used_variable_csname_transcripts = {}, {}
 
   local defined_message_name_texts = {}
   local used_message_name_texts = {}
@@ -1192,10 +1204,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
   local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
-  local maybe_declared_variable_csname_texts, maybe_declared_variable_csname_transcripts = {}, {}
-  local maybe_declared_variable_csname_pattern, maybe_defined_variable_csname_pattern = parsers.fail, parsers.fail
-  local maybe_used_variable_csname_transcripts = {}
-  local maybe_defined_variable_csname_transcripts, maybe_defined_variable_base_csname_transcripts = {}, {}
+  local maybe_declared_variable_csname_texts = {}
+  local maybe_declared_variable_csname_pattern = parsers.fail
   local maybe_used_variable_csname_texts = {}
   local maybe_used_variable_csname_pattern = parsers.fail
 
@@ -1204,7 +1214,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
-    local segment_tokens, segment_transformed_tokens, map_forward = table.unpack(token_segments[segment_number])
+    local segment_groupings, segment_tokens, segment_transformed_tokens, map_forward, map_back
+      = table.unpack(token_segments[segment_number])
 
     -- Merge a module name and a message name into a combined fully qualified name.
     local function combine_module_and_message_names(module_name, message_name)
@@ -1273,18 +1284,101 @@ local function semantic_analysis(pathname, content, issues, results, options)
           end
         end
       end
-      -- Record control sequence name definitions.
+      -- Record control sequence name definitions and message name definitions and uses.
       --- Scan control sequence tokens within N- and n-type arguments.
       if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
         for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
-          if token.type == CONTROL_SEQUENCE then
-            if token_number + 1 <= #segment_transformed_tokens then
-              local next_token = segment_transformed_tokens[token_number + 1]
-              if (
-                    next_token.type == CONTROL_SEQUENCE
-                    and lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil
-                  ) then
-                maybe_defined_csname_texts[next_token.payload] = true
+          if token.type == CONTROL_SEQUENCE then  -- control sequence, process it directly
+            local next_token_number = token_number + 1
+            if next_token_number <= #segment_transformed_tokens then
+              local next_token = segment_transformed_tokens[next_token_number]
+              -- Record control sequence name definitions.
+              if next_token.type == CONTROL_SEQUENCE then
+                -- Record potential function definitions.
+                if lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil then
+                  maybe_defined_csname_texts[next_token.payload] = true
+                end
+                -- Record potential variable declarations and definitions.
+                if lpeg.match(parsers.expl3_variable_declaration_csname, token.payload) ~= nil then
+                  maybe_declared_variable_csname_texts[next_token.payload] = true
+                  maybe_defined_csname_texts[next_token.payload] = true
+                end
+                local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
+                if variable_definition ~= nil then
+                  local _, is_constant = table.unpack(variable_definition)
+                  if is_constant then
+                    maybe_declared_variable_csname_texts[next_token.payload] = true
+                  end
+                  maybe_defined_csname_texts[next_token.payload] = true
+                end
+              -- Record message name definitions and uses.
+              elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the module name
+                local message_definition = lpeg.match(parsers.expl3_message_definition, token.payload)
+                local message_use = lpeg.match(parsers.expl3_message_use, token.payload)
+                if message_definition ~= nil or message_use ~= nil then
+                  local next_grouping = segment_groupings[map_back(next_token_number)]
+                  assert(next_grouping ~= nil)
+                  assert(map_forward(next_grouping.start) == next_token_number)
+                  if next_grouping.stop ~= nil then  -- balanced text
+                    local module_name_token_range = new_range(
+                      next_grouping.start + 1,
+                      next_grouping.stop - 1,
+                      INCLUSIVE + MAYBE_EMPTY,
+                      #segment_tokens
+                    )
+                    local next_next_token_number = map_forward(next_grouping.stop) + 1
+                    if next_next_token_number <= #segment_transformed_tokens then
+                      local next_next_token = segment_transformed_tokens[next_next_token_number]
+                      if next_next_token.type == CHARACTER  -- begin grouping, try to collect the message name
+                          and next_next_token.catcode == 1 then
+                        local next_next_grouping = segment_groupings[map_back(next_next_token_number)]
+                        assert(next_next_grouping ~= nil)
+                        assert(map_forward(next_next_grouping.start) == next_next_token_number)
+                        if next_next_grouping.stop ~= nil then  -- balanced text
+                          local message_name_token_range = new_range(
+                            next_next_grouping.start + 1,
+                            next_next_grouping.stop - 1,
+                            INCLUSIVE + MAYBE_EMPTY,
+                            #segment_tokens
+                          )
+                          local module_name = extract_name_from_tokens(module_name_token_range)
+                          local message_name = extract_name_from_tokens(message_name_token_range)
+                          if module_name ~= nil and message_name ~= nil then
+                            local combined_name = combine_module_and_message_names(module_name, message_name)
+                            -- Record potential message definitions.
+                            if message_definition ~= nil then
+                              if combined_name.type == TEXT then
+                                maybe_defined_message_name_texts[combined_name.payload] = true
+                              elseif combined_name.type == PATTERN then
+                                maybe_defined_message_name_pattern = (
+                                  maybe_defined_message_name_pattern
+                                  + #(combined_name.payload * parsers.eof)
+                                  * lpeg.Cc(true)
+                                )
+                              else
+                                error('Unexpected message name type "' .. combined_name.type .. '"')
+                              end
+                            end
+                            -- Record potential message uses.
+                            if message_use ~= nil then
+                              if combined_name.type == TEXT then
+                                maybe_used_message_name_texts[combined_name.payload] = true
+                              elseif combined_name.type == PATTERN then
+                                maybe_used_message_name_pattern = (
+                                  maybe_used_message_name_pattern
+                                  + #(combined_name.payload * parsers.eof)
+                                  * lpeg.Cc(true)
+                                )
+                              else
+                                error('Unexpected message name type "' .. combined_name.type .. '"')
+                              end
+                            end
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
               end
             end
           end
@@ -1363,7 +1457,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
       elseif statement.type == VARIABLE_DECLARATION then
         -- Record variable names.
         table.insert(
-          maybe_declared_variable_csname_transcripts,
+          declared_variable_csname_transcripts,
           {statement.variable_type, statement.declared_csname.transcript, byte_range}
         )
         if statement.declared_csname.type == TEXT then
@@ -1387,17 +1481,17 @@ local function semantic_analysis(pathname, content, issues, results, options)
         -- Record variable names.
         if statement.is_constant then
           table.insert(
-            maybe_declared_variable_csname_transcripts,
+            declared_variable_csname_transcripts,
             {statement.variable_type, statement.defined_csname.transcript, byte_range}
           )
         else
           table.insert(
-            maybe_defined_variable_csname_transcripts,
+            defined_variable_csname_transcripts,
             {statement.variable_type, statement.defined_csname.transcript, byte_range}
           )
           if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
             table.insert(
-              maybe_defined_variable_base_csname_transcripts,
+              defined_variable_base_csname_transcripts,
               {statement.base_variable_type, statement.base_csname.transcript, byte_range}
             )
           end
@@ -1417,14 +1511,6 @@ local function semantic_analysis(pathname, content, issues, results, options)
               {statement.defined_csname.payload, byte_range}
             )
           end
-        elseif statement.declared_csname.type == PATTERN then
-          maybe_defined_variable_csname_pattern = (
-            maybe_defined_variable_csname_pattern
-            + #(statement.declared_csname.payload * parsers.eof)
-            * lpeg.Cc(true)
-          )
-        else
-          error('Unexpected csname type "' .. statement.base_csname.type .. '"')
         end
         -- Record control sequence name usage and definitions.
         if statement.subtype == VARIABLE_DEFINITION_DIRECT then
@@ -1434,7 +1520,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
         table.insert(
-          maybe_used_variable_csname_transcripts,
+          used_variable_csname_transcripts,
           {statement.variable_type, statement.used_csname.transcript, byte_range}
         )
         if statement.used_csname.type == TEXT then
@@ -1672,8 +1758,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
   end
 
   ---- Report using variables and constants of incompatible types.
-  for _, maybe_declared_variable_csname_transcript in ipairs(maybe_declared_variable_csname_transcripts) do
-    local declaration_type, csname_transcript, byte_range = table.unpack(maybe_declared_variable_csname_transcript)
+  for _, declared_variable_csname_transcript in ipairs(declared_variable_csname_transcripts) do
+    local declaration_type, csname_transcript, byte_range = table.unpack(declared_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
       -- For declarations, we require that the the declaration type <= the variable type.
@@ -1685,8 +1771,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
       end
     end
   end
-  for _, maybe_defined_variable_csname_transcript in ipairs(maybe_defined_variable_csname_transcripts) do
-    local definition_type, csname_transcript, byte_range = table.unpack(maybe_defined_variable_csname_transcript)
+  for _, defined_variable_csname_transcript in ipairs(defined_variable_csname_transcripts) do
+    local definition_type, csname_transcript, byte_range = table.unpack(defined_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
       -- For definitions, we require that the definition type <= the defined variable type.
@@ -1698,8 +1784,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
       end
     end
   end
-  for _, maybe_defined_variable_base_csname_transcript in ipairs(maybe_defined_variable_base_csname_transcripts) do
-    local definition_type, csname_transcript, byte_range = table.unpack(maybe_defined_variable_base_csname_transcript)
+  for _, defined_variable_base_csname_transcript in ipairs(defined_variable_base_csname_transcripts) do
+    local definition_type, csname_transcript, byte_range = table.unpack(defined_variable_base_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
       -- Additionally, for indirect definitions, we also require that the base variable type <= the definition type.
@@ -1711,8 +1797,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
       end
     end
   end
-  for _, maybe_used_variable_csname_transcript in ipairs(maybe_used_variable_csname_transcripts) do
-    local use_type, csname_transcript, byte_range = table.unpack(maybe_used_variable_csname_transcript)
+  for _, used_variable_csname_transcript in ipairs(used_variable_csname_transcripts) do
+    local use_type, csname_transcript, byte_range = table.unpack(used_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     -- For uses, we require a potential compatibility between the use type and the variable type.
     -- For example, both `\str_count:N \g_example_tl` and `\tl_count:N \g_example_str` are OK.

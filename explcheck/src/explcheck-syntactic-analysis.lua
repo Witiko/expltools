@@ -479,14 +479,14 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
                   #transformed_tokens
                 )
                 if #next_token_range == 1 then  -- a single token, record it
-                    context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
-                    issues:add('w303', 'braced N-type function call argument', next_token.byte_range, context)
-                    record_argument({
-                      specifier = argument_specifier,
-                      token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
-                      outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
-                    })
-                    next_token_number = map_forward(next_grouping.stop)
+                  context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
+                  issues:add('w303', 'braced N-type function call argument', next_token.byte_range, context)
+                  record_argument({
+                    specifier = argument_specifier,
+                    token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
+                    outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
+                  })
+                  next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
                     transformed_tokens[next_token_range:start()].type == CHARACTER and
                     transformed_tokens[next_token_range:start()].catcode == 6 and  -- a parameter

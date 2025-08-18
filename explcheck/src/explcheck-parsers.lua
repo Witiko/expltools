@@ -769,9 +769,8 @@ local expl3_quark_or_scan_mark_csname = (
   * underscore
 )
 
-
 ------ Variable declarations
-local expl3_variable_declaration = Ct(
+local expl3_variable_declaration_csname = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
   * (
@@ -786,7 +785,7 @@ local expl3_variable_declaration = Ct(
 )
 
 ------ Variable and constant definitions
-local expl3_variable_definition = Ct(
+local expl3_variable_definition_csname = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
   * (
@@ -811,7 +810,7 @@ local expl3_variable_definition = Ct(
 )
 
 ------ Variable and constant use
-local expl3_variable_use = Ct(
+local expl3_variable_use_csname = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
   * (
@@ -903,12 +902,12 @@ return {
   expl3_message_use = expl3_message_use,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
-  expl3_variable_declaration = expl3_variable_declaration,
-  expl3_variable_definition = expl3_variable_definition,
+  expl3_variable_declaration_csname = expl3_variable_declaration_csname,
+  expl3_variable_definition_csname = expl3_variable_definition_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl3_variable_or_constant_csname_scope = expl3_variable_or_constant_csname_scope,
   expl3_variable_or_constant_csname_type = expl3_variable_or_constant_csname_type,
-  expl3_variable_use = expl3_variable_use,
+  expl3_variable_use_csname = expl3_variable_use_csname,
   expl3_well_known_csname = expl3_well_known_csname,
   expl3_well_known_message_name = expl3_well_known_message_name,
   expl_syntax_off = expl_syntax_off,
