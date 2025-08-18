@@ -33,6 +33,12 @@ This version of explcheck has made the following changes to the document titled
 - Reclassify the planned errors E421 and E518 (Using an undefined variable or
   constant) as warnings W421 and W518, respectively. (#121)
 
+- Unplan issues W424 and E521 (Setting an undefined message). (#127)
+
+- Reclassify and rename the planned errors E426 and E522 (Too few arguments
+  supplied to message) to W426 and W522 (Incorrect number of arguments supplied
+  to message), respectively. (#127)
+
 #### Development
 
 - Include contextual information in human-readable issue descriptions.
@@ -54,9 +60,9 @@ This version of explcheck has made the following changes to the document titled
 - Make `% noqa` comments at the beginning of a file silence issues everywhere.
   (suggested by @FrankMittelbach at TUG 2025, reported in #111, added in #116)
 
-- Add more support for semantic analysis. (#117..#122)
+- Add more support for semantic analysis. (#117..#122, #127)
 
-  This adds support for the following new issues from Section 4 of the document
+  This adds support for all remaining issues from Section 4 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
    1. S412 (Malformed function name)
@@ -70,11 +76,11 @@ This version of explcheck has made the following changes to the document titled
    9. E420 (Locally setting a global variable)
   10. E421 (Globally setting a local variable)
   11. T422 (Using a variable of an incompatible type)
-
-  This concludes all planned issues from sections 4.1 (Functions and
-  conditional functions) and 4.2 (Variables and constants) from this document,
-  leaving only sections 4.3 (Messages) and 4.4 (Sorting) to finish Section 4
-  (Semantic analysis).
+  12. W423 (Unused message)
+  13. E424 (Using an undefined message)
+  14. E425 (Incorrect parameters in message text)
+  15. W426 (Incorrect number of arguments supplied to message)
+  16. E427 (Comparison conditional without signature `:nnTF`)
 
 - Add Lua option `suppressed_issue_map`.
 

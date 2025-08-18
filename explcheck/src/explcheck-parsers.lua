@@ -15,6 +15,7 @@ local success = P(true)
 ---- Tokens
 local ampersand = P("&")
 local backslash = P([[\]])
+local slash = P("/")
 local circumflex = P("^")
 local colon = P(":")
 local comma = P(",")
@@ -223,7 +224,7 @@ local deprecated_argument_specifiers = (
   + Cc({})
 )
 
----- Function, variable, and constant names
+---- Expl3 control sequence names
 local expl3_function_csname = (
   (underscore * underscore)^-1 * letter^1  -- module
   * underscore
@@ -360,11 +361,17 @@ local expl3_standard_library_prefixes = (
 local function expl3_well_known_csname(other_prefix_texts)
   local other_prefixes = fail
   for _, prefix_text in ipairs(other_prefix_texts) do
-    other_prefixes = other_prefixes + P(prefix_text)
+    other_prefixes = (
+      other_prefixes +
+      #(P(prefix_text) * (underscore + colon))
+      * P(prefix_text)
+    )
   end
   local prefix = (
-    expl3_standard_library_prefixes * #(underscore + colon)
-    + registered_prefixes * #(underscore + colon)
+    #(expl3_standard_library_prefixes * (underscore + colon))
+    * expl3_standard_library_prefixes
+    + #(registered_prefixes * (underscore + colon))
+    * registered_prefixes
     + other_prefixes
   )
   local well_known_function_csname = (
@@ -723,59 +730,7 @@ local condition = (
 local conditions = comma_list(condition)
 
 ---- Variables and constants
------- Variable declarations
-local expl3_variable_declaration = Ct(
-  C(expl3_variable_or_constant_type)
-  * underscore
-  * (
-    P("g")^-1
-    * (
-      P("zero")
-      + P("clear")
-    )
-    * underscore
-  )^-1
-  * P("new:N")
-)
-
------- Variable and constant definitions
-local expl3_variable_definition = Ct(
-  C(expl3_variable_or_constant_type)
-  * underscore
-  * (
-    P("const") * Cc(true)^-3  -- constant definition
-    + Cc(false)  -- variable definition
-    * (
-      P("gset") * Cc(true)  -- global
-      + P("set") * Cc(false)  -- local
-    )
-    * (
-      Cc(false)  -- indirect
-      * underscore
-      * (
-        P("eq")
-        + P("from_")
-        * C(expl3_variable_or_constant_type)
-      )
-      + Cc(true)  -- direct
-    )
-  )
-  * P(":N")
-)
-
------- Variable and constant use
-local expl3_variable_use = Ct(
-  C(expl3_variable_or_constant_type)
-  * underscore
-  * (
-    P("count")
-    + P("open")
-    + P("show")
-    + P("use")
-  )
-  * P(":N")
-)
-
+------ Variable names
 local expl3_variable_or_constant_csname = (
   S("cgl")  -- scope
   * underscore
@@ -814,6 +769,110 @@ local expl3_quark_or_scan_mark_csname = (
   * underscore
 )
 
+------ Variable declarations
+local expl3_variable_declaration_csname = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * (
+    P("g")^-1
+    * (
+      P("zero")
+      + P("clear")
+    )
+    * underscore
+  )^-1
+  * P("new:N")
+)
+
+------ Variable and constant definitions
+local expl3_variable_definition_csname = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * (
+    P("const") * Cc(true)^-3  -- constant definition
+    + Cc(false)  -- variable definition
+    * (
+      P("gset") * Cc(true)  -- global
+      + P("set") * Cc(false)  -- local
+    )
+    * (
+      Cc(false)  -- indirect
+      * underscore
+      * (
+        P("eq")
+        + P("from_")
+        * C(expl3_variable_or_constant_type)
+      )
+      + Cc(true)  -- direct
+    )
+  )
+  * P(":N")
+)
+
+------ Variable and constant use
+local expl3_variable_use_csname = Ct(
+  C(expl3_variable_or_constant_type)
+  * underscore
+  * (
+    P("count")
+    + P("open")
+    + P("show")
+    + P("use")
+  )
+  * P(":N")
+)
+
+---- Messages
+------ Message names
+local function expl3_well_known_message_name(other_prefix_texts)
+  local other_prefixes = fail
+  for _, prefix_text in ipairs(other_prefix_texts) do
+    other_prefixes = (
+      other_prefixes
+      + #(P(prefix_text) * slash)
+      * P(prefix_text)
+    )
+  end
+  return (
+    #(expl3_standard_library_prefixes * slash)
+    * expl3_standard_library_prefixes
+    + #(registered_prefixes * slash)
+    * registered_prefixes
+    + other_prefixes
+  )
+end
+
+------ Message definitions
+local expl3_message_definition = (
+  P("msg")
+  * underscore
+  * (
+    P("new")
+    + P("set")
+  )
+  * colon
+)
+
+------ Message use
+local expl3_message_use = (
+  P("msg")
+  * underscore
+  * (
+    P("none")
+    + P("show")
+    + P("term")
+    + P("log")
+    + P("info")
+    + P("note")
+    + P("warning")
+    + P("error")
+    + P("expandable_error")
+    + P("critical")
+    + P("fatal")
+  )
+  * colon
+)
+
 return {
   any = any,
   argument_specifiers = argument_specifiers,
@@ -839,15 +898,18 @@ return {
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
   expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
+  expl3_message_definition = expl3_message_definition,
+  expl3_message_use = expl3_message_use,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
-  expl3_variable_declaration = expl3_variable_declaration,
-  expl3_variable_definition = expl3_variable_definition,
+  expl3_variable_declaration_csname = expl3_variable_declaration_csname,
+  expl3_variable_definition_csname = expl3_variable_definition_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
   expl3_variable_or_constant_csname_scope = expl3_variable_or_constant_csname_scope,
   expl3_variable_or_constant_csname_type = expl3_variable_or_constant_csname_type,
-  expl3_variable_use = expl3_variable_use,
+  expl3_variable_use_csname = expl3_variable_use_csname,
   expl3_well_known_csname = expl3_well_known_csname,
+  expl3_well_known_message_name = expl3_well_known_message_name,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   fail = fail,

@@ -669,22 +669,6 @@ A message is defined but all its uses are unreachable.
 
 This check is a stronger version of <#unused-message> and should only be emitted if <#unused-message> has not previously been emitted for this message.
 
-### Setting an undefined message {.e}
-A message is set before it has been defined.
-
-``` tex
-\msg_set:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-\msg_new:nnn
-  { foo }
-  { bar }
-  { baz }
-```
-
-This check is a stronger version of <#setting-undefined-message> and should prevent <#setting-undefined-message> from being emitted for this message.
-
 ### Using an undefined message {.e}
 A message is used before it has been defined.
 
@@ -700,8 +684,8 @@ A message is used before it has been defined.
 
 This check is a stronger version of <#using-undefined-message> and should only be emitted if <#using-undefined-message> has not previously been emitted for this message.
 
-### Too few arguments supplied to message {.e}
-A message was supplied fewer arguments than there are parameters in the message text.
+### Incorrect number of arguments supplied to message {.w}
+A message was supplied fewer or more arguments than there are parameters in the message text.
 
 ``` tex
 \msg_new:nnn
@@ -733,7 +717,7 @@ A message was supplied fewer arguments than there are parameters in the message 
   { baz }
 ```
 
-This check is a stronger version of <#too-few-arguments-supplied-to-message> and should only be emitted if <#too-few-arguments-supplied-to-message> has not previously been emitted for this message.
+This check is a stronger version of <#incorrect-number-of-arguments-supplied-to-message> and should only be emitted if <#incorrect-number-of-arguments-supplied-to-message> has not previously been emitted for this message.
 
 ### Multiply defined message {.e}
 A message is defined multiple times.

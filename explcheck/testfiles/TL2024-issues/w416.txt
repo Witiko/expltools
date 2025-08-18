@@ -20,7 +20,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/els-cas-templates/cas-common.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/elsarticle/elsarticle.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/emotion/emotion.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-question.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/figput/figput.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fistrum/fistrum.sty
@@ -81,7 +80,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/urcls/URspecialopts.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/weiqi/weiqi.sty
-/usr/local/texlive/2024/texmf-dist/tex/lualatex/letgut/letgut-banner.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/hanzibox/hanzibox.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xepersian-hm/xepersian-hm-kashida.tex
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xepersian-hm/xepersian-hm.sty

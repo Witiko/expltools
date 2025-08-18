@@ -68,7 +68,7 @@ local function process_with_all_steps(pathname, content, issues, analysis_result
     end
     step.process(pathname, content, issues, analysis_results, options)
     -- If a processing step ended with error, skip all following steps.
-    if fail_fast and #issues.errors > 0 then
+    if step_number < #step_filenames and fail_fast and #issues.errors > 0 then
       analysis_results.stopped_early = {
         when = string.format("after %s", step.name),
         reason = "it ended with errors and the option `fail_fast` was enabled",

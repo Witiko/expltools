@@ -153,105 +153,32 @@ A variable of one type is used where a variable of a different type should be us
 
 ## Messages
 
-### Unused message {.w #unused-message}
+### Unused message {.w label=w423 #unused-message}
 A message is defined but unused.
 
-``` tex
-\msg_new:nnn  % warning on this line
-  { foo }
-  { bar }
-  { baz }
-```
+ /w423-01.tex
+ /w423-02.tex
 
-``` tex
-\msg_new:nnn
-  { bar }
-  { bar }
-  { baz }
-\msg_info:nn
-  { bar }
-  { bar }
-```
-
-### Setting an undefined message {.w #setting-undefined-message}
-A message is set but undefined.
-
-``` tex
-\msg_set:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-```
-
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { baz }
-\msg_set:nnn
-  { foo }
-  { bar }
-  { baz }
-```
-
-### Using an undefined message {.e #using-undefined-message}
+### Using an undefined message {.e label=e424 #using-undefined-message}
 A message is used but undefined.
 
-``` tex
-\msg_info:nn
-  { foo }
-  { bar }
-```
+ /e424.tex
 
-### Incorrect parameters in message text {.e #invalid-parameters-in-message-text}
+### Incorrect parameters in message text {.e label=e425 #invalid-parameters-in-message-text}
 Parameter tokens other than `#1`, `#2`, `#3`, and `#4` are specified in a message text.
 
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { #5 }  % error on this line
-```
+ /e425-01.tex
+ /e425-02.tex
+ /e425-03.tex
 
-``` tex
-\msg_new:nnnn
-  { foo }
-  { bar }
-  { #4 }
-  { #5 }  % error on this line
-```
+### Incorrect number of arguments supplied to message {.w label=w426 #incorrect-number-of-arguments-supplied-to-message}
+A message was supplied fewer or more arguments than there are parameters in the message text.
 
-### Too few arguments supplied to message {.e #too-few-arguments-supplied-to-message}
-A message was supplied fewer arguments than there are parameters in the message text.
-
-``` tex
-\msg_new:nnn
-  { foo }
-  { bar }
-  { #1~#2 }
-\msg_info:nn  % error on this line
-  { foo }
-  { bar }
-\msg_info:nnn  % error on this line
-  { foo }
-  { bar }
-  { baz }
-\msg_info:nnnn
-  { foo }
-  { bar }
-  { baz }
-  { baz }
-```
+ /w426.tex
 
 ## Sorting
-### Comparison conditional without signature `:nnTF` {.e}
+### Comparison conditional without signature `:nnTF` {.e label=e427}
 A sorting function is called with a conditional that has a signature different than `:nnTF` [@latexteam2024interfaces, Section 15.5.4].
 
-``` tex
-\cs_new:Nn
-  \example_foo:
-  { \prg_return_true: }
-\tl_sort:nN
-  { { foo } { bar } }
-  \example_foo:TF
-```
+ /e427-01.tex
+ /e427-02.tex
