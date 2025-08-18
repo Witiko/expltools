@@ -418,7 +418,7 @@ ignored_issues = ["e408"]
 ignored_issues = ["e408"]
 
 [package.fontawesome5]
-imported_prefixes = ["fontawesome"]
+imported_prefixes = ["fontawesome", "fontawesome5"]
 
 [package.hobby]
 imported_prefixes = ["hobby"]

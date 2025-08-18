@@ -1521,6 +1521,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
   --- Report issues apparent from the collected information.
   local imported_prefixes = get_option('imported_prefixes', options, pathname)
   local expl3_well_known_csname = parsers.expl3_well_known_csname(imported_prefixes)
+  local expl3_well_known_message_name = parsers.expl3_well_known_message_name(imported_prefixes)
 
   ---- Report unused private functions.
   for _, defined_private_function_text in ipairs(defined_private_function_texts) do
@@ -1736,7 +1737,8 @@ local function semantic_analysis(pathname, content, issues, results, options)
   for _, used_message_name_text in ipairs(used_message_name_texts) do
     local message_name_text, byte_range = table.unpack(used_message_name_text)
     if (
-          not maybe_defined_message_name_texts[message_name_text]
+          lpeg.match(expl3_well_known_message_name, message_name_text) == nil
+          and not maybe_defined_message_name_texts[message_name_text]
           and lpeg.match(maybe_defined_message_name_pattern, message_name_text) == nil
         ) then
       issues:add('e424', 'using an undefined message', byte_range, message_name_text)

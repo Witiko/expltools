@@ -15,6 +15,7 @@ local success = P(true)
 ---- Tokens
 local ampersand = P("&")
 local backslash = P([[\]])
+local slash = P("/")
 local circumflex = P("^")
 local colon = P(":")
 local comma = P(",")
@@ -223,7 +224,7 @@ local deprecated_argument_specifiers = (
   + Cc({})
 )
 
----- Function, variable, and constant names
+---- Expl3 control sequence names
 local expl3_function_csname = (
   (underscore * underscore)^-1 * letter^1  -- module
   * underscore
@@ -360,11 +361,17 @@ local expl3_standard_library_prefixes = (
 local function expl3_well_known_csname(other_prefix_texts)
   local other_prefixes = fail
   for _, prefix_text in ipairs(other_prefix_texts) do
-    other_prefixes = other_prefixes + P(prefix_text)
+    other_prefixes = (
+      other_prefixes +
+      #(P(prefix_text) * (underscore + colon))
+      * P(prefix_text)
+    )
   end
   local prefix = (
-    expl3_standard_library_prefixes * #(underscore + colon)
-    + registered_prefixes * #(underscore + colon)
+    #(expl3_standard_library_prefixes * (underscore + colon))
+    * expl3_standard_library_prefixes
+    + #(registered_prefixes * (underscore + colon))
+    * registered_prefixes
     + other_prefixes
   )
   local well_known_function_csname = (
@@ -723,6 +730,46 @@ local condition = (
 local conditions = comma_list(condition)
 
 ---- Variables and constants
+------ Variable names
+local expl3_variable_or_constant_csname = (
+  S("cgl")  -- scope
+  * underscore
+  * (
+    underscore^-1 * letter^1  -- module
+    * underscore
+    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
+  )
+  * underscore
+  * expl3_variable_or_constant_type  -- type
+  * eof
+)
+local expl3_variable_or_constant_csname_scope = (
+  C(S("cgl"))  -- scope
+  * underscore
+)
+local expl3_variable_or_constant_csname_type = (
+  (any - underscore)^0  -- scope
+  * underscore^1
+  * (any - underscore)^1  -- module and description
+  * (any - #(underscore * expl3_variable_or_constant_type * eof))^0
+  * underscore
+  * C(expl3_variable_or_constant_type)  -- type
+  * eof
+)
+local expl3_scratch_variable_csname = (
+  S("gl")
+  * underscore
+  * P("tmp") * S("ab")
+  * underscore
+  * expl3_variable_or_constant_type
+  * eof
+)
+local expl3_quark_or_scan_mark_csname = (
+  S("qs")
+  * underscore
+)
+
+
 ------ Variable declarations
 local expl3_variable_declaration = Ct(
   C(expl3_variable_or_constant_type)
@@ -776,46 +823,26 @@ local expl3_variable_use = Ct(
   * P(":N")
 )
 
------- Variable and constant names
-local expl3_variable_or_constant_csname = (
-  S("cgl")  -- scope
-  * underscore
-  * (
-    underscore^-1 * letter^1  -- module
-    * underscore
-    * letter * (letter + underscore * -#(expl3_variable_or_constant_type * eof))^0  -- description
-  )
-  * underscore
-  * expl3_variable_or_constant_type  -- type
-  * eof
-)
-local expl3_variable_or_constant_csname_scope = (
-  C(S("cgl"))  -- scope
-  * underscore
-)
-local expl3_variable_or_constant_csname_type = (
-  (any - underscore)^0  -- scope
-  * underscore^1
-  * (any - underscore)^1  -- module and description
-  * (any - #(underscore * expl3_variable_or_constant_type * eof))^0
-  * underscore
-  * C(expl3_variable_or_constant_type)  -- type
-  * eof
-)
-local expl3_scratch_variable_csname = (
-  S("gl")
-  * underscore
-  * P("tmp") * S("ab")
-  * underscore
-  * expl3_variable_or_constant_type
-  * eof
-)
-local expl3_quark_or_scan_mark_csname = (
-  S("qs")
-  * underscore
-)
-
 ---- Messages
+------ Message names
+local function expl3_well_known_message_name(other_prefix_texts)
+  local other_prefixes = fail
+  for _, prefix_text in ipairs(other_prefix_texts) do
+    other_prefixes = (
+      other_prefixes
+      + #(P(prefix_text) * slash)
+      * P(prefix_text)
+    )
+  end
+  return (
+    #(expl3_standard_library_prefixes * slash)
+    * expl3_standard_library_prefixes
+    + #(registered_prefixes * slash)
+    * registered_prefixes
+    + other_prefixes
+  )
+end
+
 ------ Message definitions
 local expl3_message_definition = (
   P("msg")
@@ -883,6 +910,7 @@ return {
   expl3_variable_or_constant_csname_type = expl3_variable_or_constant_csname_type,
   expl3_variable_use = expl3_variable_use,
   expl3_well_known_csname = expl3_well_known_csname,
+  expl3_well_known_message_name = expl3_well_known_message_name,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   fail = fail,
