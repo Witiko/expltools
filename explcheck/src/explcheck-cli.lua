@@ -189,6 +189,8 @@ else
     elseif argument == "--expect-expl3-everywhere" then
       -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
       options.expl3_detection_strategy = "always"
+    elseif argument:sub(1, 14) == "--group-files=" then
+      options.group_files = argument:sub(15)
     elseif argument:sub(1, 17) == "--ignored-issues=" then
       options.ignored_issues = {}
       for issue_identifier in argument:sub(18):gmatch('[^,]+') do
