@@ -45,7 +45,7 @@ local function identity(...)
   return ...
 end
 
--- Run all processing steps.
+-- Run all processing steps on a group of files.
 local function process_with_all_steps(pathname, content, issues, analysis_results, options)
   local get_option = require("explcheck-config").get_option
   local fail_fast = get_option('fail_fast', options, pathname)
@@ -66,6 +66,7 @@ local function process_with_all_steps(pathname, content, issues, analysis_result
         break
       end
     end
+    -- Run the processing step.
     step.process(pathname, content, issues, analysis_results, options)
     -- If a processing step ended with error, skip all following steps.
     if step_number < #step_filenames and fail_fast and #issues.errors > 0 then

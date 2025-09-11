@@ -62,11 +62,7 @@ end
 
 -- Import explcheck.
 local new_issues = require("explcheck-issues")
-
-local preprocessing = require("explcheck-preprocessing")
-local lexical_analysis = require("explcheck-lexical-analysis")
-local syntactic_analysis = require("explcheck-syntactic-analysis")
-local semantic_analysis = require("explcheck-semantic-analysis")
+local process = require("explcheck-utils").process_with_all_steps
 
 -- Process file "code.tex" and print warnings and errors.
 local filename = "code.tex"
@@ -77,10 +73,7 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 
-preprocessing.process(filename, content, issues, results)
-lexical_analysis.process(filename, content, issues, results)
-syntactic_analysis.process(filename, content, issues, results)
-semantic_analysis.process(filename, content, issues, results)
+process({filename}, content, issues, results)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "
@@ -139,11 +132,7 @@ end
 
 -- Import explcheck.
 local new_issues = require("explcheck-issues")
-
-local preprocessing = require("explcheck-preprocessing")
-local lexical_analysis = require("explcheck-lexical-analysis")
-local syntactic_analysis = require("explcheck-syntactic-analysis")
-local semantic_analysis = require("explcheck-semantic-analysis")
+local process = require("explcheck-utils").process_with_all_steps
 
 -- Process file "code.tex" and print warnings and errors.
 local filename = "code.tex"
@@ -158,10 +147,7 @@ local file = assert(io.open(filename, "r"))
 local content = assert(file:read("*a"))
 assert(file:close())
 
-preprocessing.process(filename, content, issues, results, options)
-lexical_analysis.process(filename, content, issues, results, options)
-syntactic_analysis.process(filename, content, issues, results, options)
-semantic_analysis.process(filename, content, issues, results, options)
+process({filename}, content, issues, results, options)
 
 print(
   "There were " .. #issues.warnings .. " warnings, "

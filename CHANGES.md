@@ -4,6 +4,32 @@
 
 ### explcheck v0.13.0
 
+#### Development
+
+This version of explcheck has implemented the following new features:
+
+- Support inter-file dependencies. (#129, #131)
+
+  After this change, you may manually _group files_ from the command-line
+  interface as follows:
+
+        explcheck first.tex + second.tex , third.tex , fourth.tex
+
+  The above command would cause the files `first.tex` and `second.tex` to be
+  processed together and allow explcheck to assume that these files will always
+  be used together. As a result, using e.g. a function in the file `first.tex`
+  that is only defined in the file `second.tex` would no longer raise the error
+  E408 (Calling an undefined function).
+
+  To control how files are grouped by default, you may use the new command-line
+  option `--group-files`. To process a group of files in Lua, you may use the
+  function `process_with_all_steps()` from the file `explcheck-utils.lua`:
+
+  ``` lua
+  local utils = require("explcheck-utils")
+  utils.process_with_all_steps({"first.tex", "second.tex"}, ...)
+  ```
+
 ## expltools 2025-08-18
 
 ### explcheck v0.12.0
