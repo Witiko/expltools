@@ -9,21 +9,6 @@ local utils = require("explcheck-utils")
 local new_file_results = evaluation.new_file_results
 local new_aggregate_results = evaluation.new_aggregate_results
 
--- Deduplicate pathnames.
-local function deduplicate_pathnames(pathnames)
-  local deduplicated_pathnames = {}
-  local seen_pathnames = {}
-  for _, pathname in ipairs(pathnames) do
-    if seen_pathnames[pathname] ~= nil then
-      goto continue
-    end
-    seen_pathnames[pathname] = true
-    table.insert(deduplicated_pathnames, pathname)
-    ::continue::
-  end
-  return deduplicated_pathnames
-end
-
 -- Check that the pathname specifies a file that we can process.
 local function check_pathname(pathname)
   local suffix = utils.get_suffix(pathname)
@@ -60,6 +45,99 @@ local function check_pathname(pathname)
       .. "to generate .tex, .cls, and .sty files and process these files instead."
   end
   return true
+end
+
+-- Group pathnames.
+local function group_pathnames(pathnames, options)
+  local pathname_groups, current_group = {}, {}
+  local group_next, ungroup_next = false, false
+  local group_files = get_option("group_files", options)
+  local max_grouped_files_per_directory = get_option("max_grouped_files_per_directory", options)
+  local previous_pathname, num_files_from_current_directory = nil, 0
+
+  -- Close the current group by adding it to a list of groups, if nonempty, and opening the next group.
+  local function close_current_group()
+    if #current_group > 0 then
+      table.insert(pathname_groups, current_group)
+    end
+    current_group = {}
+  end
+
+  -- Explode the current group by creating single-element groups out of it and adding them to the list of groups.
+  local function explode_current_group()
+    for _, pathname in ipairs(current_group) do
+      table.insert(pathname_groups, {pathname})
+    end
+    current_group = {}
+  end
+
+  for _, current_pathname in ipairs(pathnames) do
+    -- Process a grouping argument, such as "+" or ",".
+    if current_pathname == "+" or current_pathname == "," then  -- a grouping argument
+      if group_next or ungroup_next then
+        error('Two arguments "+" or "," in a row')
+      end
+      if current_pathname == "+" then
+        group_next = true
+      else
+        ungroup_next = true
+      end
+    else
+      assert(not (group_next and ungroup_next))
+      -- Check a pathname argument.
+      local is_ok, error_message = check_pathname(current_pathname)
+      if not is_ok then
+        error('Failed to process "' .. current_pathname .. '": ' .. error_message)
+      end
+      -- Process the pathname argument.
+      if group_files == "no" then
+        if not group_next then
+          close_current_group()
+        end
+      elseif group_files == "yes" then
+        if ungroup_next then
+          close_current_group()
+        end
+      elseif group_files == "auto" then
+        if group_next then
+          if num_files_from_current_directory > max_grouped_files_per_directory then
+            explode_current_group()
+          end
+          num_files_from_current_directory = 0
+        elseif ungroup_next then
+          if num_files_from_current_directory > max_grouped_files_per_directory then
+            explode_current_group()
+          else
+            close_current_group()
+          end
+          num_files_from_current_directory = 0
+        elseif previous_pathname == nil or utils.get_parent(previous_pathname) == utils.get_parent(current_pathname) then
+          num_files_from_current_directory = num_files_from_current_directory + 1
+        else
+          if num_files_from_current_directory > max_grouped_files_per_directory then
+            explode_current_group()
+          else
+            close_current_group()
+          end
+          num_files_from_current_directory = 0
+        end
+      else
+        error('Unexpected grouping strategy "' .. group_files .. '"')
+      end
+      group_next, ungroup_next = false, false
+      previous_pathname = current_pathname
+      table.insert(current_group, current_pathname)
+    end
+  end
+
+  -- Close or explode any trailing group.
+  if group_files == "auto" and num_files_from_current_directory > max_grouped_files_per_directory then
+    explode_current_group()
+  else
+    close_current_group()
+  end
+
+  return pathname_groups
 end
 
 -- Process all input files.
@@ -114,7 +192,7 @@ local function print_usage()
   local expl3_detection_strategy = get_option("expl3_detection_strategy")
   local make_at_letter = tostring(get_option("make_at_letter"))
   local max_line_length = tostring(get_option("max_line_length"))
-  local max_grouped_files = get_option("max_grouped_files_per_directory")
+  local max_grouped_files_per_directory = get_option("max_grouped_files_per_directory")
   print(
     "Options:\n\n"
     .. "\t--config-file=FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
@@ -135,8 +213,8 @@ local function print_usage()
     .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
     .. '\t                           - "no": Never group files unless "+" is written between a pair of FILENAMES.\n'
     .. '\t                           - "yes": Always group files unless "," is written between a pair of FILENAMES.\n'
-    .. '\t                           - "auto": Group files from the same directory, unless they are separated with ","\n'
-    .. "\t                             and unless there are more than " .. max_grouped_files .. " files in the directory.\n\n"
+    .. '\t                           - "auto": Group consecutive files from the same directory, unless separated with ","\n'
+    .. "\t                             and unless there are more than " .. max_grouped_files_per_directory .. " files in the directory.\n\n"
     .. "\t                           The default setting is --group-files=" .. get_option("group_files") .. ".\n\n"
     .. "\t--ignored-issues=ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
     .. "\t--make-at-letter[={true|false|auto}]\n\n"
@@ -231,15 +309,8 @@ else
     os.exit(1)
   end
 
-  -- Deduplicate and check that pathnames specify files that we can process.
-  pathnames = deduplicate_pathnames(pathnames)
-  for _, pathname in ipairs(pathnames) do
-    local is_ok, error_message = check_pathname(pathname)
-    if not is_ok then
-      print('Failed to process "' .. pathname .. '": ' .. error_message)
-      os.exit(1)
-    end
-  end
+  -- Group pathnames.
+  local pathname_groups = group_pathnames(pathnames, options)  -- luacheck: ignore pathname_groups
 
   -- Run the analysis.
   local exit_code = main(pathnames, options)
