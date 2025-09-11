@@ -114,6 +114,7 @@ local function print_usage()
   local expl3_detection_strategy = get_option("expl3_detection_strategy")
   local make_at_letter = tostring(get_option("make_at_letter"))
   local max_line_length = tostring(get_option("max_line_length"))
+  local max_grouped_files = get_option("max_grouped_files_per_directory")
   print(
     "Options:\n\n"
     .. "\t--config-file=FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
@@ -130,6 +131,13 @@ local function print_usage()
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
     .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
+    .. "\t--group-files={no|yes|auto}\n\n"
+    .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
+    .. '\t                           - "no": Never group files unless "+" is written between a pair of FILENAMES.\n'
+    .. '\t                           - "yes": Always group files unless "," is written between a pair of FILENAMES.\n'
+    .. '\t                           - "auto": Group files from the same directory, unless they are separated with ","\n'
+    .. "\t                             and unless there are more than " .. max_grouped_files .. " files in the directory.\n\n"
+    .. "\t                           The default setting is --group-files=" .. get_option("group_files") .. ".\n\n"
     .. "\t--ignored-issues=ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
     .. "\t--make-at-letter[={true|false|auto}]\n\n"
     .. '\t                           How the at sign ("@") should be tokenized:\n\n'
