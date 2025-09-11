@@ -88,7 +88,7 @@ This version of explcheck has implemented the following new features:
   15. W426 (Incorrect number of arguments supplied to message)
   16. E427 (Comparison conditional without signature `:nnTF`)
 
-- Add Lua option `suppressed_issue_map`.
+- Add Lua option `suppressed_issue_map`. (#102, #126)
 
   This option defines a mapping between issues that suppress one or more
   other issues. At this point, this option only maps issue W200 ("Do not use"
