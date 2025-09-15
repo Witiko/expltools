@@ -218,7 +218,7 @@ local function process_with_all_steps(pathnames, options)
   for step_number, step_filename in ipairs(step_filenames) do
     local step = require(string.format('explcheck-%s', step_filename))
     -- Process all files in the group with this step.
-    for _, process_with_substep in ipairs(step.substeps) do
+    for substep_number, process_with_substep in ipairs(step.substeps) do
       -- Process all files in the group with this substep.
       for _, state in ipairs(states) do
         -- Get options.
@@ -231,7 +231,7 @@ local function process_with_all_steps(pathnames, options)
           goto continue
         end
         -- If a processing step is confused for this file, skip it and all following steps for this file.
-        if stop_early_when_confused then
+        if substep_number == 1 and stop_early_when_confused then
           is_confused, reason = step.is_confused(state.pathname, state.results, options)
           if is_confused then
             assert(reason ~= nil)
@@ -244,21 +244,23 @@ local function process_with_all_steps(pathnames, options)
         end
         -- Run the substep for this file.
         process_with_substep(state, options)
-        -- If a processing step ended with errors for this file, skip all following steps for this file.
-        if step_number < #step_filenames and fail_fast and #state.issues.errors > 0 then
-          state.results.stopped_early = {
-            when = string.format("after %s", step.name),
-            reason = "it ended with errors and the option `fail_fast` was enabled",
-          }
-          goto continue
-        end
-        -- If a processing step is supposed to be the last step, skip all following steps.
-        if step_number < #step_filenames and (stop_after == step_filename or stop_after == step.name) then
-          state.results.stopped_early = {
-            when = string.format("after %s", step.name),
-            reason = "that was the final step according to the option `stop_after`",
-          }
-          goto continue
+        if substep_number == #step.substeps then
+          -- If a processing step ended with errors for this file, skip all following steps for this file.
+          if step_number < #step_filenames and fail_fast and #state.issues.errors > 0 then
+            state.results.stopped_early = {
+              when = string.format("after %s", step.name),
+              reason = "it ended with errors and the option `fail_fast` was enabled",
+            }
+            goto continue
+          end
+          -- If a processing step is supposed to be the last step, skip all following steps.
+          if step_number < #step_filenames and (stop_after == step_filename or stop_after == step.name) then
+            state.results.stopped_early = {
+              when = string.format("after %s", step.name),
+              reason = "that was the final step according to the option `stop_after`",
+            }
+            goto continue
+          end
         end
         ::continue::
       end
