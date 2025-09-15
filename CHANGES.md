@@ -32,6 +32,8 @@ This version of explcheck has implemented the following new features:
   local third_group_results = utils.process_files({"fourth.tex"})
   ```
 
+- Add command-line option `--files-from`. (#131)
+
 ## expltools 2025-08-18
 
 ### explcheck v0.12.0

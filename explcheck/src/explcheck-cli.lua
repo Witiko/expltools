@@ -75,6 +75,7 @@ local function print_usage()
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
     .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
+    .. "\t--files-from=FILE          Read the list of FILENAMES from FILE.\n\n"
     .. "\t--group-files[={true|false|auto}]\n\n"
     .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
     .. '\t                           - empty or "true": Always group files unless "," is written between a pair of FILENAMES.\n'
@@ -133,6 +134,13 @@ else
     elseif argument == "--expect-expl3-everywhere" then
       -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
       options.expl3_detection_strategy = "always"
+    elseif argument:sub(1, 13) == "--files-from=" then
+      local files_from = argument:sub(14)
+      local file = assert(io.open(files_from, "r"))
+      for pathname in file:lines() do
+        table.insert(pathnames, pathname)
+      end
+      assert(file:close())
     elseif argument == "--group-files" then
       options.group_files = true
     elseif argument:sub(1, 14) == "--group-files=" then

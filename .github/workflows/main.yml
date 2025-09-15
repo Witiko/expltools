@@ -153,11 +153,9 @@ jobs:
         run: |
           set -e
           # Collect the full list of issues.
+          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -print 1> files.txt
           export LUAINPUTS=explcheck/src
-          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -exec \
-            sh -c '
-              texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" -- "$@" 1>&2 || true
-            ' sh {} + -print 1> files.txt 2> issues.txt
+          texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" --files-from=files.txt 2> issues.txt 1>&2
           # Display any potential exceptions.
           if grep -v '^/' issues.txt
           then
