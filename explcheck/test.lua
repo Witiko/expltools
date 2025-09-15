@@ -80,7 +80,7 @@ local function run_tests(test_directory, support_files, test_files)
   -- Run the tests.
   local previous_directory = assert(lfs.currentdir())
   assert(lfs.chdir(test_directory))
-  local process_with_all_steps = require("explcheck-utils").process_with_all_steps
+  local process_files = require("explcheck-utils").process_files
   print("Running " .. #main_test_files .. " tests\n")
   local num_errors = 0
   for _, filename in ipairs(main_test_files) do
@@ -92,7 +92,7 @@ local function run_tests(test_directory, support_files, test_files)
       assert(seen_lua_stems[get_stem(filename)] == nil)
       check_function = function()
         local options = {ignored_issues = {'w100'}}
-        local result = table.unpack(process_with_all_steps({basename}, options))
+        local result = table.unpack(process_files({basename}, options))
         assert(#result.issues.warnings == 0)
         assert(#result.issues.errors == 0)
       end

@@ -5,8 +5,6 @@ local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")
 
-local pre_v0_13_0_process = utils.pre_v0_13_0_process
-
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
 
@@ -365,6 +363,5 @@ local substeps = {
 return {
   is_confused = function() return false end,
   name = "preprocessing",
-  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
   substeps = substeps,
 }

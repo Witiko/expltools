@@ -13,7 +13,8 @@ local utils = require("explcheck-utils")
 
 local get_stem = utils.get_stem
 local get_suffix = utils.get_suffix
-local process_with_all_steps = utils.process_with_all_steps
+local group_pathnames = utils.group_pathnames
+local process_files = utils.process_files
 
 local default_config = config.default_config
 local get_user_config = config.get_user_config
@@ -71,7 +72,7 @@ local function main(filelist_pathname, results_pathname)
   local filelist = read_filelist(filelist_pathname)
   local results = read_results(results_pathname)
 
-  local pathname_groups = utils.group_pathnames(filelist)
+  local pathname_groups = group_pathnames(filelist)
   local pathname_group_results = {}
 
   local num_options = 0
@@ -110,7 +111,7 @@ local function main(filelist_pathname, results_pathname)
     -- Collect the cached results for the group of files or run all steps of the static analysis and cache the results.
     if pathname_group_results[pathname_group_number] == nil or pathname_group_results[pathname_group_number][key_location] == nil then
       local options = {[key] = default_value}
-      local states = process_with_all_steps(pathnames, options)
+      local states = process_files(pathnames, options)
       assert(#states == #pathnames)
 
       local group_actual_issues = {}

@@ -63,7 +63,7 @@ end
 -- Process file "code.tex" and print warnings and errors.
 local utils = require("explcheck-utils")
 local pathnames = {"code.tex"}
-local results = utils.process_with_all_steps(pathnames)
+local results = utils.process_files(pathnames)
 
 print(
   "There were " .. #results[1].issues.warnings .. " warnings, "
@@ -127,7 +127,7 @@ local options = {
   max_line_length = 120,
   ignored_issues = {"w100", "S"},
 }
-local results = utils.process_with_all_steps(pathnames, options)
+local results = utils.process_files(pathnames, options)
 
 print(
   "There were " .. #results[1].issues.warnings .. " warnings, "

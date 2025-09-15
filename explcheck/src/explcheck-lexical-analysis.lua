@@ -4,9 +4,6 @@ local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local obsolete = require("explcheck-latex3").obsolete
 local parsers = require("explcheck-parsers")
-local utils = require("explcheck-utils")
-
-local pre_v0_13_0_process = utils.pre_v0_13_0_process
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -422,7 +419,6 @@ return {
   is_confused = is_confused,
   is_token_simple = is_token_simple,
   name = "lexical analysis",
-  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
   substeps = substeps,
   token_types = token_types,
 }

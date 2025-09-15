@@ -4,10 +4,7 @@ local get_option = require("explcheck-config").get_option
 local lexical_analysis = require("explcheck-lexical-analysis")
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
-local utils = require("explcheck-utils")
-
-local identity = utils.identity
-local pre_v0_13_0_process = utils.pre_v0_13_0_process
+local identity = require("explcheck-utils").identity
 
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
@@ -697,7 +694,6 @@ return {
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
   name = "syntactic analysis",
-  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
   substeps = substeps,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
 }

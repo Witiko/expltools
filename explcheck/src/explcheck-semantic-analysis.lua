@@ -5,10 +5,7 @@ local syntactic_analysis = require("explcheck-syntactic-analysis")
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
-local utils = require("explcheck-utils")
-
-local identity = utils.identity
-local pre_v0_13_0_process = utils.pre_v0_13_0_process
+local identity = require("explcheck-utils").identity
 
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
@@ -1934,7 +1931,6 @@ return {
   csname_types = csname_types,
   is_confused = is_confused,
   name = "semantic analysis",
-  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
   statement_types = statement_types,
   statement_confidences = statement_confidences,
   statement_subtypes = statement_subtypes,

@@ -23,7 +23,7 @@ local function main(pathname_groups, options)
     local is_last_group = pathname_group_number == #pathname_groups
     local is_ok, error_message = xpcall(function()
       -- Run all processing steps and collect issues and analysis results.
-      local states = utils.process_with_all_steps(pathname_group, options)
+      local states = utils.process_files(pathname_group, options)
       assert(#states == #pathname_group)
       for pathname_number, state in ipairs(states) do
         assert(pathname_group[pathname_number] == state.pathname)

@@ -177,23 +177,8 @@ local function group_pathnames(pathnames, options)
   return pathname_groups
 end
 
--- Process all substeps of a processing steps using the pre-v0.13.0 call signature.
-local function pre_v0_13_0_process(substeps)  -- TODO: Remove in v1.0.0.
-  return function(pathname, content, issues, results, options)
-    local state = {
-      pathname = pathname,
-      content = content,
-      issues = issues,
-      results = results,
-    }
-    for _, process_with_substep in ipairs(substeps) do
-      process_with_substep(state, options)
-    end
-  end
-end
-
 -- Run all processing steps on a group of files.
-local function process_with_all_steps(pathnames, options)
+local function process_files(pathnames, options)
   -- Require packages.
   local get_option = require("explcheck-config").get_option
   local new_issues = require("explcheck-issues")
@@ -225,12 +210,12 @@ local function process_with_all_steps(pathnames, options)
         local fail_fast = get_option('fail_fast', options, state.pathname)
         local stop_after = get_option('stop_after', options, state.pathname)
         local stop_early_when_confused = get_option('stop_early_when_confused', options, state.pathname)
-        -- If a previous step was confused for this file, skip this step for this file also.
+        -- If we stopped early for this file, skip this (sub)step for this file also.
         local is_confused, reason
         if state.results.stopped_early ~= nil then
           goto continue
         end
-        -- If a processing step is confused for this file, skip it and all following steps for this file.
+        -- If the step is confused by this file, skip it and all following steps.
         if substep_number == 1 and stop_early_when_confused then
           is_confused, reason = step.is_confused(state.pathname, state.results, options)
           if is_confused then
@@ -245,7 +230,7 @@ local function process_with_all_steps(pathnames, options)
         -- Run the substep for this file.
         process_with_substep(state, options)
         if substep_number == #step.substeps then
-          -- If a processing step ended with errors for this file, skip all following steps for this file.
+          -- If the step ended with errors for this file, skip all following steps for this file.
           if step_number < #step_filenames and fail_fast and #state.issues.errors > 0 then
             state.results.stopped_early = {
               when = string.format("after %s", step.name),
@@ -253,7 +238,7 @@ local function process_with_all_steps(pathnames, options)
             }
             goto continue
           end
-          -- If a processing step is supposed to be the last step, skip all following steps.
+          -- If the step is supposed to be the last step, skip all following steps.
           if step_number < #step_filenames and (stop_after == step_filename or stop_after == step.name) then
             state.results.stopped_early = {
               when = string.format("after %s", step.name),
@@ -279,6 +264,5 @@ return {
   get_suffix = get_suffix,
   group_pathnames = group_pathnames,
   identity = identity,
-  pre_v0_13_0_process = pre_v0_13_0_process,
-  process_with_all_steps = process_with_all_steps,
+  process_files = process_files,
 }

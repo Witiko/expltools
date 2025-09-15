@@ -23,13 +23,13 @@ This version of explcheck has implemented the following new features:
 
   To control how files are grouped by default, you may use the new command-line
   option `--group-files`. To process a group of files in Lua, you may use the
-  function `process_with_all_steps()` from the file `explcheck-utils.lua`:
+  function `process_files()` from the file `explcheck-utils.lua`:
 
   ``` lua
   local utils = require("explcheck-utils")
-  local first_group_results = utils.process_with_all_steps({"first.tex", "second.tex"})
-  local second_group_results = utils.process_with_all_steps({"third.tex"})
-  local third_group_results = utils.process_with_all_steps({"fourth.tex"})
+  local first_group_results = utils.process_files({"first.tex", "second.tex"})
+  local second_group_results = utils.process_files({"third.tex"})
+  local third_group_results = utils.process_files({"fourth.tex"})
   ```
 
 ## expltools 2025-08-18

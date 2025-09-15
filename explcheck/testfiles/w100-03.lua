@@ -1,15 +1,12 @@
-local new_issues = require("explcheck-issues")
-local preprocessing = require("explcheck-preprocessing")
+local utils = require("explcheck-utils")
 
 local filename = "w100-03.tex"
-
-local file = assert(io.open(filename, "r"))
-local content = assert(file:read("*a"))
-assert(file:close())
-local issues = new_issues()
-local results = {}
-
-preprocessing.process(filename, content, issues, results)
+local options = {
+  expl3_detection_strategy = "always",
+  stop_after = "preprocessing",
+}
+local state = table.unpack(utils.process_files({filename}, options))
+local issues = state.issues
 
 assert(#issues.errors == 0)
 assert(#issues.warnings == 0)
