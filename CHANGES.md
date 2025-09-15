@@ -27,7 +27,9 @@ This version of explcheck has implemented the following new features:
 
   ``` lua
   local utils = require("explcheck-utils")
-  utils.process_with_all_steps({"first.tex", "second.tex"}, ...)
+  local first_group_results = utils.process_with_all_steps({"first.tex", "second.tex"})
+  local second_group_results = utils.process_with_all_steps({"third.tex"})
+  local third_group_results = utils.process_with_all_steps({"fourth.tex"})
   ```
 
 ## expltools 2025-08-18

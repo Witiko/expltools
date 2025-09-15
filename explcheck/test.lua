@@ -80,6 +80,7 @@ local function run_tests(test_directory, support_files, test_files)
   -- Run the tests.
   local previous_directory = assert(lfs.currentdir())
   assert(lfs.chdir(test_directory))
+  local process_with_all_steps = require("explcheck-utils").process_with_all_steps
   print("Running " .. #main_test_files .. " tests\n")
   local num_errors = 0
   for _, filename in ipairs(main_test_files) do
@@ -91,14 +92,9 @@ local function run_tests(test_directory, support_files, test_files)
       assert(seen_lua_stems[get_stem(filename)] == nil)
       check_function = function()
         local options = {ignored_issues = {'w100'}}
-        local issues = require("explcheck-issues")(filename, options)
-        local file = assert(io.open(basename, "r"))
-        local content = assert(file:read("*a"))
-        assert(file:close())
-        local analysis_results = {}
-        require("explcheck-utils").process_with_all_steps(filename, content, issues, analysis_results, options)
-        assert(#issues.warnings == 0)
-        assert(#issues.errors == 0)
+        local result = table.unpack(process_with_all_steps({basename}, options))
+        assert(#result.issues.warnings == 0)
+        assert(#result.issues.errors == 0)
       end
     else
       -- A Lua file with a complex test, run it.

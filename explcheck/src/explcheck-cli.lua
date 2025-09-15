@@ -3,173 +3,39 @@
 local evaluation = require("explcheck-evaluation")
 local format = require("explcheck-format")
 local get_option = require("explcheck-config").get_option
-local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
 
 local new_file_results = evaluation.new_file_results
 local new_aggregate_results = evaluation.new_aggregate_results
 
--- Check that the pathname specifies a file that we can process.
-local function check_pathname(pathname)
-  local suffix = utils.get_suffix(pathname)
-  if suffix == ".ins" then
-    local basename = utils.get_basename(pathname)
-    if basename:find(" ") then
-      basename = "'" .. basename .. "'"
-    end
-    return
-      false,
-      "explcheck can't currently process .ins files directly\n"
-      .. 'Use a command such as "luatex ' .. basename .. '" '
-      .. "to generate .tex, .cls, and .sty files and process these files instead."
-  elseif suffix == ".dtx" then
-    local parent = utils.get_parent(pathname)
-    local basename = "*.ins"
-    local has_lfs, lfs = pcall(require, "lfs")
-    if has_lfs then
-      for candidate_basename in lfs.dir(parent) do
-        local candidate_suffix = utils.get_suffix(candidate_basename)
-        if candidate_suffix == ".ins" then
-          basename = candidate_basename
-          if basename:find(" ") then
-            basename = "'" .. candidate_basename .. "'"
-          end
-          break
-        end
-      end
-    end
-    return
-      false,
-      "explcheck can't currently process .dtx files directly\n"
-      .. 'Use a command such as "luatex ' .. basename .. '" '
-      .. "to generate .tex, .cls, and .sty files and process these files instead."
-  end
-  return true
-end
-
--- Group pathnames.
-local function group_pathnames(pathnames, options)
-  local pathname_groups, current_group = {}, {}
-  local group_next, ungroup_next = false, false
-  local group_files = get_option("group_files", options)
-  local max_grouped_files_per_directory = get_option("max_grouped_files_per_directory", options)
-  local previous_pathname, num_files_from_current_directory = nil, 0
-
-  -- Close the current group by adding it to a list of groups, if nonempty, and opening the next group.
-  local function close_current_group()
-    if #current_group > 0 then
-      table.insert(pathname_groups, current_group)
-    end
-    current_group = {}
-  end
-
-  -- Explode the current group by creating single-element groups out of it and adding them to the list of groups.
-  local function explode_current_group()
-    for _, pathname in ipairs(current_group) do
-      table.insert(pathname_groups, {pathname})
-    end
-    current_group = {}
-  end
-
-  for _, current_pathname in ipairs(pathnames) do
-    -- Process a grouping argument, such as "+" or ",".
-    if current_pathname == "+" or current_pathname == "," then  -- a grouping argument
-      if group_next or ungroup_next then
-        error('Two arguments "+" or "," in a row')
-      end
-      if current_pathname == "+" then
-        group_next = true
-      else
-        ungroup_next = true
-      end
-    else
-      assert(not (group_next and ungroup_next))
-      -- Check a pathname argument.
-      local is_ok, error_message = check_pathname(current_pathname)
-      if not is_ok then
-        error('Failed to process "' .. current_pathname .. '": ' .. error_message)
-      end
-      -- Process the pathname argument.
-      if group_files == "no" then
-        if not group_next then
-          close_current_group()
-        end
-      elseif group_files == "yes" then
-        if ungroup_next then
-          close_current_group()
-        end
-      elseif group_files == "auto" then
-        if group_next then
-          if num_files_from_current_directory > max_grouped_files_per_directory then
-            explode_current_group()
-          end
-          num_files_from_current_directory = 0
-        elseif ungroup_next then
-          if num_files_from_current_directory > max_grouped_files_per_directory then
-            explode_current_group()
-          else
-            close_current_group()
-          end
-          num_files_from_current_directory = 0
-        elseif previous_pathname == nil or utils.get_parent(previous_pathname) == utils.get_parent(current_pathname) then
-          num_files_from_current_directory = num_files_from_current_directory + 1
-        else
-          if num_files_from_current_directory > max_grouped_files_per_directory then
-            explode_current_group()
-          else
-            close_current_group()
-          end
-          num_files_from_current_directory = 0
-        end
-      else
-        error('Unexpected grouping strategy "' .. group_files .. '"')
-      end
-      group_next, ungroup_next = false, false
-      previous_pathname = current_pathname
-      table.insert(current_group, current_pathname)
-    end
-  end
-
-  -- Close or explode any trailing group.
-  if group_files == "auto" and num_files_from_current_directory > max_grouped_files_per_directory then
-    explode_current_group()
-  else
-    close_current_group()
-  end
-
-  return pathname_groups
-end
-
 -- Process all input files.
-local function main(pathnames, options)
+local function main(pathname_groups, options)
+  local num_pathnames = 0
+  for _, pathname_group in ipairs(pathname_groups) do
+    num_pathnames = num_pathnames + #pathname_group
+  end
   if not options.porcelain then
-    print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
+    print("Checking " .. num_pathnames .. " " .. format.pluralize("file", num_pathnames))
   end
 
   local aggregate_evaluation_results = new_aggregate_results()
-  for pathname_number, pathname in ipairs(pathnames) do
+  for pathname_group_number, pathname_group in ipairs(pathname_groups) do
+    local is_last_group = pathname_group_number == #pathname_groups
     local is_ok, error_message = xpcall(function()
-
-      -- Set up the issue registry.
-      local issues = new_issues(pathname, options)
-
-      -- Load an input file.
-      local file = assert(io.open(pathname, "r"))
-      local content = assert(file:read("*a"))
-      assert(file:close())
-
-      -- Run all steps.
-      local analysis_results = {}
-      utils.process_with_all_steps(pathname, content, issues, analysis_results, options)
-
-      -- Print warnings and errors.
-      local file_evaluation_results = new_file_results(content, analysis_results, issues)
-      aggregate_evaluation_results:add(file_evaluation_results)
-      local is_last_file = pathname_number == #pathnames
-      format.print_results(pathname, issues, analysis_results, options, file_evaluation_results, is_last_file)
+      -- Run all processing steps and collect issues and analysis results.
+      local processing_results = utils.process_with_all_steps(pathname_group, options)
+      assert(#processing_results == #pathname_group)
+      for pathname_number, result in ipairs(processing_results) do
+        assert(pathname_group[pathname_number] == result.pathname)
+        -- Print warnings and errors.
+        local file_evaluation_results = new_file_results(result.content, result.analysis_results, result.issues)
+        aggregate_evaluation_results:add(file_evaluation_results)
+        local is_last_file = is_last_group and (pathname_number == #pathname_group)
+        format.print_results(result.pathname, result.issues, result.analysis_results, options, file_evaluation_results, is_last_file)
+      end
     end, debug.traceback)
     if not is_ok then
-      error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
+      error("Failed to process " .. table.concat(pathname_group, ' + ') .. ": " .. tostring(error_message), 0)
     end
   end
 
@@ -310,9 +176,20 @@ else
   end
 
   -- Group pathnames.
-  local pathname_groups = group_pathnames(pathnames, options)  -- luacheck: ignore pathname_groups
+  local pathname_groups = utils.group_pathnames(pathnames, options)
+
+  -- Check pathnames.
+  for _, pathname_group in ipairs(pathname_groups) do
+    for _, pathname in ipairs(pathname_group) do
+      local is_ok, error_message = utils.check_pathname(pathname)
+      if not is_ok then
+        print('Failed to process "' .. pathname .. '": ' .. error_message .. "\n")
+        os.exit(1)
+      end
+    end
+  end
 
   -- Run the analysis.
-  local exit_code = main(pathnames, options)
+  local exit_code = main(pathname_groups, options)
   os.exit(exit_code)
 end

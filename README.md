@@ -60,25 +60,15 @@ if using_luatex then
   kpse.set_program_name("texlua", "explcheck")
 end
 
--- Import explcheck.
-local new_issues = require("explcheck-issues")
-local process = require("explcheck-utils").process_with_all_steps
-
 -- Process file "code.tex" and print warnings and errors.
-local filename = "code.tex"
-local issues = new_issues()
-local results = {}
-
-local file = assert(io.open(filename, "r"))
-local content = assert(file:read("*a"))
-assert(file:close())
-
-process({filename}, content, issues, results)
+local utils = require("explcheck-utils")
+local pathnames = {"code.tex"}
+local results = utils.process_with_all_steps(pathnames)
 
 print(
-  "There were " .. #issues.warnings .. " warnings, "
-  .. "and " .. #issues.errors .. " errors "
-  .. "in the file " .. filename .. "."
+  "There were " .. #results[1].issues.warnings .. " warnings, "
+  .. "and " .. #results[1].issues.errors .. " errors "
+  .. "in the file " .. results[1].pathname .. "."
 )
 ```
 
@@ -130,29 +120,19 @@ if using_luatex then
   kpse.set_program_name("texlua", "explcheck")
 end
 
--- Import explcheck.
-local new_issues = require("explcheck-issues")
-local process = require("explcheck-utils").process_with_all_steps
-
 -- Process file "code.tex" and print warnings and errors.
-local filename = "code.tex"
+local utils = require("explcheck-utils")
+local pathnames = {"code.tex"}
 local options = {
   max_line_length = 120,
   ignored_issues = {"w100", "S"},
 }
-local issues = new_issues(filename, options)
-local results = {}
-
-local file = assert(io.open(filename, "r"))
-local content = assert(file:read("*a"))
-assert(file:close())
-
-process({filename}, content, issues, results, options)
+local results = utils.process_with_all_steps(pathnames, options)
 
 print(
-  "There were " .. #issues.warnings .. " warnings, "
-  .. "and " .. #issues.errors .. " errors "
-  .. "in the file " .. filename .. "."
+  "There were " .. #results[1].issues.warnings .. " warnings, "
+  .. "and " .. #results[1].issues.errors .. " errors "
+  .. "in the file " .. results[1].pathname .. "."
 )
 ```
 
