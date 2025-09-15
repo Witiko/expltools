@@ -4,7 +4,10 @@ local get_option = require("explcheck-config").get_option
 local lexical_analysis = require("explcheck-lexical-analysis")
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
-local identity = require("explcheck-utils").identity
+local utils = require("explcheck-utils")
+
+local identity = utils.identity
+local pre_v0_13_0_process = utils.pre_v0_13_0_process
 
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
@@ -663,8 +666,13 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
   return calls
 end
 
--- Convert the tokens to a tree of top-level function calls and register any issues.
-local function syntactic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname content options
+-- Convert the tokens to a tree of top-level function calls and report any issues.
+local function analyze_and_report_issues(state, options)  -- luacheck: ignore options
+
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
+
   local calls = {}
   for part_number, part_tokens in ipairs(results.tokens) do
     local part_groupings = results.groupings[part_number]
@@ -677,14 +685,19 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
   results.calls = calls
 end
 
+local substeps = {
+  analyze_and_report_issues,
+}
+
 return {
+  call_types = call_types,
   count_parameters_in_replacement_text = count_parameters_in_replacement_text,
   extract_text_from_tokens = extract_text_from_tokens,
   get_calls = get_calls,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
   name = "syntactic analysis",
-  process = syntactic_analysis,
-  call_types = call_types,
+  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
+  substeps = substeps,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
 }

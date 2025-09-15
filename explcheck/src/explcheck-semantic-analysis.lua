@@ -5,7 +5,10 @@ local syntactic_analysis = require("explcheck-syntactic-analysis")
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
-local identity = require("explcheck-utils").identity
+local utils = require("explcheck-utils")
+
+local identity = utils.identity
+local pre_v0_13_0_process = utils.pre_v0_13_0_process
 
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
@@ -174,79 +177,84 @@ local function is_confused(pathname, results, options)
   return false
 end
 
--- Determine the meaning of function calls and register any issues.
-local function semantic_analysis(pathname, content, issues, results, options)
-
-  -- Convert tokens from a range into a PEG pattern.
-  local function extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
-    -- First, extract subpatterns and text transcripts for the simple material.
-    local subpatterns, subpattern, transcripts, num_simple_tokens = {}, parsers.success, {}, 0
-    local previous_token_was_simple = true
-    for _, token in token_range:enumerate(transformed_tokens, map_forward) do
-      if is_token_simple(token) then  -- simple material
-        subpattern = subpattern * lpeg.P(token.payload)
-        table.insert(transcripts, token.payload)
-        num_simple_tokens = num_simple_tokens + 1
-        previous_token_was_simple = true
-      else  -- complex material
-        if previous_token_was_simple then
-          table.insert(subpatterns, subpattern)
-          subpattern = parsers.success
-          table.insert(transcripts, "*")
-        end
-        previous_token_was_simple = false
-      end
-    end
-    if previous_token_was_simple then
-      table.insert(subpatterns, subpattern)
-    end
-    local transcript = table.concat(transcripts)
-    -- Next, build up the pattern from the back, simulating lazy `.*?` using negative lookaheads.
-    local subpattern_separators = {}
-    for subpattern_number = #subpatterns, 2, -1 do
-      local rest = subpatterns[subpattern_number]
-      for separator_number = 1, #subpattern_separators do
-        rest = rest * subpattern_separators[#subpattern_separators - separator_number + 1]
-        rest = rest * subpatterns[subpattern_number + separator_number]
-      end
-      local separator = (parsers.any - #rest)^0
-      table.insert(subpattern_separators, separator)
-    end
-    local pattern = parsers.success
-    for subpattern_number = 1, #subpatterns do
-      pattern = pattern * subpatterns[subpattern_number]
-      if subpattern_number < #subpatterns then
-        pattern = pattern * subpattern_separators[#subpattern_separators - subpattern_number + 1]
-      elseif not previous_token_was_simple then
-        pattern = pattern * parsers.any^0
-      end
-    end
-    return pattern, transcript, num_simple_tokens
-  end
-
-  -- Try and convert tokens from a range into a csname.
-  local function _extract_name_from_tokens(token_range, transformed_tokens, map_forward)
-    local text = extract_text_from_tokens(token_range, transformed_tokens, map_forward)
-    local csname
-    if text ~= nil then  -- simple material
-      csname = {
-        payload = text,
-        transcript = text,
-        type = TEXT
-      }
+-- Convert tokens from a range into a PEG pattern.
+local function extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
+  -- First, extract subpatterns and text transcripts for the simple material.
+  local subpatterns, subpattern, transcripts, num_simple_tokens = {}, parsers.success, {}, 0
+  local previous_token_was_simple = true
+  for _, token in token_range:enumerate(transformed_tokens, map_forward) do
+    if is_token_simple(token) then  -- simple material
+      subpattern = subpattern * lpeg.P(token.payload)
+      table.insert(transcripts, token.payload)
+      num_simple_tokens = num_simple_tokens + 1
+      previous_token_was_simple = true
     else  -- complex material
-      local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
-      if num_simple_tokens < get_option("min_simple_tokens_in_csname_pattern", options, pathname) then  -- too few simple tokens, give up
-        return nil
+      if previous_token_was_simple then
+        table.insert(subpatterns, subpattern)
+        subpattern = parsers.success
+        table.insert(transcripts, "*")
       end
-      csname = {
-        payload = pattern,
-        transcript = transcript,
-        type = PATTERN
-      }
+      previous_token_was_simple = false
     end
-    return csname
   end
+  if previous_token_was_simple then
+    table.insert(subpatterns, subpattern)
+  end
+  local transcript = table.concat(transcripts)
+  -- Next, build up the pattern from the back, simulating lazy `.*?` using negative lookaheads.
+  local subpattern_separators = {}
+  for subpattern_number = #subpatterns, 2, -1 do
+    local rest = subpatterns[subpattern_number]
+    for separator_number = 1, #subpattern_separators do
+      rest = rest * subpattern_separators[#subpattern_separators - separator_number + 1]
+      rest = rest * subpatterns[subpattern_number + separator_number]
+    end
+    local separator = (parsers.any - #rest)^0
+    table.insert(subpattern_separators, separator)
+  end
+  local pattern = parsers.success
+  for subpattern_number = 1, #subpatterns do
+    pattern = pattern * subpatterns[subpattern_number]
+    if subpattern_number < #subpatterns then
+      pattern = pattern * subpattern_separators[#subpattern_separators - subpattern_number + 1]
+    elseif not previous_token_was_simple then
+      pattern = pattern * parsers.any^0
+    end
+  end
+  return pattern, transcript, num_simple_tokens
+end
+
+-- Try and convert tokens from a range into a csname.
+local function _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, map_forward)
+  local text = extract_text_from_tokens(token_range, transformed_tokens, map_forward)
+  local csname
+  if text ~= nil then  -- simple material
+    csname = {
+      payload = text,
+      transcript = text,
+      type = TEXT
+    }
+  else  -- complex material
+    local pattern, transcript, num_simple_tokens = extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
+    if num_simple_tokens < get_option("min_simple_tokens_in_csname_pattern", options, pathname) then  -- too few simple tokens, give up
+      return nil
+    end
+    csname = {
+      payload = pattern,
+      transcript = transcript,
+      type = PATTERN
+    }
+  end
+  return csname
+end
+
+-- Determine the meaning of function calls.
+local function analyze(state, options)
+
+  local pathname = state.pathname
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
 
   -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
   local function record_statements_and_replacement_texts(tokens, transformed_tokens, calls, first_map_back, first_map_forward)
@@ -275,7 +283,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
       -- Try and convert tokens from a range into a csname.
       local function extract_name_from_tokens(token_range)
-        return _extract_name_from_tokens(token_range, transformed_tokens, first_map_forward)
+        return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, first_map_forward)
       end
 
       -- Extract the name of a control sequence from a call argument.
@@ -1186,17 +1194,30 @@ local function semantic_analysis(pathname, content, issues, results, options)
   assert(#statements == #results.calls)
   assert(#statements == #replacement_texts)
 
+  -- Store the intermediate results of the analysis.
+  results.statements = statements
+  results.replacement_texts = replacement_texts
+end
+
+-- Report any issues.
+local function report_issues(state, options)
+
+  local pathname = state.pathname
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
+
   -- Report issues that are apparent after the semantic analysis.
   --- Collect all segments of top-level and nested tokens, calls, and statements.
   local token_segments, call_segments, statement_segments = {}, {}, {}
   for part_number, part_calls in ipairs(results.calls) do
-    local part_statements = statements[part_number]
+    local part_statements = results.statements[part_number]
     table.insert(call_segments, part_calls)
     table.insert(statement_segments, part_statements)
     local part_groupings = results.groupings[part_number]
     local part_tokens = results.tokens[part_number]
     table.insert(token_segments, {part_groupings, part_tokens, part_tokens, identity, identity})
-    local part_replacement_texts = replacement_texts[part_number]
+    local part_replacement_texts = results.replacement_texts[part_number]
     for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls) do
       local nested_statements = part_replacement_texts.statements[replacement_text_number]
       table.insert(call_segments, nested_calls)
@@ -1288,7 +1309,7 @@ local function semantic_analysis(pathname, content, issues, results, options)
 
     -- Try and convert tokens from a range into a csname.
     local function extract_name_from_tokens(token_range)
-      return _extract_name_from_tokens(token_range, segment_transformed_tokens, map_forward)
+      return _extract_name_from_tokens(options, pathname, token_range, segment_transformed_tokens, map_forward)
     end
 
     -- Process an argument and record control sequence name usage and definitions.
@@ -1902,18 +1923,20 @@ local function semantic_analysis(pathname, content, issues, results, options)
       issues:add('w426', 'incorrect number of arguments supplied to message', byte_range, context)
     end
   end
-
-  -- Store the intermediate results of the analysis.
-  results.statements = statements
-  results.replacement_texts = replacement_texts
 end
+
+local substeps = {
+  analyze,
+  report_issues,
+}
 
 return {
   csname_types = csname_types,
   is_confused = is_confused,
   name = "semantic analysis",
-  process = semantic_analysis,
+  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
   statement_types = statement_types,
   statement_confidences = statement_confidences,
   statement_subtypes = statement_subtypes,
+  substeps = substeps,
 }

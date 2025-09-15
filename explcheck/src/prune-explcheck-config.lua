@@ -110,14 +110,14 @@ local function main(filelist_pathname, results_pathname)
     -- Collect the cached results for the group of files or run all steps of the static analysis and cache the results.
     if pathname_group_results[pathname_group_number] == nil or pathname_group_results[pathname_group_number][key] == nil then
       local options = {[key] = default_value}
-      local processing_results = process_with_all_steps(pathnames, options)
-      assert(#processing_results == #pathnames)
+      local states = process_with_all_steps(pathnames, options)
+      assert(#states == #pathnames)
 
       local group_actual_issues = {}
-      for _, processing_result in ipairs(processing_results) do
-        table.insert(group_actual_issues, processing_result.issues)
+      for _, state in ipairs(states) do
+        table.insert(group_actual_issues, state.issues)
       end
-      assert(#group_actual_issues == #processing_results)
+      assert(#group_actual_issues == #states)
 
       if pathname_group_results[pathname_group_number] == nil then
         pathname_group_results[pathname_group_number] = {}

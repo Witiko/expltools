@@ -353,7 +353,8 @@ local function print_summary(options, evaluation_results)
 end
 
 -- Print the results of analyzing a file.
-local function print_results(pathname, issues, analysis_results, options, evaluation_results, is_last_file)
+local function print_results(state, options, evaluation_results, is_last_file)
+  local pathname, issues, analysis_results = state.pathname, state.issues, state.results
   local porcelain, verbose = get_option('porcelain', options), get_option('verbose', options)
   local line_starting_byte_numbers = analysis_results.line_starting_byte_numbers
   assert(line_starting_byte_numbers ~= nil)

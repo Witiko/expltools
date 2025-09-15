@@ -81,7 +81,8 @@ local function count_top_level_calls(analysis_results)
 end
 
 -- Create a new evaluation results for the analysis results of an individual file.
-function FileEvaluationResults.new(cls, content, analysis_results, issues)
+function FileEvaluationResults.new(cls, state)
+  local content, analysis_results, issues = state.content, state.results, state.issues
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)

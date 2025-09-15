@@ -5,6 +5,8 @@ local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")
 
+local pre_v0_13_0_process = utils.pre_v0_13_0_process
+
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
 
@@ -14,8 +16,13 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local lpeg = require("lpeg")
 local B, Cmt, Cp, Ct, Cc, P, V = lpeg.B, lpeg.Cmt, lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
 
--- Preprocess the content and register any issues.
-local function preprocessing(pathname, content, issues, results, options)
+-- Preprocess the content and report any issues.
+local function analyze_and_report_issues(state, options)
+
+  local pathname = state.pathname
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
 
   -- Determine the bytes where lines begin.
   local line_starting_byte_numbers = {}
@@ -351,8 +358,13 @@ local function preprocessing(pathname, content, issues, results, options)
   results.seems_like_latex_style_file = seems_like_latex_style_file
 end
 
+local substeps = {
+  analyze_and_report_issues,
+}
+
 return {
   is_confused = function() return false end,
   name = "preprocessing",
-  process = preprocessing,
+  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
+  substeps = substeps,
 }

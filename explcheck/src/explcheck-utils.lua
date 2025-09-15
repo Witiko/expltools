@@ -177,77 +177,95 @@ local function group_pathnames(pathnames, options)
   return pathname_groups
 end
 
+-- Process all substeps of a processing steps using the pre-v0.13.0 call signature.
+local function pre_v0_13_0_process(substeps)  -- TODO: Remove in v1.0.0.
+  return function(pathname, content, issues, results, options)
+    local state = {
+      pathname = pathname,
+      content = content,
+      issues = issues,
+      results = results,
+    }
+    for _, process_with_substep in substeps do
+      process_with_substep(state, options)
+    end
+  end
+end
+
 -- Run all processing steps on a group of files.
 local function process_with_all_steps(pathnames, options)
   -- Require packages.
   local get_option = require("explcheck-config").get_option
   local new_issues = require("explcheck-issues")
 
-  -- Prepare the processing results for all files in the group.
-  local processing_results = {}
+  -- Prepare empty processing states for all files in the group.
+  local states = {}
   for _, pathname in ipairs(pathnames) do
     local file = assert(io.open(pathname, "r"))
-    local processing_result = {
+    local state = {
       pathname = pathname,
       content = assert(file:read("*a")),
       issues = new_issues(pathname, options),
-      analysis_results = {},
+      results = {},
     }
     assert(file:close())
-    table.insert(processing_results, processing_result)
+    table.insert(states, state)
   end
-  assert(#processing_results == #pathnames)
+  assert(#states == #pathnames)
 
   -- Run all processing steps.
   local step_filenames = {'preprocessing', 'lexical-analysis', 'syntactic-analysis', 'semantic-analysis'}
   for step_number, step_filename in ipairs(step_filenames) do
     local step = require(string.format('explcheck-%s', step_filename))
     -- Process all files in the group with this step.
-    for _, result in ipairs(processing_results) do
-      -- Collect relevant options.
-      local fail_fast = get_option('fail_fast', options, result.pathname)
-      local stop_after = get_option('stop_after', options, result.pathname)
-      local stop_early_when_confused = get_option('stop_early_when_confused', options, result.pathname)
-      -- If a previous step was confused for this file, skip this step for this file also.
-      local is_confused, reason
-      if result.analysis_results.stopped_early ~= nil then
-        goto continue
-      end
-      -- If a processing step is confused for this file, skip it and all following steps for this file.
-      if stop_early_when_confused then
-        is_confused, reason = step.is_confused(result.pathname, result.analysis_results, options)
-        if is_confused then
-          assert(reason ~= nil)
-          result.analysis_results.stopped_early = {
-            when = string.format("before the %s", step.name),
-            reason = reason,
+    for _, process_with_substep in ipairs(step.substeps) do
+      -- Process all files in the group with this substep.
+      for _, state in ipairs(states) do
+        -- Get options.
+        local fail_fast = get_option('fail_fast', options, state.pathname)
+        local stop_after = get_option('stop_after', options, state.pathname)
+        local stop_early_when_confused = get_option('stop_early_when_confused', options, state.pathname)
+        -- If a previous step was confused for this file, skip this step for this file also.
+        local is_confused, reason
+        if state.results.stopped_early ~= nil then
+          goto continue
+        end
+        -- If a processing step is confused for this file, skip it and all following steps for this file.
+        if stop_early_when_confused then
+          is_confused, reason = step.is_confused(state.pathname, state.results, options)
+          if is_confused then
+            assert(reason ~= nil)
+            state.results.stopped_early = {
+              when = string.format("before the %s", step.name),
+              reason = reason,
+            }
+            goto continue
+          end
+        end
+        -- Run the substep for this file.
+        process_with_substep(state, options)
+        -- If a processing step ended with errors for this file, skip all following steps for this file.
+        if step_number < #step_filenames and fail_fast and #state.issues.errors > 0 then
+          state.results.stopped_early = {
+            when = string.format("after %s", step.name),
+            reason = "it ended with errors and the option `fail_fast` was enabled",
           }
           goto continue
         end
+        -- If a processing step is supposed to be the last step, skip all following steps.
+        if step_number < #step_filenames and (stop_after == step_filename or stop_after == step.name) then
+          state.results.stopped_early = {
+            when = string.format("after %s", step.name),
+            reason = "that was the final step according to the option `stop_after`",
+          }
+          goto continue
+        end
+        ::continue::
       end
-      -- Run the processing step for this file.
-      step.process(result.pathname, result.content, result.issues, result.analysis_results, options)
-      -- If a processing step ended with errors for this file, skip all following steps for this file.
-      if step_number < #step_filenames and fail_fast and #result.issues.errors > 0 then
-        result.analysis_results.stopped_early = {
-          when = string.format("after %s", step.name),
-          reason = "it ended with errors and the option `fail_fast` was enabled",
-        }
-        goto continue
-      end
-      -- If a processing step is supposed to be the last step, skip all following steps.
-      if step_number < #step_filenames and (stop_after == step_filename or stop_after == step.name) then
-        result.analysis_results.stopped_early = {
-          when = string.format("after %s", step.name),
-          reason = "that was the final step according to the option `stop_after`",
-        }
-        goto continue
-      end
-      ::continue::
     end
   end
 
-  return processing_results
+  return states
 end
 
 return {
@@ -259,5 +277,6 @@ return {
   get_suffix = get_suffix,
   group_pathnames = group_pathnames,
   identity = identity,
+  pre_v0_13_0_process = pre_v0_13_0_process,
   process_with_all_steps = process_with_all_steps,
 }

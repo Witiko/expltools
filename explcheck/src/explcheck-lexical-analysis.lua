@@ -4,6 +4,9 @@ local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local obsolete = require("explcheck-latex3").obsolete
 local parsers = require("explcheck-parsers")
+local utils = require("explcheck-utils")
+
+local pre_v0_13_0_process = utils.pre_v0_13_0_process
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -86,8 +89,13 @@ local function is_confused(_, results, _)
   return false
 end
 
--- Tokenize the content and register any issues.
-local function lexical_analysis(pathname, content, issues, results, options)
+-- Tokenize the content.
+local function analyze(state, options)
+
+  local pathname = state.pathname
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
 
   -- Process bytes within a given range similarly to TeX's input processor (TeX's "eyes" [1]) and produce lines.
   --
@@ -146,7 +154,7 @@ local function lexical_analysis(pathname, content, issues, results, options)
 
     local num_invalid_characters = 0
 
-    local state
+    local state  -- luacheck: ignore state
 
     -- Determine the category code of the at sign ("@").
     local make_at_letter = get_option("make_at_letter", options, pathname)
@@ -367,8 +375,21 @@ local function lexical_analysis(pathname, content, issues, results, options)
     num_invalid_characters = num_invalid_characters + part_num_invalid_characters
   end
 
+  -- Store the intermediate results of the analysis.
+  results.tokens = tokens
+  results.groupings = groupings
+  results.num_invalid_characters = num_invalid_characters
+end
+
+-- Report any issues.
+local function report_issues(state, options)  -- luacheck: ignore options
+
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
+
   -- Record issues that are apparent after the lexical analysis.
-  for _, part_tokens in ipairs(tokens) do
+  for _, part_tokens in ipairs(results.tokens) do
     for _, token in ipairs(part_tokens) do
       if token.type == CONTROL_SEQUENCE then
         local _, _, argument_specifiers = token.payload:find(":([^:]*)")
@@ -386,12 +407,12 @@ local function lexical_analysis(pathname, content, issues, results, options)
       end
     end
   end
-
-  -- Store the intermediate results of the analysis.
-  results.tokens = tokens
-  results.groupings = groupings
-  results.num_invalid_characters = num_invalid_characters
 end
+
+local substeps = {
+  analyze,
+  report_issues,
+}
 
 return {
   format_csname = format_csname,
@@ -401,6 +422,7 @@ return {
   is_confused = is_confused,
   is_token_simple = is_token_simple,
   name = "lexical analysis",
-  process = lexical_analysis,
+  process = pre_v0_13_0_process(substeps),  -- TODO: Remove in v1.0.0.
+  substeps = substeps,
   token_types = token_types,
 }

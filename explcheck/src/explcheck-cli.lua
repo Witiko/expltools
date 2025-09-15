@@ -23,19 +23,19 @@ local function main(pathname_groups, options)
     local is_last_group = pathname_group_number == #pathname_groups
     local is_ok, error_message = xpcall(function()
       -- Run all processing steps and collect issues and analysis results.
-      local processing_results = utils.process_with_all_steps(pathname_group, options)
-      assert(#processing_results == #pathname_group)
-      for pathname_number, result in ipairs(processing_results) do
-        assert(pathname_group[pathname_number] == result.pathname)
+      local states = utils.process_with_all_steps(pathname_group, options)
+      assert(#states == #pathname_group)
+      for pathname_number, state in ipairs(states) do
+        assert(pathname_group[pathname_number] == state.pathname)
         -- Print warnings and errors.
-        local file_evaluation_results = new_file_results(result.content, result.analysis_results, result.issues)
+        local file_evaluation_results = new_file_results(state)
         aggregate_evaluation_results:add(file_evaluation_results)
         local is_last_file = is_last_group and (pathname_number == #pathname_group)
-        format.print_results(result.pathname, result.issues, result.analysis_results, options, file_evaluation_results, is_last_file)
+        format.print_results(state, options, file_evaluation_results, is_last_file)
       end
     end, debug.traceback)
     if not is_ok then
-      error("Failed to process " .. table.concat(pathname_group, ' + ') .. ": " .. tostring(error_message), 0)
+      error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
     end
   end
 
