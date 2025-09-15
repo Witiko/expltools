@@ -39,7 +39,6 @@ imported_prefixes = ["chemgreek"]
 expl3_detection_strategy = "precision"
 
 [filename."skrapport.cls"]
-expl3_detection_strategy = "always"
 max_line_length = 150
 ignored_issues = ["e300"]
 
@@ -49,7 +48,8 @@ max_line_length = 100
 ignored_issues = ["e304"]
 
 [package.knowledge]
-ignored_issues = ["e201", "e300", "e301", "w302", "e405"]
+ignored_issues = ["e201", "e300", "e301", "w302"]
+imported_prefixes = ["kl", "knowledge", "ktuple", "scope"]
 
 [filename."grading-scheme.sty"]
 ignored_issues = ["e201"]
@@ -62,7 +62,7 @@ ignored_issues = ["e300"]
 [package.stex]
 expl3_detection_strategy = "always"
 max_line_length = 110
-ignored_issues = ["e304", "e405"]
+ignored_issues = ["e304"]
 imported_prefixes = ["stex"]
 
 [package.qrbill]
@@ -177,7 +177,7 @@ max_line_length = 100
 
 [package.tuda-ci]
 expl3_detection_strategy = "always"
-ignored_issues = ["e304", "w401"]
+ignored_issues = ["e304"]
 
 [filename."xob-dotemph.sty"]
 ignored_issues = ["e209"]
@@ -254,7 +254,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.latex-lab]
-ignored_issues = ["e304", "e405"]
+ignored_issues = ["e304"]
 
 [package.animate]
 ignored_issues = ["e304"]
@@ -273,7 +273,7 @@ expl3_detection_strategy = "always"
 ignored_issues = ["e201", "e304"]
 
 [package.easybook]
-ignored_issues = ["e304", "e405"]
+ignored_issues = ["e304"]
 
 [package.els-cas-templates]
 ignored_issues = ["e304", "e408"]
@@ -303,7 +303,7 @@ ignored_issues = ["e304", "e405"]
 ignored_issues = ["e304"]
 
 [package.lwarp]
-ignored_issues = ["e304", "w302", "w401", "e408"]
+ignored_issues = ["e304", "w302", "e408"]
 
 [filename."lwarp-simplebnf.sty"]
 imported_prefixes = ["simplebnf"]
@@ -329,7 +329,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.spectralsequences]
-ignored_issues = ["e304", "w401", "e424"]
+ignored_issues = ["e304", "e424"]
 imported_prefixes = ["sseq"]
 
 [filename."beamerthemesTeX.sty"]
@@ -342,14 +342,14 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.ufrgscca]
-ignored_issues = ["e304", "e405"]
+ignored_issues = ["e304"]
 imported_prefixes = ["ufrgscca"]
 
 [package.univie-ling]
 ignored_issues = ["e304"]
 
 [package.zugferd]
-ignored_issues = ["e304", "e405"]
+ignored_issues = ["e304"]
 
 [package.luatexko]
 ignored_issues = ["e304"]
@@ -402,11 +402,9 @@ imported_prefixes = ["erw"]
 
 [package.colorist]
 ignored_issues = ["e408"]
-imported_prefixes = ["projlib", "crefthe"]
 
 [package.minimalist]
 ignored_issues = ["e408"]
-imported_prefixes = ["projlib", "crefthe"]
 
 [package.datatool]
 imported_prefixes = ["datatool"]
@@ -431,9 +429,6 @@ imported_prefixes = ["projlib"]
 
 [package.jwjournal]
 imported_prefixes = ["projlib"]
-
-[package.knowledge]
-imported_prefixes = ["kl", "knowledge", "ktuple", "scope"]
 
 [package.lambdax]
 imported_prefixes = ["keyparse"]
