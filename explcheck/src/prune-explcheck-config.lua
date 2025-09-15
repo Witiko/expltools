@@ -122,9 +122,9 @@ local function main(filelist_pathname, results_pathname)
       if pathname_group_results[pathname_group_number] == nil then
         pathname_group_results[pathname_group_number] = {}
       end
-      pathname_group_results[pathname_group_number][key] = group_actual_issues
+      pathname_group_results[pathname_group_number][key_location] = group_actual_issues
     end
-    local actual_issues = pathname_group_results[pathname_group_number][key][pathname_number]
+    local actual_issues = pathname_group_results[pathname_group_number][key_location][pathname_number]
 
     -- Compare the expected results of the static analysis with the actual results.
     local result = actual_issues:has_same_codes_as(expected_issues)
