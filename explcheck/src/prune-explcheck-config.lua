@@ -108,7 +108,7 @@ local function main(filelist_pathname, results_pathname)
     assert(pathname_number ~= nil)
 
     -- Collect the cached results for the group of files or run all steps of the static analysis and cache the results.
-    if pathname_group_results[pathname_group_number] == nil or pathname_group_results[pathname_group_number][key] == nil then
+    if pathname_group_results[pathname_group_number] == nil or pathname_group_results[pathname_group_number][key_location] == nil then
       local options = {[key] = default_value}
       local states = process_with_all_steps(pathnames, options)
       assert(#states == #pathnames)
