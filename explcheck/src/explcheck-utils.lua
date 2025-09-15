@@ -186,7 +186,7 @@ local function pre_v0_13_0_process(substeps)  -- TODO: Remove in v1.0.0.
       issues = issues,
       results = results,
     }
-    for _, process_with_substep in substeps do
+    for _, process_with_substep in ipairs(substeps) do
       process_with_substep(state, options)
     end
   end
