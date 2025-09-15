@@ -127,11 +127,11 @@ local function group_pathnames(pathnames, options)
     else
       assert(not (group_next and ungroup_next))
       -- Process the pathname argument.
-      if group_files == "no" then
+      if group_files == false then
         if not group_next then
           close_current_group()
         end
-      elseif group_files == "yes" then
+      elseif group_files == true then
         if ungroup_next then
           close_current_group()
         end

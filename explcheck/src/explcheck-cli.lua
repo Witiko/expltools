@@ -75,10 +75,10 @@ local function print_usage()
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
     .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
-    .. "\t--group-files={no|yes|auto}\n\n"
+    .. "\t--group-files[={true|false|auto}]\n\n"
     .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
-    .. '\t                           - "no": Never group files unless "+" is written between a pair of FILENAMES.\n'
-    .. '\t                           - "yes": Always group files unless "," is written between a pair of FILENAMES.\n'
+    .. '\t                           - empty or "true": Always group files unless "," is written between a pair of FILENAMES.\n'
+    .. '\t                           - "false": Never group files unless "+" is written between a pair of FILENAMES.\n'
     .. '\t                           - "auto": Group consecutive files from the same directory, unless separated with ","\n'
     .. "\t                             and unless there are more than " .. max_grouped_files_per_directory .. " files in the directory.\n\n"
     .. "\t                           The default setting is --group-files=" .. get_option("group_files") .. ".\n\n"
@@ -133,8 +133,17 @@ else
     elseif argument == "--expect-expl3-everywhere" then
       -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
       options.expl3_detection_strategy = "always"
+    elseif argument == "--group-files" then
+      options.group_files = true
     elseif argument:sub(1, 14) == "--group-files=" then
-      options.group_files = argument:sub(15)
+      local group_files = argument:sub(15)
+      if group_files == "true" then
+        options.group_files = true
+      elseif group_files == "false" then
+        options.group_files = false
+      else
+        options.group_files = group_files
+      end
     elseif argument:sub(1, 17) == "--ignored-issues=" then
       options.ignored_issues = {}
       for issue_identifier in argument:sub(18):gmatch('[^,]+') do
