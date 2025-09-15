@@ -32,7 +32,9 @@ This version of explcheck has implemented the following new features:
   local third_group_results = utils.process_files({"fourth.tex"})
   ```
 
-- Add command-line option `--files-from`. (#131)
+- Add a new command-line option `--files-from`. (#131)
+
+  Use this option to read the list of expl3 files to check from a text file.
 
 ## expltools 2025-08-18
 
