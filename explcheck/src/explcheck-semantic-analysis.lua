@@ -1199,41 +1199,43 @@ local function analyze(states, state_number, options)
 end
 
 -- Report any issues.
-local function report_issues(states, state_number, options)
+local function report_issues(states, main_state_number, options)
 
-  local state = states[state_number]
+  local main_state = states[main_state_number]
 
-  local pathname = state.pathname
-  local content = state.content
-  local issues = state.issues
-  local results = state.results
+  local main_pathname = main_state.pathname
+  local issues = main_state.issues
 
   -- Report issues that are apparent after the semantic analysis.
-  --- Collect all segments of top-level and nested tokens, calls, and statements.
+  --- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
   local token_segments, call_segments, statement_segments = {}, {}, {}
-  for part_number, part_calls in ipairs(results.calls) do
-    local part_statements = results.statements[part_number]
-    table.insert(call_segments, part_calls)
-    table.insert(statement_segments, part_statements)
-    local part_groupings = results.groupings[part_number]
-    local part_tokens = results.tokens[part_number]
-    table.insert(token_segments, {part_groupings, part_tokens, part_tokens, identity, identity})
-    local part_replacement_texts = results.replacement_texts[part_number]
-    for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls) do
-      local nested_statements = part_replacement_texts.statements[replacement_text_number]
-      table.insert(call_segments, nested_calls)
-      table.insert(statement_segments, nested_statements)
-      local replacement_text_tokens = part_replacement_texts.tokens[replacement_text_number]
-      table.insert(
-        token_segments,
-        {
-          part_groupings,
-          part_tokens,
-          replacement_text_tokens.transformed_tokens,
-          replacement_text_tokens.map_forward,
-          replacement_text_tokens.map_back,
-        }
-      )
+  for state_number, state in ipairs(states) do
+    local results = state.results
+    for part_number, part_calls in ipairs(results.calls or {}) do
+      local part_statements = results.statements and results.statements[part_number] or {}
+      table.insert(call_segments, part_calls)
+      table.insert(statement_segments, part_statements)
+      local part_groupings = results.groupings[part_number]
+      local part_tokens = results.tokens[part_number]
+      table.insert(token_segments, {state_number, part_groupings, part_tokens, part_tokens, identity, identity})
+      local part_replacement_texts = results.replacement_texts and results.replacement_texts[part_number] or {}
+      for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls or {}) do
+        local nested_statements = part_replacement_texts.statements and part_replacement_texts.statements[replacement_text_number] or {}
+        table.insert(call_segments, nested_calls)
+        table.insert(statement_segments, nested_statements)
+        local replacement_text_tokens = part_replacement_texts.tokens[replacement_text_number]
+        table.insert(
+          token_segments,
+          {
+            state_number,
+            part_groupings,
+            part_tokens,
+            replacement_text_tokens.transformed_tokens,
+            replacement_text_tokens.map_forward,
+            replacement_text_tokens.map_back,
+          }
+        )
+      end
     end
   end
 
@@ -1271,8 +1273,14 @@ local function report_issues(states, state_number, options)
 
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
-    local segment_groupings, segment_tokens, segment_transformed_tokens, map_forward, map_back
+    local state_number, segment_groupings, segment_tokens, segment_transformed_tokens, map_forward, map_back
       = table.unpack(token_segments[segment_number])
+
+    local state = states[state_number]
+    local is_main_file = state_number == main_state_number
+
+    local pathname = state.pathname
+    local content = state.content
 
     -- Merge a module name and a message name into a combined fully qualified name.
     local function combine_module_and_message_names(module_name, message_name)
@@ -1450,7 +1458,9 @@ local function report_issues(states, state_number, options)
       if statement.type == FUNCTION_VARIANT_DEFINITION then
         -- Record base control sequence names of variants, both as control sequence name usage and separately.
         if statement.base_csname.type == TEXT then
-          table.insert(variant_base_csname_texts, {statement.base_csname.payload, byte_range})
+          if is_main_file then
+            table.insert(variant_base_csname_texts, {statement.base_csname.payload, byte_range})
+          end
           maybe_used_csname_texts[statement.base_csname.payload] = true
         elseif statement.base_csname.type == PATTERN then
           maybe_used_csname_pattern = (
@@ -1463,7 +1473,9 @@ local function report_issues(states, state_number, options)
         end
         -- Record control sequence name definitions.
         if statement.defined_csname.type == TEXT then
-          table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+          if is_main_file then
+            table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+          end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1475,7 +1487,7 @@ local function report_issues(states, state_number, options)
           error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
         end
         -- Record private function variant definitions.
-        if statement.defined_csname.type == TEXT and statement.is_private then
+        if statement.defined_csname.type == TEXT and statement.is_private and is_main_file then
           table.insert(defined_private_function_variant_byte_ranges, byte_range)
           table.insert(defined_private_function_variant_csnames, statement.defined_csname)
           local private_function_variant_number = #defined_private_function_variant_byte_ranges
@@ -1487,7 +1499,9 @@ local function report_issues(states, state_number, options)
         if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
           if statement.base_csname.type == TEXT then
             maybe_used_csname_texts[statement.base_csname.payload] = true
-            table.insert(indirect_definition_base_csname_texts, {statement.base_csname.payload, byte_range})
+            if is_main_file then
+              table.insert(indirect_definition_base_csname_texts, {statement.base_csname.payload, byte_range})
+            end
           elseif statement.base_csname.type == PATTERN then
             maybe_used_csname_pattern = (
               maybe_used_csname_pattern
@@ -1501,28 +1515,36 @@ local function report_issues(states, state_number, options)
         -- Record control sequence name usage and definitions.
         if statement.defined_csname.type == TEXT then
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
-          table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+          if is_main_file then
+            table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+          end
         end
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_number == nil then
           process_argument_tokens(statement.replacement_text_argument)
         end
         -- Record private function defition.
         if statement.defined_csname.type == TEXT and statement.is_private then
-          table.insert(defined_private_function_texts, {statement.defined_csname.payload, byte_range})
+          if is_main_file then
+            table.insert(defined_private_function_texts, {statement.defined_csname.payload, byte_range})
+          end
         end
       -- Process a variable declaration.
       elseif statement.type == VARIABLE_DECLARATION then
         -- Record variable names.
-        table.insert(
-          declared_variable_csname_transcripts,
-          {statement.variable_type, statement.declared_csname.transcript, byte_range}
-        )
-        if statement.declared_csname.type == TEXT then
+        if is_main_file then
           table.insert(
-            declared_defined_and_used_variable_csname_texts,
-            {statement.variable_type, statement.declared_csname.payload, byte_range}
+            declared_variable_csname_transcripts,
+            {statement.variable_type, statement.declared_csname.transcript, byte_range}
           )
-          table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, byte_range})
+        end
+        if statement.declared_csname.type == TEXT then
+          if is_main_file then
+            table.insert(
+              declared_defined_and_used_variable_csname_texts,
+              {statement.variable_type, statement.declared_csname.payload, byte_range}
+            )
+            table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, byte_range})
+          end
           maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
         elseif statement.declared_csname.type == PATTERN then
           maybe_declared_variable_csname_pattern = (
@@ -1536,37 +1558,43 @@ local function report_issues(states, state_number, options)
       -- Process a variable or constant definition.
       elseif statement.type == VARIABLE_DEFINITION then
         -- Record variable names.
-        if statement.is_constant then
-          table.insert(
-            declared_variable_csname_transcripts,
-            {statement.variable_type, statement.defined_csname.transcript, byte_range}
-          )
-        else
-          table.insert(
-            defined_variable_csname_transcripts,
-            {statement.variable_type, statement.defined_csname.transcript, byte_range}
-          )
-          if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
+        if is_main_file then
+          if statement.is_constant then
             table.insert(
-              defined_variable_base_csname_transcripts,
-              {statement.base_variable_type, statement.base_csname.transcript, byte_range}
+              declared_variable_csname_transcripts,
+              {statement.variable_type, statement.defined_csname.transcript, byte_range}
             )
+          else
+            table.insert(
+              defined_variable_csname_transcripts,
+              {statement.variable_type, statement.defined_csname.transcript, byte_range}
+            )
+            if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
+              table.insert(
+                defined_variable_base_csname_transcripts,
+                {statement.base_variable_type, statement.base_csname.transcript, byte_range}
+              )
+            end
           end
         end
         if statement.defined_csname.type == TEXT then
-          table.insert(
-            declared_defined_and_used_variable_csname_texts,
-            {statement.variable_type, statement.defined_csname.payload, byte_range})
-          table.insert(
-            defined_variable_csname_texts,
-            {statement.defined_csname.payload, byte_range}
-          )
-          if statement.is_constant then
-            maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
+          if is_main_file then
             table.insert(
-              declared_variable_csname_texts,
+              declared_defined_and_used_variable_csname_texts,
+              {statement.variable_type, statement.defined_csname.payload, byte_range})
+            table.insert(
+              defined_variable_csname_texts,
               {statement.defined_csname.payload, byte_range}
             )
+          end
+          if statement.is_constant then
+            maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
+            if is_main_file then
+              table.insert(
+                declared_variable_csname_texts,
+                {statement.defined_csname.payload, byte_range}
+              )
+            end
           end
         end
         -- Record control sequence name usage and definitions.
@@ -1576,16 +1604,20 @@ local function report_issues(states, state_number, options)
       -- Process a variable or constant use.
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
-        table.insert(
-          used_variable_csname_transcripts,
-          {statement.variable_type, statement.used_csname.transcript, byte_range}
-        )
-        if statement.used_csname.type == TEXT then
+        if is_main_file then
           table.insert(
-            declared_defined_and_used_variable_csname_texts,
-            {statement.variable_type, statement.used_csname.payload, byte_range}
+            used_variable_csname_transcripts,
+            {statement.variable_type, statement.used_csname.transcript, byte_range}
           )
-          table.insert(used_variable_csname_texts, {statement.used_csname.payload, byte_range})
+        end
+        if statement.used_csname.type == TEXT then
+          if is_main_file then
+            table.insert(
+              declared_defined_and_used_variable_csname_texts,
+              {statement.variable_type, statement.used_csname.payload, byte_range}
+            )
+            table.insert(used_variable_csname_texts, {statement.used_csname.payload, byte_range})
+          end
           maybe_used_variable_csname_texts[statement.used_csname.payload] = true
         elseif statement.used_csname.type == PATTERN then
           maybe_used_variable_csname_pattern = (
@@ -1602,7 +1634,9 @@ local function report_issues(states, state_number, options)
         local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
         if message_name.type == TEXT then
           maybe_defined_message_name_texts[message_name.payload] = true
-          table.insert(defined_message_name_texts, {message_name.payload, byte_range})
+          if is_main_file then
+            table.insert(defined_message_name_texts, {message_name.payload, byte_range})
+          end
         elseif message_name.type == PATTERN then
           maybe_defined_message_name_pattern = (
             maybe_defined_message_name_pattern
@@ -1641,7 +1675,9 @@ local function report_issues(states, state_number, options)
         local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
         if message_name.type == TEXT then
           maybe_used_message_name_texts[message_name.payload] = true
-          table.insert(used_message_name_texts, {message_name.payload, byte_range})
+          if is_main_file then
+            table.insert(used_message_name_texts, {message_name.payload, byte_range})
+          end
         elseif message_name.type == PATTERN then
           maybe_used_message_name_pattern = (
             maybe_used_message_name_pattern
@@ -1653,7 +1689,9 @@ local function report_issues(states, state_number, options)
         end
         -- Record numbers of text parameters.
         if message_name.type == TEXT then
-          table.insert(used_message_nums_text_arguments, {message_name.payload, #statement.text_arguments, byte_range})
+          if is_main_file then
+            table.insert(used_message_nums_text_arguments, {message_name.payload, #statement.text_arguments, byte_range})
+          end
         end
         -- Record control sequence name usage and definitions.
         for _, argument in ipairs(statement.text_arguments) do
@@ -1664,7 +1702,9 @@ local function report_issues(states, state_number, options)
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment_calls) do
           maybe_used_csname_texts[call.csname] = true
-          table.insert(called_functions_and_variants, {call.csname, byte_range})
+          if is_main_file then
+            table.insert(called_functions_and_variants, {call.csname, byte_range})
+          end
           for _, argument in ipairs(call.arguments) do
             process_argument_tokens(argument)
           end
@@ -1684,7 +1724,7 @@ local function report_issues(states, state_number, options)
   end
 
   --- Report issues apparent from the collected information.
-  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local imported_prefixes = get_option('imported_prefixes', options, main_pathname)
   local expl3_well_known_csname = parsers.expl3_well_known_csname(imported_prefixes)
   local expl3_well_known_message_name = parsers.expl3_well_known_message_name(imported_prefixes)
 
