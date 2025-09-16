@@ -5,6 +5,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/chemnum/chemnum.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/enumext/enumext.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fnpct/fnpct.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/fontawesome5/fontawesome5-generic-helper.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/knowledge/knowledge.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf-debug.sty

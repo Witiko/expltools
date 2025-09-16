@@ -26,7 +26,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/mathcommand/mathcommand.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/nwafuthesis/nwafuthesis.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/paresse/paresse.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/physics2/physics2.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/precattl/precattl.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/secnum/secnum.sty

@@ -13,7 +13,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/codedescribe/codedescribe.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cooking-units/cooking-units.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datagidx.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/datatool/dataplot.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datatool-base.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/person.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/dbshow/dbshow.sty
@@ -63,7 +62,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tilings/tikzlibrarytilings.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tilings/tikzlibrarytilings.polykite.code.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex/ufrgscca/ufrgscca-core.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/ufrgscca/ufrgscca-ppc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/xsim/xsimverb.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/zhlipsum/zhlipsum.sty
@@ -71,5 +69,4 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/zugferd/zugferd.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/piton/piton.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/hanzibox/hanzibox.sty
-/usr/local/texlive/2024/texmf-dist/tex/xelatex/xduts/xdupgthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty
