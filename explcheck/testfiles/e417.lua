@@ -1,21 +1,22 @@
 local utils = require("explcheck-utils")
 
-local filename = "w401-01.tex"
+local filename = "e417.tex"
 local options = {
   expl3_detection_strategy = "always",
+  ignored_issues = {"s413", "w415"},
   stop_after = "semantic analysis",
 }
 local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results
 
-assert(#issues.errors == 0)
-assert(#issues.warnings == 1)
+assert(#issues.errors == 1)
+assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{1, 3}}
-for index, warning in ipairs(issues.sort(issues.warnings)) do
-  assert(warning[1] == "w401")
-  assert(warning[2] == "unused private function")
-  local byte_range = warning[3]
+for index, err in ipairs(issues.sort(issues.errors)) do
+  assert(err[1] == "e417")
+  assert(err[2] == "setting a variable as a constant")
+  local byte_range = err[3]
   local start_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:start())
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index][1])

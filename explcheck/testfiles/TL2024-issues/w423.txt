@@ -27,7 +27,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-question.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fnpct/fnpct-2019-10-05.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fnpct/fnpct.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/fontawesome5/fontawesome5.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fontspec/fontspec.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/genealogy-profiles/genealogy-profiles.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/hobby/pml3array.sty
@@ -40,7 +39,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/koma-script/scrlfile-hook.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate-2023-10-10.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/leadsheets/leadsheets.library.songs.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/longdivision/longdivision.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lt3rawobjects/lt3rawobjects.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/media4svg/media4svg.sty
@@ -54,9 +52,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/pascaltriangle/pascaltriangle.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/pdfmanagement-testphase/pdfmanagement-firstaid.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/phonenumbers/phonenumbers.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/pkgloader/pkgloader.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/pythonimmediate/pythonimmediate.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/rbt-mathnotes/rbt-mathnotes-messages.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/semantex/semantex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/semantex/stripsemantex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/siunitx/siunitx-v2.sty
@@ -68,7 +64,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/texnegar/texnegar-ini.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tilings/tikzlibrarytilings.code.tex
-/usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/beamerthemeTUDa2023.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudacolors.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaexercise.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/unravel/unravel.sty

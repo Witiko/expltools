@@ -3,95 +3,39 @@
 local evaluation = require("explcheck-evaluation")
 local format = require("explcheck-format")
 local get_option = require("explcheck-config").get_option
-local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
 
 local new_file_results = evaluation.new_file_results
 local new_aggregate_results = evaluation.new_aggregate_results
 
--- Deduplicate pathnames.
-local function deduplicate_pathnames(pathnames)
-  local deduplicated_pathnames = {}
-  local seen_pathnames = {}
-  for _, pathname in ipairs(pathnames) do
-    if seen_pathnames[pathname] ~= nil then
-      goto continue
-    end
-    seen_pathnames[pathname] = true
-    table.insert(deduplicated_pathnames, pathname)
-    ::continue::
-  end
-  return deduplicated_pathnames
-end
-
--- Check that the pathname specifies a file that we can process.
-local function check_pathname(pathname)
-  local suffix = utils.get_suffix(pathname)
-  if suffix == ".ins" then
-    local basename = utils.get_basename(pathname)
-    if basename:find(" ") then
-      basename = "'" .. basename .. "'"
-    end
-    return
-      false,
-      "explcheck can't currently process .ins files directly\n"
-      .. 'Use a command such as "luatex ' .. basename .. '" '
-      .. "to generate .tex, .cls, and .sty files and process these files instead."
-  elseif suffix == ".dtx" then
-    local parent = utils.get_parent(pathname)
-    local basename = "*.ins"
-    local has_lfs, lfs = pcall(require, "lfs")
-    if has_lfs then
-      for candidate_basename in lfs.dir(parent) do
-        local candidate_suffix = utils.get_suffix(candidate_basename)
-        if candidate_suffix == ".ins" then
-          basename = candidate_basename
-          if basename:find(" ") then
-            basename = "'" .. candidate_basename .. "'"
-          end
-          break
-        end
-      end
-    end
-    return
-      false,
-      "explcheck can't currently process .dtx files directly\n"
-      .. 'Use a command such as "luatex ' .. basename .. '" '
-      .. "to generate .tex, .cls, and .sty files and process these files instead."
-  end
-  return true
-end
-
 -- Process all input files.
-local function main(pathnames, options)
+local function main(pathname_groups, options)
+  local num_pathnames = 0
+  for _, pathname_group in ipairs(pathname_groups) do
+    num_pathnames = num_pathnames + #pathname_group
+  end
   if not options.porcelain then
-    print("Checking " .. #pathnames .. " " .. format.pluralize("file", #pathnames))
+    print("Checking " .. num_pathnames .. " " .. format.pluralize("file", num_pathnames))
   end
 
   local aggregate_evaluation_results = new_aggregate_results()
-  for pathname_number, pathname in ipairs(pathnames) do
+  for pathname_group_number, pathname_group in ipairs(pathname_groups) do
+    local is_last_group = pathname_group_number == #pathname_groups
     local is_ok, error_message = xpcall(function()
-
-      -- Set up the issue registry.
-      local issues = new_issues(pathname, options)
-
-      -- Load an input file.
-      local file = assert(io.open(pathname, "r"))
-      local content = assert(file:read("*a"))
-      assert(file:close())
-
-      -- Run all steps.
-      local analysis_results = {}
-      utils.process_with_all_steps(pathname, content, issues, analysis_results, options)
-
-      -- Print warnings and errors.
-      local file_evaluation_results = new_file_results(content, analysis_results, issues)
-      aggregate_evaluation_results:add(file_evaluation_results)
-      local is_last_file = pathname_number == #pathnames
-      format.print_results(pathname, issues, analysis_results, options, file_evaluation_results, is_last_file)
+      -- Run all processing steps and collect issues and analysis results.
+      local states = utils.process_files(pathname_group, options)
+      assert(#states == #pathname_group)
+      for pathname_number, state in ipairs(states) do
+        assert(pathname_group[pathname_number] == state.pathname)
+        -- Print warnings and errors.
+        local file_evaluation_results = new_file_results(state)
+        aggregate_evaluation_results:add(file_evaluation_results)
+        local is_last_file = is_last_group and (pathname_number == #pathname_group)
+        format.print_results(state, options, file_evaluation_results, is_last_file)
+      end
     end, debug.traceback)
     if not is_ok then
-      error("Failed to process " .. pathname .. ": " .. tostring(error_message), 0)
+      error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
     end
   end
 
@@ -114,6 +58,7 @@ local function print_usage()
   local expl3_detection_strategy = get_option("expl3_detection_strategy")
   local make_at_letter = tostring(get_option("make_at_letter"))
   local max_line_length = tostring(get_option("max_line_length"))
+  local max_grouped_files_per_directory = get_option("max_grouped_files_per_directory")
   print(
     "Options:\n\n"
     .. "\t--config-file=FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
@@ -130,6 +75,14 @@ local function print_usage()
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
     .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
+    .. "\t--files-from=FILE          Read the list of FILENAMES from FILE.\n\n"
+    .. "\t--group-files[={true|false|auto}]\n\n"
+    .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
+    .. '\t                           - empty or "true": Always group files unless "," is written between a pair of FILENAMES.\n'
+    .. '\t                           - "false": Never group files unless "+" is written between a pair of FILENAMES.\n'
+    .. '\t                           - "auto": Group consecutive files from the same directory, unless separated with ","\n'
+    .. "\t                             and unless there are more than " .. max_grouped_files_per_directory .. " files in the directory.\n\n"
+    .. "\t                           The default setting is --group-files=" .. get_option("group_files") .. ".\n\n"
     .. "\t--ignored-issues=ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
     .. "\t--make-at-letter[={true|false|auto}]\n\n"
     .. '\t                           How the at sign ("@") should be tokenized:\n\n'
@@ -158,12 +111,13 @@ if #arg == 0 then
   os.exit(1)
 else
   -- Collect arguments.
-  local pathnames = {}
+  local pathnames, allow_pathname_separators = {}, {}
   local only_pathnames_from_now_on = false
   local options = {}
   for _, argument in ipairs(arg) do
     if only_pathnames_from_now_on then
       table.insert(pathnames, argument)
+      table.insert(allow_pathname_separators, true)
     elseif argument == "--" then
       only_pathnames_from_now_on = true
     elseif argument == "--help" or argument == "-h" then
@@ -181,6 +135,25 @@ else
     elseif argument == "--expect-expl3-everywhere" then
       -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
       options.expl3_detection_strategy = "always"
+    elseif argument:sub(1, 13) == "--files-from=" then
+      local files_from = argument:sub(14)
+      local file = assert(io.open(files_from, "r"))
+      for pathname in file:lines() do
+        table.insert(pathnames, pathname)
+        table.insert(allow_pathname_separators, false)
+      end
+      assert(file:close())
+    elseif argument == "--group-files" then
+      options.group_files = true
+    elseif argument:sub(1, 14) == "--group-files=" then
+      local group_files = argument:sub(15)
+      if group_files == "true" then
+        options.group_files = true
+      elseif group_files == "false" then
+        options.group_files = false
+      else
+        options.group_files = group_files
+      end
     elseif argument:sub(1, 17) == "--ignored-issues=" then
       options.ignored_issues = {}
       for issue_identifier in argument:sub(18):gmatch('[^,]+') do
@@ -213,25 +186,31 @@ else
       os.exit(1)
     else
       table.insert(pathnames, argument)
+      table.insert(allow_pathname_separators, true)
     end
   end
+  assert(#pathnames == #allow_pathname_separators)
 
   if #pathnames == 0 then
     print_usage()
     os.exit(1)
   end
 
-  -- Deduplicate and check that pathnames specify files that we can process.
-  pathnames = deduplicate_pathnames(pathnames)
-  for _, pathname in ipairs(pathnames) do
-    local is_ok, error_message = check_pathname(pathname)
-    if not is_ok then
-      print('Failed to process "' .. pathname .. '": ' .. error_message)
-      os.exit(1)
+  -- Group pathnames.
+  local pathname_groups = utils.group_pathnames(pathnames, options, allow_pathname_separators)
+
+  -- Check pathnames.
+  for _, pathname_group in ipairs(pathname_groups) do
+    for _, pathname in ipairs(pathname_group) do
+      local is_ok, error_message = utils.check_pathname(pathname)
+      if not is_ok then
+        print('Failed to process "' .. pathname .. '": ' .. error_message .. "\n")
+        os.exit(1)
+      end
     end
   end
 
   -- Run the analysis.
-  local exit_code = main(pathnames, options)
+  local exit_code = main(pathname_groups, options)
   os.exit(exit_code)
 end

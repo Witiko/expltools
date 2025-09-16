@@ -663,8 +663,15 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
   return calls
 end
 
--- Convert the tokens to a tree of top-level function calls and register any issues.
-local function syntactic_analysis(pathname, content, issues, results, options)  -- luacheck: ignore pathname content options
+-- Convert the tokens to a tree of top-level function calls and report any issues.
+local function analyze_and_report_issues(states, state_number, options)  -- luacheck: ignore options
+
+  local state = states[state_number]
+
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
+
   local calls = {}
   for part_number, part_tokens in ipairs(results.tokens) do
     local part_groupings = results.groupings[part_number]
@@ -677,14 +684,18 @@ local function syntactic_analysis(pathname, content, issues, results, options)  
   results.calls = calls
 end
 
+local substeps = {
+  analyze_and_report_issues,
+}
+
 return {
+  call_types = call_types,
   count_parameters_in_replacement_text = count_parameters_in_replacement_text,
   extract_text_from_tokens = extract_text_from_tokens,
   get_calls = get_calls,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
   name = "syntactic analysis",
-  process = syntactic_analysis,
-  call_types = call_types,
+  substeps = substeps,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
 }

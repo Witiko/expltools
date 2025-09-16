@@ -1,21 +1,13 @@
-local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
-local preprocessing = require("explcheck-preprocessing")
-local lexical_analysis = require("explcheck-lexical-analysis")
-local syntactic_analysis = require("explcheck-syntactic-analysis")
 
 local filename = "t305.tex"
-
-local file = assert(io.open(filename, "r"))
-local content = assert(file:read("*a"))
-assert(file:close())
-local options = {expl3_detection_strategy = "always"}
-local issues = new_issues(filename, options)
-local results = {}
-
-preprocessing.process(filename, content, issues, results, options)
-lexical_analysis.process(filename, content, issues, results, options)
-syntactic_analysis.process(filename, content, issues, results, options)
+local options = {
+  expl3_detection_strategy = "always",
+  ignored_issues = {"w415"},
+  stop_after = "syntactic analysis",
+}
+local state = table.unpack(utils.process_files({filename}, options))
+local issues, results = state.issues, state.results
 
 assert(#issues.errors == 2)
 assert(#issues.warnings == 0)

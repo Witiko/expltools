@@ -1,5 +1,3 @@
-/usr/local/texlive/2024/texmf-dist/tex/generic/scontents/scontents-code.tex
-/usr/local/texlive/2024/texmf-dist/tex/generic/scontents/scontents.tex
 /usr/local/texlive/2024/texmf-dist/tex/generic/termmenu/termmenu.tex
 /usr/local/texlive/2024/texmf-dist/tex/generic/witharrows/witharrows.sty
 /usr/local/texlive/2024/texmf-dist/tex/generic/witharrows/witharrows.tex
@@ -32,8 +30,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/chronos/chronos.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/circledtext/circledtext.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/citation-style-language/citation-style-language-bib.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/citation-style-language/citation-style-language-init.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/citation-style-language/citation-style-language.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/citeall/citeall.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/codehigh/codehigh.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cooking-units/cooking-units.sty
@@ -42,9 +38,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/cryptocode/cryptocode-2020-04-24.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cryptocode/cryptocode.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/csvsimple/csvsimple-l3.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/ctex/ctex.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/ctex/ctexbeamer.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/ctex/ctexheading.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/databar.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datagidx.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/dataplot.sty
@@ -54,8 +47,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/denisbdoc/denisbdoc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/derivative/derivative.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/didec/didec.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/ducksay/ducksay.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/easybook/easybook.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/els-cas-templates/cas-common.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/embrac/embrac.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/endiagram/endiagram.sty
@@ -90,7 +81,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/kfupm-math-exam/kfupm-math-exam.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/knowledge/knowledge.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/kotex-oblivoir/memhangul-x/ob-mathleading.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/kotex-oblivoir/oblivoir-utf.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/l3draw/l3draw.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/l3graphics/l3graphics.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/xgalley/l3galley.sty
@@ -116,7 +106,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/mercatormap/mercatormap.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/metrix/metrix.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/mhchem/hpstatement.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimalist-classicthesis.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/modiagram/modiagram.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/moremath/moremath.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/newpx/newpxmath.sty
@@ -131,7 +120,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/pdfmanagement-testphase/l3pdffield-testphase.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/phonenumbers/phonenumbers.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/physics2/physics2.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/pmhanguljamo/pmhanguljamo-frkim.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/prelim2e/prelim2e.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-author.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-language.sty
@@ -140,15 +128,12 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/qrbill/qrbill.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/recorder-fingering/recorder-fingering.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/returntogrid/returntogrid.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/rpgicons/rpgicons-l3.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/scontents/scontents.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/scripture/scripture.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/sdaps/sdapsbase.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/secnum/secnum.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/siunitx/siunitx-v2.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/siunitx/siunitx.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/sjtutex/sjtuarticle.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex/sjtutex/sjtureport.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/smart-eqn/smart-eqn.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/soup/soup.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/spath3/spath3.sty
@@ -158,18 +143,14 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/suanpan-l3/suanpan-l3.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tabularray/tabularray-2021.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tabularray/tabularray.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf-base.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf-mc-code-generic.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tasks/tasks.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/tcolorbox/tcolorbox.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/texnegar/texnegar-ini.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzmark/tikzlibrarytikzmark.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzsymbols/tikzsymbols.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tools/l3sys-query.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/beamerinnerthemeTUDa.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/beamerouterthemeTUDa.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaexercise.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaletter.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaposter.cls
@@ -181,7 +162,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/ufrgscca/ufrgscca-cover.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/ufrgscca/ufrgscca-curr.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/ufrgscca/ufrgscca-forms.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/ufrgscca/ufrgscca.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unravel/unravel.sty

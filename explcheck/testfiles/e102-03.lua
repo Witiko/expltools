@@ -1,16 +1,11 @@
-local new_issues = require("explcheck-issues")
 local utils = require("explcheck-utils")
-local preprocessing = require("explcheck-preprocessing")
 
 local filename = "e102-03.tex"
-
-local file = assert(io.open(filename, "r"))
-local content = assert(file:read("*a"))
-assert(file:close())
-local issues = new_issues()
-local results = {}
-
-preprocessing.process(filename, content, issues, results)
+local options = {
+  stop_after = "preprocessing",
+}
+local state = table.unpack(utils.process_files({filename}, options))
+local issues, results = state.issues, state.results
 
 assert(#issues.errors == 3)
 assert(#issues.warnings == 0)

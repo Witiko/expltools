@@ -11,7 +11,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/commalists-tools/commalists-tools.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cprotectinside/cprotectinside.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/crefthe/crefthe.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/datatool/databar.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datapie.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/dbshow/dbshow.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/decision-table/decision-table.sty
@@ -26,7 +25,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/genealogy-profiles/genealogy-profiles.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/hustthesis/hustthesis-doc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/istgame/istgame.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq-complements.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq-trimmarks.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/jlreq/jlreq.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/kanbun/kanbun.sty

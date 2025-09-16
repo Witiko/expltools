@@ -13,7 +13,8 @@ local utils = require("explcheck-utils")
 
 local get_stem = utils.get_stem
 local get_suffix = utils.get_suffix
-local process_with_all_steps = utils.process_with_all_steps
+local group_pathnames = utils.group_pathnames
+local process_files = utils.process_files
 
 local default_config = config.default_config
 local get_user_config = config.get_user_config
@@ -71,6 +72,15 @@ local function main(filelist_pathname, results_pathname)
   local filelist = read_filelist(filelist_pathname)
   local results = read_results(results_pathname)
 
+  local pathname_groups = group_pathnames(filelist)
+  local pathname_group_index = {}
+  for pathname_group_number, pathname_group in ipairs(pathname_groups) do
+    for pathname_number, pathname in ipairs(pathname_group) do
+      pathname_group_index[pathname] = {pathname_group_number, pathname_group, pathname_number}
+    end
+  end
+  local pathname_group_results = {}
+
   local num_options = 0
   local key_locations = {
     seen = {},
@@ -87,14 +97,25 @@ local function main(filelist_pathname, results_pathname)
 
     num_options = num_options + 1
 
-    -- Run all steps of the static analysis.
-    local actual_issues = new_issues()
-    local options = {[key] = default_value}
-    local file = assert(io.open(pathname, "r"))
-    local content = assert(file:read("*a"))
-    assert(file:close())
-    local analysis_results = {}
-    process_with_all_steps(pathname, content, actual_issues, analysis_results, options)
+    -- Collect the cached results for the group of files or run all steps of the static analysis and cache the results.
+    local pathname_group_number, pathname_group, pathname_number = table.unpack(pathname_group_index[pathname])
+    if pathname_group_results[pathname_group_number] == nil or pathname_group_results[pathname_group_number][key_location] == nil then
+      local options = {[key] = default_value}
+      local states = process_files(pathname_group, options)
+      assert(#states == #pathname_group)
+
+      local group_actual_issues = {}
+      for _, state in ipairs(states) do
+        table.insert(group_actual_issues, state.issues)
+      end
+      assert(#group_actual_issues == #states)
+
+      if pathname_group_results[pathname_group_number] == nil then
+        pathname_group_results[pathname_group_number] = {}
+      end
+      pathname_group_results[pathname_group_number][key_location] = group_actual_issues
+    end
+    local actual_issues = pathname_group_results[pathname_group_number][key_location][pathname_number]
 
     -- Compare the expected results of the static analysis with the actual results.
     local result = actual_issues:has_same_codes_as(expected_issues)
