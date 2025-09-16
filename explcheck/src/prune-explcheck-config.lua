@@ -73,6 +73,12 @@ local function main(filelist_pathname, results_pathname)
   local results = read_results(results_pathname)
 
   local pathname_groups = group_pathnames(filelist)
+  local pathname_group_index = {}
+  for pathname_group_number, pathname_group in ipairs(pathname_groups) do
+    for pathname_number, pathname in ipairs(pathname_group) do
+      pathname_group_index[pathname] = {pathname_group_number, pathname_group, pathname_number}
+    end
+  end
   local pathname_group_results = {}
 
   local num_options = 0
@@ -91,28 +97,12 @@ local function main(filelist_pathname, results_pathname)
 
     num_options = num_options + 1
 
-    -- Collect the group of files containing the current pathname.
-    local pathnames, pathname_group_number, pathname_number
-    for current_pathname_group_number, current_pathname_group in ipairs(pathname_groups) do
-      for current_pathname_number, current_pathname in ipairs(current_pathname_group) do
-        if current_pathname == pathname then
-          pathnames = current_pathname_group
-          pathname_group_number = current_pathname_group_number
-          pathname_number = current_pathname_number
-          goto continue
-        end
-      end
-    end
-    ::continue::
-    assert(pathnames ~= nil)
-    assert(pathname_group_number ~= nil)
-    assert(pathname_number ~= nil)
-
     -- Collect the cached results for the group of files or run all steps of the static analysis and cache the results.
+    local pathname_group_number, pathname_group, pathname_number = table.unpack(pathname_group_index[pathname])
     if pathname_group_results[pathname_group_number] == nil or pathname_group_results[pathname_group_number][key_location] == nil then
       local options = {[key] = default_value}
-      local states = process_files(pathnames, options)
-      assert(#states == #pathnames)
+      local states = process_files(pathname_group, options)
+      assert(#states == #pathname_group)
 
       local group_actual_issues = {}
       for _, state in ipairs(states) do
