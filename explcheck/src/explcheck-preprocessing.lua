@@ -15,7 +15,9 @@ local lpeg = require("lpeg")
 local B, Cmt, Cp, Ct, Cc, P, V = lpeg.B, lpeg.Cmt, lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
 
 -- Preprocess the content and report any issues.
-local function analyze_and_report_issues(state, options)
+local function analyze_and_report_issues(states, state_number, options)
+
+  local state = states[state_number]
 
   local pathname = state.pathname
   local content = state.content

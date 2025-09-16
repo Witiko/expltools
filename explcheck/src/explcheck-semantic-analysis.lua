@@ -246,7 +246,9 @@ local function _extract_name_from_tokens(options, pathname, token_range, transfo
 end
 
 -- Determine the meaning of function calls.
-local function analyze(state, options)
+local function analyze(states, state_number, options)
+
+  local state = states[state_number]
 
   local pathname = state.pathname
   local content = state.content
@@ -1197,7 +1199,9 @@ local function analyze(state, options)
 end
 
 -- Report any issues.
-local function report_issues(state, options)
+local function report_issues(states, state_number, options)
+
+  local state = states[state_number]
 
   local pathname = state.pathname
   local content = state.content
