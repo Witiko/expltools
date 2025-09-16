@@ -111,12 +111,13 @@ if #arg == 0 then
   os.exit(1)
 else
   -- Collect arguments.
-  local pathnames = {}
+  local pathnames, allow_pathname_separators = {}, {}
   local only_pathnames_from_now_on = false
   local options = {}
   for _, argument in ipairs(arg) do
     if only_pathnames_from_now_on then
       table.insert(pathnames, argument)
+      table.insert(allow_pathname_separators, true)
     elseif argument == "--" then
       only_pathnames_from_now_on = true
     elseif argument == "--help" or argument == "-h" then
@@ -139,6 +140,7 @@ else
       local file = assert(io.open(files_from, "r"))
       for pathname in file:lines() do
         table.insert(pathnames, pathname)
+        table.insert(allow_pathname_separators, false)
       end
       assert(file:close())
     elseif argument == "--group-files" then
@@ -184,8 +186,10 @@ else
       os.exit(1)
     else
       table.insert(pathnames, argument)
+      table.insert(allow_pathname_separators, true)
     end
   end
+  assert(#pathnames == #allow_pathname_separators)
 
   if #pathnames == 0 then
     print_usage()
@@ -193,7 +197,7 @@ else
   end
 
   -- Group pathnames.
-  local pathname_groups = utils.group_pathnames(pathnames, options)
+  local pathname_groups = utils.group_pathnames(pathnames, options, allow_pathname_separators)
 
   -- Check pathnames.
   for _, pathname_group in ipairs(pathname_groups) do

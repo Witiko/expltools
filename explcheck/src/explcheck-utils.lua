@@ -84,7 +84,9 @@ local function check_pathname(pathname)
 end
 
 -- Group pathnames passed to the command-line interface.
-local function group_pathnames(pathnames, options)
+local function group_pathnames(pathnames, options, allow_pathname_separators)
+  assert(allow_pathname_separators == nil or #pathnames == #allow_pathname_separators)
+
   -- Require packages.
   local get_option = require("explcheck-config").get_option
 
@@ -113,9 +115,10 @@ local function group_pathnames(pathnames, options)
     current_group = {}
   end
 
-  for _, current_pathname in ipairs(pathnames) do
+  for pathname_number, current_pathname in ipairs(pathnames) do
     -- Process a grouping argument, such as "+" or ",".
-    if current_pathname == "+" or current_pathname == "," then  -- a grouping argument
+    local allow_separator = allow_pathname_separators == nil or allow_pathname_separators[pathname_number] == true
+    if allow_separator and (current_pathname == "+" or current_pathname == ",") then  -- a grouping argument
       if group_next or ungroup_next then
         error('Two arguments "+" or "," in a row')
       end
