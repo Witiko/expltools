@@ -36,6 +36,15 @@ This version of explcheck has implemented the following new features:
 
   Use this option to read the list of expl3 files to check from a text file.
 
+#### Deprecations and removals
+
+This version of explcheck has deprecated or removed the following features:
+
+- Remove function `process_with_all_steps()` from the file
+  `explcheck-utils.lua`. (#131)
+
+  Use the new function `process_files()` from the same file instead.
+
 ## expltools 2025-08-18
 
 ### explcheck v0.12.0
