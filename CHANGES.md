@@ -47,9 +47,10 @@ This version of explcheck has implemented the following new features:
 
   Needlessly ignored issues produce warning S105 (Needlessly ignored issue).
 
-#### Deprecations and removals
+#### Breaking changes
 
-This version of explcheck has deprecated or removed the following features:
+This version of explcheck has made the following breaking changes to the
+interfaces:
 
 - Remove function `process_with_all_steps()` from the file
   `explcheck-utils.lua`. (#131)
@@ -58,6 +59,9 @@ This version of explcheck has deprecated or removed the following features:
 
 - Method `Issues.ignore()` from the file `explcheck-issues.lua` accepts a table
   instead of a list of arguments. (#132)
+
+- The file `explcheck-issues.lua` exports a table rather than just the function
+  `new_issues()`. (#132)
 
 ## expltools 2025-08-18
 
