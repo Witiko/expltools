@@ -29,6 +29,6 @@ An input file contains multiple delimiters `\ProvidesExplPackage`, `\ProvidesExp
  /e104.tex
 
 ## Needlessly ignored issue {.s label=s105}
-An input file contains `% noqa` comments, a config file specifies the option `ignored_issues`, or the command line contains options `--ignored-issues` with needlessly ignored issues.
+An input file contains `% noqa` comments with needlessly ignored issues.
 
  /s105.tex

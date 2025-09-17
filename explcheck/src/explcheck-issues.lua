@@ -36,6 +36,13 @@ function Issues._normalize_identifier(identifier)
   return identifier:lower()
 end
 
+-- Determine whether an identifier prefix matches an identifier.
+function Issues._match_identifier_prefix(identifier_prefix, identifier)
+  identifier_prefix = Issues._normalize_identifier(identifier_prefix)
+  identifier = Issues._normalize_identifier(identifier)
+  return identifier:sub(1, #identifier_prefix) == identifier_prefix
+end
+
 -- Convert an issue identifier to either a table of warnings or a table of errors.
 function Issues:_get_issue_table(identifier)
   identifier = self._normalize_identifier(identifier)
@@ -117,9 +124,9 @@ function Issues:ignore(ignored_issue)
       or issue_range:stop() >= ignored_issue.range:start() and issue_range:stop() <= ignored_issue.range:stop()  -- issue ends within range
     )
   end
-  local function match_issue_identifier(issue_identifier)
+  local function match_issue_identifier(identifier)
     -- Match the prefix of an issue, allowing us to ignore whole sets of issues with prefixes like "s" or "w4".
-    return issue_identifier:sub(1, #ignored_issue.identifier_prefix) == ignored_issue.identifier_prefix
+    return self._match_identifier_prefix(ignored_issue.identifier_prefix, identifier)
   end
 
   local issue_tables
@@ -154,13 +161,7 @@ function Issues:ignore(ignored_issue)
       local issue_identifier = issue[1]
       local issue_range = issue[3]
       if issue_range == nil then  -- file-wide issue
-        -- Make an exception for issue S105 (Needlessly ignored issue), which can be both ranged and file-wide.
-        -- Only match the ranged variant of this issue here.
-        if issue_identifier == self._normalize_identifier('s105') then
-          return false
-        else
-          return match_issue_identifier(issue_identifier)
-        end
+        return match_issue_identifier(issue_identifier)
       else  -- ranged issue
         return match_issue_range(issue_range) and match_issue_identifier(issue_identifier)
       end
@@ -231,12 +232,16 @@ function Issues:close()
 
   -- Report all needlessly ignored issues.
   for _, ignored_issue in ipairs(self.ignored_issues) do
-    if not ignored_issue.seen and ignored_issue.identifier_prefix ~= self._normalize_identifier('s105') then
+    if (
+          not ignored_issue.seen
+          and ignored_issue.source_range ~= nil
+          and not Issues._match_identifier_prefix(ignored_issue.identifier_prefix, 's105')
+        ) then
       local formatted_identifier_prefix
       if ignored_issue.identifier_prefix ~= nil then
         formatted_identifier_prefix = format_identifier(ignored_issue.identifier_prefix)
       end
-      self:add('s105', 'Needlessly ignored issue', ignored_issue.source_range, formatted_identifier_prefix)
+      self:add('s105', 'needlessly ignored issue', ignored_issue.source_range, formatted_identifier_prefix)
     end
   end
 
