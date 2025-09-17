@@ -3,7 +3,6 @@ local utils = require("explcheck-utils")
 local filename = "w202.tex"
 local options = {
   expl3_detection_strategy = "always",
-  ignored_issues = {"s413", "w415"},
   stop_after = "lexical analysis",
 }
 local state = table.unpack(utils.process_files({filename}, options))

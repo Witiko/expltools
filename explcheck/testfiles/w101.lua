@@ -2,7 +2,6 @@ local utils = require("explcheck-utils")
 
 local filename = "w101.tex"
 local options = {
-  ignored_issues = {"s413", "w415"},
   stop_after = "preprocessing",
 }
 local state = table.unpack(utils.process_files({filename}, options))

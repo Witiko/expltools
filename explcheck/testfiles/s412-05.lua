@@ -9,7 +9,7 @@ local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results
 
 assert(#issues.errors == 0)
-assert(#issues.warnings == 1)
+assert(#issues.warnings == 3)
 
 local expected_line_numbers = {2}
 for index, warning in ipairs(issues.sort(issues.errors)) do
