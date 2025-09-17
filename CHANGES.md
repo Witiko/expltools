@@ -4,6 +4,13 @@
 
 ### explcheck v0.13.0
 
+#### Fixes
+
+This version of explcheck has fixed the following bugs:
+
+- Do not deduplicate issues with the same identifier and range but different
+  context. (#132)
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
