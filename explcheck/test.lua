@@ -91,7 +91,7 @@ local function run_tests(test_directory, support_files, test_files)
       -- A TeX file with no associated Lua file. Check it and see if any issues were detected.
       assert(seen_lua_stems[get_stem(filename)] == nil)
       check_function = function()
-        local options = {ignored_issues = {'w100'}}
+        local options = {ignored_issues = {'w100', 's105'}}
         local result = table.unpack(process_files({basename}, options))
         assert(#result.issues.warnings == 0)
         assert(#result.issues.errors == 0)

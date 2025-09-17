@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "e411-04.tex"
@@ -12,7 +13,7 @@ assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{5, 7}}
-for index, err in ipairs(issues.sort(issues.errors)) do
+for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e411")
   assert(err[2] == "indirect function definition from an undefined function")
   local byte_range = err[3]

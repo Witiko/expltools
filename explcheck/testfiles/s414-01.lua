@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "s414-01.tex"
@@ -13,7 +14,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
 local expected_line_numbers = {{1, 2}}
-for index, warning in ipairs(issues.sort(issues.errors)) do
+for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "s414")
   assert(warning[2] == "malformed quark or scan mark name")
   local byte_range = warning[3]

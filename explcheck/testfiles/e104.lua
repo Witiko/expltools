@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "e104.tex"
@@ -10,7 +11,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
-local errors = issues.sort(issues.errors)
+local errors = sort_issues(issues.errors)
 local err = errors[1]
 
 assert(err[1] == "e104")

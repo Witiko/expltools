@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "w401-01.tex"
@@ -12,7 +13,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
 local expected_line_numbers = {{1, 3}}
-for index, warning in ipairs(issues.sort(issues.warnings)) do
+for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w401")
   assert(warning[2] == "unused private function")
   local byte_range = warning[3]

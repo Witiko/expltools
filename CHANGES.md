@@ -4,6 +4,20 @@
 
 ### explcheck v0.13.0
 
+#### Fixes
+
+This version of explcheck has fixed the following bugs:
+
+- Do not deduplicate issues with the same identifier and range but different
+  context. (#132)
+
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Plan issue S105 (Needlessly ignored issue). (#130, #132)
+
 #### Development
 
 This version of explcheck has implemented the following new features:
@@ -35,6 +49,10 @@ This version of explcheck has implemented the following new features:
 - Add a new command-line option `--files-from`. (#131)
 
   Use this option to read the list of expl3 files to check from a text file.
+
+- Report a warning for needlessly ignored issues. (#130, #132)
+
+  Needlessly ignored issues produce warning S105 (Needlessly ignored issue).
 
 ## expltools 2025-08-18
 

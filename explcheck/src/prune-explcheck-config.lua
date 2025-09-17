@@ -8,7 +8,7 @@ kpse.set_program_name("texlua", "prune-explcheck-config")
 local lfs = require("lfs")
 
 local config = require("explcheck-config")
-local new_issues = require("explcheck-issues")
+local new_issues = require("explcheck-issues").new_issues
 local utils = require("explcheck-utils")
 
 local get_stem = utils.get_stem
@@ -54,6 +54,9 @@ local function read_results(results_pathname)
       results.issues[pathname]:add(issue)
     end
     ::continue::
+  end
+  for _, issues in pairs(results.issues) do
+    issues:close()
   end
   print(string.format('Read %d issues and %d files listed in "%s".', num_issues, #results.pathnames, results_pathname))
   return results

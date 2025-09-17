@@ -184,7 +184,7 @@ end
 local function process_files(pathnames, options)
   -- Require packages.
   local get_option = require("explcheck-config").get_option
-  local new_issues = require("explcheck-issues")
+  local new_issues = require("explcheck-issues").new_issues
 
   -- Prepare empty processing states for all files in the group.
   local states = {}
@@ -253,6 +253,11 @@ local function process_files(pathnames, options)
         ::continue::
       end
     end
+  end
+
+  -- Close all issue registries.
+  for _, state in ipairs(states) do
+    state.issues:close()
   end
 
   return states

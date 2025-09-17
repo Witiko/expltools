@@ -1,9 +1,9 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "e209.tex"
 local options = {
   expl3_detection_strategy = "always",
-  ignored_issues = {'s204'},
   stop_after = "lexical analysis",
 }
 local state = table.unpack(utils.process_files({filename}, options))
@@ -13,7 +13,7 @@ assert(#issues.errors == 2)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {1, 2}
-for index, err in ipairs(issues.sort(issues.errors)) do
+for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e209")
   assert(err[2] == "invalid characters")
   local byte_range = err[3]

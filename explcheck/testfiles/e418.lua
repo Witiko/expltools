@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "e418.tex"
@@ -13,7 +14,7 @@ assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{1, 3}}
-for index, err in ipairs(issues.sort(issues.errors)) do
+for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e418")
   assert(err[2] == "setting a constant")
   local byte_range = err[3]

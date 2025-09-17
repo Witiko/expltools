@@ -10,6 +10,7 @@ local range_flags = ranges.range_flags
 
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
+local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local lpeg = require("lpeg")
 local B, Cmt, Cp, Ct, Cc, P, V = lpeg.B, lpeg.Cmt, lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
@@ -50,46 +51,47 @@ local function analyze_and_report_issues(states, state_number, options)
     local transformed_text_table = {}
     local content_started = false
     for index, text_position in ipairs(lpeg.match(parsers.commented_lines, content)) do
-      local span_size = text_position - transformed_index - 1
-      if span_size > 0 then
+      local span_range = new_range(transformed_index + 1, text_position, EXCLUSIVE + MAYBE_EMPTY, #content)
+      if #span_range > 0 then
         if index % 2 == 1 then  -- chunk of text
-          local chunk_text = content:sub(transformed_index + 1, text_position - 1)
+          local chunk_text = content:sub(span_range:start(), span_range:stop())
           if content_started or chunk_text:find("%S") ~= nil then
             content_started = true
           end
           table.insert(transformed_text_table, chunk_text)
         else  -- comment
-          local comment_text = content:sub(transformed_index + 1, text_position - 1)
-          local ignored_issues = lpeg.match(parsers.ignored_issues, comment_text)
+          local comment_text = content:sub(span_range:start(), span_range:stop())
+          local comment_start, ignored_issues = lpeg.match(parsers.ignored_issues, comment_text)
           -- If a comment specifies ignored issues, register them.
           if ignored_issues ~= nil then
-            local comment_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, transformed_index + 1)
+            local comment_range = new_range(span_range:start() + comment_start - 1, span_range:stop(), INCLUSIVE, #content)
+            local comment_line_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, comment_range:start())
             assert(comment_line_number <= #line_starting_byte_numbers)
             -- If the comment appears before any content other than indentation and comments, ignore all issues everywhere.
-            local comment_range = nil
+            local ignored_range = nil
             -- Otherwise, ignore the issues only on this line, except for file-wide issues, which are always ignored everywhere.
             if content_started then
-              local comment_range_start = line_starting_byte_numbers[comment_line_number]
-              local comment_range_end
+              local ignored_range_start = line_starting_byte_numbers[comment_line_number]
+              local ignored_range_end
               if(comment_line_number + 1 <= #line_starting_byte_numbers) then
-                comment_range_end = line_starting_byte_numbers[comment_line_number + 1]
-                comment_range = new_range(comment_range_start, comment_range_end, EXCLUSIVE, #content)
+                ignored_range_end = line_starting_byte_numbers[comment_line_number + 1]
+                ignored_range = new_range(ignored_range_start, ignored_range_end, EXCLUSIVE, #content)
               else
-                comment_range_end = #content
-                comment_range = new_range(comment_range_start, comment_range_end, INCLUSIVE, #content)
+                ignored_range_end = #content
+                ignored_range = new_range(ignored_range_start, ignored_range_end, INCLUSIVE, #content)
               end
             end
             if #ignored_issues == 0 then  -- ignore all issues
-              issues:ignore(nil, comment_range)
+              issues:ignore({range = ignored_range, source_range = comment_range})
             else  -- ignore specific issues
               for _, identifier in ipairs(ignored_issues) do
-                issues:ignore(identifier, comment_range)
+                issues:ignore({identifier_prefix = identifier, range = ignored_range, source_range = comment_range})
               end
             end
           end
-          table.insert(numbers_of_bytes_removed, {transformed_index, span_size})
+          table.insert(numbers_of_bytes_removed, {transformed_index, #span_range})
         end
-        transformed_index = transformed_index + span_size
+        transformed_index = transformed_index + #span_range
       end
     end
     table.insert(transformed_text_table, content:sub(transformed_index + 1, -1))
@@ -304,7 +306,7 @@ local function analyze_and_report_issues(states, state_number, options)
 
   -- If no expl3 parts were detected, decide whether no part or the whole input file is in expl3.
   if(#expl_ranges == 0 and #content > 0) then
-    issues:ignore('e102')
+    issues:ignore({identifier_prefix = 'e102', seen = true})
     if expl3_detection_strategy == "precision" or expl3_detection_strategy == "never" then
       -- Assume that no part of the input file is in expl3.
     elseif expl3_detection_strategy == "recall" or expl3_detection_strategy == "always" then

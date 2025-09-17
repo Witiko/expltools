@@ -83,6 +83,11 @@ local function titlecase(word)
   return string.format("%s%s", word:sub(1, 1):upper(), word:sub(2))
 end
 
+-- Format an issue identifier for display.
+local function format_issue_identifier(code)
+  return code:upper()
+end
+
 -- Convert a number to a string with thousand separators.
 local function separate_thousands(number)
   local initial_digit, following_digits = string.match(tostring(number), '^(%d)(%d*)$')
@@ -448,7 +453,8 @@ local function print_results(state, options, evaluation_results, is_last_file)
         print()
       end
       -- Display the warnings/errors.
-      for _, issue in ipairs(issues.sort(warnings_or_errors)) do
+      local sort_issues = require("explcheck-issues").sort_issues
+      for _, issue in ipairs(sort_issues(warnings_or_errors)) do
         local code, message, range, context = table.unpack(issue)
         local start_line_number, start_column_number = 1, 1
         local end_line_number, end_column_number = 1, 1
@@ -465,7 +471,7 @@ local function print_results(state, options, evaluation_results, is_last_file)
           local reserved_context_length = 20
           local max_context_length = 50
           local label_indent = (" "):rep(4)
-          local formatted_message = code:upper() .. " " .. message
+          local formatted_message = format_issue_identifier(code) .. " " .. message
           if context ~= nil then
             formatted_message = formatted_message .. ": "
             context = format_context(context, max_context_length)
@@ -753,6 +759,7 @@ local function print_results(state, options, evaluation_results, is_last_file)
 end
 
 return {
+  format_issue_identifier = format_issue_identifier,
   format_percentage = format_percentage,
   pluralize = pluralize,
   print_results = print_results,

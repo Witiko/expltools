@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "s103.tex"
@@ -11,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 0)
 assert(#issues.warnings == 2)
 
-local warnings = issues.sort(issues.warnings)
+local warnings = sort_issues(issues.warnings)
 
 assert(warnings[1][1] == "w100")
 assert(warnings[1][2] == "no standard delimiters")

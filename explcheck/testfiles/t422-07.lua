@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "t422-07.tex"
@@ -13,7 +14,7 @@ assert(#issues.errors == 7)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10}, {13, 14}, {15, 16}}
-for index, err in ipairs(issues.sort(issues.errors)) do
+for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "t422")
   assert(err[2] == "using a variable of an incompatible type")
   local byte_range = err[3]

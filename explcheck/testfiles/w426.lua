@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "w426.tex"
@@ -12,7 +13,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 3)
 
 local expected_line_numbers = {{5, 7}, {8, 11}, {17, 22}}
-for index, warning in ipairs(issues.sort(issues.warnings)) do
+for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w426")
   assert(warning[2] == "incorrect number of arguments supplied to message")
   local byte_range = warning[3]
