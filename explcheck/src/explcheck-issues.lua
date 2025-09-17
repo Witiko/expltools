@@ -247,7 +247,12 @@ local function sort_issues(warnings_and_errors)
   table.sort(sorted_warnings_and_errors, function(a, b)
     local a_identifier, b_identifier = a[1], b[1]
     local a_range, b_range = (a[3] and a[3]:start()) or 0, (b[3] and b[3]:start()) or 0
-    return a_range < b_range or (a_range == b_range and a_identifier < b_identifier)
+    local a_context, b_context = a[4] or '', b[4] or ''
+    return (
+      a_range < b_range
+      or (a_range == b_range and a_identifier < b_identifier)
+      or (a_range == b_range and a_identifier == b_identifier and a_context < b_context)
+    )
   end)
   return sorted_warnings_and_errors
 end
