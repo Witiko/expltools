@@ -453,7 +453,8 @@ local function print_results(state, options, evaluation_results, is_last_file)
         print()
       end
       -- Display the warnings/errors.
-      for _, issue in ipairs(issues.sort(warnings_or_errors)) do
+      local sort_issues = require("explcheck-issues").sort_issues
+      for _, issue in ipairs(sort_issues(warnings_or_errors)) do
         local code, message, range, context = table.unpack(issue)
         local start_line_number, start_column_number = 1, 1
         local end_line_number, end_column_number = 1, 1

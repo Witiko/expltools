@@ -1,9 +1,13 @@
 -- A registry of warnings and errors identified by different processing steps.
 
-local format_identifier = require('explcheck-format').format_issue_identifier
 local get_option = require("explcheck-config").get_option
 
 local Issues = {}
+
+-- Normalize an issue identifier.
+local function normalize_identifier(identifier)
+  return identifier:lower()
+end
 
 function Issues.new(cls, pathname, options)
   -- Instantiate the class.
@@ -20,7 +24,7 @@ function Issues.new(cls, pathname, options)
   --- Suppressed issues
   self.suppressed_issue_map = {}
   for issue_identifier, suppressed_issues in pairs(get_option("suppressed_issue_map", options, pathname)) do
-    issue_identifier = self._normalize_identifier(issue_identifier)
+    issue_identifier = normalize_identifier(issue_identifier)
     self.suppressed_issue_map[issue_identifier] = suppressed_issues
   end
   --- Ignored issues
@@ -31,21 +35,9 @@ function Issues.new(cls, pathname, options)
   return self
 end
 
--- Normalize an issue identifier.
-function Issues._normalize_identifier(identifier)
-  return identifier:lower()
-end
-
--- Determine whether an identifier prefix matches an identifier.
-function Issues._match_identifier_prefix(identifier_prefix, identifier)
-  identifier_prefix = Issues._normalize_identifier(identifier_prefix)
-  identifier = Issues._normalize_identifier(identifier)
-  return identifier:sub(1, #identifier_prefix) == identifier_prefix
-end
-
 -- Convert an issue identifier to either a table of warnings or a table of errors.
 function Issues:_get_issue_table(identifier)
-  identifier = self._normalize_identifier(identifier)
+  identifier = normalize_identifier(identifier)
   local prefix = identifier:sub(1, 1)
   if prefix == "s" or prefix == "w" then
     return self.warnings
@@ -62,7 +54,7 @@ function Issues:add(identifier, message, range, context)
     error('Cannot add issues to a closed issue registry')
   end
 
-  identifier = self._normalize_identifier(identifier)
+  identifier = normalize_identifier(identifier)
 
   -- Discard duplicate issues.
   local range_start = (range ~= nil and range:start()) or false
@@ -85,7 +77,7 @@ function Issues:add(identifier, message, range, context)
   -- Suppress any dependent issues.
   if self.suppressed_issue_map[identifier] ~= nil then
     for _, suppressed_issue_identifier in ipairs(self.suppressed_issue_map[identifier]) do
-      suppressed_issue_identifier = self._normalize_identifier(suppressed_issue_identifier)
+      suppressed_issue_identifier = normalize_identifier(suppressed_issue_identifier)
       self:ignore({identifier_prefix = suppressed_issue_identifier, range = range, seen = true})
     end
   end
@@ -113,7 +105,7 @@ function Issues:ignore(ignored_issue)
   end
 
   if ignored_issue.identifier_prefix ~= nil then
-    ignored_issue.identifier_prefix = self._normalize_identifier(ignored_issue.identifier_prefix)
+    ignored_issue.identifier_prefix = normalize_identifier(ignored_issue.identifier_prefix)
   end
 
   -- Determine which issues should be ignored.
@@ -126,7 +118,7 @@ function Issues:ignore(ignored_issue)
   end
   local function match_issue_identifier(identifier)
     -- Match the prefix of an issue, allowing us to ignore whole sets of issues with prefixes like "s" or "w4".
-    return self._match_identifier_prefix(ignored_issue.identifier_prefix, identifier)
+    return identifier:sub(1, #ignored_issue.identifier_prefix) == ignored_issue.identifier_prefix
   end
 
   local issue_tables
@@ -231,12 +223,9 @@ function Issues:close()
   end
 
   -- Report all needlessly ignored issues.
+  local format_identifier = require('explcheck-format').format_issue_identifier
   for _, ignored_issue in ipairs(self.ignored_issues) do
-    if (
-          not ignored_issue.seen
-          and ignored_issue.source_range ~= nil
-          and not Issues._match_identifier_prefix(ignored_issue.identifier_prefix, 's105')
-        ) then
+    if not ignored_issue.seen and ignored_issue.source_range ~= nil then
       local formatted_identifier_prefix
       if ignored_issue.identifier_prefix ~= nil then
         formatted_identifier_prefix = format_identifier(ignored_issue.identifier_prefix)
@@ -250,7 +239,7 @@ function Issues:close()
 end
 
 -- Sort the warnings/errors using location as the primary key.
-function Issues.sort(warnings_and_errors)
+local function sort_issues(warnings_and_errors)
   local sorted_warnings_and_errors = {}
   for _, issue in ipairs(warnings_and_errors) do
     table.insert(sorted_warnings_and_errors, issue)
@@ -263,6 +252,9 @@ function Issues.sort(warnings_and_errors)
   return sorted_warnings_and_errors
 end
 
-return function(...)
-  return Issues:new(...)
-end
+return {
+  new_issues = function(...)
+    return Issues:new(...)
+  end,
+  sort_issues = sort_issues,
+}

@@ -184,7 +184,7 @@ end
 local function process_files(pathnames, options)
   -- Require packages.
   local get_option = require("explcheck-config").get_option
-  local new_issues = require("explcheck-issues")
+  local new_issues = require("explcheck-issues").new_issues
 
   -- Prepare empty processing states for all files in the group.
   local states = {}

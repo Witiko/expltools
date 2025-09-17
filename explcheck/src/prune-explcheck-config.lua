@@ -8,7 +8,7 @@ kpse.set_program_name("texlua", "prune-explcheck-config")
 local lfs = require("lfs")
 
 local config = require("explcheck-config")
-local new_issues = require("explcheck-issues")
+local new_issues = require("explcheck-issues").new_issues
 local utils = require("explcheck-utils")
 
 local get_stem = utils.get_stem
