@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "s105.tex"
@@ -11,7 +12,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
 local expected_line_numbers = {2}
-for index, warning in ipairs(issues.sort(issues.warnings)) do
+for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "s105")
   assert(warning[2] == "needlessly ignored issue")
   local byte_range = warning[3]

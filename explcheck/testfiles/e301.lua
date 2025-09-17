@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "e301.tex"
@@ -11,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 1)
 
 local expected_line_numbers = {1}
-for index, err in ipairs(issues.sort(issues.errors)) do
+for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e301")
   assert(err[2] == "end of expl3 part within function call")
   local byte_range = err[3]

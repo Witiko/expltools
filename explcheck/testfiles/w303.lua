@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "w303.tex"
@@ -12,7 +13,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
 local expected_line_numbers = {2}
-for index, warning in ipairs(issues.sort(issues.warnings)) do
+for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w303")
   assert(warning[2] == "braced N-type function call argument")
   local byte_range = warning[3]

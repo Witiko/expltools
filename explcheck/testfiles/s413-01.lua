@@ -1,3 +1,4 @@
+local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
 local filename = "s413-01.tex"
@@ -13,7 +14,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 3)
 
 local expected_line_numbers = {{1, 2}, {3, 4}, {5, 7}}
-for index, warning in ipairs(issues.sort(issues.warnings)) do
+for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "s413")
   assert(warning[2] == "malformed variable or constant")
   local byte_range = warning[3]
