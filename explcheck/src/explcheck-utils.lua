@@ -255,6 +255,11 @@ local function process_files(pathnames, options)
     end
   end
 
+  -- Close all issue registries.
+  for _, state in ipairs(states) do
+    state.issues:close()
+  end
+
   return states
 end
 

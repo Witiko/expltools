@@ -4,6 +4,13 @@
 
 ### explcheck v0.13.0
 
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Plan issue S105 (Needlessly ignored issue). (#130, #132)
+
 #### Development
 
 This version of explcheck has implemented the following new features:
@@ -36,6 +43,10 @@ This version of explcheck has implemented the following new features:
 
   Use this option to read the list of expl3 files to check from a text file.
 
+- Report a warning for needlessly ignored issues. (#130, #132)
+
+  Needlessly ignored issues produce warning S105 (Needlessly ignored issue).
+
 #### Deprecations and removals
 
 This version of explcheck has deprecated or removed the following features:
@@ -44,6 +55,9 @@ This version of explcheck has deprecated or removed the following features:
   `explcheck-utils.lua`. (#131)
 
   Use the new function `process_files()` from the same file instead.
+
+- Method `Issues.ignore()` from the file `explcheck-issues.lua` accepts a table
+  instead of a list of arguments. (#132)
 
 ## expltools 2025-08-18
 

@@ -492,14 +492,17 @@ local issue_code_prefix = (
   S("EeSsTtWw")
   * decimal_digit^-3
 )
-local ignored_issues = Ct(
-  (
+local ignored_issues = (
+  optional_spaces
+  * Cp()
+  * expl3_catcodes[14]
+  * (
     optional_spaces
     * expl3_catcodes[14]
-  )^1
+  )^0
   * optional_spaces
   * P("noqa")
-  * (
+  * Ct(
     P(":")
     * optional_spaces
     * (

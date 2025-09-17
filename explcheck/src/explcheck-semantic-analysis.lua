@@ -588,7 +588,7 @@ local function analyze(states, state_number, options)
           local lua_code_argument = call.arguments[arguments_number]
           if #lua_code_argument.token_range > 0 then
             local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
-            issues:ignore('s204', lua_code_byte_range)
+            issues:ignore({identifier_prefix = 's204', range = lua_code_byte_range, seen = true})
           end
         end
 

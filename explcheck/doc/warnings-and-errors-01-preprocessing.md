@@ -27,3 +27,8 @@ The maximum line length can be configured using the command-line option `--max-l
 An input file contains multiple delimiters `\ProvidesExplPackage`, `\ProvidesExplClass`, and `\ProvidesExplFile`.
 
  /e104.tex
+
+## Needlessly ignored issue {.s label=s105}
+An input file contains `% noqa` comments, a config file specifies the option `ignored_issues`, or the command line contains options `--ignored-issues` with needlessly ignored issues.
+
+ /s105.tex

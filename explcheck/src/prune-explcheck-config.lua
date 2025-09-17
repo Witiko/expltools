@@ -55,6 +55,7 @@ local function read_results(results_pathname)
     end
     ::continue::
   end
+  results.issues:close()
   print(string.format('Read %d issues and %d files listed in "%s".', num_issues, #results.pathnames, results_pathname))
   return results
 end
