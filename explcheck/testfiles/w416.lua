@@ -13,7 +13,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
 local expected_line_numbers = {{1, 3}}
-for index, warning in ipairs(issues.sort(issues.errors)) do
+for index, warning in ipairs(issues.sort(issues.warnings)) do
   assert(warning[1] == "w416")
   assert(warning[2] == "setting an undeclared variable")
   local byte_range = warning[3]
