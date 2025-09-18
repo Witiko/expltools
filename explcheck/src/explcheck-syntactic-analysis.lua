@@ -224,12 +224,11 @@ local function is_confused(pathname, results, options)
 end
 
 -- Extract function calls from TeX tokens and groupings.
-local function get_calls(segment, issues, content)
+local function get_calls(tokens, groupings, segment, issues, content)
 
-  local tokens = segment.part_tokens
-  local groupings = segment.part_groupings
+  local token_range = segment.location.token_range
+
   local transformed_tokens = segment.transformed_tokens.tokens
-  local token_range = segment.transformed_tokens.token_range
   local map_back = segment.transformed_tokens.map_back
   local map_forward = segment.transformed_tokens.map_forward
 
@@ -690,22 +689,21 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   local segments = {}
   local calls = {}  -- TODO: remove
   for part_number, part_tokens in ipairs(results.tokens) do
+    local part_groupings = results.groupings[part_number]
     local segment = {
       type = PART,
       location = {
         file_number = file_number,
         part_number = part_number,
+        token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),
       },
-      part_tokens = part_tokens,
-      part_groupings = results.groupings[part_number],
       transformed_tokens = {
         tokens = part_tokens,
-        token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),
         map_back = identity,
         map_forward = identity,
       },
     }
-    segment.calls = get_calls(segment, issues, content)
+    segment.calls = get_calls(part_tokens, part_groupings, segment, issues, content)
     table.insert(segments, segment)
     table.insert(calls, segment.calls)  -- TODO: remove
   end
