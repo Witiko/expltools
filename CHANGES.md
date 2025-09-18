@@ -67,9 +67,11 @@ This version of explcheck has implemented the following new features:
   This more general notion of a block of code that may carry calls and
   statements makes it possible to dynamically support new kinds of segments
   without changing the logic of the code. Furthermore, segments can be
+  easily referenced regardless of their files and expl3 parts of origin, and
   subdivided into "chunks of well-understood code", which will be the base data
   type for the flow analysis. Therefore, this change lays the groundwork for
-  the implementation of the flow analysis.
+  the implementation of the flow analysis, where we'll be working with a
+  directed graph with chunks as the nodes.
 
 ## expltools 2025-08-18
 
