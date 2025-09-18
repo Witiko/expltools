@@ -33,7 +33,7 @@ local transform_replacement_text_tokens = syntactic_analysis.transform_replaceme
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 
-local REPLACEMENT_TEXT = segment_types.REPLACEMENT_TEXT  -- luacheck: ignore
+local REPLACEMENT_TEXT = segment_types.REPLACEMENT_TEXT
 
 local lpeg = require("lpeg")
 
