@@ -54,6 +54,23 @@ This version of explcheck has implemented the following new features:
 
   Needlessly ignored issues produce warning S105 (Needlessly ignored issue).
 
+- Update the representation of segments according to [the work-in-progress TUG
+  2025 paper][expltools-tug25-paper]. (#128, #133)
+
+  Previously, calls and statements were tied to expl3 parts, similarly to
+  groupings and tokens, and the notion of "nested calls" and "nested
+  statements" was tackled ad-hoc. Following this change, syntactic and
+  semantic analyses no longer operate on expl3 parts but on segments that
+  represent blocks of either top-level or nested code in some expl3 part from
+  some file in the current group of files.
+
+  This more general notion of a block of code that may carry calls and
+  statements makes it possible to dynamically support new kinds of segments
+  without changing the logic of the code. Furthermore, segments can be
+  subdivided into "chunks of well-understood code", which will be the base data
+  type for the flow analysis. Therefore, this change lays the groundwork for
+  the implementation of the flow analysis.
+
 ## expltools 2025-08-18
 
 ### explcheck v0.12.0
