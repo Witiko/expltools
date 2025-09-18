@@ -692,8 +692,10 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   for part_number, part_tokens in ipairs(results.tokens) do
     local segment = {
       type = PART,
-      file_number = file_number,
-      part_number = part_number,
+      location = {
+        file_number = file_number,
+        part_number = part_number,
+      },
       part_tokens = part_tokens,
       part_groupings = results.groupings[part_number],
       transformed_tokens = {
