@@ -1139,7 +1139,7 @@ local function analyze(states, file_number, options)
         -- extract nested calls from the replacement text using syntactic analysis
         local segment = {
           type = REPLACEMENT_TEXT,
-          location = {
+          location = {  -- TODO: copy the segment location from the parent segment
             file_number = file_number,
             part_number = part_number,
           },
