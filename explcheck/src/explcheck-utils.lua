@@ -208,7 +208,7 @@ local function process_files(pathnames, options)
     -- Process all files in the group with this step.
     for substep_number, process_with_substep in ipairs(step.substeps) do
       -- Process all files in the group with this substep.
-      for state_number, state in ipairs(states) do
+      for file_number, state in ipairs(states) do
         -- Get options.
         local fail_fast = get_option('fail_fast', options, state.pathname)
         local stop_after = get_option('stop_after', options, state.pathname)
@@ -231,7 +231,7 @@ local function process_files(pathnames, options)
           end
         end
         -- Run the substep for this file.
-        process_with_substep(states, state_number, options)
+        process_with_substep(states, file_number, options)
         if substep_number == #step.substeps then
           -- If the step ended with errors for this file, skip all following steps for this file.
           if step_number < #step_filenames and fail_fast and #state.issues.errors > 0 then

@@ -246,9 +246,9 @@ local function _extract_name_from_tokens(options, pathname, token_range, transfo
 end
 
 -- Determine the meaning of function calls.
-local function analyze(states, state_number, options)
+local function analyze(states, file_number, options)
 
-  local state = states[state_number]
+  local state = states[file_number]
 
   local pathname = state.pathname
   local content = state.content
@@ -1199,9 +1199,9 @@ local function analyze(states, state_number, options)
 end
 
 -- Report any issues.
-local function report_issues(states, main_state_number, options)
+local function report_issues(states, main_file_number, options)
 
-  local main_state = states[main_state_number]
+  local main_state = states[main_file_number]
 
   local main_pathname = main_state.pathname
   local issues = main_state.issues
@@ -1209,7 +1209,7 @@ local function report_issues(states, main_state_number, options)
   -- Report issues that are apparent after the semantic analysis.
   --- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
   local token_segments, call_segments, statement_segments = {}, {}, {}
-  for state_number, state in ipairs(states) do
+  for file_number, state in ipairs(states) do
     local results = state.results
     for part_number, part_calls in ipairs(results.calls or {}) do
       local part_statements = results.statements and results.statements[part_number] or {}
@@ -1217,7 +1217,7 @@ local function report_issues(states, main_state_number, options)
       table.insert(statement_segments, part_statements)
       local part_groupings = results.groupings[part_number]
       local part_tokens = results.tokens[part_number]
-      table.insert(token_segments, {state_number, part_groupings, part_tokens, part_tokens, identity, identity})
+      table.insert(token_segments, {file_number, part_groupings, part_tokens, part_tokens, identity, identity})
       local part_replacement_texts = results.replacement_texts and results.replacement_texts[part_number] or {}
       for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls or {}) do
         local nested_statements = part_replacement_texts.statements and part_replacement_texts.statements[replacement_text_number] or {}
@@ -1227,7 +1227,7 @@ local function report_issues(states, main_state_number, options)
         table.insert(
           token_segments,
           {
-            state_number,
+            file_number,
             part_groupings,
             part_tokens,
             replacement_text_tokens.transformed_tokens,
@@ -1273,11 +1273,11 @@ local function report_issues(states, main_state_number, options)
 
   for segment_number, segment_statements in ipairs(statement_segments) do
     local segment_calls = call_segments[segment_number]
-    local state_number, segment_groupings, segment_tokens, segment_transformed_tokens, map_forward, map_back
+    local file_number, segment_groupings, segment_tokens, segment_transformed_tokens, map_forward, map_back
       = table.unpack(token_segments[segment_number])
 
-    local state = states[state_number]
-    local is_main_file = state_number == main_state_number
+    local state = states[file_number]
+    local is_main_file = file_number == main_file_number
 
     local pathname = state.pathname
     local content = state.content

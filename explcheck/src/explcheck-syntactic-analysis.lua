@@ -664,9 +664,9 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
 end
 
 -- Convert the tokens to a tree of top-level function calls and report any issues.
-local function analyze_and_report_issues(states, state_number, options)  -- luacheck: ignore options
+local function analyze_and_report_issues(states, file_number, options)  -- luacheck: ignore options
 
-  local state = states[state_number]
+  local state = states[file_number]
 
   local content = state.content
   local issues = state.issues

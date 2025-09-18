@@ -87,9 +87,9 @@ local function is_confused(_, results, _)
 end
 
 -- Tokenize the content.
-local function analyze(states, state_number, options)
+local function analyze(states, file_number, options)
 
-  local state = states[state_number]
+  local state = states[file_number]
 
   local pathname = state.pathname
   local content = state.content
@@ -381,9 +381,9 @@ local function analyze(states, state_number, options)
 end
 
 -- Report any issues.
-local function report_issues(states, state_number, options)  -- luacheck: ignore options
+local function report_issues(states, file_number, options)  -- luacheck: ignore options
 
-  local state = states[state_number]
+  local state = states[file_number]
 
   local content = state.content
   local issues = state.issues
