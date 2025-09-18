@@ -1167,6 +1167,7 @@ local function analyze(states, file_number, options)
               and nested_statement.subtype == FUNCTION_DEFINITION_DIRECT
               and nested_statement.replacement_text_number ~= nil then
             -- make the reference to the replacement text absolute instead of relative
+            -- TODO: reference the segment rather than the replacement text
             nested_statement.replacement_text_number = nested_statement.replacement_text_number + current_num_replacement_texts
           end
         end
@@ -1183,7 +1184,7 @@ local function analyze(states, file_number, options)
     assert(#replacement_texts.tokens == current_num_replacement_texts)
     assert(#replacement_texts.calls == current_num_replacement_texts)
     assert(#replacement_texts.statements == current_num_replacement_texts)
-    assert(#replacement_texts.nesting_depth == current_num_replacement_texts)
+    assert(#replacement_texts.nesting_depth == current_num_replacement_texts)  -- TODO: record the nesting depth within the segment
 
     return statements, replacement_texts
   end
@@ -1191,16 +1192,16 @@ local function analyze(states, file_number, options)
   -- Extract statements from function calls.
   local statements = {}
   local replacement_texts = {}
-  for part_number, part_calls in ipairs(results.calls) do
-    local part_tokens = results.tokens[part_number]
-    local part_groupings = results.groupings[part_number]
+  for part_number, part_calls in ipairs(results.calls) do  -- TODO: act directly on segments
+    local part_tokens = results.tokens[part_number]  -- TODO: remove, the tokens can be determined from part_number
+    local part_groupings = results.groupings[part_number]  -- TODO: remove, the tokens can be determined from part_number
     local part_statements, part_replacement_texts = get_statements(part_number, part_tokens, part_groupings, part_calls)
     table.insert(statements, part_statements)
-    table.insert(replacement_texts, part_replacement_texts)
+    table.insert(replacement_texts, part_replacement_texts)  -- TODO: remove
   end
 
   assert(#statements == #results.calls)
-  assert(#statements == #replacement_texts)
+  assert(#statements == #replacement_texts)  -- TODO: remove
 
   -- Store the intermediate results of the analysis.
   results.statements = statements
