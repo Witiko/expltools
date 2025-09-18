@@ -33,6 +33,13 @@ local call_types = {
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 
+local segment_types = {
+  PART = "expl3 part",
+  REPLACEMENT_TEXT = "function definition replacement text",
+}
+
+local PART = segment_types.PART
+
 -- Get the token range for a given call.
 local function get_call_token_range(calls)
   return function(call_number)
@@ -217,7 +224,15 @@ local function is_confused(pathname, results, options)
 end
 
 -- Extract function calls from TeX tokens and groupings.
-local function get_calls(tokens, transformed_tokens, token_range, map_back, map_forward, issues, groupings, content)
+local function get_calls(segment, issues, content)
+
+  local tokens = segment.part_tokens
+  local groupings = segment.part_groupings
+  local transformed_tokens = segment.transformed_tokens.tokens
+  local token_range = segment.transformed_tokens.token_range
+  local map_back = segment.transformed_tokens.map_back
+  local map_forward = segment.transformed_tokens.map_forward
+
   local calls = {}
   if #token_range == 0 then
     return calls
@@ -663,7 +678,7 @@ local function get_calls(tokens, transformed_tokens, token_range, map_back, map_
   return calls
 end
 
--- Convert the tokens to a tree of top-level function calls and report any issues.
+-- Convert the tokens to top-level and nested segments of function calls and report any issues.
 local function analyze_and_report_issues(states, file_number, options)  -- luacheck: ignore options
 
   local state = states[file_number]
@@ -672,16 +687,30 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   local issues = state.issues
   local results = state.results
 
-  local calls = {}
+  local segments = {}
+  local calls = {}  -- TODO: remove
   for part_number, part_tokens in ipairs(results.tokens) do
-    local part_groupings = results.groupings[part_number]
-    local part_token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens)
-    local part_calls = get_calls(part_tokens, part_tokens, part_token_range, identity, identity, issues, part_groupings, content)
-    table.insert(calls, part_calls)
+    local segment = {
+      type = PART,
+      file_number = file_number,
+      part_number = part_number,
+      part_tokens = part_tokens,
+      part_groupings = results.groupings[part_number],
+      transformed_tokens = {
+        tokens = part_tokens,
+        token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),
+        map_back = identity,
+        map_forward = identity,
+      },
+    }
+    segment.calls = get_calls(segment, issues, content)
+    table.insert(segments, segment)
+    table.insert(calls, segment.calls)  -- TODO: remove
   end
 
   -- Store the intermediate results of the analysis.
-  results.calls = calls
+  results.segments = segments
+  results.calls = calls  -- TODO: remove
 end
 
 local substeps = {
@@ -696,6 +725,7 @@ return {
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
   name = "syntactic analysis",
+  segment_types = segment_types,
   substeps = substeps,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
 }

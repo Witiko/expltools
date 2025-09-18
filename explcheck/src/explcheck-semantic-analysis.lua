@@ -25,12 +25,15 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
+local segment_types = syntactic_analysis.segment_types
 local get_calls = syntactic_analysis.get_calls
 local get_call_token_range = syntactic_analysis.get_call_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
+
+local REPLACEMENT_TEXT = segment_types.REPLACEMENT_TEXT  -- luacheck: ignore
 
 local lpeg = require("lpeg")
 
@@ -1117,7 +1120,7 @@ local function analyze(states, file_number, options)
 
   -- Extract statements from function calls. For all identified function definitions, record replacement texts and recursively
   -- apply syntactic and semantic analysis on them.
-  local function get_statements(tokens, groupings, calls)
+  local function get_statements(part_number, tokens, groupings, calls)
 
     -- First, record top-level statements.
     local replacement_texts = {tokens = nil, calls = {}, statements = {}, nesting_depth = {}}
@@ -1134,17 +1137,23 @@ local function analyze(states, file_number, options)
         -- record the current nesting depth with the replacement text
         table.insert(replacement_texts.nesting_depth, current_nesting_depth)
         -- extract nested calls from the replacement text using syntactic analysis
-        local nested_calls = get_calls(
-          tokens,
-          replacement_text_tokens.transformed_tokens,
-          replacement_text_tokens.token_range,
-          replacement_text_tokens.map_back,
-          replacement_text_tokens.map_forward,
-          issues,
-          groupings,
-          content
-        )
-        table.insert(replacement_texts.calls, nested_calls)
+        local segment = {
+          type = REPLACEMENT_TEXT,
+          file_number = file_number,
+          part_number = part_number,
+          part_tokens = tokens,
+          part_groupings = groupings,
+          transformed_tokens = {
+            tokens = replacement_text_tokens.transformed_tokens,
+            token_range = replacement_text_tokens.token_range,
+            map_back = replacement_text_tokens.map_back,
+            map_forward = replacement_text_tokens.map_forward,
+          },
+        }
+        segment.calls = get_calls(segment, issues, content)
+        -- TODO: store the segment
+        local nested_calls = segment.calls  -- TODO: remove
+        table.insert(replacement_texts.calls, nested_calls)  -- TODO: remove
         -- extract nested statements and replacement texts from the nested calls using semactic analysis
         local nested_statements, nested_replacement_text_tokens = record_statements_and_replacement_texts(
           tokens,
@@ -1185,7 +1194,7 @@ local function analyze(states, file_number, options)
   for part_number, part_calls in ipairs(results.calls) do
     local part_tokens = results.tokens[part_number]
     local part_groupings = results.groupings[part_number]
-    local part_statements, part_replacement_texts = get_statements(part_tokens, part_groupings, part_calls)
+    local part_statements, part_replacement_texts = get_statements(part_number, part_tokens, part_groupings, part_calls)
     table.insert(statements, part_statements)
     table.insert(replacement_texts, part_replacement_texts)
   end
