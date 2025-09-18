@@ -226,9 +226,8 @@ end
 -- Extract function calls from TeX tokens and groupings.
 local function get_calls(tokens, groupings, segment, issues, content)
 
-  local token_range = segment.location.token_range
-
   local transformed_tokens = segment.transformed_tokens.tokens
+  local token_range = segment.transformed_tokens.token_range
   local map_back = segment.transformed_tokens.map_back
   local map_forward = segment.transformed_tokens.map_forward
 
@@ -695,10 +694,10 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
       location = {
         file_number = file_number,
         part_number = part_number,
-        token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),
       },
       transformed_tokens = {
         tokens = part_tokens,
+        token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),
         map_back = identity,
         map_forward = identity,
       },

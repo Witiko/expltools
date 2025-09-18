@@ -1142,10 +1142,10 @@ local function analyze(states, file_number, options)
           location = {
             file_number = file_number,
             part_number = part_number,
-            token_range = replacement_text_tokens.token_range,
           },
           transformed_tokens = {
             tokens = replacement_text_tokens.transformed_tokens,
+            token_range = replacement_text_tokens.token_range,
             map_back = replacement_text_tokens.map_back,
             map_forward = replacement_text_tokens.map_forward,
           },
