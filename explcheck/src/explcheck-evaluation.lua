@@ -1,15 +1,8 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
-local semantic_analysis = require("explcheck-semantic-analysis")
-
 local token_types = require("explcheck-lexical-analysis").token_types
-local statement_types = semantic_analysis.statement_types
-local statement_subtypes = semantic_analysis.statement_subtypes
 
 local ARGUMENT = token_types.ARGUMENT
-
-local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
-local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
@@ -58,26 +51,124 @@ local function count_tokens(analysis_results)
   return num_tokens
 end
 
--- Count the number of all top-level calls in analysis results.
-local function count_top_level_calls(analysis_results)
-  local num_calls, num_call_tokens, num_calls_total
-  if analysis_results.calls ~= nil then
-    num_calls, num_call_tokens = {}, {}
-    num_calls_total = 0
-    for _, part_calls in ipairs(analysis_results.calls) do
-      for _, call in ipairs(part_calls) do
+-- Count the number of segments in analysis results.
+local function count_segments(analysis_results)
+  local num_segments
+  if analysis_results.tokens ~= nil then
+    num_segments = {}
+    for _, segment in ipairs(analysis_results.segments) do
+      if num_segments[segment.type] == nil then
+        num_segments[segment.type] = 0
+      end
+      num_segments[segment.type] = num_segments[segment.type] + 1
+    end
+  end
+  return num_segments
+end
+
+-- Count the number of calls in analysis results.
+local function count_calls(analysis_results)
+  local num_segment_calls, num_segment_call_tokens
+  local num_segment_calls_total
+  local num_calls, num_call_tokens
+  local num_calls_total
+  for _, segment in ipairs(analysis_results.segments or {}) do
+    if segment.calls ~= nil then
+      if num_segment_calls == nil then
+        assert(num_segment_call_tokens == nil)
+        assert(num_calls == nil)
+        assert(num_call_tokens == nil)
+        assert(num_calls_total == nil)
+        num_segment_calls, num_segment_call_tokens = {}, {}
+        num_segment_calls_total = {}
+        num_calls, num_call_tokens = {}, {}
+        num_calls_total = 0
+      end
+      if num_segment_calls[segment.type] == nil then
+        assert(num_segment_call_tokens[segment.type] == nil)
+        assert(num_segment_calls_total[segment.type] == nil)
+        num_segment_calls[segment.type] = {}
+        num_segment_call_tokens[segment.type] = {}
+        num_segment_calls_total[segment.type] = 0
+      end
+      for _, call in ipairs(segment.calls) do
         if num_calls[call.type] == nil then
           assert(num_call_tokens[call.type] == nil)
           num_calls[call.type] = 0
           num_call_tokens[call.type] = 0
         end
+        if num_segment_calls[segment.type][call.type] == nil then
+          assert(num_segment_call_tokens[segment.type][call.type] == nil)
+          num_segment_calls[segment.type][call.type] = 0
+          num_segment_call_tokens[segment.type][call.type] = 0
+        end
+        num_segment_calls[segment.type][call.type] = num_segment_calls[segment.type][call.type] + 1
+        num_segment_call_tokens[segment.type][call.type] = num_segment_call_tokens[segment.type][call.type] + #call.token_range
+        num_segment_calls_total[segment.type] = num_segment_calls_total[segment.type] + 1
         num_calls[call.type] = num_calls[call.type] + 1
         num_call_tokens[call.type] = num_call_tokens[call.type] + #call.token_range
         num_calls_total = num_calls_total + 1
       end
     end
   end
-  return num_calls, num_call_tokens, num_calls_total
+  return num_segment_calls, num_segment_call_tokens, num_segment_calls_total, num_calls, num_call_tokens, num_calls_total
+end
+
+-- Count the number of statements in analysis results.
+local function count_statements(analysis_results)
+  local num_segment_statements, num_segment_statement_tokens
+  local num_segment_statements_total
+  local num_statements, num_statement_tokens
+  local num_statements_total
+  for _, segment in ipairs(analysis_results.segments or {}) do
+    if segment.statements ~= nil then
+      if num_segment_statements == nil then
+        assert(num_segment_statement_tokens == nil)
+        assert(num_segment_statements_total == nil)
+        assert(num_statements == nil)
+        assert(num_statement_tokens == nil)
+        assert(num_statements_total == nil)
+        num_segment_statements, num_segment_statement_tokens = {}, {}
+        num_segment_statements_total = {}
+        num_statements, num_statement_tokens = {}, {}
+        num_statements_total = 0
+      end
+      if num_segment_statements[segment.type] == nil then
+        assert(num_segment_statement_tokens[segment.type] == nil)
+        assert(num_segment_statements_total[segment.type] == nil)
+        num_segment_statements[segment.type] = {}
+        num_segment_statement_tokens[segment.type] = {}
+        num_segment_statements_total[segment.type] = 0
+      end
+      local seen_call_numbers = {}
+      for _, statement in ipairs(segment.statements) do
+        if num_statements[statement.type] == nil then
+          assert(num_statement_tokens[statement.type] == nil)
+          num_statements[statement.type] = 0
+          num_statement_tokens[statement.type] = 0
+        end
+        if num_segment_statements[segment.type][statement.type] == nil then
+          assert(num_segment_statement_tokens[segment.type][statement.type] == nil)
+          num_segment_statements[segment.type][statement.type] = 0
+          num_segment_statement_tokens[segment.type][statement.type] = 0
+        end
+        for call_number, call in statement.call_range:enumerate(segment.calls) do
+          if seen_call_numbers[call_number] == nil then
+            seen_call_numbers[call_number] = true
+            num_segment_statement_tokens[segment.type][statement.type]
+              = num_segment_statement_tokens[segment.type][statement.type] + #call.token_range
+            num_statement_tokens[statement.type] = num_statement_tokens[statement.type] + #call.token_range
+          end
+        end
+        num_segment_statements[segment.type][statement.type] = num_segment_statements[segment.type][statement.type] + 1
+        num_segment_statements_total[segment.type] = num_segment_statements_total[segment.type] + 1
+        num_statements[statement.type] = num_statements[statement.type] + 1
+        num_statements_total = num_statements_total + 1
+      end
+    end
+  end
+  return num_segment_statements, num_segment_statement_tokens, num_segment_statements_total, num_statements, num_statement_tokens,
+    num_statements_total
 end
 
 -- Create a new evaluation results for the analysis results of an individual file.
@@ -97,91 +188,12 @@ function FileEvaluationResults.new(cls, state)
   -- Evaluate the results of the lexical analysis.
   local num_tokens = count_tokens(analysis_results)
   local num_groupings, num_unclosed_groupings = count_groupings(analysis_results)
-  -- Evaluate the results of the syntactic analysis.
-  local num_calls, num_call_tokens, num_calls_total = count_top_level_calls(analysis_results)
-  local num_replacement_text_calls, num_replacement_text_call_tokens
-  local num_replacement_text_calls_total
-  if analysis_results.replacement_texts ~= nil then
-    num_replacement_text_calls, num_replacement_text_call_tokens = {}, {}
-    num_replacement_text_calls_total = 0
-    for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
-      for _, replacement_text_calls in ipairs(part_replacement_texts.calls) do
-        for _, call in pairs(replacement_text_calls) do
-          if num_replacement_text_calls[call.type] == nil then
-            assert(num_replacement_text_call_tokens[call.type] == nil)
-            num_replacement_text_calls[call.type] = 0
-            num_replacement_text_call_tokens[call.type] = 0
-          end
-          num_replacement_text_calls[call.type] = num_replacement_text_calls[call.type] + 1
-          num_replacement_text_call_tokens[call.type] = num_replacement_text_call_tokens[call.type] + #call.token_range
-          num_replacement_text_calls_total = num_replacement_text_calls_total + 1
-        end
-      end
-    end
-  end
-  -- Evaluate the results of the semantic analysis.
-  local num_statements, num_statement_tokens
-  local num_statements_total
-  if analysis_results.statements ~= nil then
-    num_statements, num_statement_tokens = {}, {}
-    num_statements_total = 0
-    for part_number, part_statements in ipairs(analysis_results.statements) do
-      local seen_call_numbers = {}
-      local part_calls = analysis_results.calls[part_number]
-      for _, statement in ipairs(part_statements) do
-        if num_statements[statement.type] == nil then
-          assert(num_statement_tokens[statement.type] == nil)
-          num_statements[statement.type] = 0
-          num_statement_tokens[statement.type] = 0
-        end
-        num_statements[statement.type] = num_statements[statement.type] + 1
-        for call_number, call in statement.call_range:enumerate(part_calls) do
-          if seen_call_numbers[call_number] == nil then
-            seen_call_numbers[call_number] = true
-            num_statement_tokens[statement.type] = num_statement_tokens[statement.type] + #call.token_range
-          end
-        end
-        num_statements_total = num_statements_total + 1
-      end
-    end
-  end
-  local num_replacement_text_statements, num_replacement_text_statement_tokens
-  local num_replacement_text_statements_total, replacement_text_max_nesting_depth
-  local seen_replacement_text_call_numbers = {}
-  if analysis_results.replacement_texts ~= nil then
-    num_replacement_text_statements, num_replacement_text_statement_tokens = {}, {}
-    num_replacement_text_statements_total = 0
-    replacement_text_max_nesting_depth = {}
-
-    for _, part_replacement_texts in ipairs(analysis_results.replacement_texts) do
-      for replacement_text_number, replacement_text_statements in ipairs(part_replacement_texts.statements) do
-        seen_replacement_text_call_numbers[replacement_text_number] = {}
-        local nesting_depth = part_replacement_texts.nesting_depth[replacement_text_number]
-        for _, statement in pairs(replacement_text_statements) do
-          if num_replacement_text_statements[statement.type] == nil then
-            assert(num_replacement_text_statement_tokens[statement.type] == nil)
-            num_replacement_text_statements[statement.type] = 0
-            num_replacement_text_statement_tokens[statement.type] = 0
-            replacement_text_max_nesting_depth[statement.type] = 0
-          end
-          num_replacement_text_statements[statement.type] = num_replacement_text_statements[statement.type] + 1
-          if nesting_depth == 1 or statement.type ~= FUNCTION_DEFINITION or statement.subtype ~= FUNCTION_DEFINITION_DIRECT then
-            -- prevent counting overlapping tokens from nested function definitions several times
-            for call_number, call in statement.call_range:enumerate(part_replacement_texts.calls[replacement_text_number]) do
-              if seen_replacement_text_call_numbers[replacement_text_number][call_number] == nil then
-                seen_replacement_text_call_numbers[replacement_text_number][call_number] = true
-                num_replacement_text_statement_tokens[statement.type]
-                  = num_replacement_text_statement_tokens[statement.type] + #call.token_range
-              end
-            end
-          end
-          num_replacement_text_statements_total = num_replacement_text_statements_total + 1
-          replacement_text_max_nesting_depth[statement.type]
-            = math.max(replacement_text_max_nesting_depth[statement.type], nesting_depth)
-        end
-      end
-    end
-  end
+  -- Evaluate the results of the syntactic and semantic analyses.
+  local num_segments = count_segments(analysis_results)
+  local num_segment_calls, num_segment_call_tokens, num_segment_calls_total, num_calls, num_call_tokens, num_calls_total
+    = count_calls(analysis_results)
+  local num_segment_statements, num_segment_statement_tokens, num_segment_statements_total, num_statements, num_statement_tokens,
+    num_statements_total = count_statements(analysis_results)
   -- Initialize the class.
   self.num_total_bytes = num_total_bytes
   self.num_warnings = num_warnings
@@ -190,19 +202,19 @@ function FileEvaluationResults.new(cls, state)
   self.num_tokens = num_tokens
   self.num_groupings = num_groupings
   self.num_unclosed_groupings = num_unclosed_groupings
+  self.num_segments = num_segments
+  self.num_segment_calls = num_segment_calls
+  self.num_segment_call_tokens = num_segment_call_tokens
+  self.num_segment_calls_total = num_segment_calls_total
   self.num_calls = num_calls
   self.num_call_tokens = num_call_tokens
   self.num_calls_total = num_calls_total
-  self.num_replacement_text_calls = num_replacement_text_calls
-  self.num_replacement_text_call_tokens = num_replacement_text_call_tokens
-  self.num_replacement_text_calls_total = num_replacement_text_calls_total
+  self.num_segment_statements = num_segment_statements
+  self.num_segment_statement_tokens = num_segment_statement_tokens
+  self.num_segment_statements_total = num_segment_statements_total
   self.num_statements = num_statements
   self.num_statement_tokens = num_statement_tokens
   self.num_statements_total = num_statements_total
-  self.num_replacement_text_statements = num_replacement_text_statements
-  self.num_replacement_text_statement_tokens = num_replacement_text_statement_tokens
-  self.num_replacement_text_statements_total = num_replacement_text_statements_total
-  self.replacement_text_max_nesting_depth = replacement_text_max_nesting_depth
   return self
 end
 
@@ -221,19 +233,19 @@ function AggregateEvaluationResults.new(cls)
   self.num_tokens = 0
   self.num_groupings = 0
   self.num_unclosed_groupings = 0
+  self.num_segments = {}
+  self.num_segment_calls = {}
+  self.num_segment_call_tokens = {}
+  self.num_segment_calls_total = {}
   self.num_calls = {}
   self.num_call_tokens = {}
   self.num_calls_total = 0
-  self.num_replacement_text_calls = {}
-  self.num_replacement_text_call_tokens = {}
-  self.num_replacement_text_calls_total = 0
+  self.num_segment_statements = {}
+  self.num_segment_statement_tokens = {}
+  self.num_segment_statements_total = {}
   self.num_statements = {}
   self.num_statement_tokens = {}
   self.num_statements_total = 0
-  self.num_replacement_text_statements = {}
-  self.num_replacement_text_statement_tokens = {}
-  self.num_replacement_text_statements_total = 0
-  self.replacement_text_max_nesting_depth = {_how = math.max}
   return self
 end
 
