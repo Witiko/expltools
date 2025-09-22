@@ -5,7 +5,6 @@ local syntactic_analysis = require("explcheck-syntactic-analysis")
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
-local identity = require("explcheck-utils").identity
 
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
@@ -147,11 +146,12 @@ local function is_confused(pathname, results, options)
   local count_tokens = evaluation.count_tokens
   local num_tokens = count_tokens(results)
   assert(num_tokens ~= nil)
-  assert(results.tokens ~= nil and results.calls ~= nil)
+  assert(results.tokens ~= nil and results.segments ~= nil)
   local num_other_complex_tokens = 0
-  for part_number, part_calls in ipairs(results.calls) do
-    local part_tokens = results.tokens[part_number]
-    for _, call in ipairs(part_calls) do
+  for _, segment in ipairs(results.segments) do
+    assert(segment.calls ~= nil)
+    local part_tokens = results.tokens[segment.location.part_number]
+    for _, call in ipairs(segment.calls) do
       if call.type == OTHER_TOKENS then
         for _, token in call.token_range:enumerate(part_tokens) do
           if not is_token_simple(token) then
@@ -259,9 +259,20 @@ local function analyze(states, file_number, options)
   local results = state.results
 
   -- Extract statements from function calls and record them. For all identified function definitions, also record replacement texts.
-  local function record_statements_and_replacement_texts(tokens, transformed_tokens, calls, first_map_back, first_map_forward)
+  local function get_statements(segment)
+    assert(segment.location.file_number == file_number)
+    local part_number = segment.location.part_number
+
+    local tokens = results.tokens[part_number]
+    local groupings = results.groupings[part_number]
+
+    local calls = segment.calls
+
+    local transformed_tokens = segment.transformed_tokens.tokens
+    local first_map_back = segment.transformed_tokens.map_back
+    local first_map_forward = segment.transformed_tokens.map_forward
+
     local statements = {}
-    local replacement_text_tokens = {}
     for call_number, call in ipairs(calls) do
 
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
@@ -720,7 +731,7 @@ local function analyze(states, file_number, options)
             end
             local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
             -- determine the replacement text
-            local replacement_text_number
+            local replacement_text_segment_number
             local replacement_text_argument = call.arguments[#call.arguments]
             do
               if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion
@@ -762,13 +773,19 @@ local function analyze(states, file_number, options)
               end
               local function map_back(...) return first_map_back(second_map_back(...)) end
               local function map_forward(...) return second_map_forward(first_map_forward(...)) end
-              table.insert(replacement_text_tokens, {
-                token_range = replacement_text_argument.token_range,
-                transformed_tokens = doubly_transformed_tokens,
-                map_back = map_back,
-                map_forward = map_forward,
-              })
-              replacement_text_number = #replacement_text_tokens
+              local nested_segment = {
+                type = REPLACEMENT_TEXT,
+                location = segment.location,
+                transformed_tokens = {
+                  tokens = doubly_transformed_tokens,
+                  token_range = replacement_text_argument.token_range,
+                  map_back = map_back,
+                  map_forward = map_forward,
+                },
+              }
+              nested_segment.calls = get_calls(tokens, groupings, nested_segment, issues, content)
+              table.insert(results.segments, nested_segment)
+              replacement_text_segment_number = #results.segments
             end
             ::skip_replacement_text::
             -- determine all effectively defined csnames
@@ -811,7 +828,7 @@ local function analyze(states, file_number, options)
                 is_conditional = is_conditional,
                 is_protected = is_protected,
                 is_nopar = is_nopar,
-                replacement_text_number = replacement_text_number,
+                replacement_text_segment_number = replacement_text_segment_number,
                 replacement_text_argument = replacement_text_argument,
               }
               table.insert(statements, statement)
@@ -1115,97 +1132,16 @@ local function analyze(states, file_number, options)
       end
       ::continue::
     end
-    return statements, replacement_text_tokens
-  end
-
-  -- Extract statements from function calls. For all identified function definitions, record replacement texts and recursively
-  -- apply syntactic and semantic analysis on them.
-  local function get_statements(part_number, tokens, groupings, calls)
-
-    -- First, record top-level statements.
-    local replacement_texts = {tokens = nil, calls = {}, statements = {}, nesting_depth = {}}
-    local statements
-    statements, replacement_texts.tokens = record_statements_and_replacement_texts(tokens, tokens, calls, identity, identity)
-
-    -- Then, process any new replacement texts until convergence.
-    local previous_num_replacement_texts = 0
-    local current_num_replacement_texts = #replacement_texts.tokens
-    local current_nesting_depth = 1
-    while previous_num_replacement_texts < current_num_replacement_texts do
-      for replacement_text_number = previous_num_replacement_texts + 1, current_num_replacement_texts do
-        local replacement_text_tokens = replacement_texts.tokens[replacement_text_number]
-        -- record the current nesting depth with the replacement text
-        table.insert(replacement_texts.nesting_depth, current_nesting_depth)
-        -- extract nested calls from the replacement text using syntactic analysis
-        local segment = {
-          type = REPLACEMENT_TEXT,
-          location = {  -- TODO: copy the segment location from the parent segment
-            file_number = file_number,
-            part_number = part_number,
-          },
-          transformed_tokens = {
-            tokens = replacement_text_tokens.transformed_tokens,
-            token_range = replacement_text_tokens.token_range,
-            map_back = replacement_text_tokens.map_back,
-            map_forward = replacement_text_tokens.map_forward,
-          },
-        }
-        segment.calls = get_calls(tokens, groupings, segment, issues, content)
-        -- TODO: store the segment
-        local nested_calls = segment.calls  -- TODO: remove
-        table.insert(replacement_texts.calls, nested_calls)  -- TODO: remove
-        -- extract nested statements and replacement texts from the nested calls using semactic analysis
-        local nested_statements, nested_replacement_text_tokens = record_statements_and_replacement_texts(
-          tokens,
-          replacement_text_tokens.transformed_tokens,
-          nested_calls,
-          replacement_text_tokens.map_back,
-          replacement_text_tokens.map_forward
-        )
-        for _, nested_statement in ipairs(nested_statements) do
-          if nested_statement.type == FUNCTION_DEFINITION
-              and nested_statement.subtype == FUNCTION_DEFINITION_DIRECT
-              and nested_statement.replacement_text_number ~= nil then
-            -- make the reference to the replacement text absolute instead of relative
-            -- TODO: reference the segment rather than the replacement text
-            nested_statement.replacement_text_number = nested_statement.replacement_text_number + current_num_replacement_texts
-          end
-        end
-        table.insert(replacement_texts.statements, nested_statements)
-        for _, nested_tokens in ipairs(nested_replacement_text_tokens) do
-          table.insert(replacement_texts.tokens, nested_tokens)
-        end
-      end
-      previous_num_replacement_texts = current_num_replacement_texts
-      current_num_replacement_texts = #replacement_texts.tokens
-      current_nesting_depth = current_nesting_depth + 1
-    end
-
-    assert(#replacement_texts.tokens == current_num_replacement_texts)
-    assert(#replacement_texts.calls == current_num_replacement_texts)
-    assert(#replacement_texts.statements == current_num_replacement_texts)
-    assert(#replacement_texts.nesting_depth == current_num_replacement_texts)  -- TODO: record the nesting depth within the segment
-
-    return statements, replacement_texts
+    return statements
   end
 
   -- Extract statements from function calls.
-  local statements = {}
-  local replacement_texts = {}
-  for part_number, part_calls in ipairs(results.calls) do  -- TODO: act directly on segments
-    local part_tokens = results.tokens[part_number]  -- TODO: remove, the tokens can be determined from part_number
-    local part_groupings = results.groupings[part_number]  -- TODO: remove, the tokens can be determined from part_number
-    local part_statements, part_replacement_texts = get_statements(part_number, part_tokens, part_groupings, part_calls)
-    table.insert(statements, part_statements)
-    table.insert(replacement_texts, part_replacement_texts)  -- TODO: remove
+  local segment_number = 1
+  while segment_number <= #results.segments do
+    local segment = results.segments[segment_number]
+    segment.statements = get_statements(segment)  -- may produce new segments in `results.segments`
+    segment_number = segment_number + 1
   end
-
-  assert(#statements == #results.calls)
-  assert(#statements == #replacement_texts)  -- TODO: remove
-
-  -- Store the intermediate results of the analysis.
-  results.statements = statements
-  results.replacement_texts = replacement_texts
 end
 
 -- Report any issues.
@@ -1218,34 +1154,11 @@ local function report_issues(states, main_file_number, options)
 
   -- Report issues that are apparent after the semantic analysis.
   --- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
-  local token_segments, call_segments, statement_segments = {}, {}, {}
-  for file_number, state in ipairs(states) do
+  local all_segments = {}
+  for _, state in ipairs(states) do
     local results = state.results
-    for part_number, part_calls in ipairs(results.calls or {}) do
-      local part_statements = results.statements and results.statements[part_number] or {}
-      table.insert(call_segments, part_calls)
-      table.insert(statement_segments, part_statements)
-      local part_groupings = results.groupings[part_number]
-      local part_tokens = results.tokens[part_number]
-      table.insert(token_segments, {file_number, part_groupings, part_tokens, part_tokens, identity, identity})
-      local part_replacement_texts = results.replacement_texts and results.replacement_texts[part_number] or {}
-      for replacement_text_number, nested_calls in ipairs(part_replacement_texts.calls or {}) do
-        local nested_statements = part_replacement_texts.statements and part_replacement_texts.statements[replacement_text_number] or {}
-        table.insert(call_segments, nested_calls)
-        table.insert(statement_segments, nested_statements)
-        local replacement_text_tokens = part_replacement_texts.tokens[replacement_text_number]
-        table.insert(
-          token_segments,
-          {
-            file_number,
-            part_groupings,
-            part_tokens,
-            replacement_text_tokens.transformed_tokens,
-            replacement_text_tokens.map_forward,
-            replacement_text_tokens.map_back,
-          }
-        )
-      end
+    for _, segment in ipairs(results.segments or {}) do
+      table.insert(all_segments, segment)
     end
   end
 
@@ -1281,16 +1194,23 @@ local function report_issues(states, main_file_number, options)
   local maybe_defined_message_name_texts, maybe_defined_message_name_pattern = {}, parsers.fail
   local maybe_used_message_name_texts, maybe_used_message_name_pattern = {}, parsers.fail
 
-  for segment_number, segment_statements in ipairs(statement_segments) do
-    local segment_calls = call_segments[segment_number]
-    local file_number, segment_groupings, segment_tokens, segment_transformed_tokens, map_forward, map_back
-      = table.unpack(token_segments[segment_number])
-
-    local state = states[file_number]
+  for _, segment in ipairs(all_segments) do
+    local file_number = segment.location.file_number
     local is_main_file = file_number == main_file_number
 
+    local state = states[file_number]
     local pathname = state.pathname
     local content = state.content
+    local results = state.results
+
+    local part_number = segment.location.part_number
+
+    local groupings = results.groupings[part_number]
+    local tokens = results.tokens[part_number]
+
+    local transformed_tokens = segment.transformed_tokens.tokens
+    local map_forward = segment.transformed_tokens.map_forward
+    local map_back = segment.transformed_tokens.map_back
 
     -- Merge a module name and a message name into a combined fully qualified name.
     local function combine_module_and_message_names(module_name, message_name)
@@ -1328,7 +1248,7 @@ local function report_issues(states, main_file_number, options)
 
     -- Try and convert tokens from a range into a csname.
     local function extract_name_from_tokens(token_range)
-      return _extract_name_from_tokens(options, pathname, token_range, segment_transformed_tokens, map_forward)
+      return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, map_forward)
     end
 
     -- Process an argument and record control sequence name usage and definitions.
@@ -1353,7 +1273,7 @@ local function report_issues(states, main_file_number, options)
       end
       --- Scan control sequence tokens within N- and n-type arguments.
       if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-        for _, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+        for _, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
             maybe_used_csname_texts[token.payload] = true
           end
@@ -1362,11 +1282,11 @@ local function report_issues(states, main_file_number, options)
       -- Record control sequence name definitions and message name definitions and uses.
       --- Scan control sequence tokens within N- and n-type arguments.
       if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-        for token_number, token in argument.token_range:enumerate(segment_transformed_tokens, map_forward) do
+        for token_number, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then  -- control sequence, process it directly
             local next_token_number = token_number + 1
-            if next_token_number <= #segment_transformed_tokens then
-              local next_token = segment_transformed_tokens[next_token_number]
+            if next_token_number <= #transformed_tokens then
+              local next_token = transformed_tokens[next_token_number]
               -- Record control sequence name definitions.
               if next_token.type == CONTROL_SEQUENCE then
                 -- Record potential function definitions.
@@ -1391,7 +1311,7 @@ local function report_issues(states, main_file_number, options)
                 local message_definition = lpeg.match(parsers.expl3_message_definition, token.payload)
                 local message_use = lpeg.match(parsers.expl3_message_use, token.payload)
                 if message_definition ~= nil or message_use ~= nil then
-                  local next_grouping = segment_groupings[map_back(next_token_number)]
+                  local next_grouping = groupings[map_back(next_token_number)]
                   assert(next_grouping ~= nil)
                   assert(map_forward(next_grouping.start) == next_token_number)
                   if next_grouping.stop ~= nil then  -- balanced text
@@ -1399,14 +1319,14 @@ local function report_issues(states, main_file_number, options)
                       next_grouping.start + 1,
                       next_grouping.stop - 1,
                       INCLUSIVE + MAYBE_EMPTY,
-                      #segment_tokens
+                      #tokens
                     )
                     local next_next_token_number = map_forward(next_grouping.stop) + 1
-                    if next_next_token_number <= #segment_transformed_tokens then
-                      local next_next_token = segment_transformed_tokens[next_next_token_number]
+                    if next_next_token_number <= #transformed_tokens then
+                      local next_next_token = transformed_tokens[next_next_token_number]
                       if next_next_token.type == CHARACTER  -- begin grouping, try to collect the message name
                           and next_next_token.catcode == 1 then
-                        local next_next_grouping = segment_groupings[map_back(next_next_token_number)]
+                        local next_next_grouping = groupings[map_back(next_next_token_number)]
                         assert(next_next_grouping ~= nil)
                         assert(map_forward(next_next_grouping.start) == next_next_token_number)
                         if next_next_grouping.stop ~= nil then  -- balanced text
@@ -1414,7 +1334,7 @@ local function report_issues(states, main_file_number, options)
                             next_next_grouping.start + 1,
                             next_next_grouping.stop - 1,
                             INCLUSIVE + MAYBE_EMPTY,
-                            #segment_tokens
+                            #tokens
                           )
                           local module_name = extract_name_from_tokens(module_name_token_range)
                           local message_name = extract_name_from_tokens(message_name_token_range)
@@ -1461,9 +1381,9 @@ local function report_issues(states, main_file_number, options)
       end
     end
 
-    for _, statement in ipairs(segment_statements) do
-      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment_calls), #segment_tokens)
-      local byte_range = token_range:new_range_from_subranges(get_token_byte_range(segment_tokens), #content)
+    for _, statement in ipairs(segment.statements or {}) do
+      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment.calls), #tokens)
+      local byte_range = token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
       -- Process a function variant definition.
       if statement.type == FUNCTION_VARIANT_DEFINITION then
         -- Record base control sequence names of variants, both as control sequence name usage and separately.
@@ -1529,7 +1449,7 @@ local function report_issues(states, main_file_number, options)
             table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
           end
         end
-        if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_number == nil then
+        if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_segment_number == nil then
           process_argument_tokens(statement.replacement_text_argument)
         end
         -- Record private function defition.
@@ -1710,7 +1630,7 @@ local function report_issues(states, main_file_number, options)
       -- Process an unrecognized statement.
       elseif statement.type == OTHER_STATEMENT then
         -- Record control sequence name usage and definitions.
-        for _, call in statement.call_range:enumerate(segment_calls) do
+        for _, call in statement.call_range:enumerate(segment.calls) do
           maybe_used_csname_texts[call.csname] = true
           if is_main_file then
             table.insert(called_functions_and_variants, {call.csname, byte_range})
@@ -1722,7 +1642,7 @@ local function report_issues(states, main_file_number, options)
       -- Process a block of unrecognized tokens.
       elseif statement.type == OTHER_TOKENS_SIMPLE or statement.type == OTHER_TOKENS_COMPLEX then
         -- Record control sequence name usage by scanning all control sequence tokens.
-        for _, token in token_range:enumerate(segment_transformed_tokens, map_forward) do
+        for _, token in token_range:enumerate(transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
             maybe_used_csname_texts[token.payload] = true
           end

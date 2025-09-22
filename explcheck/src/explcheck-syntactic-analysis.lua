@@ -686,7 +686,6 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   local results = state.results
 
   local segments = {}
-  local calls = {}  -- TODO: remove
   for part_number, part_tokens in ipairs(results.tokens) do
     local part_groupings = results.groupings[part_number]
     local segment = {
@@ -704,12 +703,10 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
     }
     segment.calls = get_calls(part_tokens, part_groupings, segment, issues, content)
     table.insert(segments, segment)
-    table.insert(calls, segment.calls)  -- TODO: remove
   end
 
   -- Store the intermediate results of the analysis.
   results.segments = segments
-  results.calls = calls  -- TODO: remove
 end
 
 local substeps = {
