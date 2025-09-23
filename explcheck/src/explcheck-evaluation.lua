@@ -1,8 +1,13 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
 local token_types = require("explcheck-lexical-analysis").token_types
+local get_call_token_range = require("explcheck-syntactic-analysis").get_call_token_range
+local statement_confidences = require("explcheck-semantic-analysis").statement_confidences
 
 local ARGUMENT = token_types.ARGUMENT
+
+local DEFINITELY = statement_confidences.DEFINITELY
+local NONE = statement_confidences.NONE
 
 local FileEvaluationResults = {}
 local AggregateEvaluationResults = {}
@@ -171,6 +176,40 @@ local function count_statements(analysis_results)
     num_statements_total
 end
 
+-- Determine code coverage from analysis results.
+local function count_well_understood_tokens(analysis_results)
+  local is_token_well_understood_outer_accumulator = {}
+  for _, segment in ipairs(analysis_results.segments or {}) do
+    local part_number = segment.location.part_number
+    local tokens = analysis_results.tokens[part_number]
+    local is_token_well_understood_inner_accumulator = {}
+    for _, statement in ipairs(segment.statements or {}) do
+      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment.calls), #tokens)
+      for token_number, _ in token_range:enumerate(tokens) do
+        if is_token_well_understood_inner_accumulator[token_number] == nil then
+          is_token_well_understood_inner_accumulator[token_number] = NONE
+        end
+        is_token_well_understood_inner_accumulator[token_number]
+          = math.max(is_token_well_understood_inner_accumulator[token_number], statement.confidence)
+      end
+    end
+    for token_number, confidence in pairs(is_token_well_understood_inner_accumulator) do
+      if is_token_well_understood_outer_accumulator[token_number] == nil then
+        is_token_well_understood_outer_accumulator[token_number] = DEFINITELY
+      end
+      is_token_well_understood_outer_accumulator[token_number]
+        = math.min(is_token_well_understood_outer_accumulator[token_number], confidence)
+    end
+  end
+  local num_well_understood_tokens = 0
+  for _, confidence in pairs(is_token_well_understood_outer_accumulator) do
+    if confidence == DEFINITELY then
+      num_well_understood_tokens = num_well_understood_tokens + 1
+    end
+  end
+  return num_well_understood_tokens
+end
+
 -- Create a new evaluation results for the analysis results of an individual file.
 function FileEvaluationResults.new(cls, state)
   local content, analysis_results, issues = state.content, state.results, state.issues
@@ -194,6 +233,7 @@ function FileEvaluationResults.new(cls, state)
     = count_calls(analysis_results)
   local num_segment_statements, num_segment_statement_tokens, num_segment_statements_total, num_statements, num_statement_tokens,
     num_statements_total = count_statements(analysis_results)
+  local num_well_understood_tokens = count_well_understood_tokens(analysis_results)
   -- Initialize the class.
   self.num_total_bytes = num_total_bytes
   self.num_warnings = num_warnings
@@ -215,6 +255,7 @@ function FileEvaluationResults.new(cls, state)
   self.num_statements = num_statements
   self.num_statement_tokens = num_statement_tokens
   self.num_statements_total = num_statements_total
+  self.num_well_understood_tokens = num_well_understood_tokens
   return self
 end
 
@@ -246,6 +287,7 @@ function AggregateEvaluationResults.new(cls)
   self.num_statements = {}
   self.num_statement_tokens = {}
   self.num_statements_total = 0
+  self.num_well_understood_tokens = 0
   return self
 end
 
