@@ -259,13 +259,22 @@ local function print_summary(options, evaluation_results)
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
     io.write(
       string.format(
-        "\n- %s well-understood expl3 %s (%s of expl3 tokens, ~%s of total bytes)",
+        "\n- %s well-understood expl3 %s ",
         titlecase(humanize(num_well_understood_tokens)),
-        pluralize("token", num_well_understood_tokens),
-        format_ratio(num_well_understood_tokens, num_tokens),
-        format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+        pluralize("token", num_well_understood_tokens)
       )
     )
+    if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
+      io.write("(all expl3 tokens and bytes)")
+    else
+      io.write(
+        string.format(
+          "(%s of expl3 tokens, ~%s of total bytes)",
+          format_ratio(num_well_understood_tokens, num_tokens),
+          format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+        )
+      )
+    end
   end
 
   ::skip_remaining_additional_information::
