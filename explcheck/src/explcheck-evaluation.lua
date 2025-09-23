@@ -1,7 +1,6 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
 local token_types = require("explcheck-lexical-analysis").token_types
-local get_call_token_range = require("explcheck-syntactic-analysis").get_call_token_range
 local statement_confidences = require("explcheck-semantic-analysis").statement_confidences
 
 local ARGUMENT = token_types.ARGUMENT
