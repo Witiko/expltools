@@ -176,8 +176,14 @@ local function count_statements(analysis_results)
     num_statements_total
 end
 
--- Determine code coverage from analysis results.
+-- Determine how many tokens are "well-understood" from analysis results.
+--
+-- Let S be a set of all statements that contain a token T and originate from a maximally nested segment. Then, T is
+-- "well-understood" if the maximum confidence among these statements is 1.0.
+--
 local function count_well_understood_tokens(analysis_results)
+  -- Since segments are ordered from the least to the most nested, there is no need to track the "nesting level".
+  -- Instead, the confidence can be accumulated as a minimum over the segments and as a maximum within these segments.
   local is_token_well_understood_outer_accumulator = {}
   for _, segment in ipairs(analysis_results.segments or {}) do
     local part_number = segment.location.part_number
