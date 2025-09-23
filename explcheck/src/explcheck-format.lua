@@ -257,7 +257,6 @@ local function print_summary(options, evaluation_results)
     end
     -- Evaluate the evalution results of the syntactic and semantic analysis.
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
-    local code_coverage = format_ratio(num_well_understood_tokens, num_tokens)
     io.write(
       string.format(
         "\n- %s well-understood expl3 %s (%s of expl3 tokens, ~%s of total bytes)",
