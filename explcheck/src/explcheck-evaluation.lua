@@ -194,17 +194,22 @@ local function count_well_understood_tokens(analysis_results)
       end
     end
     for token_number, confidence in pairs(is_token_well_understood_inner_accumulator) do
-      if is_token_well_understood_outer_accumulator[token_number] == nil then
-        is_token_well_understood_outer_accumulator[token_number] = DEFINITELY
+      if is_token_well_understood_outer_accumulator[part_number] == nil then
+        is_token_well_understood_outer_accumulator[part_number] = {}
       end
-      is_token_well_understood_outer_accumulator[token_number]
-        = math.min(is_token_well_understood_outer_accumulator[token_number], confidence)
+      if is_token_well_understood_outer_accumulator[part_number][token_number] == nil then
+        is_token_well_understood_outer_accumulator[part_number][token_number] = DEFINITELY
+      end
+      is_token_well_understood_outer_accumulator[part_number][token_number]
+        = math.min(is_token_well_understood_outer_accumulator[part_number][token_number], confidence)
     end
   end
   local num_well_understood_tokens = 0
-  for _, confidence in pairs(is_token_well_understood_outer_accumulator) do
-    if confidence == DEFINITELY then
-      num_well_understood_tokens = num_well_understood_tokens + 1
+  for _, confidences in pairs(is_token_well_understood_outer_accumulator) do
+    for _, confidence in pairs(confidences) do
+      if confidence == DEFINITELY then
+        num_well_understood_tokens = num_well_understood_tokens + 1
+      end
     end
   end
   return num_well_understood_tokens
