@@ -184,13 +184,14 @@ local function count_well_understood_tokens(analysis_results)
     local tokens = analysis_results.tokens[part_number]
     local is_token_well_understood_inner_accumulator = {}
     for _, statement in ipairs(segment.statements or {}) do
-      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment.calls), #tokens)
-      for token_number, _ in token_range:enumerate(tokens) do
-        if is_token_well_understood_inner_accumulator[token_number] == nil then
-          is_token_well_understood_inner_accumulator[token_number] = NONE
+      for _, call in statement.call_range:enumerate(segment.calls) do
+        for token_number, _ in call.token_range:enumerate(tokens) do
+          if is_token_well_understood_inner_accumulator[token_number] == nil then
+            is_token_well_understood_inner_accumulator[token_number] = NONE
+          end
+          is_token_well_understood_inner_accumulator[token_number]
+            = math.max(is_token_well_understood_inner_accumulator[token_number], statement.confidence)
         end
-        is_token_well_understood_inner_accumulator[token_number]
-          = math.max(is_token_well_understood_inner_accumulator[token_number], statement.confidence)
       end
     end
     for token_number, confidence in pairs(is_token_well_understood_inner_accumulator) do
