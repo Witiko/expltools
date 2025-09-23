@@ -132,10 +132,10 @@ end
 local function classify_tokens(tokens, token_range)
   for _, token in token_range:enumerate(tokens) do
     if not is_token_simple(token) then
-      return OTHER_TOKENS_COMPLEX  -- context material
+      return OTHER_TOKENS_COMPLEX, NONE  -- context material
     end
   end
-  return OTHER_TOKENS_SIMPLE  -- simple material
+  return OTHER_TOKENS_SIMPLE, DEFINITELY  -- simple material
 end
 
 -- Determine whether the semantic analysis step is too confused by the results
@@ -1120,11 +1120,11 @@ local function analyze(states, file_number, options)
         }
         table.insert(statements, statement)
       elseif call.type == OTHER_TOKENS then  -- other tokens
-        local statement_type = classify_tokens(tokens, call.token_range)
+        local statement_type, confidence = classify_tokens(tokens, call.token_range)
         local statement = {
           type = statement_type,
           call_range = call_range,
-          confidence = NONE,
+          confidence = confidence,
         }
         table.insert(statements, statement)
       else
