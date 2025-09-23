@@ -234,8 +234,12 @@ local function print_summary(options, evaluation_results)
     if num_expl_bytes == 0 then
       goto skip_remaining_additional_information
     end
-    io.write(string.format("\n- %s expl3 %s ", titlecase(humanize(num_expl_bytes)), pluralize("byte", num_expl_bytes)))
-    io.write(string.format("(%s of total bytes)", format_ratio(num_expl_bytes, num_total_bytes)))
+    if num_expl_bytes == num_total_bytes then
+      io.write(" (all expl3)")
+    else
+      io.write(string.format("\n- %s expl3 %s ", titlecase(humanize(num_expl_bytes)), pluralize("byte", num_expl_bytes)))
+      io.write(string.format("(%s of total bytes)", format_ratio(num_expl_bytes, num_total_bytes)))
+    end
     -- Evaluate the evalution results of the lexical analysis.
     local num_tokens = evaluation_results.num_tokens
     if num_tokens == 0 then
@@ -251,25 +255,18 @@ local function print_summary(options, evaluation_results)
         io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
       end
     end
-    -- Evaluate the evalution results of the syntactic analysis.
-    if evaluation_results.num_calls_total > 0 and evaluation_results.num_statements_total == 0 then
-      for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
-        local num_calls = evaluation_results.num_calls[call_type]
-        assert(num_calls > 0)
-        assert(num_call_tokens > 0)
-        io.write(string.format("\n- %s %s spanning ", titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
-        io.write(string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens)))
-      end
-    end
-    -- Evaluate the evalution results of the semantic analysis.
-    for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens) do
-      local num_statements = evaluation_results.num_statements[statement_type]
-      assert(num_statements > 0)
-      assert(num_statement_tokens > 0)
-      io.write(string.format("\n- %s ", titlecase(humanize(num_statements))))
-      io.write(string.format("%s spanning ", pluralize(statement_type, num_statements)))
-      io.write(string.format("%s %s", humanize(num_statement_tokens), pluralize("token", num_statement_tokens)))
-    end
+    -- Evaluate the evalution results of the syntactic and semantic analysis.
+    local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
+    local code_coverage = format_ratio(num_well_understood_tokens, num_tokens)
+    io.write(
+      string.format(
+        "\n- %s well-understood expl3 %s (%s of expl3 tokens, ~%s of total bytes)",
+        titlecase(humanize(num_well_understood_tokens)),
+        pluralize("token", num_well_understood_tokens),
+        format_ratio(num_well_understood_tokens, num_tokens),
+        format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+      )
+    )
   end
 
   ::skip_remaining_additional_information::
