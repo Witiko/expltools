@@ -73,6 +73,11 @@ This version of explcheck has implemented the following new features:
   the implementation of the flow analysis, where we'll be working with a
   directed graph with chunks as the nodes.
 
+- Recognize `T`- and `F`-type arguments as code segments. (#92, #136)
+
+  This allows issues to be reported in true- and false-branches of conditional
+  functions, even if these functions are unknown or nested.
+
 - Report code coverage in the verbose human-readable output. (#134, #135)
 
   The code coverage provides an estimate of how well-understood a piece of code

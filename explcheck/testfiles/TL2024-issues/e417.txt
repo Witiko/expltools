@@ -10,10 +10,14 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/lebhart/lebhart.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/maze/maze.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/media4svg/media4svg.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/media9/pdfbase.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/mhchem/mhchem.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimalist-classical.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimart.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/minimalist/minimbook.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-draft.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/rbt-mathnotes/rbt-mathnotes-hw.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/rbt-mathnotes/rbt-mathnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/simplivre/simplivre.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tabularray/tabularray-2021.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tabularray/tabularray.sty

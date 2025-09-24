@@ -1,1 +1,12 @@
+/usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-block.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/chinesechess/chinesechess.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/hvarabic/hvarabic.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/keytheorems/class-support/keythms-beamer-support.tex
+/usr/local/texlive/2024/texmf-dist/tex/latex/kotex-oblivoir/memhangul-common/oblivoir-misc.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/l3graphics/l3graphics.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-block.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-fontawesome5-generic-helper.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-fontawesome5-utex-helper.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/media9/pdfbase.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/se2thesis/se2packages.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/simplebnf/simplebnf.sty

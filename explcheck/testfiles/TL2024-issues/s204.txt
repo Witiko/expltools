@@ -133,7 +133,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/chronos/chronos.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/circledtext/circledtext.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/citation-style-language/citation-style-language-bib.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/citation-style-language/citation-style-language-cite.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/citation-style-language/citation-style-language-data.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/citeall/citeall.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/classics/classics.sty

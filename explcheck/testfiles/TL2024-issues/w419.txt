@@ -1,3 +1,6 @@
+/usr/local/texlive/2024/texmf-dist/tex/latex-dev/base/doc.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/base/doc.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/bithesis/bitbeamer.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/changelog/changelog.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/decision-table/decision-table.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/easybook/easybase.sty
@@ -9,7 +12,11 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/matapli/matapli.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/mdframed/ltxmdf.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/pangram/pangram.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/pmhanguljamo/pmhanguljamo-frkim.code.tex
+/usr/local/texlive/2024/texmf-dist/tex/latex/pmhanguljamo/pmhanguljamo-rrk.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/rbt-mathnotes/rbt-mathnotes-hw.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaexercise.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaleaflet.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaposter.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/zennote/zennote.sty
+/usr/local/texlive/2024/texmf-dist/tex/lualatex/letgut/letgut.cls

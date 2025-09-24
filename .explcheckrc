@@ -49,7 +49,7 @@ ignored_issues = ["e304"]
 
 [package.knowledge]
 ignored_issues = ["e201", "e300", "e301", "w302"]
-imported_prefixes = ["kl", "knowledge", "ktuple", "scope"]
+imported_prefixes = ["knowledge"]
 
 [filename."grading-scheme.sty"]
 ignored_issues = ["e201"]
@@ -302,7 +302,7 @@ ignored_issues = ["e304", "e405"]
 ignored_issues = ["e304"]
 
 [package.lwarp]
-ignored_issues = ["e304", "w302", "e408"]
+ignored_issues = ["w302", "e408"]
 
 [filename."lwarp-simplebnf.sty"]
 imported_prefixes = ["simplebnf"]
@@ -386,9 +386,6 @@ imported_prefixes = ["ctxdoc", "nju"]
 [package.semantex]
 ignored_issues = ["e405"]
 
-[package.witharrows]
-imported_prefixes = ["MH"]
-
 [package.ccool]
 ignored_issues = ["e408"]
 
@@ -418,9 +415,6 @@ ignored_issues = ["e408"]
 
 [package.fontawesome5]
 imported_prefixes = ["fontawesome"]
-
-[package.homework]
-imported_prefixes = ["projlib"]
 
 [package.jwjournal]
 imported_prefixes = ["projlib"]

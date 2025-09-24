@@ -36,9 +36,11 @@ local OTHER_TOKENS = call_types.OTHER_TOKENS
 local segment_types = {
   PART = "expl3 part",
   REPLACEMENT_TEXT = "function definition replacement text",
+  TF_TYPE_ARGUMENTS = "T-type or F-type argument",
 }
 
 local PART = segment_types.PART
+local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
 -- Get the token range for a given call.
 local function get_call_token_range(calls)
@@ -224,7 +226,10 @@ local function is_confused(pathname, results, options)
 end
 
 -- Extract function calls from TeX tokens and groupings.
-local function get_calls(tokens, groupings, segment, issues, content)
+local function get_calls(results, part_number, segment, issues, content)
+
+  local tokens = results.tokens[part_number]
+  local groupings = results.groupings[part_number]
 
   local transformed_tokens = segment.transformed_tokens.tokens
   local token_range = segment.transformed_tokens.token_range
@@ -422,6 +427,7 @@ local function get_calls(tokens, groupings, segment, issues, content)
           table.insert(arguments, argument)
         end
 
+        local argument
         local next_grouping, parameter_text_start_token_number
         local num_parameters
         for argument_specifier in argument_specifiers:gmatch(".") do  -- an expl3 control sequence, try to collect the arguments
@@ -475,11 +481,12 @@ local function get_calls(tokens, groupings, segment, issues, content)
                   #tokens
                 )
                 num_parameters = count_parameters_in_parameter_text(next_token_range)
-                record_argument({
+                argument = {
                   specifier = argument_specifier,
                   token_range = next_token_range,
                   num_parameters = num_parameters,
-                })
+                }
+                record_argument(argument)
                 break
               end
               next_token_number = next_token_number + 1
@@ -523,11 +530,12 @@ local function get_calls(tokens, groupings, segment, issues, content)
                 if #next_token_range == 1 then  -- a single token, record it
                   context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
                   issues:add('w303', 'braced N-type function call argument', next_token.byte_range, context)
-                  record_argument({
+                  argument = {
                     specifier = argument_specifier,
                     token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
                     outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
-                  })
+                  }
+                  record_argument(argument)
                   next_token_number = map_forward(next_grouping.stop)
                 elseif #next_token_range == 2 and  -- two tokens
                     transformed_tokens[next_token_range:start()].type == CHARACTER and
@@ -572,10 +580,11 @@ local function get_calls(tokens, groupings, segment, issues, content)
               end
               -- an N-type argument, record it
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
-              record_argument({
+              argument = {
                 specifier = argument_specifier,
                 token_range = next_token_range,
-              })
+              }
+              record_argument(argument)
             end
           elseif lpeg.match(parsers.n_type_argument_specifier, argument_specifier) then  -- an n-type argument specifier
             if next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the balanced text
@@ -593,11 +602,27 @@ local function get_calls(tokens, groupings, segment, issues, content)
                 end
                 goto skip_other_token
               else  -- a balanced text, record it
-                record_argument({
+                argument = {
                   specifier = argument_specifier,
                   token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens),
                   outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
-                })
+                }
+                if argument_specifier == "T" or argument_specifier == "F" then
+                  local nested_segment = {
+                    type = TF_TYPE_ARGUMENTS,
+                    location = segment.location,
+                    transformed_tokens = {
+                      tokens = transformed_tokens,
+                      token_range = argument.token_range,
+                      map_back = map_back,
+                      map_forward = map_forward,
+                    },
+                  }
+                  table.insert(results.segments, nested_segment)
+                  nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
+                  argument.segment_number = #results.segments
+                end
+                record_argument(argument)
                 next_token_number = map_forward(next_grouping.stop)
               end
             elseif next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping (partial application?), skip all tokens
@@ -622,10 +647,11 @@ local function get_calls(tokens, groupings, segment, issues, content)
               -- an unbraced n-type argument, record it
               issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range, format_token(next_token, content))
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
-              record_argument({
+              argument = {
                 specifier = argument_specifier,
                 token_range = next_token_range,
-              })
+              }
+              record_argument(argument)
             end
           else
             error('Unexpected argument specifier "' .. argument_specifier .. '"')
@@ -685,9 +711,8 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   local issues = state.issues
   local results = state.results
 
-  local segments = {}
+  results.segments = {}
   for part_number, part_tokens in ipairs(results.tokens) do
-    local part_groupings = results.groupings[part_number]
     local segment = {
       type = PART,
       location = {
@@ -701,12 +726,9 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
         map_forward = identity,
       },
     }
-    segment.calls = get_calls(part_tokens, part_groupings, segment, issues, content)
-    table.insert(segments, segment)
+    table.insert(results.segments, segment)
+    segment.calls = get_calls(results, part_number, segment, issues, content)
   end
-
-  -- Store the intermediate results of the analysis.
-  results.segments = segments
 end
 
 local substeps = {
