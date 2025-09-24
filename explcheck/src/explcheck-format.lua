@@ -749,7 +749,10 @@ end
 return {
   format_issue_identifier = format_issue_identifier,
   format_percentage = format_percentage,
+  format_ratio = format_ratio,
+  humanize = humanize,
   pluralize = pluralize,
   print_results = print_results,
   print_summary = print_summary,
+  titlecase = titlecase,
 }
