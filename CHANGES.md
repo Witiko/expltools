@@ -81,6 +81,16 @@ This version of explcheck has implemented the following new features:
   likely going to be >95% well-understood expl3 tokens, so most code will
   initially only be analyzed using semantic analysis, not flow analysis.
 
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Compare code coverage on TeX Live 2024 with a baseline. (#134, #135)
+
+  This acts as an extra precaution against regressions. In general, changes
+  should only increase the code coverage compared to the baseline.
+
 ## expltools 2025-08-18
 
 ### explcheck v0.12.0
