@@ -33,7 +33,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/citeall/citeall.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/codehigh/codehigh.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cooking-units/cooking-units.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/crefthe/crefthe.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cryptocode/cryptocode-2018-11-11.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cryptocode/cryptocode-2020-04-24.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/cryptocode/cryptocode.sty
@@ -122,8 +121,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/physics2/physics2.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/prelim2e/prelim2e.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-author.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-language.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/projlib/projlib-theorem.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/q-and-a/Q-and-A.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/qrbill/qrbill.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/recorder-fingering/recorder-fingering.sty
