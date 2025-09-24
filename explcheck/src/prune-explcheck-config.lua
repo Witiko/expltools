@@ -8,6 +8,7 @@ kpse.set_program_name("texlua", "prune-explcheck-config")
 local lfs = require("lfs")
 
 local config = require("explcheck-config")
+local humanize = require("explcheck-format").humanize
 local new_issues = require("explcheck-issues").new_issues
 local utils = require("explcheck-utils")
 
@@ -27,7 +28,7 @@ local function read_filelist(filelist_pathname)
   for pathname in io.lines(filelist_pathname) do
     table.insert(pathnames, pathname)
   end
-  print(string.format('Read %d files listed in "%s".', #pathnames, filelist_pathname))
+  print(string.format('Read %s files listed in "%s".', humanize(#pathnames), filelist_pathname))
   return pathnames
 end
 
@@ -58,7 +59,7 @@ local function read_results(results_pathname)
   for _, issues in pairs(results.issues) do
     issues:close()
   end
-  print(string.format('Read %d issues and %d files listed in "%s".', num_issues, #results.pathnames, results_pathname))
+  print(string.format('Read %s issues and %s files listed in "%s".', humanize(num_issues), humanize(#results.pathnames), results_pathname))
   return results
 end
 
@@ -209,11 +210,17 @@ local function main(filelist_pathname, results_pathname)
   end
 
   -- Print the results.
-  io.write(string.format('Checked %d different options in file "%s"', num_options, user_config_pathname))
+  io.write(string.format('Checked %s different options in file "%s"', humanize(num_options), user_config_pathname))
   if #key_locations.to_remove == 0 then
     print(string.format(', none of which can be removed without affecting files listed in "%s".', results_pathname))
   else
-    print(string.format(', %d of which can be removed without affecting files listed in "%s":', #key_locations.to_remove, results_pathname))
+    print(
+      string.format(
+        ', %s of which can be removed without affecting files listed in "%s":',
+        humanize(#key_locations.to_remove),
+        results_pathname
+      )
+    )
     for _, key_location in ipairs(key_locations.to_remove) do
       print(string.format('- %s', key_location))
     end
