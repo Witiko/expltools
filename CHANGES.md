@@ -76,9 +76,9 @@ This version of explcheck has implemented the following new features:
 - Report code coverage in the verbose human-readable output. (#134, #135)
 
   The code coverage provides an estimate of how well-understood a piece of code
-  is. Circa 14% of expl3 code and 2% of all TeX code in current TeX Live are
+  is. Circa 14% of all expl3 code and 2% of all TeX code in current TeX Live is
   considered well-understood. The cut-off for performing the flow analysis is
-  likely going to be >95% well-understood expl3 tokens, so most code will
+  likely going to be circa 95% well-understood expl3 tokens, so most code will
   initially only be analyzed using semantic analysis, not flow analysis.
 
 #### Continuous integration
