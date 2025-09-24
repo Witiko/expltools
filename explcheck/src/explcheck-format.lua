@@ -228,20 +228,41 @@ local function print_summary(options, evaluation_results)
     io.write(string.format("\n%s", colorize("Aggregate statistics:", BOLD)))
     -- Display pre-evaluation information.
     local num_total_bytes = evaluation_results.num_total_bytes
-    io.write(string.format("\n- %s total %s", titlecase(humanize(num_total_bytes)), pluralize("byte", num_total_bytes)))
+    io.write(
+      string.format(
+        "\n- %s %s total %s",
+        colorize("File size:", BOLD),
+        titlecase(humanize(num_total_bytes)),
+        pluralize("byte", num_total_bytes)
+      )
+    )
     -- Evaluate the evalution results of the preprocessing.
     local num_expl_bytes = evaluation_results.num_expl_bytes
     if num_expl_bytes == 0 then
       goto skip_remaining_additional_information
     end
-    io.write(string.format("\n- %s expl3 %s ", titlecase(humanize(num_expl_bytes)), pluralize("byte", num_expl_bytes)))
-    io.write(string.format("(%s of total bytes)", format_ratio(num_expl_bytes, num_total_bytes)))
+    io.write(
+      string.format(
+        "\n- %s %s expl3 %s (%s of total bytes)",
+        colorize("Preprocessing:", BOLD),
+        titlecase(humanize(num_expl_bytes)),
+        pluralize("byte", num_expl_bytes),
+        format_ratio(num_expl_bytes, num_total_bytes)
+      )
+    )
     -- Evaluate the evalution results of the lexical analysis.
     local num_tokens = evaluation_results.num_tokens
     if num_tokens == 0 then
       goto skip_remaining_additional_information
     end
-    io.write(string.format(" containing %s %s", humanize(num_tokens), pluralize("token", num_tokens)))
+    io.write(
+      string.format(
+        "\n- %s %s expl3 %s",
+        colorize("Lexical analysis:", BOLD),
+        titlecase(humanize(num_tokens)),
+        pluralize("token", num_tokens)
+      )
+    )
     local num_groupings = evaluation_results.num_groupings
     if num_groupings > 0 then
       io.write(string.format(" and %s %s", humanize(num_groupings), pluralize("grouping", num_groupings)))
@@ -251,24 +272,51 @@ local function print_summary(options, evaluation_results)
         io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
       end
     end
-    -- Evaluate the evalution results of the syntactic analysis.
-    if evaluation_results.num_calls_total > 0 and evaluation_results.num_statements_total == 0 then
-      for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
-        local num_calls = evaluation_results.num_calls[call_type]
-        assert(num_calls > 0)
-        assert(num_call_tokens > 0)
-        io.write(string.format("\n- %s %s spanning ", titlecase(humanize(num_calls)), pluralize(call_type, num_calls)))
-        io.write(string.format("%s %s", humanize(num_call_tokens), pluralize("token", num_call_tokens)))
-      end
+    -- Evaluate the evalution results of the syntactic and semantic analysis.
+    local num_segments_total = evaluation_results.num_segments_total
+    local num_calls_total = evaluation_results.num_calls_total
+    if num_segments_total == 0 or num_calls_total == 0 then
+      goto skip_remaining_additional_information
     end
-    -- Evaluate the evalution results of the semantic analysis.
-    for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens) do
-      local num_statements = evaluation_results.num_statements[statement_type]
-      assert(num_statements > 0)
-      assert(num_statement_tokens > 0)
-      io.write(string.format("\n- %s ", titlecase(humanize(num_statements))))
-      io.write(string.format("%s spanning ", pluralize(statement_type, num_statements)))
-      io.write(string.format("%s %s", humanize(num_statement_tokens), pluralize("token", num_statement_tokens)))
+    io.write(
+      string.format(
+        "\n- %s %s code %s containing %s %s",
+        colorize("Syntactic and semantic analysis:", BOLD),
+        titlecase(humanize(num_segments_total)),
+        pluralize("segment", num_segments_total),
+        humanize(num_calls_total),
+        pluralize("call", num_calls_total)
+      )
+    )
+    local num_statements_total = evaluation_results.num_statements_total
+    if num_statements_total == 0 then
+      goto skip_remaining_additional_information
+    end
+    if num_statements_total == num_calls_total then
+      io.write(string.format(" and %s", pluralize("statement", num_statements_total)))
+    else
+      io.write(string.format(", %s %s", humanize(num_statements_total), pluralize("statement", num_statements_total)))
+    end
+
+    local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
+    io.write(
+      string.format(
+        "\n- %s %s well-understood expl3 %s ",
+        colorize("Code coverage:", BOLD),
+        titlecase(humanize(num_well_understood_tokens)),
+        pluralize("token", num_well_understood_tokens)
+      )
+    )
+    if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
+      io.write("(all expl3 tokens and bytes)")
+    else
+      io.write(
+        string.format(
+          "(%s of expl3 tokens, ~%s of total bytes)",
+          format_ratio(num_well_understood_tokens, num_tokens),
+          format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+        )
+      )
     end
   end
 
@@ -551,81 +599,130 @@ local function print_results(state, options, evaluation_results, is_last_file)
         end
       end
       -- Evaluate the evalution results of the syntactic analysis.
-      if evaluation_results.num_calls == nil then
+      if evaluation_results.num_segments == nil or evaluation_results.num_calls == nil then
         goto skip_remaining_additional_information
       end
-      io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
-      if evaluation_results.num_calls_total == 0 then
+      if evaluation_results.num_statements == nil then
+        io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
+      else
+        io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic and semantic analysis results:", BOLD)))
+      end
+      local num_segments_total = evaluation_results.num_segments_total
+      assert(num_segments_total ~= nil)
+      if num_segments_total == 0 then
+        io.write(string.format("\n%s- No code %s", line_indent, pluralize("segment")))
+        goto skip_remaining_additional_information
+      end
+      io.write(
+        string.format(
+          "\n%s- %s code %s:",
+          line_indent,
+          titlecase(humanize(num_segments_total)),
+          pluralize("segment", num_segments_total)
+        )
+      )
+      for segment_type, num_segments in pairs_sorted_by_descending_values(evaluation_results.num_segments) do
+        io.write(
+          string.format(
+            "\n%s%s- %s %s",
+            line_indent,
+            line_indent,
+            titlecase(humanize(num_segments)),
+            pluralize(segment_type, num_segments)
+          )
+        )
+      end
+      local num_calls_total = evaluation_results.num_calls_total
+      assert(num_calls_total ~= nil)
+      if num_calls_total == 0 then
         io.write(string.format("\n%s- No %s", line_indent, pluralize("call")))
         goto skip_remaining_additional_information
       end
-      local num_segment_types = 0
-      for _, _ in pairs(evaluation_results.num_segments) do
-        num_segment_types = num_segment_types + 1
-      end
-      assert(num_segment_types >= 1)
-      for segment_type, _ in pairs_sorted_by_descending_values(evaluation_results.num_segment_calls_total) do
-        local num_segments = evaluation_results.num_segments[segment_type]
-        if num_segment_types > 1 then
-          io.write(string.format("\n%s- %s %s:", line_indent, titlecase(humanize(num_segments)), pluralize(segment_type, num_segments)))
-        end
-        local num_segment_call_tokens = evaluation_results.num_segment_call_tokens[segment_type]
-        for call_type, num_call_tokens in pairs_sorted_by_descending_values(num_segment_call_tokens) do
-          local num_calls = evaluation_results.num_segment_calls[segment_type][call_type]
-          assert(num_calls ~= nil)
-          assert(num_calls > 0)
-          assert(num_call_tokens ~= nil)
-          assert(num_call_tokens > 0)
-          io.write(
-            string.format(
-              "\n%s- %s %s spanning %s %s",
-              num_segment_types == 1 and line_indent or string.format("%s%s", line_indent, line_indent),
-              titlecase(humanize(num_calls)),
-              pluralize(call_type, num_calls),
-              humanize(num_call_tokens),
-              pluralize("token", num_call_tokens)
-            )
+      io.write(
+        string.format(
+          "\n%s- %s %s:",
+          line_indent,
+          titlecase(humanize(num_calls_total)),
+          pluralize("call", num_calls_total)
+        )
+      )
+      for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
+        local num_calls = evaluation_results.num_calls[call_type]
+        assert(num_calls ~= nil)
+        io.write(
+          string.format(
+            "\n%s%s- %s %s spanning %s %s",
+            line_indent,
+            line_indent,
+            titlecase(humanize(num_calls)),
+            pluralize(call_type, num_calls),
+            humanize(num_call_tokens),
+            pluralize("token", num_call_tokens)
           )
-        end
-      end
-      if evaluation_results.num_calls_total == nil or evaluation_results.num_calls_total == 0 then
-        goto skip_remaining_additional_information
+        )
       end
       -- Evaluate the evalution results of the semantic analysis.
       if evaluation_results.num_statements == nil then
         goto skip_remaining_additional_information
       end
-      io.write(string.format("\n\n%s%s", line_indent, colorize("Semantic analysis results:", BOLD)))
-      if evaluation_results.num_statements_total == 0 then
+      local num_statements_total = evaluation_results.num_statements_total
+      assert(num_statements_total ~= nil)
+      if num_statements_total == 0 then
         io.write(string.format("\n%s- No %s", line_indent, pluralize("statement")))
         goto skip_remaining_additional_information
       end
-      for segment_type, _ in pairs_sorted_by_descending_values(evaluation_results.num_segment_statements_total) do
-        local num_segments = evaluation_results.num_segments[segment_type]
-        if num_segment_types > 1 then
-          io.write(string.format("\n%s- %s %s:", line_indent, titlecase(humanize(num_segments)), pluralize(segment_type, num_segments)))
-        end
-        local num_segment_statement_tokens = evaluation_results.num_segment_statement_tokens[segment_type]
-        for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(num_segment_statement_tokens) do
-          local num_statements = evaluation_results.num_segment_statements[segment_type][statement_type]
-          assert(num_statements ~= nil)
-          assert(num_statements > 0)
-          assert(num_statement_tokens ~= nil)
-          assert(num_statement_tokens > 0)
-          io.write(
-            string.format(
-              "\n%s- %s %s spanning %s %s",
-              num_segment_types == 1 and line_indent or string.format("%s%s", line_indent, line_indent),
-              titlecase(humanize(num_statements)),
-              pluralize(statement_type, num_statements),
-              humanize(num_statement_tokens),
-              pluralize("token", num_statement_tokens)
-            )
+      io.write(
+        string.format(
+          "\n%s- %s %s:",
+          line_indent,
+          titlecase(humanize(num_statements_total)),
+          pluralize("statement", num_statements_total)
+        )
+      )
+      for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens) do
+        local num_statements = evaluation_results.num_statements[statement_type]
+        local num_statement_calls = evaluation_results.num_statement_calls[statement_type]
+        assert(num_statements ~= nil)
+        assert(num_statement_calls ~= nil)
+        io.write(
+          string.format(
+            "\n%s%s- %s %s spanning %s %s",
+            line_indent,
+            line_indent,
+            titlecase(humanize(num_statements)),
+            pluralize(statement_type, num_statements),
+            humanize(num_statement_tokens),
+            pluralize("token", num_statement_tokens)
           )
+        )
+        if num_statement_calls ~= num_statements then
+          io.write(string.format(" and %s %s", humanize(num_statement_calls), pluralize("call", num_statement_calls)))
         end
       end
-      if evaluation_results.num_statements_total == nil or evaluation_results.num_statements_total == 0 then
+      local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
+      assert(num_well_understood_tokens ~= nil)
+      if num_well_understood_tokens == 0 then
+        io.write(string.format("\n%s- No well-understood expl3 %s", line_indent, pluralize("token")))
         goto skip_remaining_additional_information
+      end
+      io.write(
+        string.format(
+          "\n%s- %s well-understood expl3 %s ",
+          line_indent,
+          titlecase(humanize(num_well_understood_tokens)),
+          pluralize("token", num_well_understood_tokens)
+        )
+      )
+      if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
+        io.write("(all expl3 tokens and bytes)")
+      else
+        io.write(
+          string.format(
+            "(%s of expl3 tokens, ~%s of total bytes)",
+            format_ratio(num_well_understood_tokens, num_tokens),
+            format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+          )
+        )
       end
     end
 
@@ -652,7 +749,10 @@ end
 return {
   format_issue_identifier = format_issue_identifier,
   format_percentage = format_percentage,
+  format_ratio = format_ratio,
+  humanize = humanize,
   pluralize = pluralize,
   print_results = print_results,
   print_summary = print_summary,
+  titlecase = titlecase,
 }

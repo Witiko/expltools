@@ -155,30 +155,11 @@ jobs:
           # Collect the full list of issues.
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -print 1> files.txt
           export LUAINPUTS=explcheck/src
-          texlua explcheck/src/explcheck.lua --porcelain --error-format="%f %t%n" --files-from=files.txt 2> issues.txt 1>&2 || true
-          # Display any potential exceptions.
-          if grep -v '^/' issues.txt
-          then
-            exit 1
-          fi
-          # Split the issues into individual files.
           mkdir issues
-          sort -u issues.txt | python3 -c '
-          import sys
-
-          # Read filenames and issues.
-          issue_files = dict()
-          for line in sys.stdin:
-              filename, issue = line.split()
-              # Store the filename in the corresponding issue file.
-              if issue not in issue_files:
-                  issue_files[issue] = open(f"issues/{issue}.txt", "wt")
-              print(filename, file=issue_files[issue])
-          # Close the issue files.
-          for wf in issue_files.values():
-              wf.close()
-          '
-      - name: Upload issues
+          texlua explcheck/src/collect-explcheck-issues-and-code-coverage.lua files.txt issues
+      - name: Print code coverage
+        run: cat issues/COVERAGE
+      - name: Upload issues and code coverage
         if: matrix.release != 'latest'
         uses: actions/upload-artifact@v4
         with:

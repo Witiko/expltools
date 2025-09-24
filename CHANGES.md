@@ -73,6 +73,24 @@ This version of explcheck has implemented the following new features:
   the implementation of the flow analysis, where we'll be working with a
   directed graph with chunks as the nodes.
 
+- Report code coverage in the verbose human-readable output. (#134, #135)
+
+  The code coverage provides an estimate of how well-understood a piece of code
+  is. Circa 14% of expl3 code and 2% of all TeX code in current TeX Live are
+  considered well-understood. The cut-off for performing the flow analysis is
+  likely going to be >95% well-understood expl3 tokens, so most code will
+  initially only be analyzed using semantic analysis, not flow analysis.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Compare code coverage on TeX Live 2024 with a baseline. (#134, #135)
+
+  This acts as an extra precaution against regressions. In general, changes
+  should only increase the code coverage compared to the baseline.
+
 ## expltools 2025-08-18
 
 ### explcheck v0.12.0
