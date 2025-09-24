@@ -299,24 +299,28 @@ local function print_summary(options, evaluation_results)
     end
 
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
-    io.write(
-      string.format(
-        "\n- %s %s well-understood expl3 %s ",
-        colorize("Code coverage:", BOLD),
-        titlecase(humanize(num_well_understood_tokens)),
-        pluralize("token", num_well_understood_tokens)
-      )
-    )
-    if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
-      io.write("(all expl3 tokens and bytes)")
+    io.write(string.format("\n- %s ", colorize("Code coverage:", BOLD)))
+    if num_well_understood_tokens == 0 then
+      io.write(string.format("No well-understood expl3 %s", pluralize("token")))
     else
       io.write(
         string.format(
-          "(%s of expl3 tokens, ~%s of total bytes)",
-          format_ratio(num_well_understood_tokens, num_tokens),
-          format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+          "%s well-understood expl3 %s ",
+          titlecase(humanize(num_well_understood_tokens)),
+          pluralize("token", num_well_understood_tokens)
         )
       )
+      if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
+        io.write("(all expl3 tokens and bytes)")
+      else
+        io.write(
+          string.format(
+            "(%s of expl3 tokens, ~%s of total bytes)",
+            format_ratio(num_well_understood_tokens, num_tokens),
+            format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+          )
+        )
+      end
     end
   end
 
