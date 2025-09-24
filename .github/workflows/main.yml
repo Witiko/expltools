@@ -157,6 +157,8 @@ jobs:
           export LUAINPUTS=explcheck/src
           mkdir issues
           texlua explcheck/src/collect-explcheck-issues-and-code-coverage.lua files.txt issues
+      - name: Print code coverage
+        run: cat issues/COVERAGE
       - name: Upload issues and code coverage
         if: matrix.release != 'latest'
         uses: actions/upload-artifact@v4
