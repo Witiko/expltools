@@ -264,7 +264,6 @@ local function analyze(states, file_number, options)
     local part_number = segment.location.part_number
 
     local tokens = results.tokens[part_number]
-    local groupings = results.groupings[part_number]
 
     local calls = segment.calls
 
@@ -731,7 +730,6 @@ local function analyze(states, file_number, options)
             end
             local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
             -- determine the replacement text
-            local replacement_text_segment_number
             local replacement_text_argument = call.arguments[#call.arguments]
             do
               if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion
@@ -783,9 +781,9 @@ local function analyze(states, file_number, options)
                   map_forward = map_forward,
                 },
               }
-              nested_segment.calls = get_calls(tokens, groupings, nested_segment, issues, content)
               table.insert(results.segments, nested_segment)
-              replacement_text_segment_number = #results.segments
+              nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
+              replacement_text_argument.segment_number = #results.segments
             end
             ::skip_replacement_text::
             -- determine all effectively defined csnames
@@ -828,7 +826,6 @@ local function analyze(states, file_number, options)
                 is_conditional = is_conditional,
                 is_protected = is_protected,
                 is_nopar = is_nopar,
-                replacement_text_segment_number = replacement_text_segment_number,
                 replacement_text_argument = replacement_text_argument,
               }
               table.insert(statements, statement)
@@ -1449,7 +1446,7 @@ local function report_issues(states, main_file_number, options)
             table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
           end
         end
-        if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_segment_number == nil then
+        if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
           process_argument_tokens(statement.replacement_text_argument)
         end
         -- Record private function defition.
