@@ -153,7 +153,9 @@ jobs:
         run: |
           set -e
           # Collect the full list of issues.
-          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -print 1> files.txt
+          find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -print 1> unsorted-files.txt
+          # Sort files, so that files from the same directory that can be grouped by explcheck are listed together.
+          cat unsorted-files.txt | perl -pe 'print tr{/}{}, "\t"' | LC_ALL=C sort -k1,1n -k2 | cut -f2- > files.txt
           export LUAINPUTS=explcheck/src
           mkdir issues
           texlua explcheck/src/collect-explcheck-issues-and-code-coverage.lua files.txt issues
