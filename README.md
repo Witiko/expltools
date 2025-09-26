@@ -19,7 +19,7 @@ These devlog posts chronicle the latest updates and progress in the ongoing deve
 9. [Semantic analysis][15] from August 18, 2025
 10. [Expltools goes to India][16] from July 22, 2025
 
-The article [Expltools: Development tools for expl3 programmers][14], forthcoming in TUGboat 46(2) or (3), is a work in progress that summarizes the devlog posts and provides a coherent overview of the current state of the tool.
+The article [Expltools: Development tools for expl3 programmers][14], forthcoming in TUGboat 47(1), is a work in progress that summarizes the devlog posts and provides a coherent overview of the current state of the tool.
 
 In the future, this repository may also contain the code of other useful development tools for expl3 programmers, such as a command-line utility similar to `grep` that will ignore whitespaces and newlines as well as other tools.
 
