@@ -500,6 +500,9 @@ ignored_issues = ["e304"]
 [filename."linguistix-ipa.sty"]
 ignored_issues = ["e408"]
 
+[filename."linguistix-logos.sty"]
+ignored_issues = ["e408"]
+
 [package.koma-script]
 ignored_issues = ["e304"]
 
@@ -517,3 +520,6 @@ imported_prefixes = ["keytheorems"]
 
 [filename."platexrelease.sty"]
 ignored_issues = ["e102"]
+
+[filename."lwarp-fontawesome5-utex-helper.sty"]
+imported_prefixes = ["fontawesome5"]
