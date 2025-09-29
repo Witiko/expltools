@@ -491,6 +491,9 @@ imported_prefixes = ["xpeekahead"]
 [package.prettytok]
 imported_prefixes = ["precattl"]
 
+[package.se2thesis]
+imported_prefixes = ["seipackages"]
+
 [package.ltx-talk]
 ignored_issues = ["e304"]
 
