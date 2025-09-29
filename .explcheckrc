@@ -340,7 +340,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.ufrgscca]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e421"]
 imported_prefixes = ["ufrgscca"]
 
 [package.univie-ling]
