@@ -40,7 +40,7 @@ expl3_detection_strategy = "precision"
 
 [filename."skrapport.cls"]
 max_line_length = 150
-ignored_issues = ["e300", "e418"]
+ignored_issues = ["e300"]
 
 [package.ctex]
 expl3_detection_strategy = "always"
@@ -340,7 +340,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.ufrgscca]
-ignored_issues = ["e304", "e421"]
+ignored_issues = ["e304"]
 imported_prefixes = ["ufrgscca"]
 
 [package.univie-ling]
@@ -430,7 +430,6 @@ ignored_issues = ["e408"]
 
 [package.projlib]
 imported_prefixes = ["crthm", "projlib"]
-ignored_issues = ["e417", "e421"]
 
 [package.pythonimmediate]
 imported_prefixes = ["precattl"]
@@ -477,11 +476,8 @@ ignored_issues = ["e304", "w423"]
 [package.homework]
 imported_prefixes = ["minimalist", "projlib"]
 
-[package.kalendarium]
-ignored_issues = ["e418"]
-
-[package.cooking-units]
-ignored_issues = ["e418"]
-
 [package.nicematrix]
 ignored_issues = ["w423"]
+
+[package.create-theorem]
+imported_prefixes = ["crefthe"]
