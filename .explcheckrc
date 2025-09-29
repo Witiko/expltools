@@ -499,3 +499,6 @@ ignored_issues = ["e408"]
 
 [package.koma-script]
 ignored_issues = ["e304"]
+
+[package.asmeconf]
+ignored_issues = ["e304"]
