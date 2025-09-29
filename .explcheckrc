@@ -536,3 +536,6 @@ imported_prefixes = ["figureversions"]
 
 [filename."glossary-tree.sty"]
 imported_prefixes = ["glossaries"]
+
+[filename."glossaries-2025-03-19.sty"]
+imported_prefixes = ["datatool"]
