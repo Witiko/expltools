@@ -482,3 +482,6 @@ ignored_issues = ["e418"]
 
 [package.cooking-units]
 ignored_issues = ["e418"]
+
+[package.nicematrix]
+ignored_issues = ["w423"]
