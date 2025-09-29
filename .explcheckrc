@@ -430,6 +430,7 @@ ignored_issues = ["e408"]
 
 [package.projlib]
 imported_prefixes = ["crthm", "projlib"]
+ignored_issues = ["e417", "e421"]
 
 [package.pythonimmediate]
 imported_prefixes = ["precattl"]
