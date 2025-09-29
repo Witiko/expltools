@@ -5,7 +5,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/homework/homework.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/hustthesis/hustthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/knowledge/knowledge.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/mhchem/mhchem.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/prettytok/prettytok.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/stex.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-preset.sty
