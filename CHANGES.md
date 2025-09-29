@@ -11,6 +11,9 @@ This version of explcheck has fixed the following bugs:
 - Do not deduplicate issues with the same identifier and range but different
   context. (#132)
 
+- Do not report issues E420 (Locally setting a global variable) and E421
+  (Globally setting a local variable) in top-level code. (21e2023a, 61a40cb7)
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
