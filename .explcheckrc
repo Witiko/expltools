@@ -48,7 +48,7 @@ max_line_length = 100
 ignored_issues = ["e304"]
 
 [package.knowledge]
-ignored_issues = ["e201", "e300", "e301", "w302"]
+ignored_issues = ["e201", "e300", "e301", "w302", "e408"]
 imported_prefixes = ["knowledge"]
 
 [filename."grading-scheme.sty"]
