@@ -369,7 +369,7 @@ ignored_issues = ["e405"]
 ignored_issues = ["e405"]
 
 [package.genealogy-profiles]
-ignored_issues = ["e405"]
+ignored_issues = ["e405", "e408"]
 
 [package.lambdax]
 ignored_issues = ["e405"]
@@ -505,9 +505,6 @@ ignored_issues = ["e304"]
 ignored_issues = ["e408"]
 
 [filename."linguistix-logos.sty"]
-ignored_issues = ["e408"]
-
-[package.genealogy-profiles]
 ignored_issues = ["e408"]
 
 [package.koma-script]
