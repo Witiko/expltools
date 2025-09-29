@@ -404,6 +404,7 @@ ignored_issues = ["e408"]
 
 [package.datatool]
 imported_prefixes = ["datatool"]
+ignored_issues = ["e304"]
 
 [package.download]
 ignored_issues = ["e408"]
