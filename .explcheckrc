@@ -483,4 +483,4 @@ ignored_issues = ["w423"]
 imported_prefixes = ["crefthe"]
 
 [package.witharrows]
-imported_prefixes = ["MH"]
+imported_prefixes = ["MH", "MT"]
