@@ -15,6 +15,9 @@ This version of explcheck has fixed the following bugs:
   (Globally setting a local variable) in top-level code. (21e2023a, 61a40cb7,
   cfa7847b)
 
+- Support message definitions using the deprecated function `\msg_gset:nn...`.
+  (3101d9ff)
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
