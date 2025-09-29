@@ -487,3 +487,6 @@ imported_prefixes = ["MH", "MT"]
 
 [package.codearrows]
 imported_prefixes = ["xpeekahead"]
+
+[package.prettytok]
+imported_prefixes = ["precattl"]
