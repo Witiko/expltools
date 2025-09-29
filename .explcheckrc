@@ -504,6 +504,9 @@ ignored_issues = ["e408"]
 [filename."linguistix-logos.sty"]
 ignored_issues = ["e408"]
 
+[package.genealogy-profiles]
+ignored_issues = ["e408"]
+
 [package.koma-script]
 ignored_issues = ["e304"]
 
