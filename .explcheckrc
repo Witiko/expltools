@@ -472,3 +472,6 @@ ignored_issues = ["e405", "e411"]
 
 [package.robust-externalize]
 ignored_issues = ["e304", "w423"]
+
+[package.homework]
+imported_prefixes = ["minimalist", "projlib"]
