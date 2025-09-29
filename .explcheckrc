@@ -490,3 +490,6 @@ imported_prefixes = ["xpeekahead"]
 
 [package.prettytok]
 imported_prefixes = ["precattl"]
+
+[package.ltx-talk]
+ignored_issues = ["e304"]
