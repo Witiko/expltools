@@ -525,6 +525,9 @@ ignored_issues = ["e304"]
 [package.polyglossia]
 ignored_issues = ["e304"]
 
+[package.phimisci]
+ignored_issues = ["e304"]
+
 [filename."keythms-beamer-support.tex"]
 imported_prefixes = ["keytheorems"]
 
