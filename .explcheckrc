@@ -475,3 +475,6 @@ ignored_issues = ["e304", "w423"]
 
 [package.homework]
 imported_prefixes = ["minimalist", "projlib"]
+
+[package.kalendarium]
+ignored_issues = ["e418"]
