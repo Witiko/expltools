@@ -531,6 +531,9 @@ ignored_issues = ["e304"]
 [package.multifootnote]
 ignored_issues = ["e304"]
 
+[package.mucproc]
+ignored_issues = ["e304"]
+
 [filename."keythms-beamer-support.tex"]
 imported_prefixes = ["keytheorems"]
 
