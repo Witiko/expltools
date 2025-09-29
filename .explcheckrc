@@ -460,3 +460,6 @@ ignored_issues = ["e411"]
 
 [package.timechart]
 ignored_issues = ["e201", "e411"]
+
+[package.mhchem]
+imported_prefixes = ["chemgreek"]
