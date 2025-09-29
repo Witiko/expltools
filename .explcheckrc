@@ -496,3 +496,6 @@ ignored_issues = ["e304"]
 
 [filename."linguistix-ipa.sty"]
 ignored_issues = ["e408"]
+
+[package.koma-script]
+ignored_issues = ["e304"]
