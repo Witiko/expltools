@@ -560,3 +560,6 @@ ignored_issues = ["e411"]
 
 [filename."latex-lab-testphase-l3doc.sty"]
 imported_prefixes = ["l3doc"]
+
+[filename."latex-lab-testphase-block.sty"]
+imported_prefixes = ["hooks"]
