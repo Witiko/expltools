@@ -508,3 +508,6 @@ ignored_issues = ["e304"]
 
 [filename."keythms-beamer-support.tex"]
 imported_prefixes = ["keytheorems"]
+
+[filename."platexrelease.sty"]
+ignored_issues = ["e102"]
