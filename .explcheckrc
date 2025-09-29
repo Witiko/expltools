@@ -40,7 +40,7 @@ expl3_detection_strategy = "precision"
 
 [filename."skrapport.cls"]
 max_line_length = 150
-ignored_issues = ["e300"]
+ignored_issues = ["e300", "e418"]
 
 [package.ctex]
 expl3_detection_strategy = "always"
