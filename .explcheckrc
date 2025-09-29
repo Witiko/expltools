@@ -557,3 +557,6 @@ imported_prefixes = ["datatool"]
 
 [package.xpeekahead]
 ignored_issues = ["e411"]
+
+[filename."latex-lab-testphase-l3doc.sty"]
+imported_prefixes = ["l3doc"]
