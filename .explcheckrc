@@ -62,7 +62,7 @@ ignored_issues = ["e300"]
 [package.stex]
 expl3_detection_strategy = "always"
 max_line_length = 110
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "e408"]
 imported_prefixes = ["stex"]
 
 [package.qrbill]
