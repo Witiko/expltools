@@ -851,7 +851,8 @@ local expl3_message_definition = (
   * underscore
   * (
     P("new")
-    + P("set")
+    + P("g")^-1
+    * P("set")
   )
   * colon
 )
