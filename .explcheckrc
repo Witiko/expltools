@@ -542,3 +542,6 @@ imported_prefixes = ["datatool"]
 
 [filename."glossaries.sty"]
 imported_prefixes = ["datatool"]
+
+[package.xpeekahead]
+ignored_issues = ["e411"]
