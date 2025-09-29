@@ -180,6 +180,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-preset.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/patches/lltjp-atbegshi.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luaxml/luaxml.sty
+/usr/local/texlive/2024/texmf-dist/tex/platex/base/platexrelease.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/bidi/bidi-media9.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/langsci/langscibook.cls
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xduts/xdupgthesis.cls

@@ -1,2 +1,1 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/robust-externalize/robust-externalize.sty
-/usr/local/texlive/2024/texmf-dist/tex/platex/base/platexrelease.sty

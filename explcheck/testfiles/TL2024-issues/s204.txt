@@ -920,6 +920,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexko/luatexko.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luaxml/luaxml.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/nodetree/nodetree-embed.sty
+/usr/local/texlive/2024/texmf-dist/tex/platex/base/platexrelease.sty
 /usr/local/texlive/2024/texmf-dist/tex/platex/jlreq-deluxe/jlreq-deluxe.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/bidi-atbegshi/bidi-atbegshi.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/bidi/bidi-media9.sty
