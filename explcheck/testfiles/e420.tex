@@ -1,5 +1,9 @@
 \tl_new:N
   \g_example_tl
-\tl_set:Nn  % error on this line
-  \g_example_tl
-  { foo }
+\cs_new:Nn
+  \example:
+  {
+    \tl_set:Nn  % error on this line
+      \g_example_tl
+      { foo }
+  }

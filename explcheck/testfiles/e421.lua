@@ -4,7 +4,7 @@ local utils = require("explcheck-utils")
 local filename = "e421.tex"
 local options = {
   expl3_detection_strategy = "always",
-  ignored_issues = {"s413", "w415"},
+  ignored_issues = {"s412", "s413", "w415"},
   stop_after = "semantic analysis",
 }
 local state = table.unpack(utils.process_files({filename}, options))
@@ -13,7 +13,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{3, 5}}
+local expected_line_numbers = {{6, 8}}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e421")
   assert(err[2] == "globally setting a local variable")
