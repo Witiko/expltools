@@ -533,3 +533,6 @@ imported_prefixes = ["fontawesome5"]
 
 [package.fontaxes]
 imported_prefixes = ["figureversions"]
+
+[filename."glossary-tree.sty"]
+imported_prefixes = ["glossaries"]
