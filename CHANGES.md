@@ -12,7 +12,8 @@ This version of explcheck has fixed the following bugs:
   context. (#132)
 
 - Do not report issues E420 (Locally setting a global variable) and E421
-  (Globally setting a local variable) in top-level code. (21e2023a, 61a40cb7)
+  (Globally setting a local variable) in top-level code. (21e2023a, 61a40cb7,
+  cfa7847b)
 
 #### Warnings and errors
 
