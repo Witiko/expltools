@@ -527,3 +527,6 @@ ignored_issues = ["e102"]
 
 [filename."lwarp-fontawesome5-utex-helper.sty"]
 imported_prefixes = ["fontawesome5"]
+
+[package.fontaxes]
+imported_prefixes = ["figureversions"]
