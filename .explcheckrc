@@ -478,3 +478,6 @@ imported_prefixes = ["minimalist", "projlib"]
 
 [package.kalendarium]
 ignored_issues = ["e418"]
+
+[package.cooking-units]
+ignored_issues = ["e418"]
