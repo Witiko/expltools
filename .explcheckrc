@@ -506,6 +506,9 @@ ignored_issues = ["e304"]
 [package.xetexko]
 ignored_issues = ["e304"]
 
+[package.seatingchart]
+ignored_issues = ["e304"]
+
 [filename."keythms-beamer-support.tex"]
 imported_prefixes = ["keytheorems"]
 
