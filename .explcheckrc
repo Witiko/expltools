@@ -471,4 +471,4 @@ ignored_issues = ["w415"]
 ignored_issues = ["e405", "e411"]
 
 [package.robust-externalize]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "w423"]
