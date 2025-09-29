@@ -481,3 +481,6 @@ ignored_issues = ["w423"]
 
 [package.create-theorem]
 imported_prefixes = ["crefthe"]
+
+[package.witharrows]
+imported_prefixes = ["MH"]
