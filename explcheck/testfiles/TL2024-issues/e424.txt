@@ -7,6 +7,5 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-block.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-fontawesome5-generic-helper.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-fontawesome5-utex-helper.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/media9/pdfbase.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/se2thesis/se2packages.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/simplebnf/simplebnf.sty

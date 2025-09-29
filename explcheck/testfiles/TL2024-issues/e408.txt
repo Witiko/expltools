@@ -1,8 +1,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/generic/witharrows/witharrows.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/create-theorem/create-theorem.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/genealogy-profiles/genealogy-profiles.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/glossaries/base/glossaries.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/homework/homework.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/hustthesis/hustthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/prettytok/prettytok.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-preset.sty
