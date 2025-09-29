@@ -611,6 +611,7 @@ local function get_calls(results, part_number, segment, issues, content)
                   local nested_segment = {
                     type = TF_TYPE_ARGUMENTS,
                     location = segment.location,
+                    nesting_depth = segment.nesting_depth + 1,
                     transformed_tokens = {
                       tokens = transformed_tokens,
                       token_range = argument.token_range,
@@ -719,6 +720,7 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
         file_number = file_number,
         part_number = part_number,
       },
+      nesting_depth = 1,
       transformed_tokens = {
         tokens = part_tokens,
         token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),

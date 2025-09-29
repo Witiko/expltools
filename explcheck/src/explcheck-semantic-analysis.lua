@@ -774,6 +774,7 @@ local function analyze(states, file_number, options)
               local nested_segment = {
                 type = REPLACEMENT_TEXT,
                 location = segment.location,
+                nesting_depth = segment.nesting_depth + 1,
                 transformed_tokens = {
                   tokens = doubly_transformed_tokens,
                   token_range = replacement_text_argument.token_range,
@@ -950,11 +951,13 @@ local function analyze(states, file_number, options)
             if not is_constant and defined_csname_scope == "c" then
               issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
             end
-            if not is_global and defined_csname_scope == "g" then
-              issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
-            end
-            if is_global and defined_csname_scope == "l" then
-              issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+            if segment.nesting_depth > 1 then
+              if not is_global and defined_csname_scope == "g" then
+                issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
+              end
+              if is_global and defined_csname_scope == "l" then
+                issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+              end
             end
           end
           local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
