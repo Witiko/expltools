@@ -18,6 +18,7 @@ These devlog posts chronicle the latest updates and progress in the ongoing deve
 8. [Syntactic analysis][13] from March 27, 2025
 9. [Semantic analysis][15] from August 18, 2025
 10. [Expltools goes to India][16] from July 22, 2025
+11. [Inter-file dependencies, segments, and code coverage][17] from September 30, 2025
 
 The article [Expltools: Development tools for expl3 programmers][14], forthcoming in TUGboat 47(1), is a work in progress that summarizes the devlog posts and provides a coherent overview of the current state of the tool.
 
@@ -39,6 +40,7 @@ In the future, this repository may also contain the code of other useful develop
  [14]: https://github.com/Witiko/expltools-tug25-paper
  [15]: https://witiko.github.io/Expl3-Linter-9/
  [16]: https://witiko.github.io/Expl3-Linter-10/
+ [17]: https://witiko.github.io/Expl3-Linter-11/
 
 ## Usage
 
