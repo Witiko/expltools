@@ -500,6 +500,9 @@ local function analyze(states, file_number, options)
         end
         base_argument_specifiers = base_argument_specifiers.payload
 
+        local specifiers_token_range = argument.outer_token_range or argument.token_range
+        local specifiers_byte_range = specifiers_token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+
         local variant_argument_specifiers
 
         -- try to determine all sets of variant argument specifiers
@@ -525,7 +528,7 @@ local function analyze(states, file_number, options)
               )
             else  -- variant argument specifiers are longer than base specifiers
               local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
-              issues:add("t403", "function variant of incompatible type", byte_range, context)
+              issues:add("t403", "function variant of incompatible type", specifiers_byte_range, context)
               return nil  -- give up
             end
           end
@@ -553,9 +556,9 @@ local function analyze(states, file_number, options)
               end
               local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
               if any_deprecated_specifier then
-                issues:add("w410", "function variant of deprecated type", byte_range, context)
+                issues:add("w410", "function variant of deprecated type", specifiers_byte_range, context)
               else
-                issues:add("t403", "function variant of incompatible type", byte_range, context)
+                issues:add("t403", "function variant of incompatible type", specifiers_byte_range, context)
                 return nil  -- variant argument specifier is incompatible with base argument specifier, give up
               end
             end
