@@ -215,7 +215,7 @@ local do_not_use_argument_specifiers = (
 local compatible_argument_specifiers = (
   P("N") * Cc({"N", "c"})
   + P("n") * Cc({"n", "o", "V", "v", "f", "e", "x"})
-  + C(argument_specifier)
+  + Ct(C(argument_specifier))
   + Cc({})
 )
 local deprecated_argument_specifiers = (
