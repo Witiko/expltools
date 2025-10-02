@@ -12,6 +12,23 @@ This version of explcheck has fixed the following bugs:
   for base specifiers `T`, `F`, `p`, `w`, and `D`. (reported by @muzimuzhi in
   #137, fixed in #138)
 
+- Fix the description of issue S413, which was previously "Malformed variable
+  or constant" rather than "Malformed variable or constant _name_".
+  (reported in #137 and #139, fixed in #140)
+
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Fix the documentation of issue S413 (Malformed variable or constant name).
+
+  The module name is mandatory in the variable and constant name, as documented
+  in Section 3.2 (Formal naming syntax) of the document titled [_The `expl3`
+  package and LaTeX3 programming_][expl3].
+
+ [expl3]: https://mirrors.ctan.org/macros/latex/required/l3kernel/expl3.pdf
+
 ## expltools 2025-09-29
 
 ### explcheck v0.13.0
