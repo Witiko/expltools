@@ -50,6 +50,15 @@ local function get_call_token_range(calls)
   end
 end
 
+-- Convert a call range to a corresponding token range.
+local function get_call_range_to_token_range(calls, num_tokens)
+  local token_range_getter = get_call_token_range(calls)
+  local function call_range_to_token_range(call_range)
+    return call_range:new_range_from_subranges(token_range_getter, num_tokens)
+  end
+  return call_range_to_token_range
+end
+
 -- Try and convert tokens from a range into a text.
 local function extract_text_from_tokens(token_range, tokens, map_forward)
   local texts = {}
@@ -744,6 +753,7 @@ return {
   count_parameters_in_replacement_text = count_parameters_in_replacement_text,
   extract_text_from_tokens = extract_text_from_tokens,
   get_calls = get_calls,
+  get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
   name = "syntactic analysis",

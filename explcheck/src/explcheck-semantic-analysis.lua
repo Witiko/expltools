@@ -6,7 +6,7 @@ local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 
-local get_token_byte_range = lexical_analysis.get_token_byte_range
+local get_token_range_to_byte_range = lexical_analysis.get_token_range_to_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
 local format_csname = lexical_analysis.format_csname
@@ -27,7 +27,7 @@ local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 local call_types = syntactic_analysis.call_types
 local segment_types = syntactic_analysis.segment_types
 local get_calls = syntactic_analysis.get_calls
-local get_call_token_range = syntactic_analysis.get_call_token_range
+local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
@@ -273,12 +273,13 @@ local function analyze(states, file_number, options)
     local first_map_forward = segment.transformed_tokens.map_forward
 
     local statements = {}
-    local byte_range_getter = get_token_byte_range(tokens)
+    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+
     for call_number, call in ipairs(calls) do
 
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
       local token_range = call.token_range
-      local byte_range = token_range:new_range_from_subranges(byte_range_getter, #content)
+      local byte_range = token_range_to_byte_range(token_range)
 
       -- Map a token range from the tokens to the transformed tokens.
       local function transform_token_range(token_range)  -- luacheck: ignore token_range
@@ -503,7 +504,7 @@ local function analyze(states, file_number, options)
         base_argument_specifiers = base_argument_specifiers.payload
 
         local specifiers_token_range = argument.outer_token_range or argument.token_range
-        local specifiers_byte_range = specifiers_token_range:new_range_from_subranges(byte_range_getter, #content)
+        local specifiers_byte_range = token_range_to_byte_range(specifiers_token_range)
 
         local variant_argument_specifiers
 
@@ -616,7 +617,7 @@ local function analyze(states, file_number, options)
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
           local lua_code_argument = call.arguments[arguments_number]
           if #lua_code_argument.token_range > 0 then
-            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(byte_range_getter, #content)
+            local lua_code_byte_range = token_range_to_byte_range(lua_code_argument.token_range)
             issues:ignore({identifier_prefix = 's204', range = lua_code_byte_range, seen = true})
           end
         end
@@ -823,7 +824,7 @@ local function analyze(states, file_number, options)
                 end
                 local effectively_defined_csname = get_conditional_function_csname(defined_csname_stem, argument_specifiers, condition)
                 if condition == "p" and is_protected then
-                  local definition_byte_range = definition_token_range:new_range_from_subranges(byte_range_getter, #content)
+                  local definition_byte_range = token_range_to_byte_range(definition_token_range)
                   issues:add("e404", "protected predicate function", definition_byte_range, format_csname(effectively_defined_csname))
                 end
                 table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
@@ -1415,17 +1416,17 @@ local function report_issues(states, main_file_number, options)
       end
     end
 
-    local token_range_getter = get_call_token_range(segment.calls)
-    local byte_range_getter = get_token_byte_range(tokens)
+    local call_range_to_token_range = get_call_range_to_token_range(segment.calls, #tokens)
+    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
     for _, statement in ipairs(segment.statements or {}) do
-      local token_range = statement.call_range:new_range_from_subranges(token_range_getter, #tokens)
-      local byte_range = token_range:new_range_from_subranges(byte_range_getter, #content)
+      local token_range = call_range_to_token_range(statement.call_range)
+      local byte_range = token_range_to_byte_range(token_range)
       -- Process a function variant definition.
       if statement.type == FUNCTION_VARIANT_DEFINITION then
         -- Record base control sequence names of variants, both as control sequence name usage and separately.
         if statement.base_csname.type == TEXT then
           if is_main_file then
-            local base_csname_byte_range = statement.base_csname_argument.token_range:new_range_from_subranges(byte_range_getter, #content)
+            local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
             table.insert(variant_base_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
           end
           maybe_used_csname_texts[statement.base_csname.payload] = true
@@ -1492,7 +1493,7 @@ local function report_issues(states, main_file_number, options)
         -- Record private function defition.
         if statement.defined_csname.type == TEXT and statement.is_private then
           if is_main_file then
-            local definition_byte_range = statement.definition_token_range:new_range_from_subranges(byte_range_getter, #content)
+            local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
             table.insert(defined_private_function_texts, {statement.defined_csname.payload, definition_byte_range})
           end
         end
@@ -1671,7 +1672,7 @@ local function report_issues(states, main_file_number, options)
         for _, call in statement.call_range:enumerate(segment.calls) do
           maybe_used_csname_texts[call.csname] = true
           if is_main_file then
-            local csname_byte_range = call.csname_token_range:new_range_from_subranges(byte_range_getter, #content)
+            local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
             table.insert(called_functions_and_variants, {call.csname, csname_byte_range})
           end
           for _, argument in ipairs(call.arguments) do

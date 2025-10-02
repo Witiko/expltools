@@ -57,6 +57,15 @@ local function get_token_byte_range(tokens)
   end
 end
 
+-- Convert a token range to a corresponding byte range.
+local function get_token_range_to_byte_range(tokens, num_bytes)
+  local byte_range_getter = get_token_byte_range(tokens)
+  local function token_range_to_byte_range(token_range)
+    return token_range:new_range_from_subranges(byte_range_getter, num_bytes)
+  end
+  return token_range_to_byte_range
+end
+
 -- Format a control sequence name as it appears in expl3 code.
 local function format_csname(csname)
   return string.format("\\%s", csname)
@@ -420,6 +429,7 @@ return {
   format_token = format_token,
   format_tokens = format_tokens,
   get_token_byte_range = get_token_byte_range,
+  get_token_range_to_byte_range = get_token_range_to_byte_range,
   is_confused = is_confused,
   is_token_simple = is_token_simple,
   name = "lexical analysis",
