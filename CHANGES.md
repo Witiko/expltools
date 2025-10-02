@@ -183,7 +183,7 @@ This version of explcheck has implemented the following new features:
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
    1. S412 (Malformed function name)
-   2. S413 (Malformed function name)
+   2. S413 (Malformed variable or constant name)
    3. S414 (Malformed quark or scan mark name)
    4. W415 (Unused variable or constant)
    5. W416 (Setting an undeclared variable)
