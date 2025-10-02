@@ -1769,7 +1769,7 @@ local function report_issues(states, main_file_number, options)
             and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
             and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
           ) then
-        issues:add('s413', 'malformed variable or constant', byte_range, format_csname(variable_csname))
+        issues:add('s413', 'malformed variable or constant name', byte_range, format_csname(variable_csname))
       end
     end
   end
