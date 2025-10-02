@@ -24,6 +24,8 @@ This version of explcheck has fixed the following bugs:
      function replacement text, if any.
   2. T403 (Function variant of incompatible type) and W410 (Function variant of
      deprecated type): The argument with the list of variant specifiers.
+  3. E405 (Function variant for an undefined function): The argument with the
+     name of the undefined function.
 
 #### Warnings and errors
 

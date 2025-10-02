@@ -696,6 +696,7 @@ local function analyze(states, file_number, options)
               call_range = call_range,
               confidence = confidence,
               -- The following attributes are specific to the type.
+              base_csname_argument = base_csname_argument,
               base_csname = effective_base_csname,
               defined_csname = defined_csname,
               is_private = is_function_private(base_csname),
@@ -1413,7 +1414,8 @@ local function report_issues(states, main_file_number, options)
         -- Record base control sequence names of variants, both as control sequence name usage and separately.
         if statement.base_csname.type == TEXT then
           if is_main_file then
-            table.insert(variant_base_csname_texts, {statement.base_csname.payload, byte_range})
+            local base_csname_byte_range = statement.base_csname_argument.token_range:new_range_from_subranges(byte_range_getter, #content)
+            table.insert(variant_base_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
           end
           maybe_used_csname_texts[statement.base_csname.payload] = true
         elseif statement.base_csname.type == PATTERN then
