@@ -273,13 +273,15 @@ local function analyze(states, file_number, options)
     local first_map_forward = segment.transformed_tokens.map_forward
 
     local statements = {}
+    local byte_range_getter = get_token_byte_range(tokens)
     for call_number, call in ipairs(calls) do
 
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
-      local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+      local token_range = call.token_range
+      local byte_range = token_range:new_range_from_subranges(byte_range_getter, #content)
 
       -- Map a token range from the tokens to the transformed tokens.
-      local function transform_token_range(token_range)
+      local function transform_token_range(token_range)  -- luacheck: ignore token_range
         return new_range(
           first_map_forward(token_range:start()),
           first_map_forward(token_range:stop()),
@@ -295,7 +297,7 @@ local function analyze(states, file_number, options)
       end
 
       -- Try and convert tokens from a range into a csname.
-      local function extract_name_from_tokens(token_range)
+      local function extract_name_from_tokens(token_range)  -- luacheck: ignore token_range
         return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, first_map_forward)
       end
 
@@ -501,7 +503,7 @@ local function analyze(states, file_number, options)
         base_argument_specifiers = base_argument_specifiers.payload
 
         local specifiers_token_range = argument.outer_token_range or argument.token_range
-        local specifiers_byte_range = specifiers_token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+        local specifiers_byte_range = specifiers_token_range:new_range_from_subranges(byte_range_getter, #content)
 
         local variant_argument_specifiers
 
@@ -614,7 +616,7 @@ local function analyze(states, file_number, options)
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
           local lua_code_argument = call.arguments[arguments_number]
           if #lua_code_argument.token_range > 0 then
-            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(byte_range_getter, #content)
             issues:ignore({identifier_prefix = 's204', range = lua_code_byte_range, seen = true})
           end
         end
@@ -801,6 +803,9 @@ local function analyze(states, file_number, options)
               replacement_text_argument.segment_number = #results.segments
             end
             ::skip_replacement_text::
+            -- determine the token range of the definition excluding the replacement text
+            local replacement_text_token_range = replacement_text_argument.outer_token_range or replacement_text_argument.token_range
+            local definition_token_range = new_range(token_range:start(), replacement_text_token_range:start(), EXCLUSIVE, #tokens)
             -- determine all effectively defined csnames
             local effectively_defined_csnames = {}
             if is_conditional then  -- conditional function
@@ -817,7 +822,8 @@ local function analyze(states, file_number, options)
                 end
                 local effectively_defined_csname = get_conditional_function_csname(defined_csname_stem, argument_specifiers, condition)
                 if condition == "p" and is_protected then
-                  issues:add("e404", "protected predicate function", byte_range, format_csname(effectively_defined_csname))
+                  local definition_byte_range = definition_token_range:new_range_from_subranges(byte_range_getter, #content)
+                  issues:add("e404", "protected predicate function", definition_byte_range, format_csname(effectively_defined_csname))
                 end
                 table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
               end
@@ -837,6 +843,7 @@ local function analyze(states, file_number, options)
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
+                definition_token_range = definition_token_range,
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
                 is_protected = is_protected,
@@ -903,6 +910,7 @@ local function analyze(states, file_number, options)
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
+                definition_token_range = token_range,
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
                 is_conditional = is_conditional,
@@ -1395,9 +1403,11 @@ local function report_issues(states, main_file_number, options)
       end
     end
 
+    local token_range_getter = get_call_token_range(segment.calls)
+    local byte_range_getter = get_token_byte_range(tokens)
     for _, statement in ipairs(segment.statements or {}) do
-      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment.calls), #tokens)
-      local byte_range = token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+      local token_range = statement.call_range:new_range_from_subranges(token_range_getter, #tokens)
+      local byte_range = token_range:new_range_from_subranges(byte_range_getter, #content)
       -- Process a function variant definition.
       if statement.type == FUNCTION_VARIANT_DEFINITION then
         -- Record base control sequence names of variants, both as control sequence name usage and separately.
@@ -1469,16 +1479,7 @@ local function report_issues(states, main_file_number, options)
         -- Record private function defition.
         if statement.defined_csname.type == TEXT and statement.is_private then
           if is_main_file then
-            local definition_byte_range
-            if statement.subtype == FUNCTION_DEFINITION_DIRECT then
-              local replacement_text_token_range
-                = statement.replacement_text_argument.outer_token_range or statement.replacement_text_argument.token_range
-              local definition_token_range
-                = new_range(token_range:start(), replacement_text_token_range:start(), EXCLUSIVE, #tokens)
-              definition_byte_range = definition_token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
-            else
-              definition_byte_range = byte_range
-            end
+            local definition_byte_range = statement.definition_token_range:new_range_from_subranges(byte_range_getter, #content)
             table.insert(defined_private_function_texts, {statement.defined_csname.payload, definition_byte_range})
           end
         end

@@ -12,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{1, 4}}
+local expected_line_numbers = {{1, 3}}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e404")
   assert(err[2] == "protected predicate function")

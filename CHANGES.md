@@ -19,8 +19,9 @@ This version of explcheck has fixed the following bugs:
 - Reduce the range of semantic analysis issues to the smallest possible code
   region. (reported by @muzimuzhi in #137 and #139)
 
-  1. W401 (Unused private function): From the beginning of the function
-     definition to the beginning of the function replacement text, if any.
+  1. W401 (Unused private function) and E404 (Protected predicate function):
+     From the beginning of the function definition to the beginning of the
+     function replacement text, if any.
   2. T403 (Function variant of incompatible type) and W410 (Function variant of
      deprecated type): The argument with the list of variant specifiers.
 
