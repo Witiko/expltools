@@ -578,7 +578,7 @@ local function analyze(states, file_number, options)
           for i = 1, #base_argument_specifiers do
             local base_argument_specifier = base_argument_specifiers:sub(i, i)
             local compatible_specifiers = table.concat(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier))
-            if #compatible_specifiers == 0 then  -- an unknown argument specifier
+            if #compatible_specifiers == 0 then  -- no compatible specifiers
               return nil  -- give up
             end
             if compatible_specifiers ~= base_argument_specifier then
