@@ -588,7 +588,7 @@ local function analyze(states, file_number, options)
             local compatible_specifier_transcript = string.format('[%s]', compatible_specifiers)
             table.insert(compatible_specifier_transcripts, compatible_specifier_transcript)
           end
-          if not any_other_compatible_specifiers then  -- there are no other compatible argument specifiers
+          if not any_other_compatible_specifiers then  -- no compatible specifiers other than base
             return nil  -- give up
           end
           local compatible_specifiers_transcript = table.concat(compatible_specifier_transcripts)
