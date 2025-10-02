@@ -571,15 +571,25 @@ local function analyze(states, file_number, options)
 
         ::unknown_argument_specifiers::
         -- assume all possible sets of variant argument specifiers with lower confidence
+        variant_argument_specifiers = {}
         do
-          variant_argument_specifiers = {}
           local compatible_specifier_pattern, compatible_specifier_transcripts = parsers.success, {}
+          local any_other_compatible_specifiers = false
           for i = 1, #base_argument_specifiers do
             local base_argument_specifier = base_argument_specifiers:sub(i, i)
             local compatible_specifiers = table.concat(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier))
+            if #compatible_specifiers == 0 then  -- no compatible specifiers
+              return nil  -- give up
+            end
+            if compatible_specifiers ~= base_argument_specifier then
+              any_other_compatible_specifiers = true
+            end
             compatible_specifier_pattern = compatible_specifier_pattern * lpeg.S(compatible_specifiers)
             local compatible_specifier_transcript = string.format('[%s]', compatible_specifiers)
             table.insert(compatible_specifier_transcripts, compatible_specifier_transcript)
+          end
+          if not any_other_compatible_specifiers then  -- no compatible specifiers other than base
+            return nil  -- give up
           end
           local compatible_specifiers_transcript = table.concat(compatible_specifier_transcripts)
           table.insert(variant_argument_specifiers, {

@@ -4,6 +4,14 @@
 
 ### explcheck v0.14.0
 
+#### Fixes
+
+This version of explcheck has fixed the following bugs:
+
+- Do not produce a Lua error when trying to generate all compatible specifiers
+  for base specifiers `T`, `F`, `p`, `w`, and `D`. (reported by @muzimuzhi in
+  #137, fixed in #138)
+
 ## expltools 2025-09-29
 
 ### explcheck v0.13.0

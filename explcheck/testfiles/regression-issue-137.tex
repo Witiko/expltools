@@ -1,0 +1,6 @@
+\ExplSyntaxOn
+\cs_new_protected:Npn \foo:nn #1#2  % noqa: s412
+  {
+    \exp_after:wN \cs_generate_variant:Nn \cs:w #1:n \cs_end: { #2 }  % noqa: w302
+  }
+\ExplSyntaxOff
