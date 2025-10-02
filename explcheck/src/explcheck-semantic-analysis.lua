@@ -20,6 +20,7 @@ local CHARACTER = token_types.CHARACTER
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
 
+local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
@@ -1465,7 +1466,17 @@ local function report_issues(states, main_file_number, options)
         -- Record private function defition.
         if statement.defined_csname.type == TEXT and statement.is_private then
           if is_main_file then
-            table.insert(defined_private_function_texts, {statement.defined_csname.payload, byte_range})
+            local definition_byte_range
+            if statement.subtype == FUNCTION_DEFINITION_DIRECT then
+              local replacement_text_token_range
+                = statement.replacement_text_argument.outer_token_range or statement.replacement_text_argument.token_range
+              local definition_token_range
+                = new_range(token_range:start(), replacement_text_token_range:start(), EXCLUSIVE, #tokens)
+              definition_byte_range = definition_token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+            else
+              definition_byte_range = byte_range
+            end
+            table.insert(defined_private_function_texts, {statement.defined_csname.payload, definition_byte_range})
           end
         end
       -- Process a variable declaration.
