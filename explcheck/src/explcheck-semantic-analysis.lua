@@ -844,6 +844,7 @@ local function analyze(states, file_number, options)
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
+                defined_csname_argument = defined_csname_argument,
                 definition_token_range = definition_token_range,
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
@@ -911,6 +912,7 @@ local function analyze(states, file_number, options)
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
+                defined_csname_argument = defined_csname_argument,
                 definition_token_range = token_range,
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
@@ -944,6 +946,7 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
+            declared_csname_argument = declared_csname_argument,
             variable_type = variable_type,
           }
           table.insert(statements, statement)
@@ -1001,6 +1004,7 @@ local function analyze(states, file_number, options)
               is_constant = is_constant,
               is_global = is_global,
               defined_csname = defined_csname,
+              defined_csname_argument = defined_csname_argument,
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
@@ -1022,8 +1026,10 @@ local function analyze(states, file_number, options)
               is_constant = is_constant,
               is_global = is_global,
               defined_csname = defined_csname,
+              defined_csname_argument = defined_csname_argument,
               -- The following attributes are specific to the subtype.
               base_csname = base_csname,
+              base_csname_argument = base_csname_argument,
               base_variable_type = base_variable_type,
             }
           end
@@ -1053,6 +1059,7 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             used_csname = used_csname,
+            used_csname_argument = used_csname_argument,
             variable_type = variable_type,
           }
           table.insert(statements, statement)
@@ -1093,7 +1100,9 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             module_name = module_name,
+            module_argument = module_argument,
             message_name = message_name,
+            message_argument = message_argument,
             text_argument = text_argument,
             more_text_argument = more_text_argument,
             num_text_parameters = num_text_parameters,
@@ -1128,7 +1137,9 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             module_name = module_name,
+            module_argument = module_argument,
             message_name = message_name,
+            message_argument = message_argument,
             text_arguments = text_arguments,
           }
           table.insert(statements, statement)
@@ -1660,7 +1671,8 @@ local function report_issues(states, main_file_number, options)
         for _, call in statement.call_range:enumerate(segment.calls) do
           maybe_used_csname_texts[call.csname] = true
           if is_main_file then
-            table.insert(called_functions_and_variants, {call.csname, byte_range})
+            local csname_byte_range = call.csname_token_range:new_range_from_subranges(byte_range_getter, #content)
+            table.insert(called_functions_and_variants, {call.csname, csname_byte_range})
           end
           for _, argument in ipairs(call.arguments) do
             process_argument_tokens(argument)

@@ -22,10 +22,14 @@ This version of explcheck has fixed the following bugs:
   1. W401 (Unused private function) and E404 (Protected predicate function):
      From the beginning of the function definition to the beginning of the
      function replacement text, if any.
+
   2. T403 (Function variant of incompatible type) and W410 (Function variant of
      deprecated type): The argument with the list of variant specifiers.
+
   3. E405 (Function variant for an undefined function): The argument with the
      name of the undefined function.
+
+  4. E408 (Calling an undefined function): The undefined function name.
 
 #### Warnings and errors
 

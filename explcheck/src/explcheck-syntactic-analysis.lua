@@ -395,6 +395,7 @@ local function get_calls(results, part_number, segment, issues, content)
       local original_csname = token.payload
       local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
       ::retry_control_sequence::
+      local csname_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
       local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
       if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
         local arguments = {}
@@ -664,6 +665,7 @@ local function get_calls(results, part_number, segment, issues, content)
           type = CALL,
           token_range = next_token_range,
           csname = csname,
+          csname_token_range = csname_token_range,
           arguments = arguments,
         })
         token_number = next_token_number
