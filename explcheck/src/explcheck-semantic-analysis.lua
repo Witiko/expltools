@@ -972,18 +972,19 @@ local function analyze(states, file_number, options)
           -- detect mutability mismatches
           local defined_csname_scope = lpeg.match(parsers.expl3_variable_or_constant_csname_scope, defined_csname.transcript)
           if defined_csname_scope ~= nil then
+            local defined_csname_byte_range = token_range_to_byte_range(defined_csname_argument.token_range)
             if is_constant and (defined_csname_scope == "g" or defined_csname_scope == "l") then
-              issues:add('e417', 'setting a variable as a constant', byte_range, format_csname(defined_csname.transcript))
+              issues:add('e417', 'setting a variable as a constant', defined_csname_byte_range, format_csname(defined_csname.transcript))
             end
             if not is_constant and defined_csname_scope == "c" then
-              issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
+              issues:add('e418', 'setting a constant', defined_csname_byte_range, format_csname(defined_csname.transcript))
             end
             if segment.nesting_depth > 1 then
               if not is_global and defined_csname_scope == "g" then
-                issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
+                issues:add('e420', 'locally setting a global variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
               end
               if is_global and defined_csname_scope == "l" then
-                issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+                issues:add('e421', 'globally setting a local variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
               end
             end
           end

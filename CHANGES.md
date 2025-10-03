@@ -41,8 +41,10 @@ This version of explcheck has fixed the following bugs:
      and S414 (Malformed quark or scan mark name): The argument with the
      malformed name.
 
-  6. W415 (Unused variable or constant) and W416 (Setting an undeclared
-     variable): The argument with the variable or constant name.
+  6. W415 (Unused variable or constant), W416 (Setting an undeclared variable),
+     E417 (Setting a variable as a constant), E418 (Setting a constant),
+     E420 (Locally setting a global variable), and E421 (Globally setting a
+     local variable): The argument with the variable or constant name.
 
 #### Warnings and errors
 
