@@ -630,7 +630,8 @@ local function analyze(states, file_number, options)
           if csname ~= nil then
             local _, argument_specifiers = parse_expl3_csname(csname)
             if argument_specifiers ~= nil and argument_specifiers.type == TEXT and argument_specifiers.payload ~= 'nnTF' then
-              issues:add('e427', 'comparison conditional without signature `:nnTF`', byte_range, argument_specifiers.payload)
+              local csname_byte_range = token_range_to_byte_range(csname_argument.token_range)
+              issues:add('e427', 'comparison conditional without signature `:nnTF`', csname_byte_range, argument_specifiers.payload)
             end
           end
         end

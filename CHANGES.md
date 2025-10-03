@@ -62,6 +62,9 @@ This version of explcheck has fixed the following bugs:
   10. **E425 (Incorrect parameters in message text):** The argument with the
       incorrect parameter token.
 
+  11. **E427 (Comparison conditional without signature `:nnTF`):** The argument
+      with the comparison conditional name.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
