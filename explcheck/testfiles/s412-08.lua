@@ -1,7 +1,7 @@
 local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
-local filename = "s412-02.tex"
+local filename = "s412-08.tex"
 local options = {
   expl3_detection_strategy = "always",
   stop_after = "semantic analysis",
@@ -10,9 +10,9 @@ local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results
 
 assert(#issues.errors == 0)
-assert(#issues.warnings == 1)
+assert(#issues.warnings == 4)
 
-local expected_line_numbers = {{2, 2}}
+local expected_line_numbers = {{2, 2}, {5, 5}, {5, 5}, {5, 5}}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "s412")
   assert(warning[2] == "malformed function name")

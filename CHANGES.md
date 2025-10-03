@@ -31,6 +31,8 @@ This version of explcheck has fixed the following bugs:
 
   4. E408 (Calling an undefined function): The undefined function name.
 
+  5. S412 (Malformed function name): The argument with the malformed name.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled

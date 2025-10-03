@@ -1423,10 +1423,10 @@ local function report_issues(states, main_file_number, options)
       local byte_range = token_range_to_byte_range(token_range)
       -- Process a function variant definition.
       if statement.type == FUNCTION_VARIANT_DEFINITION then
+        local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
         -- Record base control sequence names of variants, both as control sequence name usage and separately.
         if statement.base_csname.type == TEXT then
           if is_main_file then
-            local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
             table.insert(variant_base_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
           end
           maybe_used_csname_texts[statement.base_csname.payload] = true
@@ -1442,7 +1442,7 @@ local function report_issues(states, main_file_number, options)
         -- Record control sequence name definitions.
         if statement.defined_csname.type == TEXT then
           if is_main_file then
-            table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+            table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
           end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
@@ -1484,7 +1484,8 @@ local function report_issues(states, main_file_number, options)
         if statement.defined_csname.type == TEXT then
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
           if is_main_file then
-            table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+            local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
+            table.insert(defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
           end
         end
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then

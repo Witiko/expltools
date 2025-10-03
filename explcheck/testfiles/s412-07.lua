@@ -12,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 0)
 assert(#issues.warnings == 4)
 
-local expected_line_numbers = {{5, 8}, {5, 8}, {5, 8}, {5, 8}}
+local expected_line_numbers = {{6, 6}, {6, 6}, {6, 6}, {6, 6}}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "s412")
   assert(warning[2] == "malformed function name")

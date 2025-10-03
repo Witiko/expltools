@@ -69,6 +69,10 @@ This also extends to conditional functions:
  /s412-06.tex
  /s412-07.tex
 
+Furthermore, this also extends to function variants:
+
+ /s412-08.tex
+
 ## Variables and constants
 
 ### Malformed variable or constant name {.s label=s413}
