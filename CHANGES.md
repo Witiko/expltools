@@ -33,16 +33,16 @@ This version of explcheck has fixed the following bugs:
      deprecated type): The argument with the list of variant specifiers.
 
   3. E405 (Function variant for an undefined function): The argument with the
-     name of the undefined function.
+     function name.
 
   4. E408 (Calling an undefined function): The undefined function name.
 
-  5. S412 (Malformed function name), S413 (Malformed variable or constant name)
+  5. S412 (Malformed function name), S413 (Malformed variable or constant name),
      and S414 (Malformed quark or scan mark name): The argument with the
      malformed name.
 
-  6. W415 (Unused variable or constant): The argument with the unused variable
-     or constant name.
+  6. W415 (Unused variable or constant) and W416 (Setting an undeclared
+     variable): The argument with the variable or constant name.
 
 #### Warnings and errors
 

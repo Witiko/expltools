@@ -1556,7 +1556,7 @@ local function report_issues(states, main_file_number, options)
               {statement.variable_type, statement.defined_csname.payload, defined_csname_byte_range})
             table.insert(
               defined_variable_csname_texts,
-              {statement.defined_csname.payload, byte_range}
+              {statement.defined_csname.payload, defined_csname_byte_range}
             )
           end
           if statement.is_constant then
