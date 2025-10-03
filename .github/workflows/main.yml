@@ -28,7 +28,7 @@ jobs:
           packages: |
             l3build
       - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
+        run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-obsolete.lua"
         run: l3build tag
       - name: Extract Lua code blocks from file "README.md"
@@ -71,7 +71,7 @@ jobs:
             l3build
             luatex
       - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
+        run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-obsolete.lua"
         run: l3build tag
       - name: Run explcheck
@@ -103,7 +103,7 @@ jobs:
           packages: |
             l3build
       - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
+        run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Run unit tests
         run: |
           l3build check
@@ -146,7 +146,7 @@ jobs:
         if: matrix.release == 'latest'  # otherwise, this would have been taken care of by the previous step
         run: tlmgr update --self
       - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
+        run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-obsolete.lua"
         run: l3build tag
       - name: Run explcheck
@@ -201,7 +201,7 @@ jobs:
           package-file: |
             **/DEPENDS.txt
       - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
+        run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Build CTAN archive and documentation
         timeout-minutes: 5
         run: |
@@ -238,7 +238,7 @@ jobs:
           packages: |
             l3build
       - name: Install file "l3obsolete.txt"
-        run: tlmgr install --reinstall --with-doc l3kernel
+        run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Determine Docker image tag
         run: printf 'IMAGE_TAG=ghcr.io/%s/explcheck\n' "$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
       - name: Build Docker image

@@ -80,6 +80,14 @@ This version of explcheck has made the following changes to the document titled
 - Change the description of issue E425 from "Incorrect parameters in message
   text" to "Incorrect parameter in message text". (#140)
 
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Generate the file `explcheck-latex3.lua` from the files `l3obsolete.txt` and
+  `l3prefixes.csv` in the package `l3kernel-dev` rather than `l3kernel`. (#140)
+
 ## expltools 2025-09-29
 
 ### explcheck v0.13.0
