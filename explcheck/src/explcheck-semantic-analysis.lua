@@ -996,6 +996,8 @@ local function analyze(states, file_number, options)
             if definition_text_argument == nil then  -- we couldn't extract the definition text, give up
               goto other_statement
             end
+            local definition_text_token_range = definition_text_argument.outer_token_range or definition_text_argument.token_range
+            local definition_token_range = new_range(token_range:start(), definition_text_token_range:start(), EXCLUSIVE, #tokens)
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
@@ -1007,6 +1009,7 @@ local function analyze(states, file_number, options)
               is_global = is_global,
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
+              definition_token_range = definition_token_range,
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
@@ -1029,6 +1032,7 @@ local function analyze(states, file_number, options)
               is_global = is_global,
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
+              definition_token_range = token_range,
               -- The following attributes are specific to the subtype.
               base_csname = base_csname,
               base_csname_argument = base_csname_argument,
@@ -1054,6 +1058,8 @@ local function analyze(states, file_number, options)
               ) then
             goto other_statement
           end
+          local used_csname_token_range = used_csname_argument.outer_token_range or used_csname_argument.token_range
+          local use_token_range = new_range(token_range:start(), used_csname_token_range:stop(), INCLUSIVE, #tokens)
           local confidence = used_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_USE,
@@ -1063,6 +1069,7 @@ local function analyze(states, file_number, options)
             used_csname = used_csname,
             used_csname_argument = used_csname_argument,
             variable_type = variable_type,
+            use_token_range = use_token_range,
           }
           table.insert(statements, statement)
           goto continue
@@ -1531,20 +1538,21 @@ local function report_issues(states, main_file_number, options)
       elseif statement.type == VARIABLE_DEFINITION then
         -- Record variable names.
         if is_main_file then
+          local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
           if statement.is_constant then
             table.insert(
               declared_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, byte_range}
+              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
             )
           else
             table.insert(
               defined_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, byte_range}
+              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
             )
             if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
               table.insert(
                 defined_variable_base_csname_transcripts,
-                {statement.base_variable_type, statement.base_csname.transcript, byte_range}
+                {statement.base_variable_type, statement.base_csname.transcript, definition_byte_range}
               )
             end
           end
@@ -1579,9 +1587,10 @@ local function report_issues(states, main_file_number, options)
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
         if is_main_file then
+          local use_byte_range = token_range_to_byte_range(statement.use_token_range)
           table.insert(
             used_variable_csname_transcripts,
-            {statement.variable_type, statement.used_csname.transcript, byte_range}
+            {statement.variable_type, statement.used_csname.transcript, use_byte_range}
           )
         end
         if statement.used_csname.type == TEXT then

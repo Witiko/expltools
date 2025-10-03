@@ -47,6 +47,10 @@ This version of explcheck has fixed the following bugs:
      setting a global variable), and E421 (Globally setting a local
      variable):** The argument with the variable or constant name.
 
+  7. **T422 (Using a variable of an incompatible type):** From the beginning
+     of the variable/constant declaration/definition/use to the beginning of
+     any arguments following the variable/constant names.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
