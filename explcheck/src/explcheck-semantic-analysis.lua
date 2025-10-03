@@ -1591,7 +1591,7 @@ local function report_issues(states, main_file_number, options)
               declared_defined_and_used_variable_csname_texts,
               {statement.variable_type, statement.used_csname.payload, used_csname_byte_range}
             )
-            table.insert(used_variable_csname_texts, {statement.used_csname.payload, byte_range})
+            table.insert(used_variable_csname_texts, {statement.used_csname.payload, used_csname_byte_range})
           end
           maybe_used_variable_csname_texts[statement.used_csname.payload] = true
         elseif statement.used_csname.type == PATTERN then

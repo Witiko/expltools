@@ -25,26 +25,27 @@ This version of explcheck has fixed the following bugs:
   Specifically, the ranges of the following issues were narrowed from entire
   statements to particular parts of those statements:
 
-  1. W401 (Unused private function) and E404 (Protected predicate function):
+  1. **W401 (Unused private function) and E404 (Protected predicate function):**
      From the beginning of the function definition to the beginning of the
      function replacement text, if any.
 
-  2. T403 (Function variant of incompatible type) and W410 (Function variant of
-     deprecated type): The argument with the list of variant specifiers.
+  2. **T403 (Function variant of incompatible type) and W410 (Function variant
+     of deprecated type):** The argument with the list of variant specifiers.
 
-  3. E405 (Function variant for an undefined function): The argument with the
-     function name.
+  3. **E405 (Function variant for an undefined function):** The argument with
+     the function name.
 
-  4. E408 (Calling an undefined function): The undefined function name.
+  4. **E408 (Calling an undefined function):** The undefined function name.
 
-  5. S412 (Malformed function name), S413 (Malformed variable or constant name),
-     and S414 (Malformed quark or scan mark name): The argument with the
-     malformed name.
+  5. **S412 (Malformed function name), S413 (Malformed variable or constant
+     name), and S414 (Malformed quark or scan mark name):** The argument with
+     the malformed name.
 
-  6. W415 (Unused variable or constant), W416 (Setting an undeclared variable),
-     E417 (Setting a variable as a constant), E418 (Setting a constant),
-     E420 (Locally setting a global variable), and E421 (Globally setting a
-     local variable): The argument with the variable or constant name.
+  6. **W415 (Unused variable or constant), W416 (Setting an undeclared
+     variable), E417 (Setting a variable as a constant), E418 (Setting a
+     constant), W419 (Using an undeclared variable or constant), E420 (Locally
+     setting a global variable), and E421 (Globally setting a local
+     variable):** The argument with the variable or constant name.
 
 #### Warnings and errors
 
