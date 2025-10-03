@@ -51,6 +51,9 @@ This version of explcheck has fixed the following bugs:
      of the variable/constant declaration/definition/use to the beginning of
      any arguments following the variable/constant names.
 
+  8. **W423 (Unused message):** From the beginning of the message definition
+     to the beginning of the message text.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled

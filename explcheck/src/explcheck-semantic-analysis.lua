@@ -996,6 +996,7 @@ local function analyze(states, file_number, options)
             if definition_text_argument == nil then  -- we couldn't extract the definition text, give up
               goto other_statement
             end
+            -- determine the token range of the definition excluding the definition text
             local definition_text_token_range = definition_text_argument.outer_token_range or definition_text_argument.token_range
             local definition_token_range = new_range(token_range:start(), definition_text_token_range:start(), EXCLUSIVE, #tokens)
             statement = {
@@ -1058,8 +1059,10 @@ local function analyze(states, file_number, options)
               ) then
             goto other_statement
           end
+          -- determine the token range of the use excluding any arguments following the used variable name
           local used_csname_token_range = used_csname_argument.outer_token_range or used_csname_argument.token_range
           local use_token_range = new_range(token_range:start(), used_csname_token_range:stop(), INCLUSIVE, #tokens)
+
           local confidence = used_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_USE,
@@ -1102,6 +1105,10 @@ local function analyze(states, file_number, options)
           if message_name == nil then  -- we couldn't parse the message name, give up
             goto other_statement
           end
+          -- determine the token range of the definition excluding the message text
+          local text_token_range = text_argument.outer_token_range or text_argument.token_range
+          local definition_token_range = new_range(token_range:start(), text_token_range:start(), EXCLUSIVE, #tokens)
+
           local confidence = module_name.type == TEXT and message_name.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = MESSAGE_DEFINITION,
@@ -1115,6 +1122,7 @@ local function analyze(states, file_number, options)
             text_argument = text_argument,
             more_text_argument = more_text_argument,
             num_text_parameters = num_text_parameters,
+            definition_token_range = definition_token_range,
           }
           table.insert(statements, statement)
           goto continue
@@ -1619,7 +1627,8 @@ local function report_issues(states, main_file_number, options)
         if message_name.type == TEXT then
           maybe_defined_message_name_texts[message_name.payload] = true
           if is_main_file then
-            table.insert(defined_message_name_texts, {message_name.payload, byte_range})
+            local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
+            table.insert(defined_message_name_texts, {message_name.payload, definition_byte_range})
           end
         elseif message_name.type == PATTERN then
           maybe_defined_message_name_pattern = (
