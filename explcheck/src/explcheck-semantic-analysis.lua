@@ -1147,6 +1147,15 @@ local function analyze(states, file_number, options)
           for i = 3, #call.arguments do
             table.insert(text_arguments, call.arguments[i])
           end
+          -- determine the token range of the use excluding any text arguments
+          local use_token_range
+          if #text_arguments > 0 then
+            local first_text_argument_token_range = text_arguments[1].outer_token_range or text_arguments[1].token_range
+            use_token_range = new_range(token_range:start(), first_text_argument_token_range:start(), EXCLUSIVE, #tokens)
+          else
+            use_token_range = token_range
+          end
+
           local confidence = module_name.type == TEXT and message_name.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = MESSAGE_USE,
@@ -1158,6 +1167,7 @@ local function analyze(states, file_number, options)
             message_name = message_name,
             message_argument = message_argument,
             text_arguments = text_arguments,
+            use_token_range = use_token_range,
           }
           table.insert(statements, statement)
           goto continue
@@ -1669,7 +1679,8 @@ local function report_issues(states, main_file_number, options)
         if message_name.type == TEXT then
           maybe_used_message_name_texts[message_name.payload] = true
           if is_main_file then
-            table.insert(used_message_name_texts, {message_name.payload, byte_range})
+            local use_byte_range = token_range_to_byte_range(statement.use_token_range)
+            table.insert(used_message_name_texts, {message_name.payload, use_byte_range})
           end
         elseif message_name.type == PATTERN then
           maybe_used_message_name_pattern = (

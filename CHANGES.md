@@ -27,7 +27,8 @@ This version of explcheck has fixed the following bugs:
 
   1. **W401 (Unused private function) and E404 (Protected predicate function):**
      From the beginning of the function definition to the beginning of the
-     function replacement text, if any.
+     function replacement text (exclusive), if any, or the while function
+     definition otherwise.
 
   2. **T403 (Function variant of incompatible type) and W410 (Function variant
      of deprecated type):** The argument with the list of variant specifiers.
@@ -49,10 +50,14 @@ This version of explcheck has fixed the following bugs:
 
   7. **T422 (Using a variable of an incompatible type):** From the beginning
      of the variable/constant declaration/definition/use to the beginning of
-     any arguments following the variable/constant names.
+     any arguments following the variable/constant names (exclusive).
 
   8. **W423 (Unused message):** From the beginning of the message definition
-     to the beginning of the message text.
+     to the beginning of the message text (exclusive).
+
+  9. **E424 (Using an undefined message):** From the beginning of the message use
+     to the first text argument (exclusive), if any, or the whole message use
+     otherwise.
 
 #### Warnings and errors
 
