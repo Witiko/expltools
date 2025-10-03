@@ -11,7 +11,7 @@ local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
 local format_csname = lexical_analysis.format_csname
 
-local count_parameters_in_replacement_text = syntactic_analysis.count_parameters_in_replacement_text
+local _count_parameters_in_replacement_text = syntactic_analysis.count_parameters_in_replacement_text
 local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
@@ -1085,16 +1085,19 @@ local function analyze(states, file_number, options)
           end
           local module_argument, message_argument, text_argument, more_text_argument = table.unpack(call.arguments)
           -- determine the number of parameters in the message text
-          local num_text_parameters
-            = count_parameters_in_replacement_text(transformed_tokens, transform_token_range(text_argument.token_range))
-          if more_text_argument ~= nil then
-            num_text_parameters = math.max(
-              num_text_parameters,
-              count_parameters_in_replacement_text(transformed_tokens, transform_token_range(more_text_argument.token_range))
-            )
+
+          local function count_parameters_in_replacement_text(argument)
+            local num_parameters = _count_parameters_in_replacement_text(transformed_tokens, transform_token_range(argument.token_range))
+            if num_parameters > 4 then  -- too many parameters, register an error
+              local argument_byte_range = token_range_to_byte_range(argument.token_range)
+              issues:add('e425', 'incorrect parameters in message text', argument_byte_range, string.format('#%d', num_parameters))
+            end
+            return num_parameters
           end
-          if num_text_parameters > 4 then  -- too many parameters, register an error
-            issues:add('e425', 'incorrect parameters in message text', byte_range, string.format('#%d', num_text_parameters))
+
+          local num_text_parameters = count_parameters_in_replacement_text(text_argument)
+          if more_text_argument ~= nil then
+            num_text_parameters = math.max(num_text_parameters, count_parameters_in_replacement_text(more_text_argument))
           end
           -- parse the module and message names
           local module_name = extract_name_from_tokens(module_argument.token_range)

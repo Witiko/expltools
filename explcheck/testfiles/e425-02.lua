@@ -10,10 +10,10 @@ local options = {
 local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results
 
-assert(#issues.errors == 1)
+assert(#issues.errors == 2)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{1, 5}}
+local expected_line_numbers = {{4, 4}, {5, 5}}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e425")
   assert(err[2] == "incorrect parameters in message text")

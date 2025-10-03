@@ -59,6 +59,9 @@ This version of explcheck has fixed the following bugs:
      to the first text argument (exclusive), if any, or the whole message use
      otherwise.
 
+  10. **E425 (Incorrect parameters in message text):** The argument with the
+      incorrect parameter token.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled

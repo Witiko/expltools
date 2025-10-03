@@ -13,7 +13,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{1, 4}}
+local expected_line_numbers = {{4, 4}}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e425")
   assert(err[2] == "incorrect parameters in message text")
