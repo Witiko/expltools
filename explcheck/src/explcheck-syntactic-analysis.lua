@@ -73,35 +73,6 @@ local function extract_text_from_tokens(token_range, tokens, map_forward)
   return text
 end
 
--- Count the number of parameters in a replacement text.
-local function count_parameters_in_replacement_text(tokens, replacement_text_token_range)
-  if #replacement_text_token_range == 0 then
-    return 0
-  end
-  local max_parameter_number = 0
-  local token_number = replacement_text_token_range:start()
-  while token_number <= replacement_text_token_range:stop() do
-    local token = tokens[token_number]
-    local next_token_number = token_number + 1
-    if token.type == CHARACTER and token.catcode == 6 then  -- parameter
-      if next_token_number > replacement_text_token_range:stop() then  -- not followed by anything, the replacement text is invalid
-        break
-      end
-      local next_token = tokens[next_token_number]
-      if next_token.type == CHARACTER and next_token.catcode == 6 then  -- followed by another parameter
-        next_token_number = next_token_number + 1
-      elseif next_token.type == CHARACTER and lpeg.match(parsers.decimal_digit, next_token.payload) then  -- followed by a digit
-        local next_digit = tonumber(next_token.payload)
-        assert(next_digit ~= nil)
-        max_parameter_number = math.max(max_parameter_number, next_digit)
-        next_token_number = next_token_number + 1
-      end
-    end
-    token_number = next_token_number
-  end
-  return max_parameter_number
-end
-
 -- Transform parameter tokens in a replacement text.
 local function transform_replacement_text_tokens(content, tokens, issues, num_parameters, replacement_text_token_range)
   local deleted_token_numbers, transformed_tokens = {}, {}
@@ -750,7 +721,6 @@ local substeps = {
 
 return {
   call_types = call_types,
-  count_parameters_in_replacement_text = count_parameters_in_replacement_text,
   extract_text_from_tokens = extract_text_from_tokens,
   get_calls = get_calls,
   get_call_range_to_token_range = get_call_range_to_token_range,

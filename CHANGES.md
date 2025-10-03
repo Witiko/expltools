@@ -17,7 +17,7 @@ This version of explcheck has fixed the following bugs:
   (reported in #137 and #139, fixed in #140)
 
 - Reduce the range of semantic analysis issues to the smallest possible code
-  region. (reported by @muzimuzhi in #137 and #139)
+  region. (reported by @muzimuzhi in #137 and #139, fixed in #140)
 
   This is to reduce the change of `% noqa` comments within long statements
   inadvertedly silencing issues related to other parts of the statement.
@@ -59,8 +59,7 @@ This version of explcheck has fixed the following bugs:
      to the first text argument (exclusive), if any, or the whole message use
      otherwise.
 
-  10. **E425 (Incorrect parameters in message text):** The argument with the
-      incorrect parameter token.
+  10. **E425 (Incorrect parameters in message text):** The incorrect parameter token.
 
   11. **E427 (Comparison conditional without signature `:nnTF`):** The argument
       with the comparison conditional name.
