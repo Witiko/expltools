@@ -19,9 +19,8 @@ This version of explcheck has fixed the following bugs:
 - Reduce the range of semantic analysis issues to the smallest possible code
   region. (reported by @muzimuzhi in #137 and #139, fixed in #140)
 
-  This is to reduce the change of `% noqa` comments within long statements
+  This is to reduce the chance of `% noqa` comments within long statements
   inadvertedly silencing issues related to other parts of the statement.
-
   Specifically, the ranges of the following issues were narrowed from entire
   statements to particular parts of those statements:
 
