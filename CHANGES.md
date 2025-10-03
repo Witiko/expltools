@@ -59,7 +59,7 @@ This version of explcheck has fixed the following bugs:
      to the first text argument (exclusive), if any, or the whole message use
      otherwise.
 
-  10. **E425 (Incorrect parameters in message text):** The incorrect parameter token.
+  10. **E425 (Incorrect parameter in message text):** The incorrect parameter token.
 
   11. **E427 (Comparison conditional without signature `:nnTF`):** The argument
       with the comparison conditional name.
@@ -77,6 +77,9 @@ This version of explcheck has made the following changes to the document titled
   package and LaTeX3 programming_][expl3].
 
  [expl3]: https://mirrors.ctan.org/macros/latex/required/l3kernel/expl3.pdf
+
+- Change the description of issue E425 from "Incorrect parameters in message
+  text" to "Incorrect parameter in message text". (#140)
 
 ## expltools 2025-09-29
 

@@ -1123,7 +1123,7 @@ local function analyze(states, file_number, options)
             for _, parameter in ipairs(extract_parameter_tokens(argument.token_range)) do
               if parameter.number > 4 then  -- too many parameters, register an error
                 local parameter_byte_range = token_range_to_byte_range(parameter.token_range)
-                issues:add('e425', 'incorrect parameters in message text', parameter_byte_range, string.format('#%d', parameter.number))
+                issues:add('e425', 'incorrect parameter in message text', parameter_byte_range, string.format('#%d', parameter.number))
               end
               max_parameter_number = math.max(max_parameter_number, parameter.number)
             end
