@@ -41,6 +41,9 @@ This version of explcheck has fixed the following bugs:
      and S414 (Malformed quark or scan mark name): The argument with the
      malformed name.
 
+  6. W415 (Unused variable or constant): The argument with the unused variable
+     or constant name.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled

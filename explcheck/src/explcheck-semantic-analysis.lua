@@ -1514,7 +1514,7 @@ local function report_issues(states, main_file_number, options)
               declared_defined_and_used_variable_csname_texts,
               {statement.variable_type, statement.declared_csname.payload, declared_csname_byte_range}
             )
-            table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, byte_range})
+            table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, declared_csname_byte_range})
           end
           maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
         elseif statement.declared_csname.type == PATTERN then
@@ -1562,9 +1562,10 @@ local function report_issues(states, main_file_number, options)
           if statement.is_constant then
             maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
             if is_main_file then
+              local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
               table.insert(
                 declared_variable_csname_texts,
-                {statement.defined_csname.payload, byte_range}
+                {statement.defined_csname.payload, defined_csname_byte_range}
               )
             end
           end
