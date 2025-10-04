@@ -1,6 +1,6 @@
 \cs_new:Nn
   \example_foo:
   { \prg_return_true: }
-\tl_sort:nN  % error on this line
+\tl_sort:nN
   { { foo } { bar } }
-  \example_foo:nnT
+  \example_foo:nnT  % error on this line

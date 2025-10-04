@@ -13,7 +13,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{3, 5}}
+local expected_line_numbers = {{3, 4}}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "t422")
   assert(err[2] == "using a variable of an incompatible type")

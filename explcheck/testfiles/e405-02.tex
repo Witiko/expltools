@@ -2,11 +2,11 @@
   \module_foo:n
   { p, T, F }
   { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn  % error on this line
-  \module_bar:n
+\prg_generate_conditional_variant:Nnn
+  \module_bar:n  % error on this line
   { V }
   { T }
-\prg_generate_conditional_variant:Nnn  % error on this line
-  \module_foo:n
+\prg_generate_conditional_variant:Nnn
+  \module_foo:n  % error on this line
   { V }
   { TF }

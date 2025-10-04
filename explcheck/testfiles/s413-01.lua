@@ -13,10 +13,10 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 0)
 assert(#issues.warnings == 3)
 
-local expected_line_numbers = {{1, 2}, {3, 4}, {5, 7}}
+local expected_line_numbers = {{2, 2}, {4, 4}, {6, 6}}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "s413")
-  assert(warning[2] == "malformed variable or constant")
+  assert(warning[2] == "malformed variable or constant name")
   local byte_range = warning[3]
   local start_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:start())
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())

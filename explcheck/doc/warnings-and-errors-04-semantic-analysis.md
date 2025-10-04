@@ -69,10 +69,14 @@ This also extends to conditional functions:
  /s412-06.tex
  /s412-07.tex
 
+Furthermore, this also extends to function variants:
+
+ /s412-08.tex
+
 ## Variables and constants
 
 ### Malformed variable or constant name {.s label=s413}
-Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2], where the `\meta{module}`{=tex} part is optional.
+Some expl3 variables and constants have names that are not in the format `\texttt{\textbackslash\meta{scope}\_\meta{module}\_\meta{description}\_\meta{type}}`{=tex} [@latexteam2024programming, Section 3.2].
 
  /s413-01.tex
  /s413-02.tex

@@ -12,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 2)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{5, 8}, {9, 12}}
+local expected_line_numbers = {{6, 6}, {10, 10}}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e405")
   assert(err[2] == "function variant for an undefined function")

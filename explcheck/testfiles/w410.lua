@@ -12,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 0)
 assert(#issues.warnings == 3)
 
-local expected_line_numbers = {{4, 6}, {7, 9}, {10, 12}}
+local expected_line_numbers = {{6, 6}, {9, 9}, {12, 12}}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w410")
   assert(warning[2] == "function variant of deprecated type")

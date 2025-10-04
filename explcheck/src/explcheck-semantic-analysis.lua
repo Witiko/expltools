@@ -6,12 +6,11 @@ local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 
-local get_token_byte_range = lexical_analysis.get_token_byte_range
+local get_token_range_to_byte_range = lexical_analysis.get_token_range_to_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local token_types = lexical_analysis.token_types
 local format_csname = lexical_analysis.format_csname
 
-local count_parameters_in_replacement_text = syntactic_analysis.count_parameters_in_replacement_text
 local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
@@ -20,13 +19,14 @@ local CHARACTER = token_types.CHARACTER
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
 
+local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
 local segment_types = syntactic_analysis.segment_types
 local get_calls = syntactic_analysis.get_calls
-local get_call_token_range = syntactic_analysis.get_call_token_range
+local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
@@ -272,337 +272,375 @@ local function analyze(states, file_number, options)
     local first_map_forward = segment.transformed_tokens.map_forward
 
     local statements = {}
-    for call_number, call in ipairs(calls) do
+    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
 
-      local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
-      local byte_range = call.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
-
-      -- Map a token range from the tokens to the transformed tokens.
-      local function transform_token_range(token_range)
-        return new_range(
-          first_map_forward(token_range:start()),
-          first_map_forward(token_range:stop()),
-          INCLUSIVE + MAYBE_EMPTY,
-          #transformed_tokens
-        )
+    -- Extract all parameter tokens that appear within a given range of tokens.
+    local function extract_parameter_tokens(token_range)
+      local parameters = {}
+      if #token_range == 0 then  -- empty token range
+        return parameters
       end
-
-      -- Try and convert tokens from an argument into a text.
-      local function extract_text_from_argument(argument)
-        assert(lpeg.match(parsers.n_type_argument_specifier, argument.specifier) ~= nil)
-        return extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
-      end
-
-      -- Try and convert tokens from a range into a csname.
-      local function extract_name_from_tokens(token_range)
-        return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, first_map_forward)
-      end
-
-      -- Extract the name of a control sequence from a call argument.
-      local function extract_csname_from_argument(argument)
-        local csname
-        if argument.specifier == "N" then
-          local csname_token = transformed_tokens[first_map_forward(argument.token_range:start())]
-          if csname_token.type ~= CONTROL_SEQUENCE then  -- the N-type argument is not a control sequence, give up
-            return nil
+      local token_number = first_map_forward(token_range:start())
+      local transformed_token_range_end = first_map_forward(token_range:stop())
+      while token_number <= transformed_token_range_end do
+        local token = transformed_tokens[token_number]
+        local next_token_number = token_number + 1
+        if token.type == CHARACTER and token.catcode == 6 then  -- parameter
+          if next_token_number > transformed_token_range_end then  -- not followed by anything, the replacement text is invalid
+            break
           end
-          csname = {
-            payload = csname_token.payload,
-            transcript = csname_token.payload,
+          local next_token = transformed_tokens[next_token_number]
+          if next_token.type == CHARACTER and next_token.catcode == 6 then  -- followed by another parameter
+            next_token_number = next_token_number + 1
+          elseif next_token.type == CHARACTER and lpeg.match(parsers.decimal_digit, next_token.payload) then  -- followed by a digit
+            local parameter_number = tonumber(next_token.payload)
+            assert(parameter_number ~= nil)
+            local parameter = {
+              token_range = new_range(token_number, next_token_number, INCLUSIVE, #transformed_tokens, first_map_back, #tokens),
+              number = parameter_number,
+            }
+            table.insert(parameters, parameter)
+            next_token_number = next_token_number + 1
+          end
+        end
+        token_number = next_token_number
+      end
+      return parameters
+    end
+
+    -- Map a token range from the tokens to the transformed tokens.
+    local function transform_token_range(token_range)
+      return new_range(
+        first_map_forward(token_range:start()),
+        first_map_forward(token_range:stop()),
+        INCLUSIVE + MAYBE_EMPTY,
+        #transformed_tokens
+      )
+    end
+
+    -- Try and convert tokens from an argument into a text.
+    local function extract_text_from_argument(argument)
+      assert(lpeg.match(parsers.n_type_argument_specifier, argument.specifier) ~= nil)
+      return extract_text_from_tokens(argument.token_range, transformed_tokens, first_map_forward)
+    end
+
+    -- Try and convert tokens from a range into a csname.
+    local function extract_name_from_tokens(token_range)
+      return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, first_map_forward)
+    end
+
+    -- Extract the name of a control sequence from a call argument.
+    local function extract_csname_from_argument(argument)
+      local csname
+      if argument.specifier == "N" then
+        local csname_token = transformed_tokens[first_map_forward(argument.token_range:start())]
+        if csname_token.type ~= CONTROL_SEQUENCE then  -- the N-type argument is not a control sequence, give up
+          return nil
+        end
+        csname = {
+          payload = csname_token.payload,
+          transcript = csname_token.payload,
+          type = TEXT
+        }
+      elseif argument.specifier == "c" then
+        csname = extract_name_from_tokens(argument.token_range)
+        if csname == nil then  -- the c-type argument contains complex material, give up
+          return nil
+        end
+      else
+        return nil
+      end
+      assert(csname ~= nil)
+      return csname
+    end
+
+    -- Split an expl3 control sequence name to a stem and the argument specifiers.
+    local function parse_expl3_csname(csname)
+      if csname.type == TEXT then
+        local _, _, csname_stem, argument_specifiers = csname.payload:find("([^:]*):([^:]*)")
+        if csname_stem == nil then
+          return nil
+        else
+          return csname_stem, {
+            payload = argument_specifiers,
+            transcript = argument_specifiers,
             type = TEXT
           }
-        elseif argument.specifier == "c" then
-          csname = extract_name_from_tokens(argument.token_range)
-          if csname == nil then  -- the c-type argument contains complex material, give up
-            return nil
-          end
-        else
-          return nil
         end
-        assert(csname ~= nil)
-        return csname
+      elseif csname.type == PATTERN then
+        return nil
+      else
+        error('Unexpected csname type "' .. csname.type .. '"')
       end
+    end
 
-      -- Split an expl3 control sequence name to a stem and the argument specifiers.
-      local function parse_expl3_csname(csname)
-        if csname.type == TEXT then
-          local _, _, csname_stem, argument_specifiers = csname.payload:find("([^:]*):([^:]*)")
-          if csname_stem == nil then
-            return nil
-          else
-            return csname_stem, {
-              payload = argument_specifiers,
-              transcript = argument_specifiers,
-              type = TEXT
-            }
-          end
-        elseif csname.type == PATTERN then
-          return nil
-        else
-          error('Unexpected csname type "' .. csname.type .. '"')
-        end
+    -- Determine whether a function is private or public based on its name.
+    local function is_function_private(csname)
+      if csname.type == TEXT then
+        return csname.payload:sub(1, 2) == "__"
+      elseif csname.type == PATTERN then
+        return csname.transcript:sub(1, 2) == "__"
+      else
+        error('Unexpected csname type "' .. csname.type .. '"')
       end
+    end
 
-      -- Determine whether a function is private or public based on its name.
-      local function is_function_private(csname)
-        if csname.type == TEXT then
-          return csname.payload:sub(1, 2) == "__"
-        elseif csname.type == PATTERN then
-          return csname.transcript:sub(1, 2) == "__"
-        else
-          error('Unexpected csname type "' .. csname.type .. '"')
-        end
+    -- Replace the argument specifiers in an expl3 control sequence name.
+    local function replace_argument_specifiers(csname_stem, argument_specifiers)
+      local csname
+      local transcript = string.format("%s:%s", csname_stem, argument_specifiers.transcript)
+      if argument_specifiers.type == TEXT then
+        csname = {
+          payload = string.format("%s:%s", csname_stem, argument_specifiers.payload),
+          transcript = transcript,
+          type = TEXT
+        }
+      elseif argument_specifiers.type == PATTERN then
+        csname = {
+          payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload,
+          transcript = transcript,
+          type = PATTERN
+        }
+      else
+        error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
       end
+      return csname
+    end
 
-      -- Replace the argument specifiers in an expl3 control sequence name.
-      local function replace_argument_specifiers(csname_stem, argument_specifiers)
-        local csname
-        local transcript = string.format("%s:%s", csname_stem, argument_specifiers.transcript)
+    -- Determine the control sequence name of a conditional function given a base control sequence name and a condition.
+    local function get_conditional_function_csname(csname_stem, argument_specifiers, condition)
+      local csname
+      if condition == "p" then  -- predicate function
+        local format = "%s_p:%s"
+        local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
         if argument_specifiers.type == TEXT then
           csname = {
-            payload = string.format("%s:%s", csname_stem, argument_specifiers.payload),
+            payload = string.format(format, csname_stem, argument_specifiers.payload),
             transcript = transcript,
             type = TEXT
           }
         elseif argument_specifiers.type == PATTERN then
           csname = {
-            payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload,
+            payload = lpeg.P(csname_stem) * lpeg.P("_p:") * argument_specifiers.payload,
             transcript = transcript,
             type = PATTERN
           }
         else
           error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
         end
-        return csname
-      end
-
-      -- Determine the control sequence name of a conditional function given a base control sequence name and a condition.
-      local function get_conditional_function_csname(csname_stem, argument_specifiers, condition)
-        local csname
-        if condition == "p" then  -- predicate function
-          local format = "%s_p:%s"
-          local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
-          if argument_specifiers.type == TEXT then
-            csname = {
-              payload = string.format(format, csname_stem, argument_specifiers.payload),
-              transcript = transcript,
-              type = TEXT
-            }
-          elseif argument_specifiers.type == PATTERN then
-            csname = {
-              payload = lpeg.P(csname_stem) * lpeg.P("_p:") * argument_specifiers.payload,
-              transcript = transcript,
-              type = PATTERN
-            }
-          else
-            error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
-          end
-        elseif condition == "T" then  -- true-branch conditional function
-          local format = "%s:%sT"
-          local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
-          if argument_specifiers.type == TEXT then
-            csname = {
-              payload = string.format(format, csname_stem, argument_specifiers.payload),
-              transcript = transcript,
-              type = TEXT
-            }
-          elseif argument_specifiers.type == PATTERN then
-            csname = {
-              payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("T"),
-              transcript = transcript,
-              type = PATTERN
-            }
-          else
-            error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
-          end
-        elseif condition == "F" then  -- false-branch conditional function
-          local format = "%s:%sF"
-          local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
-          if argument_specifiers.type == TEXT then
-            csname = {
-              payload = string.format(format, csname_stem, argument_specifiers.payload),
-              transcript = transcript,
-              type = TEXT
-            }
-          elseif argument_specifiers.type == PATTERN then
-            csname = {
-              payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("F"),
-              transcript = transcript,
-              type = PATTERN
-            }
-          else
-            error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
-          end
-        elseif condition == "TF" then  -- true-and-false-branch conditional function
-          local format = "%s:%sTF"
-          local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
-          if argument_specifiers.type == TEXT then
-            csname = {
-              payload = string.format(format, csname_stem, argument_specifiers.payload),
-              transcript = transcript,
-              type = TEXT
-            }
-          elseif argument_specifiers.type == PATTERN then
-            csname = {
-              payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("TF"),
-              transcript = transcript,
-              type = PATTERN,
-            }
-          else
-            error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
-          end
+      elseif condition == "T" then  -- true-branch conditional function
+        local format = "%s:%sT"
+        local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
+        if argument_specifiers.type == TEXT then
+          csname = {
+            payload = string.format(format, csname_stem, argument_specifiers.payload),
+            transcript = transcript,
+            type = TEXT
+          }
+        elseif argument_specifiers.type == PATTERN then
+          csname = {
+            payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("T"),
+            transcript = transcript,
+            type = PATTERN
+          }
         else
-          error('Unexpected condition "' .. condition .. '"')
+          error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
         end
-        return csname
+      elseif condition == "F" then  -- false-branch conditional function
+        local format = "%s:%sF"
+        local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
+        if argument_specifiers.type == TEXT then
+          csname = {
+            payload = string.format(format, csname_stem, argument_specifiers.payload),
+            transcript = transcript,
+            type = TEXT
+          }
+        elseif argument_specifiers.type == PATTERN then
+          csname = {
+            payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("F"),
+            transcript = transcript,
+            type = PATTERN
+          }
+        else
+          error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
+        end
+      elseif condition == "TF" then  -- true-and-false-branch conditional function
+        local format = "%s:%sTF"
+        local transcript = string.format(format, csname_stem, argument_specifiers.transcript)
+        if argument_specifiers.type == TEXT then
+          csname = {
+            payload = string.format(format, csname_stem, argument_specifiers.payload),
+            transcript = transcript,
+            type = TEXT
+          }
+        elseif argument_specifiers.type == PATTERN then
+          csname = {
+            payload = lpeg.P(csname_stem) * lpeg.P(":") * argument_specifiers.payload * lpeg.P("TF"),
+            transcript = transcript,
+            type = PATTERN,
+          }
+        else
+          error('Unexpected argument specifiers type "' .. argument_specifiers.type .. '"')
+        end
+      else
+        error('Unexpected condition "' .. condition .. '"')
       end
+      return csname
+    end
 
-      -- Try and extract a list of conditions in a conditional function (variant) definition.
-      -- Together with the conditions, include a measurement of confidence about the correctness of the extracted information.
-      local function parse_conditions(argument)
-        local conditions
+    -- Try and extract a list of conditions in a conditional function (variant) definition.
+    -- Together with the conditions, include a measurement of confidence about the correctness of the extracted information.
+    local function parse_conditions(argument)
+      local conditions
 
-        -- try to determine the list of conditions
-        local conditions_text, condition_list
-        if argument.specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
-          goto unknown_conditions
-        end
-        conditions_text = extract_text_from_argument(argument)
-        if conditions_text == nil then  -- failed to read conditions
-          goto unknown_conditions  -- assume all conditions with lower confidence
-        end
-        condition_list = lpeg.match(parsers.conditions, conditions_text)
-        if condition_list == nil then  -- cound not parse conditions, give up
-          return nil
-        end
-        conditions = {}
-        for _, condition in ipairs(condition_list) do
-          table.insert(conditions, {condition, DEFINITELY})
-        end
-        goto done_parsing
-
-        ::unknown_conditions::
-        -- assume all possible conditions with lower confidence
-        conditions = {{"p", MAYBE}, {"T", MAYBE}, {"F", MAYBE}, {"TF", MAYBE}}
-
-        ::done_parsing::
-        return conditions
+      -- try to determine the list of conditions
+      local conditions_text, condition_list
+      if argument.specifier ~= "n" then  -- conditions are hidden behind expansion, assume all conditions with lower confidence
+        goto unknown_conditions
       end
+      conditions_text = extract_text_from_argument(argument)
+      if conditions_text == nil then  -- failed to read conditions
+        goto unknown_conditions  -- assume all conditions with lower confidence
+      end
+      condition_list = lpeg.match(parsers.conditions, conditions_text)
+      if condition_list == nil then  -- cound not parse conditions, give up
+        return nil
+      end
+      conditions = {}
+      for _, condition in ipairs(condition_list) do
+        table.insert(conditions, {condition, DEFINITELY})
+      end
+      goto done_parsing
 
-      -- Try and extract a list of variant argument specifiers in a (conditional) function variant definition.
-      -- Together with the argument specifiers, include a measurement of confidence about the correctness of the extracted information.
-      local function parse_variant_argument_specifiers(csname, argument)
-        -- extract the argument specifiers from the csname
-        local _, base_argument_specifiers = parse_expl3_csname(csname)
-        if base_argument_specifiers == nil or base_argument_specifiers.type ~= TEXT then
-          return nil  -- we couldn't parse the csname, give up
-        end
-        base_argument_specifiers = base_argument_specifiers.payload
+      ::unknown_conditions::
+      -- assume all possible conditions with lower confidence
+      conditions = {{"p", MAYBE}, {"T", MAYBE}, {"F", MAYBE}, {"TF", MAYBE}}
 
-        local variant_argument_specifiers
+      ::done_parsing::
+      return conditions
+    end
 
-        -- try to determine all sets of variant argument specifiers
-        local variant_argument_specifiers_text, variant_argument_specifiers_list
-        if argument.specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
-          goto unknown_argument_specifiers
+    -- Try and extract a list of variant argument specifiers in a (conditional) function variant definition.
+    -- Together with the argument specifiers, include a measurement of confidence about the correctness of the extracted information.
+    local function parse_variant_argument_specifiers(csname, argument)
+      -- extract the argument specifiers from the csname
+      local _, base_argument_specifiers = parse_expl3_csname(csname)
+      if base_argument_specifiers == nil or base_argument_specifiers.type ~= TEXT then
+        return nil  -- we couldn't parse the csname, give up
+      end
+      base_argument_specifiers = base_argument_specifiers.payload
+
+      local specifiers_token_range = argument.outer_token_range or argument.token_range
+      local specifiers_byte_range = token_range_to_byte_range(specifiers_token_range)
+
+      local variant_argument_specifiers
+
+      -- try to determine all sets of variant argument specifiers
+      local variant_argument_specifiers_text, variant_argument_specifiers_list
+      if argument.specifier ~= "n" then  -- specifiers are hidden behind expansion, assume all possibilities with lower confidence
+        goto unknown_argument_specifiers
+      end
+      variant_argument_specifiers_text = extract_text_from_argument(argument)
+      if variant_argument_specifiers_text == nil then  -- failed to read specifiers
+        goto unknown_argument_specifiers  -- assume all specifiers with lower confidence
+      end
+      variant_argument_specifiers_list = lpeg.match(parsers.variant_argument_specifiers, variant_argument_specifiers_text)
+      if variant_argument_specifiers_list == nil then  -- cound not parse specifiers, assume all possibilities with lower confidence
+        goto unknown_argument_specifiers
+      end
+      variant_argument_specifiers = {}
+      for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
+        if #argument_specifiers ~= #base_argument_specifiers then
+          if #argument_specifiers < #base_argument_specifiers then  -- variant argument specifiers are shorter than base specifiers
+            argument_specifiers = string.format(
+              "%s%s",  -- treat the variant specifiers as a prefix with the rest filled in with the base specifiers
+              argument_specifiers, base_argument_specifiers:sub(#argument_specifiers + 1)
+            )
+          else  -- variant argument specifiers are longer than base specifiers
+            local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
+            issues:add("t403", "function variant of incompatible type", specifiers_byte_range, context)
+            return nil  -- give up
+          end
         end
-        variant_argument_specifiers_text = extract_text_from_argument(argument)
-        if variant_argument_specifiers_text == nil then  -- failed to read specifiers
-          goto unknown_argument_specifiers  -- assume all specifiers with lower confidence
-        end
-        variant_argument_specifiers_list = lpeg.match(parsers.variant_argument_specifiers, variant_argument_specifiers_text)
-        if variant_argument_specifiers_list == nil then  -- cound not parse specifiers, assume all possibilities with lower confidence
-          goto unknown_argument_specifiers
-        end
-        variant_argument_specifiers = {}
-        for _, argument_specifiers in ipairs(variant_argument_specifiers_list) do
-          if #argument_specifiers ~= #base_argument_specifiers then
-            if #argument_specifiers < #base_argument_specifiers then  -- variant argument specifiers are shorter than base specifiers
-              argument_specifiers = string.format(
-                "%s%s",  -- treat the variant specifiers as a prefix with the rest filled in with the base specifiers
-                argument_specifiers, base_argument_specifiers:sub(#argument_specifiers + 1)
-              )
-            else  -- variant argument specifiers are longer than base specifiers
-              local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
-              issues:add("t403", "function variant of incompatible type", byte_range, context)
-              return nil  -- give up
+        assert(#argument_specifiers == #base_argument_specifiers)
+        for i = 1, #argument_specifiers do
+          local base_argument_specifier = base_argument_specifiers:sub(i, i)
+          local argument_specifier = argument_specifiers:sub(i, i)
+          if base_argument_specifier == argument_specifier then  -- variant argument specifier is same as base argument specifier
+            goto continue  -- skip further checks
+          end
+          local any_compatible_specifier = false
+          for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
+            if argument_specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
+              any_compatible_specifier = true
+              break  -- skip further checks
             end
           end
-          assert(#argument_specifiers == #base_argument_specifiers)
-          for i = 1, #argument_specifiers do
-            local base_argument_specifier = base_argument_specifiers:sub(i, i)
-            local argument_specifier = argument_specifiers:sub(i, i)
-            if base_argument_specifier == argument_specifier then  -- variant argument specifier is same as base argument specifier
-              goto continue  -- skip further checks
-            end
-            local any_compatible_specifier = false
-            for _, compatible_specifier in ipairs(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier)) do
-              if argument_specifier == compatible_specifier then  -- variant argument specifier is compatible with base argument specifier
-                any_compatible_specifier = true
+          if not any_compatible_specifier then
+            local any_deprecated_specifier = false
+            for _, deprecated_specifier in ipairs(lpeg.match(parsers.deprecated_argument_specifiers, base_argument_specifier)) do
+              if argument_specifier == deprecated_specifier then  -- variant argument specifier is deprecated regarding the base specifier
+                any_deprecated_specifier = true
                 break  -- skip further checks
               end
             end
-            if not any_compatible_specifier then
-              local any_deprecated_specifier = false
-              for _, deprecated_specifier in ipairs(lpeg.match(parsers.deprecated_argument_specifiers, base_argument_specifier)) do
-                if argument_specifier == deprecated_specifier then  -- variant argument specifier is deprecated regarding the base specifier
-                  any_deprecated_specifier = true
-                  break  -- skip further checks
-                end
-              end
-              local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
-              if any_deprecated_specifier then
-                issues:add("w410", "function variant of deprecated type", byte_range, context)
-              else
-                issues:add("t403", "function variant of incompatible type", byte_range, context)
-                return nil  -- variant argument specifier is incompatible with base argument specifier, give up
-              end
+            local context = string.format("%s -> %s", base_argument_specifiers, argument_specifiers)
+            if any_deprecated_specifier then
+              issues:add("w410", "function variant of deprecated type", specifiers_byte_range, context)
+            else
+              issues:add("t403", "function variant of incompatible type", specifiers_byte_range, context)
+              return nil  -- variant argument specifier is incompatible with base argument specifier, give up
             end
-            ::continue::
           end
-          table.insert(variant_argument_specifiers, {
-            payload = argument_specifiers,
-            transcript = argument_specifiers,
-            type = TEXT,
-            confidence = DEFINITELY
-          })
+          ::continue::
         end
-        goto done_parsing
+        table.insert(variant_argument_specifiers, {
+          payload = argument_specifiers,
+          transcript = argument_specifiers,
+          type = TEXT,
+          confidence = DEFINITELY
+        })
+      end
+      goto done_parsing
 
-        ::unknown_argument_specifiers::
-        -- assume all possible sets of variant argument specifiers with lower confidence
-        variant_argument_specifiers = {}
-        do
-          local compatible_specifier_pattern, compatible_specifier_transcripts = parsers.success, {}
-          local any_other_compatible_specifiers = false
-          for i = 1, #base_argument_specifiers do
-            local base_argument_specifier = base_argument_specifiers:sub(i, i)
-            local compatible_specifiers = table.concat(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier))
-            if #compatible_specifiers == 0 then  -- no compatible specifiers
-              return nil  -- give up
-            end
-            if compatible_specifiers ~= base_argument_specifier then
-              any_other_compatible_specifiers = true
-            end
-            compatible_specifier_pattern = compatible_specifier_pattern * lpeg.S(compatible_specifiers)
-            local compatible_specifier_transcript = string.format('[%s]', compatible_specifiers)
-            table.insert(compatible_specifier_transcripts, compatible_specifier_transcript)
-          end
-          if not any_other_compatible_specifiers then  -- no compatible specifiers other than base
+      ::unknown_argument_specifiers::
+      -- assume all possible sets of variant argument specifiers with lower confidence
+      variant_argument_specifiers = {}
+      do
+        local compatible_specifier_pattern, compatible_specifier_transcripts = parsers.success, {}
+        local any_other_compatible_specifiers = false
+        for i = 1, #base_argument_specifiers do
+          local base_argument_specifier = base_argument_specifiers:sub(i, i)
+          local compatible_specifiers = table.concat(lpeg.match(parsers.compatible_argument_specifiers, base_argument_specifier))
+          if #compatible_specifiers == 0 then  -- no compatible specifiers
             return nil  -- give up
           end
-          local compatible_specifiers_transcript = table.concat(compatible_specifier_transcripts)
-          table.insert(variant_argument_specifiers, {
-            payload = compatible_specifier_pattern,
-            transcript = compatible_specifiers_transcript,
-            type = PATTERN,
-            confidence = MAYBE
-          })
+          if compatible_specifiers ~= base_argument_specifier then
+            any_other_compatible_specifiers = true
+          end
+          compatible_specifier_pattern = compatible_specifier_pattern * lpeg.S(compatible_specifiers)
+          local compatible_specifier_transcript = string.format('[%s]', compatible_specifiers)
+          table.insert(compatible_specifier_transcripts, compatible_specifier_transcript)
         end
-
-        ::done_parsing::
-        return variant_argument_specifiers
+        if not any_other_compatible_specifiers then  -- no compatible specifiers other than base
+          return nil  -- give up
+        end
+        local compatible_specifiers_transcript = table.concat(compatible_specifier_transcripts)
+        table.insert(variant_argument_specifiers, {
+          payload = compatible_specifier_pattern,
+          transcript = compatible_specifiers_transcript,
+          type = PATTERN,
+          confidence = MAYBE
+        })
       end
+
+      ::done_parsing::
+      return variant_argument_specifiers
+    end
+
+    for call_number, call in ipairs(calls) do
+      local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
+      local token_range = call.token_range
 
       if call.type == CALL then  -- a function call
 
@@ -610,7 +648,7 @@ local function analyze(states, file_number, options)
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
           local lua_code_argument = call.arguments[arguments_number]
           if #lua_code_argument.token_range > 0 then
-            local lua_code_byte_range = lua_code_argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+            local lua_code_byte_range = token_range_to_byte_range(lua_code_argument.token_range)
             issues:ignore({identifier_prefix = 's204', range = lua_code_byte_range, seen = true})
           end
         end
@@ -623,7 +661,8 @@ local function analyze(states, file_number, options)
           if csname ~= nil then
             local _, argument_specifiers = parse_expl3_csname(csname)
             if argument_specifiers ~= nil and argument_specifiers.type == TEXT and argument_specifiers.payload ~= 'nnTF' then
-              issues:add('e427', 'comparison conditional without signature `:nnTF`', byte_range, argument_specifiers.payload)
+              local csname_byte_range = token_range_to_byte_range(csname_argument.token_range)
+              issues:add('e427', 'comparison conditional without signature `:nnTF`', csname_byte_range, argument_specifiers.payload)
             end
           end
         end
@@ -690,6 +729,7 @@ local function analyze(states, file_number, options)
               call_range = call_range,
               confidence = confidence,
               -- The following attributes are specific to the type.
+              base_csname_argument = base_csname_argument,
               base_csname = effective_base_csname,
               defined_csname = defined_csname,
               is_private = is_function_private(base_csname),
@@ -797,6 +837,9 @@ local function analyze(states, file_number, options)
               replacement_text_argument.segment_number = #results.segments
             end
             ::skip_replacement_text::
+            -- determine the token range of the definition excluding the replacement text
+            local replacement_text_token_range = replacement_text_argument.outer_token_range or replacement_text_argument.token_range
+            local definition_token_range = new_range(token_range:start(), replacement_text_token_range:start(), EXCLUSIVE, #tokens)
             -- determine all effectively defined csnames
             local effectively_defined_csnames = {}
             if is_conditional then  -- conditional function
@@ -813,7 +856,8 @@ local function analyze(states, file_number, options)
                 end
                 local effectively_defined_csname = get_conditional_function_csname(defined_csname_stem, argument_specifiers, condition)
                 if condition == "p" and is_protected then
-                  issues:add("e404", "protected predicate function", byte_range, format_csname(effectively_defined_csname))
+                  local definition_byte_range = token_range_to_byte_range(definition_token_range)
+                  issues:add("e404", "protected predicate function", definition_byte_range, format_csname(effectively_defined_csname))
                 end
                 table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
               end
@@ -833,6 +877,8 @@ local function analyze(states, file_number, options)
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
+                defined_csname_argument = defined_csname_argument,
+                definition_token_range = definition_token_range,
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
                 is_protected = is_protected,
@@ -899,6 +945,8 @@ local function analyze(states, file_number, options)
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,
                 defined_csname = effectively_defined_csname,
+                defined_csname_argument = defined_csname_argument,
+                definition_token_range = token_range,
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
                 is_conditional = is_conditional,
@@ -931,6 +979,7 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
+            declared_csname_argument = declared_csname_argument,
             variable_type = variable_type,
           }
           table.insert(statements, statement)
@@ -955,18 +1004,19 @@ local function analyze(states, file_number, options)
           -- detect mutability mismatches
           local defined_csname_scope = lpeg.match(parsers.expl3_variable_or_constant_csname_scope, defined_csname.transcript)
           if defined_csname_scope ~= nil then
+            local defined_csname_byte_range = token_range_to_byte_range(defined_csname_argument.token_range)
             if is_constant and (defined_csname_scope == "g" or defined_csname_scope == "l") then
-              issues:add('e417', 'setting a variable as a constant', byte_range, format_csname(defined_csname.transcript))
+              issues:add('e417', 'setting a variable as a constant', defined_csname_byte_range, format_csname(defined_csname.transcript))
             end
             if not is_constant and defined_csname_scope == "c" then
-              issues:add('e418', 'setting a constant', byte_range, format_csname(defined_csname.transcript))
+              issues:add('e418', 'setting a constant', defined_csname_byte_range, format_csname(defined_csname.transcript))
             end
             if segment.nesting_depth > 1 then
               if not is_global and defined_csname_scope == "g" then
-                issues:add('e420', 'locally setting a global variable', byte_range, format_csname(defined_csname.transcript))
+                issues:add('e420', 'locally setting a global variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
               end
               if is_global and defined_csname_scope == "l" then
-                issues:add('e421', 'globally setting a local variable', byte_range, format_csname(defined_csname.transcript))
+                issues:add('e421', 'globally setting a local variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
               end
             end
           end
@@ -978,6 +1028,9 @@ local function analyze(states, file_number, options)
             if definition_text_argument == nil then  -- we couldn't extract the definition text, give up
               goto other_statement
             end
+            -- determine the token range of the definition excluding the definition text
+            local definition_text_token_range = definition_text_argument.outer_token_range or definition_text_argument.token_range
+            local definition_token_range = new_range(token_range:start(), definition_text_token_range:start(), EXCLUSIVE, #tokens)
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
@@ -988,6 +1041,8 @@ local function analyze(states, file_number, options)
               is_constant = is_constant,
               is_global = is_global,
               defined_csname = defined_csname,
+              defined_csname_argument = defined_csname_argument,
+              definition_token_range = definition_token_range,
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
@@ -1009,8 +1064,11 @@ local function analyze(states, file_number, options)
               is_constant = is_constant,
               is_global = is_global,
               defined_csname = defined_csname,
+              defined_csname_argument = defined_csname_argument,
+              definition_token_range = token_range,
               -- The following attributes are specific to the subtype.
               base_csname = base_csname,
+              base_csname_argument = base_csname_argument,
               base_variable_type = base_variable_type,
             }
           end
@@ -1033,6 +1091,10 @@ local function analyze(states, file_number, options)
               ) then
             goto other_statement
           end
+          -- determine the token range of the use excluding any arguments following the used variable name
+          local used_csname_token_range = used_csname_argument.outer_token_range or used_csname_argument.token_range
+          local use_token_range = new_range(token_range:start(), used_csname_token_range:stop(), INCLUSIVE, #tokens)
+
           local confidence = used_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_USE,
@@ -1040,7 +1102,9 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             used_csname = used_csname,
+            used_csname_argument = used_csname_argument,
             variable_type = variable_type,
+            use_token_range = use_token_range,
           }
           table.insert(statements, statement)
           goto continue
@@ -1053,16 +1117,22 @@ local function analyze(states, file_number, options)
           end
           local module_argument, message_argument, text_argument, more_text_argument = table.unpack(call.arguments)
           -- determine the number of parameters in the message text
-          local num_text_parameters
-            = count_parameters_in_replacement_text(transformed_tokens, transform_token_range(text_argument.token_range))
-          if more_text_argument ~= nil then
-            num_text_parameters = math.max(
-              num_text_parameters,
-              count_parameters_in_replacement_text(transformed_tokens, transform_token_range(more_text_argument.token_range))
-            )
+
+          local function count_parameters_in_message_text(argument)
+            local max_parameter_number = 0
+            for _, parameter in ipairs(extract_parameter_tokens(argument.token_range)) do
+              if parameter.number > 4 then  -- too many parameters, register an error
+                local parameter_byte_range = token_range_to_byte_range(parameter.token_range)
+                issues:add('e425', 'incorrect parameter in message text', parameter_byte_range, string.format('#%d', parameter.number))
+              end
+              max_parameter_number = math.max(max_parameter_number, parameter.number)
+            end
+            return max_parameter_number
           end
-          if num_text_parameters > 4 then  -- too many parameters, register an error
-            issues:add('e425', 'incorrect parameters in message text', byte_range, string.format('#%d', num_text_parameters))
+
+          local num_text_parameters = count_parameters_in_message_text(text_argument)
+          if more_text_argument ~= nil then
+            num_text_parameters = math.max(num_text_parameters, count_parameters_in_message_text(more_text_argument))
           end
           -- parse the module and message names
           local module_name = extract_name_from_tokens(module_argument.token_range)
@@ -1073,6 +1143,10 @@ local function analyze(states, file_number, options)
           if message_name == nil then  -- we couldn't parse the message name, give up
             goto other_statement
           end
+          -- determine the token range of the definition excluding the message text
+          local text_token_range = text_argument.outer_token_range or text_argument.token_range
+          local definition_token_range = new_range(token_range:start(), text_token_range:start(), EXCLUSIVE, #tokens)
+
           local confidence = module_name.type == TEXT and message_name.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = MESSAGE_DEFINITION,
@@ -1080,10 +1154,13 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             module_name = module_name,
+            module_argument = module_argument,
             message_name = message_name,
+            message_argument = message_argument,
             text_argument = text_argument,
             more_text_argument = more_text_argument,
             num_text_parameters = num_text_parameters,
+            definition_token_range = definition_token_range,
           }
           table.insert(statements, statement)
           goto continue
@@ -1108,6 +1185,15 @@ local function analyze(states, file_number, options)
           for i = 3, #call.arguments do
             table.insert(text_arguments, call.arguments[i])
           end
+          -- determine the token range of the use excluding any text arguments
+          local use_token_range
+          if #text_arguments > 0 then
+            local first_text_argument_token_range = text_arguments[1].outer_token_range or text_arguments[1].token_range
+            use_token_range = new_range(token_range:start(), first_text_argument_token_range:start(), EXCLUSIVE, #tokens)
+          else
+            use_token_range = token_range
+          end
+
           local confidence = module_name.type == TEXT and message_name.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = MESSAGE_USE,
@@ -1115,8 +1201,11 @@ local function analyze(states, file_number, options)
             confidence = confidence,
             -- The following attributes are specific to the type.
             module_name = module_name,
+            module_argument = module_argument,
             message_name = message_name,
+            message_argument = message_argument,
             text_arguments = text_arguments,
+            use_token_range = use_token_range,
           }
           table.insert(statements, statement)
           goto continue
@@ -1391,15 +1480,18 @@ local function report_issues(states, main_file_number, options)
       end
     end
 
+    local call_range_to_token_range = get_call_range_to_token_range(segment.calls, #tokens)
+    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
     for _, statement in ipairs(segment.statements or {}) do
-      local token_range = statement.call_range:new_range_from_subranges(get_call_token_range(segment.calls), #tokens)
-      local byte_range = token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
+      local token_range = call_range_to_token_range(statement.call_range)
+      local byte_range = token_range_to_byte_range(token_range)
       -- Process a function variant definition.
       if statement.type == FUNCTION_VARIANT_DEFINITION then
+        local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
         -- Record base control sequence names of variants, both as control sequence name usage and separately.
         if statement.base_csname.type == TEXT then
           if is_main_file then
-            table.insert(variant_base_csname_texts, {statement.base_csname.payload, byte_range})
+            table.insert(variant_base_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
           end
           maybe_used_csname_texts[statement.base_csname.payload] = true
         elseif statement.base_csname.type == PATTERN then
@@ -1414,7 +1506,7 @@ local function report_issues(states, main_file_number, options)
         -- Record control sequence name definitions.
         if statement.defined_csname.type == TEXT then
           if is_main_file then
-            table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+            table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
           end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
@@ -1456,7 +1548,8 @@ local function report_issues(states, main_file_number, options)
         if statement.defined_csname.type == TEXT then
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
           if is_main_file then
-            table.insert(defined_csname_texts, {statement.defined_csname.payload, byte_range})
+            local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
+            table.insert(defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
           end
         end
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
@@ -1465,7 +1558,8 @@ local function report_issues(states, main_file_number, options)
         -- Record private function defition.
         if statement.defined_csname.type == TEXT and statement.is_private then
           if is_main_file then
-            table.insert(defined_private_function_texts, {statement.defined_csname.payload, byte_range})
+            local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
+            table.insert(defined_private_function_texts, {statement.defined_csname.payload, definition_byte_range})
           end
         end
       -- Process a variable declaration.
@@ -1479,11 +1573,12 @@ local function report_issues(states, main_file_number, options)
         end
         if statement.declared_csname.type == TEXT then
           if is_main_file then
+            local declared_csname_byte_range = token_range_to_byte_range(statement.declared_csname_argument.token_range)
             table.insert(
               declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.declared_csname.payload, byte_range}
+              {statement.variable_type, statement.declared_csname.payload, declared_csname_byte_range}
             )
-            table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, byte_range})
+            table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, declared_csname_byte_range})
           end
           maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
         elseif statement.declared_csname.type == PATTERN then
@@ -1499,40 +1594,43 @@ local function report_issues(states, main_file_number, options)
       elseif statement.type == VARIABLE_DEFINITION then
         -- Record variable names.
         if is_main_file then
+          local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
           if statement.is_constant then
             table.insert(
               declared_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, byte_range}
+              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
             )
           else
             table.insert(
               defined_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, byte_range}
+              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
             )
             if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
               table.insert(
                 defined_variable_base_csname_transcripts,
-                {statement.base_variable_type, statement.base_csname.transcript, byte_range}
+                {statement.base_variable_type, statement.base_csname.transcript, definition_byte_range}
               )
             end
           end
         end
         if statement.defined_csname.type == TEXT then
           if is_main_file then
+            local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(
               declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.defined_csname.payload, byte_range})
+              {statement.variable_type, statement.defined_csname.payload, defined_csname_byte_range})
             table.insert(
               defined_variable_csname_texts,
-              {statement.defined_csname.payload, byte_range}
+              {statement.defined_csname.payload, defined_csname_byte_range}
             )
           end
           if statement.is_constant then
             maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
             if is_main_file then
+              local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
               table.insert(
                 declared_variable_csname_texts,
-                {statement.defined_csname.payload, byte_range}
+                {statement.defined_csname.payload, defined_csname_byte_range}
               )
             end
           end
@@ -1545,18 +1643,20 @@ local function report_issues(states, main_file_number, options)
       elseif statement.type == VARIABLE_USE then
         -- Record variable names.
         if is_main_file then
+          local use_byte_range = token_range_to_byte_range(statement.use_token_range)
           table.insert(
             used_variable_csname_transcripts,
-            {statement.variable_type, statement.used_csname.transcript, byte_range}
+            {statement.variable_type, statement.used_csname.transcript, use_byte_range}
           )
         end
         if statement.used_csname.type == TEXT then
           if is_main_file then
+            local used_csname_byte_range = token_range_to_byte_range(statement.used_csname_argument.token_range)
             table.insert(
               declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.used_csname.payload, byte_range}
+              {statement.variable_type, statement.used_csname.payload, used_csname_byte_range}
             )
-            table.insert(used_variable_csname_texts, {statement.used_csname.payload, byte_range})
+            table.insert(used_variable_csname_texts, {statement.used_csname.payload, used_csname_byte_range})
           end
           maybe_used_variable_csname_texts[statement.used_csname.payload] = true
         elseif statement.used_csname.type == PATTERN then
@@ -1575,7 +1675,8 @@ local function report_issues(states, main_file_number, options)
         if message_name.type == TEXT then
           maybe_defined_message_name_texts[message_name.payload] = true
           if is_main_file then
-            table.insert(defined_message_name_texts, {message_name.payload, byte_range})
+            local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
+            table.insert(defined_message_name_texts, {message_name.payload, definition_byte_range})
           end
         elseif message_name.type == PATTERN then
           maybe_defined_message_name_pattern = (
@@ -1616,7 +1717,8 @@ local function report_issues(states, main_file_number, options)
         if message_name.type == TEXT then
           maybe_used_message_name_texts[message_name.payload] = true
           if is_main_file then
-            table.insert(used_message_name_texts, {message_name.payload, byte_range})
+            local use_byte_range = token_range_to_byte_range(statement.use_token_range)
+            table.insert(used_message_name_texts, {message_name.payload, use_byte_range})
           end
         elseif message_name.type == PATTERN then
           maybe_used_message_name_pattern = (
@@ -1643,7 +1745,8 @@ local function report_issues(states, main_file_number, options)
         for _, call in statement.call_range:enumerate(segment.calls) do
           maybe_used_csname_texts[call.csname] = true
           if is_main_file then
-            table.insert(called_functions_and_variants, {call.csname, byte_range})
+            local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
+            table.insert(called_functions_and_variants, {call.csname, csname_byte_range})
           end
           for _, argument in ipairs(call.arguments) do
             process_argument_tokens(argument)
@@ -1769,7 +1872,7 @@ local function report_issues(states, main_file_number, options)
             and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
             and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
           ) then
-        issues:add('s413', 'malformed variable or constant', byte_range, format_csname(variable_csname))
+        issues:add('s413', 'malformed variable or constant name', byte_range, format_csname(variable_csname))
       end
     end
   end

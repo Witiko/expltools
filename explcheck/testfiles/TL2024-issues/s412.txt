@@ -72,6 +72,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/etc/lststex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/notesslides.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/stex.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/texnegar/texnegar-xetex-kashida.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/thermodynamics/thermodynamics.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/timechart/timechart.sty
@@ -93,5 +94,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-29c.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-29e.sty
 /usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-preset.sty
+/usr/local/texlive/2024/texmf-dist/tex/xelatex/xepersian-hm/xepersian-hm-kashida.tex
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xepersian/unicode-persianmath.sty
 /usr/local/texlive/2024/texmf-dist/tex/xetex/xetexko/xetexko.sty

@@ -12,6 +12,82 @@ This version of explcheck has fixed the following bugs:
   for base specifiers `T`, `F`, `p`, `w`, and `D`. (reported by @muzimuzhi in
   #137, fixed in #138)
 
+- Fix the description of issue S413, which was previously "Malformed variable
+  or constant" rather than "Malformed variable or constant _name_".
+  (reported in #137 and #139, fixed in #140)
+
+- Reduce the range of semantic analysis issues to the smallest possible code
+  region. (reported by @muzimuzhi in #137 and #139, fixed in #140)
+
+  This is to reduce the chance of `% noqa` comments within long statements
+  inadvertedly silencing issues related to other parts of the statement.
+  Specifically, the ranges of the following issues were narrowed from entire
+  statements to particular parts of those statements:
+
+  1. **W401 (Unused private function) and E404 (Protected predicate function):**
+     From the beginning of the function definition to the beginning of the
+     function replacement text (exclusive), if any, or the while function
+     definition otherwise.
+
+  2. **T403 (Function variant of incompatible type) and W410 (Function variant
+     of deprecated type):** The argument with the list of variant specifiers.
+
+  3. **E405 (Function variant for an undefined function):** The argument with
+     the function name.
+
+  4. **E408 (Calling an undefined function):** The undefined function name.
+
+  5. **S412 (Malformed function name), S413 (Malformed variable or constant
+     name), and S414 (Malformed quark or scan mark name):** The argument with
+     the malformed name.
+
+  6. **W415 (Unused variable or constant), W416 (Setting an undeclared
+     variable), E417 (Setting a variable as a constant), E418 (Setting a
+     constant), W419 (Using an undeclared variable or constant), E420 (Locally
+     setting a global variable), and E421 (Globally setting a local
+     variable):** The argument with the variable or constant name.
+
+  7. **T422 (Using a variable of an incompatible type):** From the beginning
+     of the variable/constant declaration/definition/use to the beginning of
+     any arguments following the variable/constant names (exclusive).
+
+  8. **W423 (Unused message):** From the beginning of the message definition
+     to the beginning of the message text (exclusive).
+
+  9. **E424 (Using an undefined message):** From the beginning of the message use
+     to the first text argument (exclusive), if any, or the whole message use
+     otherwise.
+
+  10. **E425 (Incorrect parameter in message text):** The incorrect parameter token.
+
+  11. **E427 (Comparison conditional without signature `:nnTF`):** The argument
+      with the comparison conditional name.
+
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Fix the documentation of issue S413 (Malformed variable or constant name).
+  (reported by @muzimuzhi in #137 and #139, fixed in #140)
+
+  The module name is mandatory in the variable and constant name, as documented
+  in Section 3.2 (Formal naming syntax) of the document titled [_The `expl3`
+  package and LaTeX3 programming_][expl3].
+
+ [expl3]: https://mirrors.ctan.org/macros/latex/required/l3kernel/expl3.pdf
+
+- Change the description of issue E425 from "Incorrect parameters in message
+  text" to "Incorrect parameter in message text". (#140)
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Generate the file `explcheck-latex3.lua` from the files `l3obsolete.txt` and
+  `l3prefixes.csv` in the package `l3kernel-dev` rather than `l3kernel`. (#140)
+
 ## expltools 2025-09-29
 
 ### explcheck v0.13.0
@@ -183,7 +259,7 @@ This version of explcheck has implemented the following new features:
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
    1. S412 (Malformed function name)
-   2. S413 (Malformed function name)
+   2. S413 (Malformed variable or constant name)
    3. S414 (Malformed quark or scan mark name)
    4. W415 (Unused variable or constant)
    5. W416 (Setting an undeclared variable)

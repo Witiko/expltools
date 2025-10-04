@@ -317,17 +317,24 @@ local function generate_l3prefixes_parser(output_file, prefixes)
   assert(produced_parsers == 1)
 end
 
+-- Add a comment, both to an output file and to the standard output.
+local function add_comment(output_file, text)
+  print(text)
+  output_file:write(string.format("-- %s\n", text))
+end
+
 -- Generate the file "explcheck-latex3.lua".
 local output_filename = "explcheck-latex3.lua"
 local output_file = assert(io.open(output_filename, "w"), "Could not open " .. output_filename .. " for writing")
 
 ---- Generate the preamble.
-output_file:write("-- LPEG parsers and other information extracted from LaTeX3 data files.\n")
-output_file:write(string.format("-- Generated on %s from the following files:\n", os.date("%Y-%m-%d")))
+add_comment(output_file, "LPEG parsers and other information extracted from LaTeX3 data files.")
+add_comment(output_file, string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
 local csnames, l3obsolete_latest_date = parse_l3obsolete()
-output_file:write(string.format('-- - "l3obsolete.txt" with the latest obsolete entry from %s\n', l3obsolete_latest_date))
+add_comment(output_file, string.format('- "l3obsolete.txt" with the latest obsolete entry from %s', l3obsolete_latest_date))
 local prefixes, l3prefixes_latest_date = parse_l3prefixes()
-output_file:write(string.format('-- - "l3prefixes.csv" with the latest updated prefix from %s\n\n', l3prefixes_latest_date))
+add_comment(output_file, string.format('- "l3prefixes.csv" with the latest updated prefix from %s', l3prefixes_latest_date))
+output_file:write("\n")
 
 ---- Generate the LPEG parsers.
 output_file:write('local lpeg = require("lpeg")\n')

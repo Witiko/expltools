@@ -50,6 +50,15 @@ local function get_call_token_range(calls)
   end
 end
 
+-- Convert a call range to a corresponding token range.
+local function get_call_range_to_token_range(calls, num_tokens)
+  local token_range_getter = get_call_token_range(calls)
+  local function call_range_to_token_range(call_range)
+    return call_range:new_range_from_subranges(token_range_getter, num_tokens)
+  end
+  return call_range_to_token_range
+end
+
 -- Try and convert tokens from a range into a text.
 local function extract_text_from_tokens(token_range, tokens, map_forward)
   local texts = {}
@@ -62,35 +71,6 @@ local function extract_text_from_tokens(token_range, tokens, map_forward)
   end
   local text = table.concat(texts)
   return text
-end
-
--- Count the number of parameters in a replacement text.
-local function count_parameters_in_replacement_text(tokens, replacement_text_token_range)
-  if #replacement_text_token_range == 0 then
-    return 0
-  end
-  local max_parameter_number = 0
-  local token_number = replacement_text_token_range:start()
-  while token_number <= replacement_text_token_range:stop() do
-    local token = tokens[token_number]
-    local next_token_number = token_number + 1
-    if token.type == CHARACTER and token.catcode == 6 then  -- parameter
-      if next_token_number > replacement_text_token_range:stop() then  -- not followed by anything, the replacement text is invalid
-        break
-      end
-      local next_token = tokens[next_token_number]
-      if next_token.type == CHARACTER and next_token.catcode == 6 then  -- followed by another parameter
-        next_token_number = next_token_number + 1
-      elseif next_token.type == CHARACTER and lpeg.match(parsers.decimal_digit, next_token.payload) then  -- followed by a digit
-        local next_digit = tonumber(next_token.payload)
-        assert(next_digit ~= nil)
-        max_parameter_number = math.max(max_parameter_number, next_digit)
-        next_token_number = next_token_number + 1
-      end
-    end
-    token_number = next_token_number
-  end
-  return max_parameter_number
 end
 
 -- Transform parameter tokens in a replacement text.
@@ -395,6 +375,7 @@ local function get_calls(results, part_number, segment, issues, content)
       local original_csname = token.payload
       local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
       ::retry_control_sequence::
+      local csname_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
       local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
       if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
         local arguments = {}
@@ -664,6 +645,7 @@ local function get_calls(results, part_number, segment, issues, content)
           type = CALL,
           token_range = next_token_range,
           csname = csname,
+          csname_token_range = csname_token_range,
           arguments = arguments,
         })
         token_number = next_token_number
@@ -739,9 +721,9 @@ local substeps = {
 
 return {
   call_types = call_types,
-  count_parameters_in_replacement_text = count_parameters_in_replacement_text,
   extract_text_from_tokens = extract_text_from_tokens,
   get_calls = get_calls,
+  get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
   name = "syntactic analysis",
