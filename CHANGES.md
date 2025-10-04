@@ -26,7 +26,7 @@ This version of explcheck has fixed the following bugs:
 
   1. **W401 (Unused private function) and E404 (Protected predicate function):**
      From the beginning of the function definition to the beginning of the
-     function replacement text (exclusive), if any, or the while function
+     function replacement text (exclusive), if any, or the whole function
      definition otherwise.
 
   2. **T403 (Function variant of incompatible type) and W410 (Function variant
