@@ -292,6 +292,7 @@ return {
   count_expl3_bytes = count_expl3_bytes,
   count_groupings = count_groupings,
   count_tokens = count_tokens,
+  count_well_understood_tokens = count_well_understood_tokens,
   new_file_results = function(...)
     return FileEvaluationResults:new(...)
   end,
