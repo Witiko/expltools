@@ -4,6 +4,12 @@
 
 ### explcheck v0.15.0
 
+#### Development
+
+This version of explcheck has implemented the following new features:
+
+- Support flow analysis. (#141)
+
 ## expltools 2025-10-04
 
 ### explcheck v0.14.0
