@@ -1,6 +1,26 @@
 -- The flow analysis step of static analysis determines additional emergent properties of the code.
 --
 local get_option = require("explcheck-config").get_option
+local syntactic_analysis = require("explcheck-syntactic-analysis")
+local semantic_analysis = require("explcheck-semantic-analysis")
+
+local statement_types = semantic_analysis.statement_types
+local statement_confidences = semantic_analysis.statement_confidences  -- luacheck: ignore
+
+local PART = syntactic_analysis.segment_types.PART
+
+local FUNCTION_CALL = statement_types.FUNCTION_CALL
+local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
+
+local edge_types = {
+  LATER_CODE = string.format("later code after skipping a %s or from a following %s", OTHER_TOKENS_COMPLEX, PART),
+  FUNCTION_CALL = FUNCTION_CALL,
+  FUNCTION_CALL_RETURN = string.format("return from a %s", FUNCTION_CALL),
+}
+
+local LATER_CODE = edge_types.LATER_CODE  -- luacheck: ignore
+assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
+local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN  -- luacheck: ignore
 
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
@@ -40,6 +60,7 @@ local substeps = {
 }
 
 return {
+  edge_types = edge_types,
   is_confused = is_confused,
   name = "flow analysis",
   substeps = substeps,
