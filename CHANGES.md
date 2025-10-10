@@ -8,6 +8,13 @@
 
 This version of explcheck has implemented the following new features:
 
+- Recognize calls to known or defined functions and function variants as a
+  new statement type `FUNCTION_CALL` distinct from `OTHER_STATEMENT`. (#141)
+
+  For the purpose of code coverage, calls of defined functions and function
+  variants are now considered well-known tokens. This has slightly increased
+  code coverage on TeX Live 2024 (from ca 13% to 14% of all expl3 tokens).
+
 - Support flow analysis. (#141)
 
 ## expltools 2025-10-04

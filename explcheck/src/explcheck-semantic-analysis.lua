@@ -40,6 +40,7 @@ local REPLACEMENT_TEXT = segment_types.REPLACEMENT_TEXT
 local lpeg = require("lpeg")
 
 local statement_types = {
+  FUNCTION_CALL = "function call",
   FUNCTION_DEFINITION = "function definition",
   FUNCTION_VARIANT_DEFINITION = "function variant definition",
   VARIABLE_DECLARATION = "variable declaration",
@@ -52,6 +53,7 @@ local statement_types = {
   OTHER_TOKENS_COMPLEX = "block of other complex tokens",
 }
 
+local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
@@ -1269,7 +1271,7 @@ local function report_issues(states, main_file_number, options)
   ---- Collect information about symbols that were definitely defined.
   local defined_private_function_texts = {}
   local called_functions_and_variants = {}
-  local defined_csname_texts = {}
+  local defined_csname_texts, defined_csname_texts_anywhere = {}, {}
   local defined_private_function_variant_texts = {}
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
@@ -1511,6 +1513,7 @@ local function report_issues(states, main_file_number, options)
           if is_main_file then
             table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
           end
+          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1743,13 +1746,13 @@ local function report_issues(states, main_file_number, options)
           process_argument_tokens(argument)
         end
       -- Process an unrecognized statement.
-      elseif statement.type == OTHER_STATEMENT then
+      elseif statement.type == OTHER_STATEMENT or statement.type == FUNCTION_CALL then
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment.calls) do
           maybe_used_csname_texts[call.csname] = true
           if is_main_file then
             local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
-            table.insert(called_functions_and_variants, {call.csname, csname_byte_range})
+            table.insert(called_functions_and_variants, {statement, call.csname, csname_byte_range})
           end
           for _, argument in ipairs(call.arguments) do
             process_argument_tokens(argument)
@@ -1830,12 +1833,22 @@ local function report_issues(states, main_file_number, options)
 
   ---- Report calls to undefined functions and function variants.
   for _, called_function_or_variant in ipairs(called_functions_and_variants) do
-    local csname, byte_range = table.unpack(called_function_or_variant)
+    local statement, csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
+    elseif defined_csname_texts_anywhere[csname] then
+      -- For defined functions and function variants, reclassify the statement as a function call.
+      statement.type = FUNCTION_CALL
+      if defined_csname_texts_anywhere[csname] then
+        statement.confidence = DEFINITELY
+      elseif maybe_defined_csname_texts[csname] then
+        statement.confidence = MAYBE
+      else
+        statement.confidence = NONE
+      end
     end
   end
 
