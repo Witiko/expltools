@@ -15,6 +15,13 @@ This version of explcheck has implemented the following new features:
   variants are now considered well-known tokens. This has slightly increased
   code coverage on TeX Live 2024 (from ca 13% to 14% of all expl3 tokens).
 
+- Only detect well-understood tokens in analyzed parts of statements. (#141)
+
+  Specifically, this prevents us from considering e.g. the value in a variable
+  definition well-understood, unless we have analyzed it. After this change,
+  the code coverage should be a lower estimate of actual code understanding.
+  This has reduced code coverage on TeX Live 2024 to ca 8% of all expl3 tokens.
+
 - Support flow analysis. (#141)
 
 ## expltools 2025-10-04

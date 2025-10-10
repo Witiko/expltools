@@ -1,9 +1,12 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
 local token_types = require("explcheck-lexical-analysis").token_types
+local call_types = require("explcheck-syntactic-analysis").call_types
 local statement_confidences = require("explcheck-semantic-analysis").statement_confidences
 
 local ARGUMENT = token_types.ARGUMENT
+
+local CALL = call_types.CALL
 
 local DEFINITELY = statement_confidences.DEFINITELY
 local NONE = statement_confidences.NONE
@@ -139,14 +142,16 @@ end
 
 -- Determine how many tokens are "well-understood" from analysis results.
 --
--- Let S be a set of all statements that contain a token T and originate from a maximally nested segment. Then, T is
--- "well-understood" if the maximum confidence among these statements is 1.0.
+-- Let S be a set of all statements that originate from a maximally nested segment and that contain a token T in part of
+-- the statement that has been analyzed. Then, T is "well-understood" if the maximum confidence among these statements
+-- is 1.0.
 --
 local function count_well_understood_tokens(analysis_results)
   -- Since segments are ordered from the least to the most nested, there is no need to track the "nesting level".
   -- Instead, the confidence can be accumulated as a minimum over the segments and as a maximum within these segments.
   local is_token_well_understood_outer_accumulator = {}
   local is_empty = true
+  -- Analyze all segments, from the outermost to the innermost.
   for _, segment in ipairs(analysis_results.segments or {}) do
     local part_number = segment.location.part_number
     local tokens = analysis_results.tokens[part_number]
@@ -158,11 +163,37 @@ local function count_well_understood_tokens(analysis_results)
           if is_token_well_understood_inner_accumulator[token_number] == nil then
             is_token_well_understood_inner_accumulator[token_number] = NONE
           end
-          is_token_well_understood_inner_accumulator[token_number]
-            = math.max(is_token_well_understood_inner_accumulator[token_number], statement.confidence)
+        end
+        -- Record all tokens from analyzed parts of statements with confidence 1.0.
+        if statement.confidence == DEFINITELY then
+          local function record_analyzed_token(token_number)
+            is_token_well_understood_inner_accumulator[token_number]
+              = math.max(is_token_well_understood_inner_accumulator[token_number], statement.confidence)
+          end
+          if call.type == CALL then
+            -- In expl3 calls, the control sequence name is considered analyzed.
+            for token_number, _ in call.csname_token_range:enumerate(tokens) do
+              record_analyzed_token(token_number)
+            end
+            -- Furthermore, all arguments that are marked as analyzed are also considered analyzed.
+            for _, argument in ipairs(call.arguments) do
+              if argument.analyzed then
+                local argument_token_range = argument.outer_token_range or argument.token_range
+                for token_number, _ in argument_token_range:enumerate(tokens) do
+                  record_analyzed_token(token_number)
+                end
+              end
+            end
+          else
+            -- In non-calls, all tokens are considered analyzed.
+            for token_number, _ in call.token_range:enumerate(tokens) do
+              record_analyzed_token(token_number)
+            end
+          end
         end
       end
     end
+    -- Min-aggregate the results from the parent segments with the results from this segment.
     for token_number, confidence in pairs(is_token_well_understood_inner_accumulator) do
       if is_token_well_understood_outer_accumulator[part_number] == nil then
         is_token_well_understood_outer_accumulator[part_number] = {}
@@ -174,6 +205,7 @@ local function count_well_understood_tokens(analysis_results)
         = math.min(is_token_well_understood_outer_accumulator[part_number][token_number], confidence)
     end
   end
+  -- Count the well-understood tokens.
   local num_well_understood_tokens
   if not is_empty then
     num_well_understood_tokens = 0
