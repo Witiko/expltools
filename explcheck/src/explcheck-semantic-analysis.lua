@@ -24,13 +24,16 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
-local segment_types = syntactic_analysis.segment_types
 local get_calls = syntactic_analysis.get_calls
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
+
+local segment_types = {
+  REPLACEMENT_TEXT = "function definition replacement text",
+}
 
 local REPLACEMENT_TEXT = segment_types.REPLACEMENT_TEXT
 

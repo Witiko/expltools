@@ -35,7 +35,6 @@ local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 local segment_types = {
   PART = "expl3 part",
-  REPLACEMENT_TEXT = "function definition replacement text",
   TF_TYPE_ARGUMENTS = "T-type or F-type argument",
 }
 
