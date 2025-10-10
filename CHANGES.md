@@ -19,8 +19,9 @@ This version of explcheck has implemented the following new features:
 
   Specifically, this prevents us from considering e.g. the value in a variable
   definition well-understood, unless we have analyzed it. After this change,
-  the code coverage should be a lower estimate of actual code understanding.
-  This has reduced code coverage on TeX Live 2024 to ca 8% of all expl3 tokens.
+  the code coverage should be a better lower-bound estimate of actual code
+  understanding. This has significantly reduced code coverage on TeX Live 2024
+  (from ca 14% to 8% of all expl3 tokens).
 
 - Support flow analysis. (#141)
 
