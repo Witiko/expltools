@@ -1,6 +1,6 @@
 [defaults]
 config_file = ".explcheckrc"
-error_format = "%f:%l:%c: %t%n %m"
+error_format = "%f:%l:%c: %t%n %M"
 expl3_detection_strategy = "auto"
 fail_fast = true
 group_files = "auto"
