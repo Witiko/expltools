@@ -4,6 +4,19 @@
 
 ### explcheck v0.15.0
 
+#### Development
+
+This version of explcheck has implemented the following new features:
+
+- Add support for a non-standard Vim's quickfix errorformat item `%M` in the
+  Lua option `error_format`. (discussed with @YDX-2147483647 in #143, added in
+  #144)
+
+  Compared to `%m`, `%M` contains not just the issue description (e.g. "unused
+  private function") but also the optional issue context (e.g. "unused private
+  function: `\__example_foo:n`"), just like the human-readable output ever since
+  explcheck v0.12.0.
+
 ## expltools 2025-10-04
 
 ### explcheck v0.14.0
