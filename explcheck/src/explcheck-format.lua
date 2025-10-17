@@ -502,6 +502,12 @@ local function print_results(state, options, evaluation_results, is_last_file)
               return tostring(start_line_number)
             elseif item == '%m' then
               return message
+            elseif item == '%M' then
+              if context == nil then
+                return message
+              else
+                return string.format("%s: %s", message, context)
+              end
             elseif item == '%n' then
               return code:sub(2)
             elseif item == '%t' then
@@ -509,7 +515,7 @@ local function print_results(state, options, evaluation_results, is_last_file)
             end
           end
 
-          line = line:gsub("%%[%%cefklmnt]", replace_item)
+          line = line:gsub("%%[%%cefklmMnt]", replace_item)
           print(line)
         end
       end
