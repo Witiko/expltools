@@ -9,6 +9,7 @@ imported_prefixes = []
 make_at_letter = "auto"
 max_grouped_files_per_directory = 100
 max_line_length = 80
+min_code_coverage = 0.95
 min_expl3like_material_count = 5
 min_expl3like_material_ratio = 0.5
 min_invalid_character_count = 5
@@ -20,7 +21,7 @@ min_unclosed_grouping_ratio = 0.2
 min_simple_tokens_in_csname_pattern = 5
 porcelain = false
 stop_early_when_confused = true
-stop_after = "semantic analysis"
+stop_after = "flow analysis"
 suppressed_issue_map = {
   w200 = ["s412", "s413", "s414"],
 }

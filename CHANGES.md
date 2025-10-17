@@ -17,6 +17,23 @@ This version of explcheck has implemented the following new features:
   function: `\__example_foo:n`"), just like the human-readable output ever since
   explcheck v0.12.0.
 
+- Recognize calls to known or defined functions and function variants as a
+  new statement type `FUNCTION_CALL` distinct from `OTHER_STATEMENT`. (#141)
+
+  For the purpose of code coverage, calls of defined functions and function
+  variants are now considered well-known tokens. This has slightly increased
+  code coverage on TeX Live 2024 (from ca 13% to 14% of all expl3 tokens).
+
+- Only detect well-understood tokens in analyzed parts of statements. (#141)
+
+  Specifically, this prevents us from considering e.g. the value in a variable
+  definition well-understood, unless we have analyzed it. After this change,
+  the code coverage should be a better lower-bound estimate of actual code
+  understanding. This has significantly reduced code coverage on TeX Live 2024
+  (from ca 14% to 8% of all expl3 tokens).
+
+- Support flow analysis. (#141)
+
 ## expltools 2025-10-04
 
 ### explcheck v0.14.0
