@@ -61,9 +61,6 @@ end
 local function detect_chunks(states, file_number, options)  -- luacheck: ignore options
   local state = states[file_number]
 
-  local pathname = state.pathname  -- luacheck: ignore pathname
-  local content = state.content  -- luacheck: ignore content
-  local issues = state.issues  -- luacheck: ignore issues
   local results = state.results
 
   for _, segment in ipairs(results.segments or {}) do
