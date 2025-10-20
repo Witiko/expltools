@@ -243,11 +243,11 @@ local function print_summary(options, evaluation_results)
     end
     io.write(
       string.format(
-        "\n- %s %s expl3 %s (%s of total bytes)",
+        "\n- %s %s expl3 %s (%s total bytes)",
         colorize("Preprocessing:", BOLD),
         titlecase(humanize(num_expl_bytes)),
         pluralize("byte", num_expl_bytes),
-        format_ratio(num_expl_bytes, num_total_bytes)
+        num_expl_bytes == num_total_bytes and "all" or string.format("%s of", format_ratio(num_expl_bytes, num_total_bytes))
       )
     )
     -- Evaluate the evalution results of the lexical analysis.
