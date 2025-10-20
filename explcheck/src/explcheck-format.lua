@@ -43,7 +43,7 @@ end
 
 -- Transform a singular into plural if the count is zero, greater than two, or unspecified.
 local function pluralize(singular, count)
-  if count == 1 then
+  if count == 1 or singular:sub(#singular, #singular) == "s" then
     return singular
   else
     local of_index = singular:find(" of ")
@@ -316,7 +316,7 @@ local function print_summary(options, evaluation_results)
     end
     io.write(
       string.format(
-        " and %s %s",
+        " and %s %s between them",
         humanize(num_edges_total),
         pluralize("edge", num_edges_total)
       )
