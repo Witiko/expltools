@@ -297,7 +297,21 @@ local function print_summary(options, evaluation_results)
     else
       io.write(string.format(", %s %s", humanize(num_statements_total), pluralize("statement", num_statements_total)))
     end
-
+    -- Evaluate the evalution results of the flow analysis.
+    local num_chunks = evaluation_results.num_chunks
+    if num_chunks == 0 then
+      goto skip_to_code_coverage
+    end
+    io.write(
+      string.format(
+        "\n- %s %s %s",
+        colorize("Flow analysis:", BOLD),
+        titlecase(humanize(num_chunks)),
+        pluralize("chunk", num_chunks)
+      )
+    )
+    -- Evaluate code coverage.
+    ::skip_to_code_coverage::
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
     io.write(string.format("\n- %s ", colorize("Code coverage:", BOLD)))
     if num_well_understood_tokens == 0 then
@@ -734,6 +748,17 @@ local function print_results(state, options, evaluation_results, is_last_file)
           )
         )
       end
+      -- Evaluate the evalution results of the flow analysis.
+      local num_chunks = evaluation_results.num_chunks
+      if num_chunks == nil then
+        goto skip_remaining_additional_information
+      end
+      io.write(string.format("\n\n%s%s", line_indent, colorize("Flow analysis results:", BOLD)))
+      if num_chunks == 0 then
+        io.write(string.format("\n%s- No chunks in code segments", line_indent))
+        goto skip_remaining_additional_information
+      end
+      io.write(string.format("\n%s- %s %s in code segments", line_indent, titlecase(humanize(num_chunks)), pluralize("chunk", num_chunks)))
     end
 
     ::skip_remaining_additional_information::

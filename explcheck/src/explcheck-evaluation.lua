@@ -222,6 +222,20 @@ local function count_well_understood_tokens(analysis_results)
   return num_well_understood_tokens
 end
 
+-- Count the number of chunks in analysis results.
+local function count_chunks(analysis_results)
+  local num_chunks
+  for _, segment in ipairs(analysis_results.segments or {}) do
+    if segment.chunks ~= nil then
+      if num_chunks == nil then
+        num_chunks = 0
+      end
+      num_chunks = num_chunks + #segment.chunks
+    end
+  end
+  return num_chunks
+end
+
 -- Create a new evaluation results for the analysis results of an individual file.
 function FileEvaluationResults.new(cls, state)
   local content, analysis_results, issues = state.content, state.results, state.issues
@@ -244,6 +258,8 @@ function FileEvaluationResults.new(cls, state)
   local num_calls, num_call_tokens, num_calls_total = count_calls(analysis_results)
   local num_statements, num_statement_tokens, num_statement_calls, num_statements_total = count_statements(analysis_results)
   local num_well_understood_tokens = count_well_understood_tokens(analysis_results)
+  -- Evaluate the results of the flow analysis.
+  local num_chunks = count_chunks(analysis_results)
   -- Initialize the class.
   self.num_total_bytes = num_total_bytes
   self.num_warnings = num_warnings
@@ -262,6 +278,7 @@ function FileEvaluationResults.new(cls, state)
   self.num_statement_calls = num_statement_calls
   self.num_statements_total = num_statements_total
   self.num_well_understood_tokens = num_well_understood_tokens
+  self.num_chunks = num_chunks
   return self
 end
 
@@ -290,6 +307,7 @@ function AggregateEvaluationResults.new(cls)
   self.num_statement_calls = {}
   self.num_statements_total = 0
   self.num_well_understood_tokens = 0
+  self.num_chunks = 0
   return self
 end
 
