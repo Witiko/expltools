@@ -1351,6 +1351,8 @@ local function report_issues(states, main_file_number, options)
     local content = state.content
     local results = state.results
 
+    local segments = results.segments
+
     local part_number = segment.location.part_number
 
     local groupings = results.groupings[part_number]
@@ -1557,7 +1559,9 @@ local function report_issues(states, main_file_number, options)
           if is_main_file then
             table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
           end
-          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          if defined_csname_texts_anywhere[statement.defined_csname.payload] == nil then
+            defined_csname_texts_anywhere[statement.defined_csname.payload] = {}
+          end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1596,11 +1600,19 @@ local function report_issues(states, main_file_number, options)
         end
         -- Record control sequence name usage and definitions.
         if statement.defined_csname.type == TEXT then
-          maybe_defined_csname_texts[statement.defined_csname.payload] = true
           if is_main_file then
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
           end
+          if defined_csname_texts_anywhere[statement.defined_csname.payload] == nil then
+            defined_csname_texts_anywhere[statement.defined_csname.payload] = {}
+          end
+          if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number ~= nil then
+            local replacement_text_segment = segments[statement.replacement_text_argument.segment_number]
+            assert(replacement_text_segment ~= nil)
+            table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], replacement_text_segment)
+          end
+          maybe_defined_csname_texts[statement.defined_csname.payload] = true
         end
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
           process_argument_tokens(statement.replacement_text_argument)
@@ -1883,15 +1895,16 @@ local function report_issues(states, main_file_number, options)
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
-    elseif defined_csname_texts_anywhere[csname] then
+    elseif defined_csname_texts_anywhere[csname] ~= nil or maybe_defined_csname_texts[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
-      if defined_csname_texts_anywhere[csname] then
+      if defined_csname_texts_anywhere[csname] ~= nil then
         statement.confidence = DEFINITELY
+        statement.replacement_text_segments = defined_csname_texts_anywhere[csname]
       elseif maybe_defined_csname_texts[csname] then
         statement.confidence = MAYBE
       else
-        statement.confidence = NONE
+        error("Failed to determine statement confidence")
       end
       -- Mark all call arguments as analyzed.
       for _, call in statement.call_range:enumerate(segment.calls) do
