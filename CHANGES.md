@@ -21,8 +21,9 @@ This version of explcheck has implemented the following new features:
   new statement type `FUNCTION_CALL` distinct from `OTHER_STATEMENT`. (#141)
 
   For the purpose of code coverage, calls of defined functions and function
-  variants are now considered well-known tokens. This has slightly increased
-  code coverage on TeX Live 2024 (from ca 13% to 14% of all expl3 tokens).
+  variants are now considered well-known tokens. This has significantly
+  increased code coverage on TeX Live 2024 (from ca 13% to 30% of all expl3
+  tokens).
 
 - Only detect well-understood tokens in analyzed parts of statements. (#141)
 
@@ -30,7 +31,7 @@ This version of explcheck has implemented the following new features:
   definition well-understood, unless we have analyzed it. After this change,
   the code coverage should be a better lower-bound estimate of actual code
   understanding. This has significantly reduced code coverage on TeX Live 2024
-  (from ca 14% to 8% of all expl3 tokens).
+  (from ca 30% to 24% of all expl3 tokens).
 
 - Support flow analysis. (#141)
 

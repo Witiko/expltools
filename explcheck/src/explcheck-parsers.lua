@@ -181,6 +181,7 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
+local expansionless_argument_specifier = S("NVnTF")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
 local do_not_use_argument_specifier = S("D")
@@ -887,13 +888,11 @@ return {
   decimal_digit = decimal_digit,
   deprecated_argument_specifiers = deprecated_argument_specifiers,
   determine_expl3_catcode = determine_expl3_catcode,
-  double_superscript_convention = double_superscript_convention,
   do_not_use_argument_specifiers = do_not_use_argument_specifiers,
+  double_superscript_convention = double_superscript_convention,
   endinput = endinput,
   eof = eof,
-  expl3like_csname = expl3like_csname,
-  expl3like_function_csname = expl3like_function_csname,
-  expl3like_material = expl3like_material,
+  expansionless_argument_specifier = expansionless_argument_specifier,
   expl3_catcodes = expl3_catcodes,
   expl3_endlinechar = expl3_endlinechar,
   expl3_expansion_csname = expl3_expansion_csname,
@@ -914,6 +913,9 @@ return {
   expl3_variable_use_csname = expl3_variable_use_csname,
   expl3_well_known_csname = expl3_well_known_csname,
   expl3_well_known_message_name = expl3_well_known_message_name,
+  expl3like_csname = expl3like_csname,
+  expl3like_function_csname = expl3like_function_csname,
+  expl3like_material = expl3like_material,
   expl_syntax_off = expl_syntax_off,
   expl_syntax_on = expl_syntax_on,
   fail = fail,
@@ -923,8 +925,8 @@ return {
   newline = newline,
   N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
   N_or_n_type_argument_specifiers = N_or_n_type_argument_specifiers,
-  N_type_argument_specifier = N_type_argument_specifier,
   n_type_argument_specifier = n_type_argument_specifier,
+  N_type_argument_specifier = N_type_argument_specifier,
   provides = provides,
   space = space,
   success = success,

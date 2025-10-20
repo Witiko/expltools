@@ -1906,11 +1906,13 @@ local function report_issues(states, main_file_number, options)
       else
         error("Failed to determine statement confidence")
       end
-      -- Mark all call arguments as analyzed.
+      -- Mark expansionless call arguments as analyzed.
       for _, call in statement.call_range:enumerate(segment.calls) do
         for _, argument in ipairs(call.arguments) do
           assert(argument ~= nil)
-          argument.analyzed = true
+          if lpeg.match(parsers.expansionless_argument_specifier, argument.specifier) ~= nil then
+            argument.analyzed = true
+          end
         end
       end
     end
