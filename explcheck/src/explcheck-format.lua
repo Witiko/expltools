@@ -755,10 +755,17 @@ local function print_results(state, options, evaluation_results, is_last_file)
       end
       io.write(string.format("\n\n%s%s", line_indent, colorize("Flow analysis results:", BOLD)))
       if num_chunks == 0 then
-        io.write(string.format("\n%s- No chunks in code segments", line_indent))
+        io.write(string.format("\n%s- No chunks of known statements in code segments", line_indent))
         goto skip_remaining_additional_information
       end
-      io.write(string.format("\n%s- %s %s in code segments", line_indent, titlecase(humanize(num_chunks)), pluralize("chunk", num_chunks)))
+      io.write(
+        string.format(
+          "\n%s- %s %s of known statements in code segments",
+          line_indent,
+          titlecase(humanize(num_chunks)),
+          pluralize("chunk", num_chunks)
+        )
+      )
     end
 
     ::skip_remaining_additional_information::
