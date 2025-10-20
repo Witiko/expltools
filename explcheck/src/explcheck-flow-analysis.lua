@@ -6,7 +6,6 @@ local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 
 local statement_types = semantic_analysis.statement_types
-local statement_confidences = semantic_analysis.statement_confidences  -- luacheck: ignore
 
 local PART = syntactic_analysis.segment_types.PART
 
@@ -20,14 +19,14 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
 local edge_types = {
-  LATER_CODE = string.format("later code after skipping a %s or from a following %s", OTHER_TOKENS_COMPLEX, PART),
   FUNCTION_CALL = FUNCTION_CALL,
-  FUNCTION_CALL_RETURN = string.format("return from a %s", FUNCTION_CALL),
+  FUNCTION_CALL_RETURN = string.format("%s return", FUNCTION_CALL),
+  SUCCESSION = "successive code chunks",
 }
 
-local LATER_CODE = edge_types.LATER_CODE
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
 local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN  -- luacheck: ignore
+local SUCCESSION = edge_types.SUCCESSION
 
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
@@ -97,7 +96,9 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
   local state = states[file_number]
 
   local results = state.results
-  results.edges = {}
+  if results.edges == nil then
+    results.edges = {}
+  end
 
   -- Record edges from skipping ahead to the following chunk in a code segment.
   for _, segment in ipairs(results.segments or {}) do
@@ -105,7 +106,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
     for _, chunk in ipairs(segment.chunks or {}) do
       if previous_chunk ~= nil then
         local edge = {
-          type = LATER_CODE,
+          type = SUCCESSION,
           from = previous_chunk,
           to = chunk,
         }
@@ -121,7 +122,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
     if segment.type == PART and segment.chunks ~= nil and #segment.chunks > 0 then
       if previous_part ~= nil then
         local edge = {
-          type = LATER_CODE,
+          type = SUCCESSION,
           from = previous_part.chunks[1],
           to = segment.chunks[1],
         }
@@ -133,7 +134,39 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
     end
   end
 
-  -- TODO: Record edges from function calls.
+  -- Record edges from function calls.
+  for _, segment in pairs(results.segments or {}) do
+    for _, from_chunk in ipairs(segment.chunks or {}) do
+      for _, statement in from_chunk.statement_range:enumerate(segment.statements) do
+        if statement.type == FUNCTION_CALL then
+          for _, nested_segment in ipairs(statement.replacement_text_segments or {}) do
+            if nested_segment.chunks ~= nil and #nested_segment.chunks > 0 then
+              -- Record the function call itself.
+              local function_call_edge = {
+                type = FUNCTION_CALL,
+                from = from_chunk,
+                to = nested_segment.chunks[1],
+              }
+              table.insert(results.edges, function_call_edge)
+              -- Record the return from the function call.
+              local other_file_number = nested_segment.location.file_number
+              local other_state = states[other_file_number]
+              local other_results = other_state.results
+              if other_results.edges == nil then
+                other_results.edges = {}
+              end
+              local function_call_return_edge = {
+                type = FUNCTION_CALL_RETURN,
+                from = nested_segment.chunks[#nested_segment.chunks],
+                to = from_chunk,
+              }
+              table.insert(other_results.edges, function_call_return_edge)
+            end
+          end
+        end
+      end
+    end
+  end
 end
 
 local substeps = {

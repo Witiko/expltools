@@ -1562,7 +1562,9 @@ local function report_issues(states, main_file_number, options)
           if defined_csname_texts_anywhere[statement.defined_csname.payload] == nil then
             defined_csname_texts_anywhere[statement.defined_csname.payload] = {}
           end
-          table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], false)
+          if statement.base_csname.type == TEXT then
+            table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], statement.base_csname.payload)
+          end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1612,8 +1614,8 @@ local function report_issues(states, main_file_number, options)
             local replacement_text_segment = segments[statement.replacement_text_argument.segment_number]
             assert(replacement_text_segment ~= nil)
             table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], replacement_text_segment)
-          else
-            table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], false)
+          elseif statement.subtype == FUNCTION_DEFINITION_INDIRECT and statement.base_csname.type == TEXT then
+            table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], statement.base_csname.payload)
           end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         end
@@ -1831,6 +1833,36 @@ local function report_issues(states, main_file_number, options)
     end
   end
 
+  -- Resolve the replacement text code segments for all known function definitions.
+  local replacement_text_segments_anywhere = {}
+  for defined_csname, segments_and_base_csnames in pairs(defined_csname_texts_anywhere) do
+    -- First, copy all top-level segments / base control sequence names to a deque.
+    local segments_and_base_csname_deque = {}
+    for _, segment_or_base_csname in ipairs(segments_and_base_csnames) do
+      table.insert(segments_and_base_csname_deque, segment_or_base_csname)
+    end
+    -- Next, resolve all base control sequence names in the queue to code segments, skipping any potential loops.
+    local deque_index = 1
+    local seen_base_csnames = {}
+    replacement_text_segments_anywhere[defined_csname] = {}
+    while deque_index <= #segments_and_base_csname_deque do
+      local segment_or_base_csname = segments_and_base_csname_deque[deque_index]
+      if type(segment_or_base_csname) == "string" then  -- a base control sequence name, resolve to nested items and append them to deque.
+        local base_csname = segment_or_base_csname
+        if not seen_base_csnames[base_csname] and defined_csname_texts_anywhere[base_csname] ~= nil then
+          for _, nested_segment_or_base_csname in ipairs(defined_csname_texts_anywhere[base_csname]) do
+            table.insert(segments_and_base_csname_deque, nested_segment_or_base_csname)
+          end
+        end
+        seen_base_csnames[base_csname] = true
+      else  -- a code segment, add it to the results.
+        local segment = segment_or_base_csname
+        table.insert(replacement_text_segments_anywhere[defined_csname], segment)
+      end
+      deque_index = deque_index + 1
+    end
+  end
+
   --- Report issues apparent from the collected information.
   local imported_prefixes = get_option('imported_prefixes', options, main_pathname)
   local expl3_well_known_csname = parsers.expl3_well_known_csname(imported_prefixes)
@@ -1898,12 +1930,12 @@ local function report_issues(states, main_file_number, options)
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
-    elseif defined_csname_texts_anywhere[csname] ~= nil or maybe_defined_csname_texts[csname] then
+    elseif replacement_text_segments_anywhere[csname] ~= nil or maybe_defined_csname_texts[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
-      if defined_csname_texts_anywhere[csname] ~= nil then
+      if replacement_text_segments_anywhere[csname] ~= nil then
         statement.confidence = DEFINITELY
-        statement.replacement_text_segments = defined_csname_texts_anywhere[csname]
+        statement.replacement_text_segments = replacement_text_segments_anywhere[csname]
       elseif maybe_defined_csname_texts[csname] then
         statement.confidence = MAYBE
       else
