@@ -1562,6 +1562,7 @@ local function report_issues(states, main_file_number, options)
           if defined_csname_texts_anywhere[statement.defined_csname.payload] == nil then
             defined_csname_texts_anywhere[statement.defined_csname.payload] = {}
           end
+          table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], false)
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1611,6 +1612,8 @@ local function report_issues(states, main_file_number, options)
             local replacement_text_segment = segments[statement.replacement_text_argument.segment_number]
             assert(replacement_text_segment ~= nil)
             table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], replacement_text_segment)
+          else
+            table.insert(defined_csname_texts_anywhere[statement.defined_csname.payload], false)
           end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         end

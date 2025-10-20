@@ -25,7 +25,7 @@ local edge_types = {
   FUNCTION_CALL_RETURN = string.format("return from a %s", FUNCTION_CALL),
 }
 
-local LATER_CODE = edge_types.LATER_CODE  -- luacheck: ignore
+local LATER_CODE = edge_types.LATER_CODE
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
 local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN  -- luacheck: ignore
 
@@ -57,8 +57,8 @@ local function is_confused(pathname, results, options)
   return false
 end
 
--- Detect chunks of known statements.
-local function detect_chunks(states, file_number, options)  -- luacheck: ignore options
+-- Collect chunks of known statements.
+local function collect_chunks(states, file_number, options)  -- luacheck: ignore options
   local state = states[file_number]
 
   local results = state.results
@@ -67,9 +67,13 @@ local function detect_chunks(states, file_number, options)  -- luacheck: ignore 
     segment.chunks = {}
     local first_statement_number
 
+    -- Record a chunk with a given range of known statements.
     local function record_chunk(last_statement_number, flags)
       if first_statement_number ~= nil then
-        local chunk = new_range(first_statement_number, last_statement_number, flags, #segment.statements)
+        local chunk = {
+          segment = segment,
+          statement_range = new_range(first_statement_number, last_statement_number, flags, #segment.statements),
+        }
         table.insert(segment.chunks, chunk)
       end
       first_statement_number = nil
@@ -88,8 +92,53 @@ local function detect_chunks(states, file_number, options)  -- luacheck: ignore 
   end
 end
 
+-- Draw edges between chunks.
+local function draw_edges(states, file_number, options)  -- luacheck: ignore options
+  local state = states[file_number]
+
+  local results = state.results
+  results.edges = {}
+
+  -- Record edges from skipping ahead to the following chunk in a code segment.
+  for _, segment in ipairs(results.segments or {}) do
+    local previous_chunk
+    for _, chunk in ipairs(segment.chunks or {}) do
+      if previous_chunk ~= nil then
+        local edge = {
+          type = LATER_CODE,
+          from = previous_chunk,
+          to = chunk,
+        }
+        table.insert(results.edges, edge)
+      end
+      previous_chunk = chunk
+    end
+  end
+
+  -- Record edges from skipping ahead to the following expl3 part.
+  local previous_part
+  for _, segment in ipairs(results.segments or {}) do
+    if segment.type == PART and segment.chunks ~= nil and #segment.chunks > 0 then
+      if previous_part ~= nil then
+        local edge = {
+          type = LATER_CODE,
+          from = previous_part.chunks[1],
+          to = segment.chunks[1],
+        }
+        assert(edge.from ~= nil)
+        assert(edge.to ~= nil)
+        table.insert(results.edges, edge)
+      end
+      previous_part = segment
+    end
+  end
+
+  -- TODO: Record edges from function calls.
+end
+
 local substeps = {
-  detect_chunks,
+  collect_chunks,
+  draw_edges,
 }
 
 return {

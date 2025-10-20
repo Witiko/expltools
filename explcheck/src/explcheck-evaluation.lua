@@ -236,6 +236,22 @@ local function count_chunks(analysis_results)
   return num_chunks
 end
 
+-- Count the number of edges in analysis results.
+local function count_edges(analysis_results)
+  local num_edges, num_edges_total
+  if analysis_results.edges ~= nil then
+    num_edges = {}
+    num_edges_total = #analysis_results.edges
+    for _, edge in ipairs(analysis_results.edges) do
+      if num_edges[edge.type] == nil then
+        num_edges[edge.type] = 0
+      end
+      num_edges[edge.type] = num_edges[edge.type] + 1
+    end
+  end
+  return num_edges, num_edges_total
+end
+
 -- Create a new evaluation results for the analysis results of an individual file.
 function FileEvaluationResults.new(cls, state)
   local content, analysis_results, issues = state.content, state.results, state.issues
@@ -260,6 +276,7 @@ function FileEvaluationResults.new(cls, state)
   local num_well_understood_tokens = count_well_understood_tokens(analysis_results)
   -- Evaluate the results of the flow analysis.
   local num_chunks = count_chunks(analysis_results)
+  local num_edges, num_edges_total = count_edges(analysis_results)
   -- Initialize the class.
   self.num_total_bytes = num_total_bytes
   self.num_warnings = num_warnings
@@ -279,6 +296,8 @@ function FileEvaluationResults.new(cls, state)
   self.num_statements_total = num_statements_total
   self.num_well_understood_tokens = num_well_understood_tokens
   self.num_chunks = num_chunks
+  self.num_edges = num_edges
+  self.num_edges_total = num_edges_total
   return self
 end
 
@@ -308,6 +327,8 @@ function AggregateEvaluationResults.new(cls)
   self.num_statements_total = 0
   self.num_well_understood_tokens = 0
   self.num_chunks = 0
+  self.num_edges = {}
+  self.num_edges_total = 0
   return self
 end
 
