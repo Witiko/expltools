@@ -43,13 +43,17 @@ end
 
 -- Transform a singular into plural if the count is zero, greater than two, or unspecified.
 local function pluralize(singular, count)
-  if count == 1 or singular:sub(#singular, #singular) == "s" then
+  if count == 1 then
     return singular
   else
     local of_index = singular:find(" of ")
     local plural
     if of_index == nil then
-      plural = singular .. "s"
+      if singular:sub(#singular, #singular) == "s" then
+        return singular
+      else
+        plural = singular .. "s"
+      end
     else
       plural = singular:sub(1, of_index - 1) .. "s" .. singular:sub(of_index)
     end
