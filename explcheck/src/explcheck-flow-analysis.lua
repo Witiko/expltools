@@ -74,8 +74,8 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
           statement_range = new_range(first_statement_number, last_statement_number, flags, #segment.statements),
         }
         table.insert(segment.chunks, chunk)
+        first_statement_number = nil
       end
-      first_statement_number = nil
     end
 
     if segment.statements ~= nil then
@@ -121,13 +121,21 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
   for _, segment in ipairs(results.segments or {}) do
     if segment.type == PART and segment.chunks ~= nil and #segment.chunks > 0 then
       if previous_part ~= nil then
+        local from_chunk = previous_part.chunks[#previous_part.chunks]
+        local from_statement_number = from_chunk.statement_range:stop() + 1
+        local to_chunk = segment.chunks[1]
+        local to_statement_number = to_chunk.statement_range:start()
         local edge = {
           type = AFTER,
-          from = previous_part.chunks[1],
-          to = segment.chunks[1],
+          from = {
+            chunk = from_chunk,
+            statement_number = from_statement_number,
+          },
+          to = {
+            chunk = to_chunk,
+            statement_number = to_statement_number,
+          },
         }
-        assert(edge.from ~= nil)
-        assert(edge.to ~= nil)
         table.insert(results.edges, edge)
       end
       previous_part = segment
@@ -137,15 +145,23 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
   -- Record edges from function calls.
   for _, segment in pairs(results.segments or {}) do
     for _, from_chunk in ipairs(segment.chunks or {}) do
-      for _, statement in from_chunk.statement_range:enumerate(segment.statements) do
+      for from_statement_number, statement in from_chunk.statement_range:enumerate(segment.statements) do
         if statement.type == FUNCTION_CALL then
           for _, nested_segment in ipairs(statement.replacement_text_segments or {}) do
             if nested_segment.chunks ~= nil and #nested_segment.chunks > 0 then
               -- Record the function call itself.
+              local to_chunk_start = nested_segment.chunks[1]
+              local to_statement_number_start = to_chunk_start.statement_range:start()
               local function_call_edge = {
                 type = FUNCTION_CALL,
-                from = from_chunk,
-                to = nested_segment.chunks[1],
+                from = {
+                  chunk = from_chunk,
+                  statement_number = from_statement_number,
+                },
+                to = {
+                  chunk = to_chunk_start,
+                  statement_number = to_statement_number_start,
+                },
               }
               table.insert(results.edges, function_call_edge)
               -- Record the return from the function call.
@@ -155,10 +171,18 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
               if other_results.edges == nil then
                 other_results.edges = {}
               end
+              local to_chunk_end = nested_segment.chunks[#nested_segment.chunks]
+              local to_statement_number_end = to_chunk_end.statement_range:stop() + 1
               local function_call_return_edge = {
                 type = FUNCTION_CALL_RETURN,
-                from = nested_segment.chunks[#nested_segment.chunks],
-                to = from_chunk,
+                from = {
+                  chunk = to_chunk_end,
+                  statement_number = to_statement_number_end,
+                },
+                to = {
+                  chunk = from_chunk,
+                  statement_number = from_statement_number + 1,
+                },
               }
               table.insert(other_results.edges, function_call_return_edge)
             end
