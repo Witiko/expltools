@@ -595,7 +595,7 @@ local function print_results(state, options, evaluation_results, is_last_file)
       else
         local formatted_expl_bytes = string.format("%s %s", humanize(num_expl_bytes), pluralize("byte", num_expl_bytes))
         local formatted_expl_ratio = format_ratio(num_expl_bytes, num_total_bytes)
-        io.write(string.format("%s (%s of file size)", formatted_expl_bytes, formatted_expl_ratio))
+        io.write(string.format("%s (%s of file size, including delimiters)", formatted_expl_bytes, formatted_expl_ratio))
         if #expl_ranges == 1 then
           local range = expl_ranges[1]
           local start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())

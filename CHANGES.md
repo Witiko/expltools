@@ -33,6 +33,12 @@ This version of explcheck has implemented the following new features:
   understanding. This has significantly reduced code coverage on TeX Live 2024
   (from ca 30% to 24% of all expl3 tokens).
 
+- Include expl3 part delimiters in the total number of bytes. (#141)
+
+  This increases the estimated number of expl3 bytes and allows us to determine
+  whether two expl3 parts are immediately adjacent when we disregard
+  delimiters, which has some significance for the flow analysis.
+
 - Support flow analysis. (#141)
 
 ## expltools 2025-10-04

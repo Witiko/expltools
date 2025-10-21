@@ -11,6 +11,7 @@ local range_flags = ranges.range_flags
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
+local FIRST_MAP_THEN_SUBTRACT = range_flags.FIRST_MAP_THEN_SUBTRACT
 
 local lpeg = require("lpeg")
 local B, Cmt, Cp, Ct, Cc, P, V = lpeg.B, lpeg.Cmt, lpeg.Cp, lpeg.Ct, lpeg.Cc, lpeg.P, lpeg.V
@@ -55,10 +56,13 @@ local function analyze_and_report_issues(states, file_number, options)
       if #span_range > 0 then
         if index % 2 == 1 then  -- chunk of text
           local chunk_text = content:sub(span_range:start(), span_range:stop())
-          if content_started or chunk_text:find("%S") ~= nil then
+          if chunk_text:find("%S") ~= nil then
             content_started = true
+            table.insert(transformed_text_table, chunk_text)
+          else
+            -- Skip all empty lines that only contain comments and leading spaces.
+            table.insert(numbers_of_bytes_removed, {transformed_index, #span_range})
           end
-          table.insert(transformed_text_table, chunk_text)
         else  -- comment
           local comment_text = content:sub(span_range:start(), span_range:stop())
           local comment_start, ignored_issues = lpeg.match(parsers.ignored_issues, comment_text)
@@ -119,13 +123,17 @@ local function analyze_and_report_issues(states, file_number, options)
   local transformed_content, map_back = strip_comments()
 
   -- Determine which parts of the input files contain expl3 code.
-  local expl_ranges = {}
+  local expl_ranges, outer_expl_ranges = {}, {}
   local input_ended = false
 
-  local function capture_range(should_skip, range_start, range_end)
+  local function capture_range(outer_range_start, should_skip, range_start, range_end, outer_range_end)
     if not should_skip then
-      local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
+      local flags = range_end == #transformed_content and INCLUSIVE or EXCLUSIVE
+      local outer_flags = outer_range_end == #transformed_content and INCLUSIVE or (EXCLUSIVE + FIRST_MAP_THEN_SUBTRACT)
+      local range = new_range(range_start, range_end, flags, #transformed_content, map_back, #content)
+      local outer_range = new_range(outer_range_start, outer_range_end, outer_flags, #transformed_content, map_back, #content)
       table.insert(expl_ranges, range)
+      table.insert(outer_expl_ranges, outer_range)
     end
   end
 
@@ -204,10 +212,12 @@ local function analyze_and_report_issues(states, file_number, options)
     "Root";
     Root = (
       (
-        V"FirstLineExplPart" / capture_range
+        Cp()
+        * V"FirstLineExplPart" / capture_range
       )^-1
       * (
         V"NonExplPart"
+        * Cp()
         * V"ExplPart" / capture_range
       )^0
       * V"NonExplPart"
@@ -264,7 +274,9 @@ local function analyze_and_report_issues(states, file_number, options)
         V"Head"
         * Cp()
         * V"HeadlessCloser"
+        * Cp()
         + Cp()
+        * Cp()
         * parsers.eof
       )
     ),
@@ -316,6 +328,7 @@ local function analyze_and_report_issues(states, file_number, options)
       end
       local range = new_range(1, #content, INCLUSIVE, #content)
       table.insert(expl_ranges, range)
+      table.insert(outer_expl_ranges, range)
     elseif expl3_detection_strategy == "auto" then
       -- Use context clues to determine whether no part or the whole
       -- input file is in expl3.
@@ -328,6 +341,7 @@ local function analyze_and_report_issues(states, file_number, options)
         issues:add('w100', 'no standard delimiters')
         local range = new_range(1, #content, INCLUSIVE, #content)
         table.insert(expl_ranges, range)
+        table.insert(outer_expl_ranges, range)
       end
     else
       assert(false, 'Unknown strategy "' .. expl3_detection_strategy .. '"')
@@ -356,7 +370,9 @@ local function analyze_and_report_issues(states, file_number, options)
 
   -- Store the intermediate results of the analysis.
   results.line_starting_byte_numbers = line_starting_byte_numbers
+  assert(#expl_ranges == #outer_expl_ranges)
   results.expl_ranges = expl_ranges
+  results.outer_expl_ranges = outer_expl_ranges
   results.seems_like_latex_style_file = seems_like_latex_style_file
 end
 

@@ -19,9 +19,9 @@ local AggregateEvaluationResults = {}
 -- Count the number of all expl3 bytes in analysis results.
 local function count_expl3_bytes(analysis_results)
   local num_expl_bytes
-  if analysis_results.expl_ranges ~= nil then
+  if analysis_results.outer_expl_ranges ~= nil then
     num_expl_bytes = 0
-    for _, range in ipairs(analysis_results.expl_ranges) do
+    for _, range in ipairs(analysis_results.outer_expl_ranges) do
       num_expl_bytes = num_expl_bytes + #range
     end
   end
