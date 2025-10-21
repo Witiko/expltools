@@ -105,10 +105,18 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
     local previous_chunk
     for _, chunk in ipairs(segment.chunks or {}) do
       if previous_chunk ~= nil then
+        local from_statement_number = previous_chunk.statement_range:stop() + 1
+        local to_statement_number = chunk.statement_range:start()
         local edge = {
           type = AFTER,
-          from = previous_chunk,
-          to = chunk,
+          from = {
+            chunk = previous_chunk,
+            statement_number = from_statement_number,
+          },
+          to = {
+            chunk = chunk,
+            statement_number = to_statement_number,
+          },
         }
         table.insert(results.edges, edge)
       end
