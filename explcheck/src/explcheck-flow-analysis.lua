@@ -19,14 +19,14 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
 local edge_types = {
+  AFTER = "pair of successive code chunks",
   FUNCTION_CALL = FUNCTION_CALL,
   FUNCTION_CALL_RETURN = string.format("%s return", FUNCTION_CALL),
-  SUCCESSION = "successive code chunks",
 }
 
+local AFTER = edge_types.AFTER
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
 local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN  -- luacheck: ignore
-local SUCCESSION = edge_types.SUCCESSION
 
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
@@ -106,7 +106,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
     for _, chunk in ipairs(segment.chunks or {}) do
       if previous_chunk ~= nil then
         local edge = {
-          type = SUCCESSION,
+          type = AFTER,
           from = previous_chunk,
           to = chunk,
         }
@@ -122,7 +122,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
     if segment.type == PART and segment.chunks ~= nil and #segment.chunks > 0 then
       if previous_part ~= nil then
         local edge = {
-          type = SUCCESSION,
+          type = AFTER,
           from = previous_part.chunks[1],
           to = segment.chunks[1],
         }
