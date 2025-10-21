@@ -12,6 +12,11 @@ local PART = syntactic_analysis.segment_types.PART
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
 
+local statement_confidences = semantic_analysis.statement_confidences
+
+local MAYBE = statement_confidences.MAYBE
+local DEFINITELY = statement_confidences.DEFINITELY
+
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
 
@@ -117,6 +122,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
             chunk = chunk,
             statement_number = to_statement_number,
           },
+          confidence = MAYBE,
         }
         table.insert(results.edges, edge)
       end
@@ -133,6 +139,12 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
         local from_statement_number = from_chunk.statement_range:stop() + 1
         local to_chunk = segment.chunks[1]
         local to_statement_number = to_chunk.statement_range:start()
+        -- Determine whether the parts are immediately adjacent.
+        local previous_outer_range = results.outer_expl_ranges[previous_part.location.part_number]
+        local outer_range = results.outer_expl_ranges[segment.location.part_number]
+        assert(previous_outer_range:stop() < outer_range:start())
+        local are_adjacent = previous_outer_range:stop() + 1 == outer_range:start()
+        local confidence = are_adjacent and DEFINITELY or MAYBE
         local edge = {
           type = AFTER,
           from = {
@@ -143,6 +155,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
             chunk = to_chunk,
             statement_number = to_statement_number,
           },
+          confidence = confidence,
         }
         table.insert(results.edges, edge)
       end
