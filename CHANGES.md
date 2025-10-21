@@ -39,6 +39,8 @@ This version of explcheck has implemented the following new features:
   whether two expl3 parts are immediately adjacent when we disregard
   delimiters, which has some significance for the flow analysis.
 
+- Add context for the issue S103 (Line too long). (#141)
+
 - Support flow analysis. (#141)
 
 #### Fixes

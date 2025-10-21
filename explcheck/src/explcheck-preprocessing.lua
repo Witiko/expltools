@@ -364,7 +364,7 @@ local function analyze_and_report_issues(states, file_number, options)
 
     local function line_too_long(range_start, range_end)
       local range = new_range(offset + range_start, offset + range_end, EXCLUSIVE, #transformed_content, map_back, #content)
-      issues:add('s103', 'line too long', range)
+      issues:add('s103', 'line too long', range, content:sub(range:start(), range:stop()))
     end
 
     local overline_lines_grammar = (
