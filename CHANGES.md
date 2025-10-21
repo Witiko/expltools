@@ -41,6 +41,11 @@ This version of explcheck has implemented the following new features:
 
 - Support flow analysis. (#141)
 
+#### Fixes
+
+- Fix the detection of the issue S103 (Line too long), which was previously
+  often only detected in parts of the input files outside expl3 parts. (#141)
+
 ## expltools 2025-10-04
 
 ### explcheck v0.14.0
