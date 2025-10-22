@@ -35,6 +35,8 @@ This version of explcheck has implemented the following new features:
 
 - Add context for the issue S103 (Line too long). (#141)
 
+- Draft flow analysis. (#141)
+
 #### Fixes
 
 - Fix the detection of the issue S103 (Line too long), which was previously
