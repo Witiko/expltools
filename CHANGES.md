@@ -1,5 +1,9 @@
 # Changes
 
+## expltools 2025-11-XX
+
+### explcheck v0.16.0
+
 ## expltools 2025-10-22
 
 ### explcheck v0.15.0
