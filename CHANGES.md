@@ -43,6 +43,8 @@ This version of explcheck has implemented the following new features:
 
 #### Fixes
 
+This version of explcheck has fixed the following bugs:
+
 - Fix the detection of the issue S103 (Line too long), which was previously
   often only detected in parts of the input files outside expl3 parts. (#141)
 
