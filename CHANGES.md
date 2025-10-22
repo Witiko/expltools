@@ -1,6 +1,6 @@
 # Changes
 
-## expltools 2025-10-XX
+## expltools 2025-10-22
 
 ### explcheck v0.15.0
 
@@ -20,7 +20,7 @@ This version of explcheck has implemented the following new features:
 - Recognize calls to known or defined functions and function variants as a
   new statement type `FUNCTION_CALL` distinct from `OTHER_STATEMENT`. (#141)
 
-  For the purpose of code coverage, calls of defined functions and function
+  For the purpose of code coverage, calls to defined functions and function
   variants are now considered well-known tokens. This has significantly
   increased code coverage on TeX Live 2024 (from ca 13% to 30% of all expl3
   tokens).
@@ -33,20 +33,18 @@ This version of explcheck has implemented the following new features:
   understanding. This has significantly reduced code coverage on TeX Live 2024
   (from ca 30% to 24% of all expl3 tokens).
 
-- Include expl3 part delimiters in the total number of bytes. (#141)
-
-  This increases the estimated number of expl3 bytes and allows us to determine
-  whether two expl3 parts are immediately adjacent when we disregard
-  delimiters, which has some significance for the flow analysis.
-
 - Add context for the issue S103 (Line too long). (#141)
-
-- Support flow analysis. (#141)
 
 #### Fixes
 
 - Fix the detection of the issue S103 (Line too long), which was previously
   often only detected in parts of the input files outside expl3 parts. (#141)
+
+- Include expl3 part delimiters in the total number of bytes. (#141)
+
+  This increases the estimated number of expl3 bytes and allows us to determine
+  whether two expl3 parts are immediately adjacent when we disregard
+  delimiters, which has some significance for the flow analysis.
 
 ## expltools 2025-10-04
 
