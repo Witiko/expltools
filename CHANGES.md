@@ -41,18 +41,18 @@ This version of explcheck has implemented the following new features:
 
 - Draft flow analysis. (#141)
 
+- Include expl3 part delimiters in the total number of bytes. (#141)
+
+  This increases the estimated number of expl3 bytes and allows us to determine
+  whether two expl3 parts are immediately adjacent when we disregard
+  delimiters, which has some significance for the flow analysis.
+
 #### Fixes
 
 This version of explcheck has fixed the following bugs:
 
 - Fix the detection of the issue S103 (Line too long), which was previously
   often only detected in parts of the input files outside expl3 parts. (#141)
-
-- Include expl3 part delimiters in the total number of bytes. (#141)
-
-  This increases the estimated number of expl3 bytes and allows us to determine
-  whether two expl3 parts are immediately adjacent when we disregard
-  delimiters, which has some significance for the flow analysis.
 
 ## expltools 2025-10-04
 
