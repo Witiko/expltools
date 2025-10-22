@@ -24,7 +24,6 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
-local segment_types = syntactic_analysis.segment_types
 local get_calls = syntactic_analysis.get_calls
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
@@ -32,11 +31,16 @@ local transform_replacement_text_tokens = syntactic_analysis.transform_replaceme
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 
+local segment_types = {
+  REPLACEMENT_TEXT = "function definition replacement text",
+}
+
 local REPLACEMENT_TEXT = segment_types.REPLACEMENT_TEXT
 
 local lpeg = require("lpeg")
 
 local statement_types = {
+  FUNCTION_CALL = "function call",
   FUNCTION_DEFINITION = "function definition",
   FUNCTION_VARIANT_DEFINITION = "function variant definition",
   VARIABLE_DECLARATION = "variable declaration",
@@ -49,6 +53,7 @@ local statement_types = {
   OTHER_TOKENS_COMPLEX = "block of other complex tokens",
 }
 
+local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
@@ -686,24 +691,32 @@ local function analyze(states, file_number, options)
           if base_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
+          assert(base_csname_argument ~= nil)
+          base_csname_argument.analyzed = true
           local base_csname_stem, base_argument_specifiers = parse_expl3_csname(base_csname)
           if base_csname_stem == nil then  -- we couldn't parse the csname, give up
             goto other_statement
           end
           -- determine the variant argument specifiers
-          local variant_argument_specifiers = parse_variant_argument_specifiers(base_csname, call.arguments[2])
+          local variant_specifiers_argument = call.arguments[2]
+          local variant_argument_specifiers = parse_variant_argument_specifiers(base_csname, variant_specifiers_argument)
           if variant_argument_specifiers == nil then  -- we couldn't parse the variant argument specifiers, give up
             goto other_statement
           end
+          assert(variant_specifiers_argument ~= nil)
+          variant_specifiers_argument.analyzed = true
           -- determine all defined csnames
           local defined_csnames = {}
           for _, argument_specifiers in ipairs(variant_argument_specifiers) do
             if is_conditional then  -- conditional function
               -- determine the conditions
-              local conditions = parse_conditions(call.arguments[#call.arguments])
+              local conditions_argument = call.arguments[#call.arguments]
+              local conditions = parse_conditions(conditions_argument)
               if conditions == nil then  -- we couldn't determine the conditions, give up
                 goto other_statement
               end
+              assert(conditions_argument ~= nil)
+              conditions_argument.analyzed = true
               -- determine the defined csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, condition_confidence = table.unpack(condition_table)
@@ -757,16 +770,20 @@ local function analyze(states, file_number, options)
               if num_parameter_argument ~= nil and num_parameter_argument.specifier == "n" then
                 local num_parameters_text = extract_text_from_argument(num_parameter_argument)
                 if num_parameters_text ~= nil then
+                  num_parameter_argument.analyzed = true
                   num_parameters = tonumber(num_parameters_text)
                 end
               end
-              local creator_function_csname = extract_csname_from_argument(call.arguments[2])
+              local creator_function_argument = call.arguments[2]
+              local creator_function_csname = extract_csname_from_argument(creator_function_argument)
               if (  -- couldn't determine the name of the creator function, give up
                     creator_function_csname == nil
                     or creator_function_csname.type ~= TEXT
                   ) then
                 goto other_statement
               end
+              assert(creator_function_argument ~= nil)
+              creator_function_argument.analyzed = true
               local actual_function_definition = lpeg.match(parsers.expl3_function_definition_csname, creator_function_csname.payload)
               if actual_function_definition == nil then  -- couldn't understand the creator function, give up
                 goto other_statement
@@ -778,13 +795,17 @@ local function analyze(states, file_number, options)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
+            assert(defined_csname_argument ~= nil)
+            defined_csname_argument.analyzed = true
             local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
             -- determine the replacement text
             local replacement_text_argument = call.arguments[#call.arguments]
+            assert(replacement_text_argument ~= nil)
             do
               if replacement_text_argument.specifier ~= "n" then  -- replacement text is hidden behind expansion
                 goto skip_replacement_text  -- record partial information
               end
+              replacement_text_argument.analyzed = true
               -- determine the number of parameters of the defined function
               local function update_num_parameters(updated_num_parameters)
                 assert(updated_num_parameters ~= nil)
@@ -802,6 +823,7 @@ local function analyze(states, file_number, options)
               for _, argument in ipairs(call.arguments) do  -- next, try to look for p-type "TeX parameter" argument specifiers
                 if argument.specifier == "p" and argument.num_parameters ~= nil then
                   update_num_parameters(argument.num_parameters)
+                  argument.analyzed = true
                   break
                 end
               end
@@ -844,10 +866,13 @@ local function analyze(states, file_number, options)
             local effectively_defined_csnames = {}
             if is_conditional then  -- conditional function
               -- determine the conditions
-              local conditions = parse_conditions(call.arguments[#call.arguments - 1])
+              local conditions_argument = call.arguments[#call.arguments - 1]
+              local conditions = parse_conditions(conditions_argument)
               if conditions == nil then  -- we couldn't determine the conditions, give up
                 goto other_statement
               end
+              assert(conditions_argument ~= nil)
+              conditions_argument.analyzed = true
               -- determine the defined csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, confidence = table.unpack(condition_table)
@@ -896,12 +921,16 @@ local function analyze(states, file_number, options)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
+            assert(defined_csname_argument ~= nil)
+            defined_csname_argument.analyzed = true
             -- determine the name of the base function
             local base_csname_argument = call.arguments[2]
             local base_csname = extract_csname_from_argument(base_csname_argument)
             if base_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
+            assert(base_csname_argument ~= nil)
+            base_csname_argument.analyzed = true
             -- determine all effectively defined csnames and effective base csnames
             local effective_defined_and_base_csnames = {}
             if is_conditional then  -- conditional function
@@ -915,10 +944,13 @@ local function analyze(states, file_number, options)
                 goto other_statement
               end
               -- determine the conditions
-              local conditions = parse_conditions(call.arguments[#call.arguments - 1])
+              local conditions_argument = call.arguments[#call.arguments - 1]
+              local conditions = parse_conditions(conditions_argument)
               if conditions == nil then  -- we couldn't determine the conditions, give up
                 goto other_statement
               end
+              assert(conditions_argument ~= nil)
+              conditions_argument.analyzed = true
               -- determine the defined and base csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, confidence = table.unpack(condition_table)
@@ -972,6 +1004,8 @@ local function analyze(states, file_number, options)
               ) then
             goto other_statement
           end
+          assert(declared_csname_argument ~= nil)
+          declared_csname_argument.analyzed = true
           local confidence = declared_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
             type = VARIABLE_DECLARATION,
@@ -1001,6 +1035,8 @@ local function analyze(states, file_number, options)
               ) then
             goto other_statement
           end
+          assert(defined_csname_argument ~= nil)
+          defined_csname_argument.analyzed = true
           -- detect mutability mismatches
           local defined_csname_scope = lpeg.match(parsers.expl3_variable_or_constant_csname_scope, defined_csname.transcript)
           if defined_csname_scope ~= nil then
@@ -1054,6 +1090,8 @@ local function analyze(states, file_number, options)
             if base_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
+            assert(base_csname_argument ~= nil)
+            base_csname_argument.analyzed = true
             statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
@@ -1091,6 +1129,8 @@ local function analyze(states, file_number, options)
               ) then
             goto other_statement
           end
+          assert(used_csname_argument ~= nil)
+          used_csname_argument.analyzed = true
           -- determine the token range of the use excluding any arguments following the used variable name
           local used_csname_token_range = used_csname_argument.outer_token_range or used_csname_argument.token_range
           local use_token_range = new_range(token_range:start(), used_csname_token_range:stop(), INCLUSIVE, #tokens)
@@ -1139,10 +1179,14 @@ local function analyze(states, file_number, options)
           if module_name == nil then  -- we couldn't parse the module name, give up
             goto other_statement
           end
+          assert(module_argument ~= nil)
+          module_argument.analyzed = true
           local message_name = extract_name_from_tokens(message_argument.token_range)
           if message_name == nil then  -- we couldn't parse the message name, give up
             goto other_statement
           end
+          assert(message_argument ~= nil)
+          message_argument.analyzed = true
           -- determine the token range of the definition excluding the message text
           local text_token_range = text_argument.outer_token_range or text_argument.token_range
           local definition_token_range = new_range(token_range:start(), text_token_range:start(), EXCLUSIVE, #tokens)
@@ -1176,14 +1220,19 @@ local function analyze(states, file_number, options)
           if module_name == nil then  -- we couldn't parse the module name, give up
             goto other_statement
           end
+          assert(module_argument ~= nil)
+          module_argument.analyzed = true
           local message_name = extract_name_from_tokens(message_argument.token_range)
           if message_name == nil then  -- we couldn't parse the message name, give up
             goto other_statement
           end
+          assert(message_argument ~= nil)
+          message_argument.analyzed = true
           -- collect the text arguments
           local text_arguments = {}
           for i = 3, #call.arguments do
-            table.insert(text_arguments, call.arguments[i])
+            local text_argument = call.arguments[i]
+            table.insert(text_arguments, text_argument)
           end
           -- determine the token range of the use excluding any text arguments
           local use_token_range
@@ -1266,7 +1315,7 @@ local function report_issues(states, main_file_number, options)
   ---- Collect information about symbols that were definitely defined.
   local defined_private_function_texts = {}
   local called_functions_and_variants = {}
-  local defined_csname_texts = {}
+  local defined_csname_texts, defined_csname_texts_anywhere = {}, {}
   local defined_private_function_variant_texts = {}
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
@@ -1508,6 +1557,7 @@ local function report_issues(states, main_file_number, options)
           if is_main_file then
             table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
           end
+          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1546,11 +1596,12 @@ local function report_issues(states, main_file_number, options)
         end
         -- Record control sequence name usage and definitions.
         if statement.defined_csname.type == TEXT then
-          maybe_defined_csname_texts[statement.defined_csname.payload] = true
           if is_main_file then
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
           end
+          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          maybe_defined_csname_texts[statement.defined_csname.payload] = true
         end
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
           process_argument_tokens(statement.replacement_text_argument)
@@ -1740,13 +1791,13 @@ local function report_issues(states, main_file_number, options)
           process_argument_tokens(argument)
         end
       -- Process an unrecognized statement.
-      elseif statement.type == OTHER_STATEMENT then
+      elseif statement.type == OTHER_STATEMENT or statement.type == FUNCTION_CALL then
         -- Record control sequence name usage and definitions.
         for _, call in statement.call_range:enumerate(segment.calls) do
           maybe_used_csname_texts[call.csname] = true
           if is_main_file then
             local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
-            table.insert(called_functions_and_variants, {call.csname, csname_byte_range})
+            table.insert(called_functions_and_variants, {segment, statement, call.csname, csname_byte_range})
           end
           for _, argument in ipairs(call.arguments) do
             process_argument_tokens(argument)
@@ -1827,12 +1878,31 @@ local function report_issues(states, main_file_number, options)
 
   ---- Report calls to undefined functions and function variants.
   for _, called_function_or_variant in ipairs(called_functions_and_variants) do
-    local csname, byte_range = table.unpack(called_function_or_variant)
+    local segment, statement, csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_csname, csname) == nil
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
+    elseif defined_csname_texts_anywhere[csname] or maybe_defined_csname_texts[csname] then
+      -- For defined functions and function variants, reclassify the statement as a function call.
+      statement.type = FUNCTION_CALL
+      if defined_csname_texts_anywhere[csname] then
+        statement.confidence = DEFINITELY
+      elseif maybe_defined_csname_texts[csname] then
+        statement.confidence = MAYBE
+      else
+        error("Failed to determine statement confidence")
+      end
+      -- Mark expansionless call arguments as analyzed.
+      for _, call in statement.call_range:enumerate(segment.calls) do
+        for _, argument in ipairs(call.arguments) do
+          assert(argument ~= nil)
+          if lpeg.match(parsers.expansionless_argument_specifier, argument.specifier) ~= nil then
+            argument.analyzed = true
+          end
+        end
+      end
     end
   end
 

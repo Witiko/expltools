@@ -3,14 +3,16 @@
 local Range = {}
 
 local range_flags = {
-  EXCLUSIVE = 0,
-  INCLUSIVE = 1,
-  MAYBE_EMPTY = 2,
+  EXCLUSIVE = 0,  -- the end index is one higher than the actual last item
+  INCLUSIVE = 1,  -- the end index is corresponds to the last item
+  MAYBE_EMPTY = 2,  -- the range may be empty
+  FIRST_MAP_THEN_SUBTRACT = 4,  -- for EXCLUSIVE, first map back to the original array and _then_ subtract one, not vise versa
 }
 
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
+local FIRST_MAP_THEN_SUBTRACT = range_flags.FIRST_MAP_THEN_SUBTRACT
 
 -- Create a new range based on the start/end indices, the type of the end index
 -- (INCLUSIVE/EXCLUSIVE, MAYBE_EMPTY), the size of the array that contains the
@@ -39,6 +41,10 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
   end
   local exclusive_end = end_type % 2 == EXCLUSIVE
   local maybe_empty = end_type - (end_type % 2) == MAYBE_EMPTY
+  local first_map_then_subtract = end_type - (end_type % 4) == FIRST_MAP_THEN_SUBTRACT
+  if first_map_then_subtract then
+    assert(map_back ~= nil)
+  end
   if exclusive_end then
     -- Convert exclusive range end to inclusive.
     range_end = range_end - 1
@@ -79,7 +85,13 @@ function Range.new(cls, range_start, range_end, end_type, transformed_array_size
       mapped_range_end = mapped_range_start - 1
     else
       -- Otherwise, apply the map-back function to the range end as well.
-      mapped_range_end = map_back(range_end)
+      if exclusive_end and first_map_then_subtract then
+        -- If EXCLUSIVE + FIRST_MAP_THEN_SUBTRACT is specified, use the exclusive index in the mapping and
+        -- only subtract the index after the mapping.
+        mapped_range_end = map_back(range_end + 1) - 1
+      else
+        mapped_range_end = map_back(range_end)
+      end
     end
     if original_array_size == 0 then
       -- If the original array is empty, check that the range end has also stayed at 0.

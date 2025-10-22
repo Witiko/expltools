@@ -49,7 +49,11 @@ local function pluralize(singular, count)
     local of_index = singular:find(" of ")
     local plural
     if of_index == nil then
-      plural = singular .. "s"
+      if singular:sub(#singular, #singular) == "s" then
+        return singular
+      else
+        plural = singular .. "s"
+      end
     else
       plural = singular:sub(1, of_index - 1) .. "s" .. singular:sub(of_index)
     end
@@ -243,11 +247,11 @@ local function print_summary(options, evaluation_results)
     end
     io.write(
       string.format(
-        "\n- %s %s expl3 %s (%s of total bytes)",
+        "\n- %s %s expl3 %s (%s total bytes)",
         colorize("Preprocessing:", BOLD),
         titlecase(humanize(num_expl_bytes)),
         pluralize("byte", num_expl_bytes),
-        format_ratio(num_expl_bytes, num_total_bytes)
+        num_expl_bytes == num_total_bytes and "all" or string.format("%s of", format_ratio(num_expl_bytes, num_total_bytes))
       )
     )
     -- Evaluate the evalution results of the lexical analysis.
@@ -297,7 +301,32 @@ local function print_summary(options, evaluation_results)
     else
       io.write(string.format(", %s %s", humanize(num_statements_total), pluralize("statement", num_statements_total)))
     end
-
+    -- Evaluate the evalution results of the flow analysis.
+    local num_chunks = evaluation_results.num_chunks
+    local num_edges_total = evaluation_results.num_edges_total
+    if num_chunks == 0 then
+      goto skip_to_code_coverage
+    end
+    io.write(
+      string.format(
+        "\n- %s %s %s",
+        colorize("Flow analysis:", BOLD),
+        titlecase(humanize(num_chunks)),
+        pluralize("chunk", num_chunks)
+      )
+    )
+    if num_edges_total == 0 then
+      goto skip_to_code_coverage
+    end
+    io.write(
+      string.format(
+        " and %s %s between them",
+        humanize(num_edges_total),
+        pluralize("edge", num_edges_total)
+      )
+    )
+    -- Evaluate code coverage.
+    ::skip_to_code_coverage::
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
     io.write(string.format("\n- %s ", colorize("Code coverage:", BOLD)))
     if num_well_understood_tokens == 0 then
@@ -566,7 +595,7 @@ local function print_results(state, options, evaluation_results, is_last_file)
       else
         local formatted_expl_bytes = string.format("%s %s", humanize(num_expl_bytes), pluralize("byte", num_expl_bytes))
         local formatted_expl_ratio = format_ratio(num_expl_bytes, num_total_bytes)
-        io.write(string.format("%s (%s of file size)", formatted_expl_bytes, formatted_expl_ratio))
+        io.write(string.format("%s (%s of file size, including delimiters)", formatted_expl_bytes, formatted_expl_ratio))
         if #expl_ranges == 1 then
           local range = expl_ranges[1]
           local start_line_number, start_column_number = utils.convert_byte_to_line_and_column(line_starting_byte_numbers, range:start())
@@ -731,6 +760,50 @@ local function print_results(state, options, evaluation_results, is_last_file)
             "(%s of expl3 tokens, ~%s of total bytes)",
             format_ratio(num_well_understood_tokens, num_tokens),
             format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+          )
+        )
+      end
+      -- Evaluate the evalution results of the flow analysis.
+      local num_chunks = evaluation_results.num_chunks
+      if num_chunks == nil then
+        goto skip_remaining_additional_information
+      end
+      io.write(string.format("\n\n%s%s", line_indent, colorize("Flow analysis results:", BOLD)))
+      if num_chunks == 0 then
+        io.write(string.format("\n%s- No chunks of known statements in code segments", line_indent))
+        goto skip_remaining_additional_information
+      end
+      io.write(
+        string.format(
+          "\n%s- %s %s of known statements in code segments",
+          line_indent,
+          titlecase(humanize(num_chunks)),
+          pluralize("chunk", num_chunks)
+        )
+      )
+      local num_edges_total = evaluation_results.num_edges_total
+      assert(num_edges_total ~= nil)
+      if num_edges_total == 0 then
+        io.write(string.format("\n%s- No edges between the chunks", line_indent))
+        goto skip_remaining_additional_information
+      end
+      io.write(
+        string.format(
+          "\n%s- %s %s between the chunks:",
+          line_indent,
+          titlecase(humanize(num_edges_total)),
+          pluralize("edge", num_edges_total)
+        )
+      )
+      assert(evaluation_results.num_edges ~= nil)
+      for edge_type, num_edges in pairs_sorted_by_descending_values(evaluation_results.num_edges) do
+        io.write(
+          string.format(
+            "\n%s%s- %s %s",
+            line_indent,
+            line_indent,
+            titlecase(humanize(num_edges)),
+            pluralize(edge_type, num_edges)
           )
         )
       end

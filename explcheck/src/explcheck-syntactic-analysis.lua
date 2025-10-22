@@ -8,7 +8,6 @@ local identity = require("explcheck-utils").identity
 
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
-local token_types = lexical_analysis.token_types
 local format_token = lexical_analysis.format_token
 local format_tokens = lexical_analysis.format_tokens
 
@@ -19,8 +18,12 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
-local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
-local CHARACTER = token_types.CHARACTER
+local token_types = {
+  ARGUMENT = "argument",
+}
+
+local CONTROL_SEQUENCE = lexical_analysis.token_types.CONTROL_SEQUENCE
+local CHARACTER = lexical_analysis.token_types.CHARACTER
 local ARGUMENT = token_types.ARGUMENT
 
 local lpeg = require("lpeg")
@@ -35,7 +38,6 @@ local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 local segment_types = {
   PART = "expl3 part",
-  REPLACEMENT_TEXT = "function definition replacement text",
   TF_TYPE_ARGUMENTS = "T-type or F-type argument",
 }
 
@@ -729,5 +731,6 @@ return {
   name = "syntactic analysis",
   segment_types = segment_types,
   substeps = substeps,
+  token_types = token_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
 }

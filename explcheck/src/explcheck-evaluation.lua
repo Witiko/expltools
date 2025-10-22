@@ -1,9 +1,14 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
-local token_types = require("explcheck-lexical-analysis").token_types
+local syntactic_analysis = require("explcheck-syntactic-analysis")
 local statement_confidences = require("explcheck-semantic-analysis").statement_confidences
 
+local token_types = syntactic_analysis.token_types
+local call_types = syntactic_analysis.call_types
+
 local ARGUMENT = token_types.ARGUMENT
+
+local CALL = call_types.CALL
 
 local DEFINITELY = statement_confidences.DEFINITELY
 local NONE = statement_confidences.NONE
@@ -14,9 +19,9 @@ local AggregateEvaluationResults = {}
 -- Count the number of all expl3 bytes in analysis results.
 local function count_expl3_bytes(analysis_results)
   local num_expl_bytes
-  if analysis_results.expl_ranges ~= nil then
+  if analysis_results.outer_expl_ranges ~= nil then
     num_expl_bytes = 0
-    for _, range in ipairs(analysis_results.expl_ranges) do
+    for _, range in ipairs(analysis_results.outer_expl_ranges) do
       num_expl_bytes = num_expl_bytes + #range
     end
   end
@@ -139,14 +144,16 @@ end
 
 -- Determine how many tokens are "well-understood" from analysis results.
 --
--- Let S be a set of all statements that contain a token T and originate from a maximally nested segment. Then, T is
--- "well-understood" if the maximum confidence among these statements is 1.0.
+-- Let S be a set of all statements that originate from a maximally nested segment and that contain a token T in part of
+-- the statement that has been analyzed. Then, T is "well-understood" if the maximum confidence among these statements
+-- is 1.0.
 --
 local function count_well_understood_tokens(analysis_results)
   -- Since segments are ordered from the least to the most nested, there is no need to track the "nesting level".
   -- Instead, the confidence can be accumulated as a minimum over the segments and as a maximum within these segments.
   local is_token_well_understood_outer_accumulator = {}
   local is_empty = true
+  -- Analyze all segments, from the outermost to the innermost.
   for _, segment in ipairs(analysis_results.segments or {}) do
     local part_number = segment.location.part_number
     local tokens = analysis_results.tokens[part_number]
@@ -158,11 +165,37 @@ local function count_well_understood_tokens(analysis_results)
           if is_token_well_understood_inner_accumulator[token_number] == nil then
             is_token_well_understood_inner_accumulator[token_number] = NONE
           end
-          is_token_well_understood_inner_accumulator[token_number]
-            = math.max(is_token_well_understood_inner_accumulator[token_number], statement.confidence)
+        end
+        -- Record all tokens from analyzed parts of statements with confidence 1.0.
+        if statement.confidence == DEFINITELY then
+          local function record_analyzed_token(token_number)
+            is_token_well_understood_inner_accumulator[token_number]
+              = math.max(is_token_well_understood_inner_accumulator[token_number], statement.confidence)
+          end
+          if call.type == CALL then
+            -- In expl3 calls, the control sequence name is considered analyzed.
+            for token_number, _ in call.csname_token_range:enumerate(tokens) do
+              record_analyzed_token(token_number)
+            end
+            -- Furthermore, all arguments that are marked as analyzed are also considered analyzed.
+            for _, argument in ipairs(call.arguments) do
+              if argument.analyzed then
+                local argument_token_range = argument.outer_token_range or argument.token_range
+                for token_number, _ in argument_token_range:enumerate(tokens) do
+                  record_analyzed_token(token_number)
+                end
+              end
+            end
+          else
+            -- In non-calls, all tokens are considered analyzed.
+            for token_number, _ in call.token_range:enumerate(tokens) do
+              record_analyzed_token(token_number)
+            end
+          end
         end
       end
     end
+    -- Min-aggregate the results from the parent segments with the results from this segment.
     for token_number, confidence in pairs(is_token_well_understood_inner_accumulator) do
       if is_token_well_understood_outer_accumulator[part_number] == nil then
         is_token_well_understood_outer_accumulator[part_number] = {}
@@ -174,6 +207,7 @@ local function count_well_understood_tokens(analysis_results)
         = math.min(is_token_well_understood_outer_accumulator[part_number][token_number], confidence)
     end
   end
+  -- Count the well-understood tokens.
   local num_well_understood_tokens
   if not is_empty then
     num_well_understood_tokens = 0
@@ -186,6 +220,36 @@ local function count_well_understood_tokens(analysis_results)
     end
   end
   return num_well_understood_tokens
+end
+
+-- Count the number of chunks in analysis results.
+local function count_chunks(analysis_results)
+  local num_chunks
+  for _, segment in ipairs(analysis_results.segments or {}) do
+    if segment.chunks ~= nil then
+      if num_chunks == nil then
+        num_chunks = 0
+      end
+      num_chunks = num_chunks + #segment.chunks
+    end
+  end
+  return num_chunks
+end
+
+-- Count the number of edges in analysis results.
+local function count_edges(analysis_results)
+  local num_edges, num_edges_total
+  if analysis_results.edges ~= nil then
+    num_edges = {}
+    num_edges_total = #analysis_results.edges
+    for _, edge in ipairs(analysis_results.edges) do
+      if num_edges[edge.type] == nil then
+        num_edges[edge.type] = 0
+      end
+      num_edges[edge.type] = num_edges[edge.type] + 1
+    end
+  end
+  return num_edges, num_edges_total
 end
 
 -- Create a new evaluation results for the analysis results of an individual file.
@@ -210,6 +274,9 @@ function FileEvaluationResults.new(cls, state)
   local num_calls, num_call_tokens, num_calls_total = count_calls(analysis_results)
   local num_statements, num_statement_tokens, num_statement_calls, num_statements_total = count_statements(analysis_results)
   local num_well_understood_tokens = count_well_understood_tokens(analysis_results)
+  -- Evaluate the results of the flow analysis.
+  local num_chunks = count_chunks(analysis_results)
+  local num_edges, num_edges_total = count_edges(analysis_results)
   -- Initialize the class.
   self.num_total_bytes = num_total_bytes
   self.num_warnings = num_warnings
@@ -228,6 +295,9 @@ function FileEvaluationResults.new(cls, state)
   self.num_statement_calls = num_statement_calls
   self.num_statements_total = num_statements_total
   self.num_well_understood_tokens = num_well_understood_tokens
+  self.num_chunks = num_chunks
+  self.num_edges = num_edges
+  self.num_edges_total = num_edges_total
   return self
 end
 
@@ -256,6 +326,9 @@ function AggregateEvaluationResults.new(cls)
   self.num_statement_calls = {}
   self.num_statements_total = 0
   self.num_well_understood_tokens = 0
+  self.num_chunks = 0
+  self.num_edges = {}
+  self.num_edges_total = 0
   return self
 end
 
@@ -292,6 +365,7 @@ return {
   count_expl3_bytes = count_expl3_bytes,
   count_groupings = count_groupings,
   count_tokens = count_tokens,
+  count_well_understood_tokens = count_well_understood_tokens,
   new_file_results = function(...)
     return FileEvaluationResults:new(...)
   end,

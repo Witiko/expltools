@@ -16,12 +16,10 @@ local lpeg = require("lpeg")
 local token_types = {
   CONTROL_SEQUENCE = "control sequence",
   CHARACTER = "character",
-  ARGUMENT = "argument",  -- corresponds to zero or more tokens inserted by a function call, never produced by lexical analysis
 }
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 local CHARACTER = token_types.CHARACTER
-local ARGUMENT = token_types.ARGUMENT
 
 local simple_text_catcodes = {
   [3] = true,  -- math shift
@@ -40,12 +38,10 @@ local simple_text_catcodes = {
 --  [1]: Donald Ervin Knuth. 1986. TeX: The Program. Addison-Wesley, USA.
 --
 local function is_token_simple(token)
-  if token.type == CONTROL_SEQUENCE or token.type == ARGUMENT then
-    return false
-  elseif token.type == CHARACTER then
+  if token.type == CHARACTER then
     return simple_text_catcodes[token.catcode] ~= nil
   else
-    error('Unexpected token type "' .. token.type .. '"')
+    return false
   end
 end
 

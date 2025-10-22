@@ -202,7 +202,7 @@ local function process_files(pathnames, options)
   assert(#states == #pathnames)
 
   -- Run all processing steps.
-  local step_filenames = {'preprocessing', 'lexical-analysis', 'syntactic-analysis', 'semantic-analysis'}
+  local step_filenames = {'preprocessing', 'lexical-analysis', 'syntactic-analysis', 'semantic-analysis', 'flow-analysis'}
   for step_number, step_filename in ipairs(step_filenames) do
     local step = require(string.format('explcheck-%s', step_filename))
     -- Process all files in the group with this step.
