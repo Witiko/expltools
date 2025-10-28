@@ -487,9 +487,6 @@ imported_prefixes = ["crefthe"]
 [package.witharrows]
 imported_prefixes = ["MH", "MT"]
 
-[package.codedescribe]
-imported_prefixes = ["xpeekahead"]
-
 [package.prettytok]
 imported_prefixes = ["precattl"]
 
