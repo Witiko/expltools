@@ -265,7 +265,7 @@ jobs:
       contents: write
     steps:
       - name: Download CTAN archive and documentation
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           merge-multiple: true
       - name: Publish prerelease
