@@ -9,9 +9,6 @@ ignored_issues = ["w200", "e208", "e209", "e300", "e301", "w302", "e304", "t305"
 imported_prefixes = ["graphic"]
 max_line_length = 140
 
-[filename."tex4ht.sty"]
-expl3_detection_strategy = "precision"
-
 [package.xint]
 expl3_detection_strategy = "precision"
 
@@ -120,7 +117,6 @@ max_line_length = 150
 
 [package.luamml]
 expl3_detection_strategy = "never"
-ignored_issues = ["e405"]
 
 [package.xecjk]
 expl3_detection_strategy = "always"
@@ -215,9 +211,6 @@ ignored_issues = ["e301"]
 [package.zitie]
 ignored_issues = ["e300"]
 imported_prefixes = ["zitie"]
-
-[filename."spreadtab.sty"]
-expl3_detection_strategy = "never"
 
 [filename."ecgdraw.sty"]
 ignored_issues = ["e201"]
@@ -343,9 +336,6 @@ ignored_issues = ["e304"]
 [package.ufrgscca]
 ignored_issues = ["e304"]
 imported_prefixes = ["ufrgscca"]
-
-[package.univie-ling]
-ignored_issues = ["e304"]
 
 [package.zugferd]
 ignored_issues = ["e304"]
