@@ -36,6 +36,10 @@ This version of explcheck has implemented the following new features:
   - "l3prefixes.csv" with the latest registered prefix from 2024-11-18
   ```
 
+  You may also just use the dates of the last update to TeX Live 2024
+  (2025-03-09) for both options, see https://tug.org/historic, directory
+  `systems/texlive/2024/tlnet-final`.
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
