@@ -1,3 +1,5 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex/maze/maze.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/unicode-math/um-doc-main.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/beaulivre/beaulivre.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/biblatex-ext/biblatex-ext-oasymb-l3draw.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/citeall/citeall.sty

@@ -1,3 +1,4 @@
+/usr/local/texlive/2024/texmf-dist/doc/fonts/firamath/firamath-specimen.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/chinesechess/chinesechess.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/circledtext/circledtext.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/datagidx.sty

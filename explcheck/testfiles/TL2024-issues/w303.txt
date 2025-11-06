@@ -1,3 +1,8 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex/gs1/GS_set_EAN_control_digit.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/gs1/int_set_to_EAN_control_digit.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/pseudo/doc/pseudo.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/rpgicons/rpgicons-doc.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/xassoccnt/xassoccnt_getparentcounter_example.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/akshar/akshar.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/aligned-overset/aligned-overset.sty

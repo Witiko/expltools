@@ -1,3 +1,4 @@
+/usr/local/texlive/2024/texmf-dist/doc/xelatex/xecjk/xunicode-symbols.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty

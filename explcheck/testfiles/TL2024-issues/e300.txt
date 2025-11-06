@@ -1,3 +1,5 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex/rescansync/rescansync.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/updatemarks/updatemarks.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/asmeconf/asmeconf.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/bithesis/bithesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/datatool/databib.sty

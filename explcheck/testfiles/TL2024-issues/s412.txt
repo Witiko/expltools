@@ -1,3 +1,11 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex-dev/l3kernel/l3styleguide.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/concepts/with.sty
+/usr/local/texlive/2024/texmf-dist/doc/latex/easyfloats/preamble/macros.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/pstool/pstool.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/stex/stex-devel.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/tex-overview/tex-overview-aux.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/underoverlap/with.sty
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/cfntinst.sty
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/fontinst.sty
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/xfntinst.sty
