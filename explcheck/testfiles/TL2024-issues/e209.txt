@@ -1,0 +1,3 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex/dashundergaps/l3doc-TUB.cls
+/usr/local/texlive/2024/texmf-dist/doc/latex/fewerfloatpages/l3doc-TUB.cls
+/usr/local/texlive/2024/texmf-dist/doc/latex/unicodefonttable/l3doc-TUB2024.cls
