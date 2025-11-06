@@ -64,7 +64,7 @@ end
 local function count_segments(analysis_results)
   local num_segments
   local num_segments_total
-  if analysis_results.tokens ~= nil then
+  if analysis_results.segments ~= nil then
     num_segments = {}
     num_segments_total = 0
     for _, segment in ipairs(analysis_results.segments) do
