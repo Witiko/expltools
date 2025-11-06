@@ -16,11 +16,25 @@ This version of explcheck has implemented the following new features:
   would like to only take into account the deprecations and prefixes from
   TeX Live 2024 and earlier:
 
-    ``` toml
-    [defaults]
-    l3obsolete_max_deprecated_date = "2024-03-30"
-    l3prefixes_max_first_registered_date = "2024-11-18"
-    ```
+  ``` toml
+  [defaults]
+  l3obsolete_max_deprecated_date = "2024-03-30"
+  l3prefixes_max_first_registered_date = "2024-11-18"
+  ```
+
+  You may get these dates by running the script `generate-explcheck-latex3.lua`
+  with files `l3obsolete.txt` and `l3prefixes.csv` from TeX Live 2024 placed in
+  the current working directory or other locations indexed by the KPathSea
+  library. Here is the output of the script:
+
+  ```
+  LPEG parsers and other information extracted from LaTeX3 data files.
+  Generated on 2025-11-06 from the following files:
+  - "l3obsolete.txt" with the latest obsolete entry from 2024-03-30
+  Failed to parse date out of line "fontsizes,fontsizes,Julien Rivaud,,,,,2018-06-13,", skipping it in determining the latest registered prefix
+  Failed to parse date out of line "piton,piton,François Pantigny,,,,29/09/2022,29/09/2022,", skipping it in determining the latest registered prefix
+  - "l3prefixes.csv" with the latest registered prefix from 2024-11-18
+  ```
 
 #### Continuous integration
 
