@@ -564,3 +564,6 @@ imported_prefixes = ["l3doc"]
 
 [filename."latex-lab-testphase-block.sty"]
 imported_prefixes = ["hooks"]
+
+[package.expltools]
+expl3_detection_strategy = "never"
