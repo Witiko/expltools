@@ -217,12 +217,19 @@ local function main(filelist_pathname, results_pathname)
   -- Print the results.
   io.write(string.format('Checked %s different options in file "%s"', humanize(num_options), user_config_pathname))
   if #key_locations.to_remove == 0 then
-    print(string.format(', none of which can be removed without affecting files listed in "%s".', results_pathname))
+    print(
+      string.format(
+        ', none of which can be removed without affecting files listed in "%s" and "%s".',
+        filelist_pathname,
+        results_pathname
+      )
+    )
   else
     print(
       string.format(
-        ', %s of which can be removed without affecting files listed in "%s":',
+        ', %s of which can be removed without affecting files listed in "%s" and "%s":',
         humanize(#key_locations.to_remove),
+        filelist_pathname,
         results_pathname
       )
     )
