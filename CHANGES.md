@@ -60,6 +60,13 @@ integration:
   This has reduced code coverage from ca 24% to 21% of all expl3 tokens on
   TeX Live 2024 and from ca 22% to 20% on current TeX Live 2025 (2025-11-06).
 
+- Check if the configuration is minimal even for expl3 files without any
+  issues. (#150)
+
+  This is necessary to prevent incorrect recommendations to remove unnecessary
+  default settings from the file `.explcheckrc` in the script
+  `prune-explcheck-config.lua`.
+
 ## expltools 2025-10-22
 
 ### explcheck v0.15.0
