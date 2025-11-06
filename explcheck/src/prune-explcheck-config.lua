@@ -8,9 +8,12 @@ kpse.set_program_name("texlua", "prune-explcheck-config")
 local lfs = require("lfs")
 
 local config = require("explcheck-config")
-local humanize = require("explcheck-format").humanize
+local format = require("explcheck-format")
 local new_issues = require("explcheck-issues").new_issues
 local utils = require("explcheck-utils")
+
+local humanize = format.humanize
+local pluralize = format.pluralize
 
 local get_stem = utils.get_stem
 local get_suffix = utils.get_suffix
@@ -28,7 +31,7 @@ local function read_filelist(filelist_pathname)
   for pathname in io.lines(filelist_pathname) do
     table.insert(pathnames, pathname)
   end
-  print(string.format('Read %s files listed in "%s".', humanize(#pathnames), filelist_pathname))
+  print(string.format('Read %s %s listed in "%s".', humanize(#pathnames), pluralize("file", #pathnames), filelist_pathname))
   return pathnames
 end
 
@@ -59,7 +62,16 @@ local function read_results(results_pathname)
   for _, issues in pairs(results.issues) do
     issues:close()
   end
-  print(string.format('Read %s issues and %s files listed in "%s".', humanize(num_issues), humanize(#results.pathnames), results_pathname))
+  print(
+    string.format(
+      'Read %s %s and %s %s listed in "%s".',
+      humanize(num_issues),
+      pluralize("issue", num_issues),
+      humanize(#results.pathnames),
+      pluralize("file", #results.pathnames),
+      results_pathname
+    )
+  )
   return results
 end
 
