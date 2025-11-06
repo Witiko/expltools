@@ -43,6 +43,11 @@ integration:
 
 - Use historic files "l3obsolete.txt" and "l3prefixes.csv" in CI. (#150)
 
+- Include example files from the `doc` subtree in regression tests. (#150)
+
+  This has reduced code coverage from ca 24% to 21% of all expl3 tokens on
+  TeX Live 2024 and from ca 22% to 20% on TeX Live 2025.
+
 ## expltools 2025-10-22
 
 ### explcheck v0.15.0
