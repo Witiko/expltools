@@ -31,8 +31,6 @@ This version of explcheck has implemented the following new features:
   LPEG parsers and other information extracted from LaTeX3 data files.
   Generated on 2025-11-06 from the following files:
   - "l3obsolete.txt" with the latest obsolete entry from 2024-03-30
-  Failed to parse date out of line "fontsizes,fontsizes,Julien Rivaud,,,,,2018-06-13,", skipping it in determining the latest registered prefix
-  Failed to parse date out of line "piton,piton,François Pantigny,,,,29/09/2022,29/09/2022,", skipping it in determining the latest registered prefix
   - "l3prefixes.csv" with the latest registered prefix from 2024-11-18
   ```
 
@@ -60,7 +58,7 @@ integration:
 - Include example files from the `doc` subtree in regression tests. (#150)
 
   This has reduced code coverage from ca 24% to 21% of all expl3 tokens on
-  TeX Live 2024 and from ca 22% to 20% on TeX Live 2025.
+  TeX Live 2024 and from ca 22% to 20% on current TeX Live 2025 (2025-11-06).
 
 ## expltools 2025-10-22
 
