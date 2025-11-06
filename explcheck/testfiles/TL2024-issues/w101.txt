@@ -5,7 +5,6 @@
 /usr/local/texlive/2024/texmf-dist/doc/latex/saveenv/saveenv.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/tex-overview/tex-overview.tex
 /usr/local/texlive/2024/texmf-dist/doc/lualatex/letgut/letgut-code.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/w101.tex
 /usr/local/texlive/2024/texmf-dist/doc/xelatex/exam-zh/doc/xdyydoc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-toc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/tools/array.sty

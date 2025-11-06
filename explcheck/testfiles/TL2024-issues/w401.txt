@@ -1,7 +1,6 @@
 /usr/local/texlive/2024/texmf-dist/doc/latex-dev/l3kernel/l3styleguide.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/expose-expl3-dunkerque-2019/dk19ecrireprem.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/s205-04.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/atableau/atableau.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/bookshelf/bookshelf.cls

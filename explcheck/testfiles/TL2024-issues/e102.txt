@@ -26,7 +26,6 @@
 /usr/local/texlive/2024/texmf-dist/doc/lualatex/letgut/letgut-code.tex
 /usr/local/texlive/2024/texmf-dist/doc/lualatex/luaprogtable/luaprogtable-doc.tex
 /usr/local/texlive/2024/texmf-dist/doc/lualatex/piton/piton-french.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/e102.tex
 /usr/local/texlive/2024/texmf-dist/doc/xelatex/exam-zh/doc/body/usage.tex
 /usr/local/texlive/2024/texmf-dist/doc/xelatex/interchar/interchartest.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/robust-externalize/robust-externalize.sty

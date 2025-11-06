@@ -27,8 +27,6 @@
 /usr/local/texlive/2024/texmf-dist/doc/latex/tex-overview/tex-overview.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/tikzlings/tikzlings-doc.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/tikzmarmots/tikzmarmots-doc.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/w100.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/w101.tex
 /usr/local/texlive/2024/texmf-dist/tex/generic/gtl/gtl.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls

@@ -8,12 +8,6 @@
 /usr/local/texlive/2024/texmf-dist/doc/latex/rescansync/rescansync.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/starray/starray.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/updatemarks/updatemarks.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/e208.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/s204.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/s205-04.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/s206-02.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/s206-03.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/w100.tex
 /usr/local/texlive/2024/texmf-dist/doc/xelatex/zitie/zitie-cn.tex
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/cfntinst.sty
 /usr/local/texlive/2024/texmf-dist/tex/fontinst/base/fontinst.sty

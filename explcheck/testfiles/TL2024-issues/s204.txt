@@ -193,7 +193,6 @@
 /usr/local/texlive/2024/texmf-dist/doc/lualatex/letgut/letgut-banner-code.tex
 /usr/local/texlive/2024/texmf-dist/doc/lualatex/letgut/letgut.tex
 /usr/local/texlive/2024/texmf-dist/doc/lualatex/letgut/localconf.tex
-/usr/local/texlive/2024/texmf-dist/doc/support/expltools/s204.tex
 /usr/local/texlive/2024/texmf-dist/doc/support/ltximg/ltximg-doc.tex
 /usr/local/texlive/2024/texmf-dist/doc/support/pst2pdf/pst2pdf-doc.tex
 /usr/local/texlive/2024/texmf-dist/doc/xelatex/exam-zh/doc/exam-zh-doc-setup.tex
