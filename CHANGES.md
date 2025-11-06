@@ -4,6 +4,31 @@
 
 ### explcheck v0.16.0
 
+#### Development
+
+This version of explcheck has implemented the following new features:
+
+- Support specifying cut-off dates for deprecations from the file
+  `l3obsolete.txt` and prefixes from the file `l3prefixes.csv`.
+  (suggested by @YDX-2147483647 in #147 and #149, added in #150)
+
+  For example, here is how your config file `.explcheckrc` might look if you
+  would like to only take into account the deprecations and prefixes from
+  TeX Live 2024 and earlier:
+
+    ``` toml
+    [defaults]
+    l3obsolete_max_deprecated_date = "2024-03-30"
+    l3prefixes_max_first_registered_date = "2024-11-18"
+    ```
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Use historic files "l3obsolete.txt" and "l3prefixes.csv" in CI. (#150)
+
 ## expltools 2025-10-22
 
 ### explcheck v0.15.0
@@ -497,7 +522,7 @@ This version of explcheck has implemented the following new features:
     config file `.explcheckrc` might look if you use the function
     `\precattl_exec:n` from the package precattl:
 
-    ``` csv
+    ``` toml
     [defaults]
     imported_prefixes = ["precattl"]
     ```
