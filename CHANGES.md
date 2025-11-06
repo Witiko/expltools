@@ -40,6 +40,16 @@ This version of explcheck has implemented the following new features:
   (2025-03-09) for both options, see https://tug.org/historic, directory
   `systems/texlive/2024/tlnet-final`.
 
+#### Fixes
+
+This version of explcheck has fixed the following bugs:
+
+- Fix an attempt to index a nil value in function `count_segments()` from the
+  file `explcheck-evaluation.lua`. (#150)
+
+  This bug would surface when printing results for files whose processing
+  stopped before the syntactic analysis step.
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
