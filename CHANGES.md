@@ -4,6 +4,69 @@
 
 ### explcheck v0.16.0
 
+#### Development
+
+This version of explcheck has implemented the following new features:
+
+- Support specifying cut-off dates for deprecations from the file
+  `l3obsolete.txt` and prefixes from the file `l3prefixes.csv`.
+  (suggested by @YDX-2147483647 in #147 and #149, added in #150)
+
+  For example, here is how your config file `.explcheckrc` might look if you
+  would like to only take into account the deprecations and prefixes from
+  TeX Live 2024 and earlier:
+
+  ``` toml
+  [defaults]
+  l3obsolete_max_deprecated_date = "2024-03-30"
+  l3prefixes_max_first_registered_date = "2024-11-18"
+  ```
+
+  You may get these dates by running the script `generate-explcheck-latex3.lua`
+  with files `l3obsolete.txt` and `l3prefixes.csv` from TeX Live 2024 placed in
+  the current working directory or other locations indexed by the KPathSea
+  library. Here is the output of the script:
+
+  ```
+  LPEG parsers and other information extracted from LaTeX3 data files.
+  Generated on 2025-11-06 from the following files:
+  - "l3obsolete.txt" with the latest obsolete entry from 2024-03-30
+  - "l3prefixes.csv" with the latest registered prefix from 2024-11-18
+  ```
+
+  You may also just use the dates of the last update to TeX Live 2024
+  (2025-03-09) for both options, see https://tug.org/historic, directory
+  `systems/texlive/2024/tlnet-final`.
+
+#### Fixes
+
+This version of explcheck has fixed the following bugs:
+
+- Fix an attempt to index a nil value in function `count_segments()` from the
+  file `explcheck-evaluation.lua`. (#150)
+
+  This bug would surface when printing results for files whose processing
+  stopped before the syntactic analysis step.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Use historic files "l3obsolete.txt" and "l3prefixes.csv" in CI. (#150)
+
+- Include example files from the `doc` subtree in regression tests. (#150)
+
+  This has reduced code coverage from ca 24% to 21% of all expl3 tokens on
+  TeX Live 2024 and from ca 22% to 20% on current TeX Live 2025 (2025-11-06).
+
+- Check if the configuration is minimal even for expl3 files without any
+  issues. (#150)
+
+  This is necessary to prevent incorrect recommendations to remove unnecessary
+  default settings from the file `.explcheckrc` in the script
+  `prune-explcheck-config.lua`.
+
 ## expltools 2025-10-22
 
 ### explcheck v0.15.0
@@ -497,7 +560,7 @@ This version of explcheck has implemented the following new features:
     config file `.explcheckrc` might look if you use the function
     `\precattl_exec:n` from the package precattl:
 
-    ``` csv
+    ``` toml
     [defaults]
     imported_prefixes = ["precattl"]
     ```

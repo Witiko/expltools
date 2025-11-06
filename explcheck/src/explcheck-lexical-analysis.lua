@@ -2,7 +2,6 @@
 
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
-local obsolete = require("explcheck-latex3").obsolete
 local parsers = require("explcheck-parsers")
 
 local new_range = ranges.new_range
@@ -390,11 +389,14 @@ local function report_issues(states, file_number, options)  -- luacheck: ignore 
 
   local state = states[file_number]
 
+  local pathname = state.pathname
   local content = state.content
   local issues = state.issues
   local results = state.results
 
   -- Record issues that are apparent after the lexical analysis.
+  local l3obsolete_max_deprecated_date = get_option("l3obsolete_max_deprecated_date", options, pathname)
+  local expl3_deprecated_csname = parsers.expl3_deprecated_csname(l3obsolete_max_deprecated_date)
   for _, part_tokens in ipairs(results.tokens) do
     for _, token in ipairs(part_tokens) do
       if token.type == CONTROL_SEQUENCE then
@@ -407,7 +409,7 @@ local function report_issues(states, file_number, options)  -- luacheck: ignore 
             issues:add('e201', 'unknown argument specifiers', token.byte_range, format_token(token, content))
           end
         end
-        if lpeg.match(obsolete.deprecated_csname, token.payload) ~= nil then
+        if lpeg.match(expl3_deprecated_csname, token.payload) then
           issues:add('w202', 'deprecated control sequences', token.byte_range, format_token(token, content))
         end
       end

@@ -8,9 +8,12 @@ kpse.set_program_name("texlua", "prune-explcheck-config")
 local lfs = require("lfs")
 
 local config = require("explcheck-config")
-local humanize = require("explcheck-format").humanize
+local format = require("explcheck-format")
 local new_issues = require("explcheck-issues").new_issues
 local utils = require("explcheck-utils")
+
+local humanize = format.humanize
+local pluralize = format.pluralize
 
 local get_stem = utils.get_stem
 local get_suffix = utils.get_suffix
@@ -28,7 +31,7 @@ local function read_filelist(filelist_pathname)
   for pathname in io.lines(filelist_pathname) do
     table.insert(pathnames, pathname)
   end
-  print(string.format('Read %s files listed in "%s".', humanize(#pathnames), filelist_pathname))
+  print(string.format('Read %s %s listed in "%s".', humanize(#pathnames), pluralize("file", #pathnames), filelist_pathname))
   return pathnames
 end
 
@@ -59,7 +62,16 @@ local function read_results(results_pathname)
   for _, issues in pairs(results.issues) do
     issues:close()
   end
-  print(string.format('Read %s issues and %s files listed in "%s".', humanize(num_issues), humanize(#results.pathnames), results_pathname))
+  print(
+    string.format(
+      'Read %s %s and %s %s listed in "%s".',
+      humanize(num_issues),
+      pluralize("issue", num_issues),
+      humanize(#results.pathnames),
+      pluralize("file", #results.pathnames),
+      results_pathname
+    )
+  )
   return results
 end
 
@@ -157,9 +169,12 @@ local function main(filelist_pathname, results_pathname)
   end
 
   -- Try to remove all options for the individual files from the test results.
-  for _, pathname in ipairs(results.pathnames) do
+  for _, pathname in ipairs(filelist) do
     local expected_issues = results.issues[pathname]
-    assert(expected_issues ~= nil)
+    if expected_issues == nil then
+      expected_issues = new_issues()
+      expected_issues:close()
+    end
     -- If the configuration specifies options for this filename, check them.
     local filename = get_filename(pathname)
     if user_config.filename and user_config.filename[filename] ~= nil then
@@ -190,10 +205,12 @@ local function main(filelist_pathname, results_pathname)
     end
   end
   for key, _ in pairs(visited_sections) do
-    for value, _ in pairs(user_config[key]) do
-      if visited_sections[key][value] == nil then
-        local options_location = string.format('Section [%s."%s"]', key, value)
-        table.insert(key_locations.to_remove, options_location)
+    if user_config[key] ~= nil then
+      for value, _ in pairs(user_config[key]) do
+        if visited_sections[key][value] == nil then
+          local options_location = string.format('Section [%s."%s"]', key, value)
+          table.insert(key_locations.to_remove, options_location)
+        end
       end
     end
   end
@@ -212,12 +229,19 @@ local function main(filelist_pathname, results_pathname)
   -- Print the results.
   io.write(string.format('Checked %s different options in file "%s"', humanize(num_options), user_config_pathname))
   if #key_locations.to_remove == 0 then
-    print(string.format(', none of which can be removed without affecting files listed in "%s".', results_pathname))
+    print(
+      string.format(
+        ', none of which can be removed without affecting files listed in "%s" and "%s".',
+        filelist_pathname,
+        results_pathname
+      )
+    )
   else
     print(
       string.format(
-        ', %s of which can be removed without affecting files listed in "%s":',
+        ', %s of which can be removed without affecting files listed in "%s" and "%s":',
         humanize(#key_locations.to_remove),
+        filelist_pathname,
         results_pathname
       )
     )

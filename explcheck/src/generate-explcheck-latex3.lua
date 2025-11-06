@@ -5,7 +5,7 @@ local kpse = require("kpse")
 kpse.set_program_name("texlua", "generate-explcheck-latex3")
 
 local lpeg = require("lpeg")
-local C, Ct, Cs, P, S = lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.P, lpeg.S
+local C, Ct, Cs, P, R, S = lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.P, lpeg.R, lpeg.S
 local any, eof = P(1), P(-1)
 
 -- Perform a depth-first-search algorithm on a tree.
@@ -26,7 +26,7 @@ end
 
 -- Extract obsolete control sequence names from file "l3obsolete.txt".
 local function parse_l3obsolete()
-  local latest_date, csnames = nil, {}
+  local latest_date, csnames, dates = nil, {}, {}
   local input_filename = "l3obsolete.txt"
   local input_pathname = assert(kpse.find_file(input_filename, "TeX system documentation") or input_filename)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
@@ -58,11 +58,13 @@ local function parse_l3obsolete()
       end
       if csnames[input_state] == nil then
         csnames[input_state] = {}
+        dates[input_state] = {}
         seen_csnames[input_state] = {}
       end
       for _, csname in ipairs(extracted_csnames) do
         if seen_csnames[input_state][csname] == nil then
           table.insert(csnames[input_state], csname)
+          dates[input_state][csname] = date
           seen_csnames[input_state][csname] = true
         end
       end
@@ -71,11 +73,11 @@ local function parse_l3obsolete()
   end
   assert(input_file:close())
   assert(latest_date ~= nil)
-  return csnames, latest_date
+  return csnames, dates, latest_date
 end
 
 -- Generate LPEG parsers of obsolete control sequence names from file "l3obsolete.txt".
-local function generate_l3obsolete_parsers(output_file, csnames)
+local function generate_l3obsolete_parsers(output_file, dates, csnames)
   -- First, generate some variable names that the parsers will use.
   output_file:write('local obsolete = {}\n')
   output_file:write('do\n')
@@ -120,6 +122,7 @@ local function generate_l3obsolete_parsers(output_file, csnames)
   -- Finally, generate parsers out of the trees.
   local output_wildcard = P("wildcard")
   local output_regular_character = any - P('"')
+  local output_date = P(' / "') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
   local output_regular_characters = (
     P('P("')
     * C(output_regular_character^1)
@@ -138,10 +141,10 @@ local function generate_l3obsolete_parsers(output_file, csnames)
     end
   )
   local simplified_output_parsers = Cs(
-    simplified_output_regular_characters
-    * (
-      output_wildcard^1
-      * simplified_output_regular_characters
+    (
+      output_wildcard
+      + output_date
+      + simplified_output_regular_characters
     )^0
     * eof
   )
@@ -158,6 +161,10 @@ local function generate_l3obsolete_parsers(output_file, csnames)
         else
           assert(node ~= '"')
           suffix = 'P("' .. node .. '")'
+        end
+        local maybe_date = dates[csname_type][path .. node]
+        if maybe_date ~= nil then
+          suffix = suffix .. ' / "' .. maybe_date .. '"'
         end
         if subparsers[path] ~= nil then
           subparsers[path] = subparsers[path] .. " + " .. suffix
@@ -205,7 +212,7 @@ end
 
 -- Extract registered module names from file "l3prefixes.csv".
 local function parse_l3prefixes()
-  local latest_date, prefixes = nil, {}
+  local latest_date, prefixes, dates = nil, {}, {}
   local input_filename = "l3prefixes.csv"
   local input_pathname = assert(kpse.find_file(input_filename, "TeX system documentation") or input_filename)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
@@ -218,20 +225,23 @@ local function parse_l3prefixes()
   for line in input_file:lines() do
     local values = lpeg.match(csv_fields, line)
     assert(#values == 9)
-    local prefix, date = values[1], #values[8] > 0 and values[8] or values[7]
+    local prefix, date = values[1], values[7]
     if date:find("(%d%d%d%d%-%d%d%-%d%d)$") == nil then
-      print(string.format('Failed to parse date out of line "%s", skipping it in determining the latest updated prefix', line))
+      print(string.format('Failed to parse date out of line "%s", skipping it in determining the latest registered prefix', line))
     elseif latest_date == nil or date > latest_date then
       latest_date = date
     end
     table.insert(prefixes, prefix)
+    if date ~= nil and (dates[prefix] == nil or dates[prefix] > date) then  -- only record earliest first registered prefix for duplicates
+      dates[prefix] = date
+    end
   end
   assert(latest_date ~= nil)
-  return prefixes, latest_date
+  return prefixes, dates, latest_date
 end
 
 -- Generate an LPEG parser of registered module names from file "l3prefixes.csv".
-local function generate_l3prefixes_parser(output_file, prefixes)
+local function generate_l3prefixes_parser(output_file, dates, prefixes)
   -- In order to minimize the size and speed of the parser, first construct a prefix tree of the prefixes.
   local prefix_tree = {}
   for _, prefix in ipairs(prefixes) do
@@ -252,6 +262,7 @@ local function generate_l3prefixes_parser(output_file, prefixes)
 
   -- Finally, generate a parser out of the tree.
   local output_regular_character = any - P('"')
+  local output_date = P(' / "') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
   local output_regular_characters = (
     P('P("')
     * C(output_regular_character^1)
@@ -268,6 +279,12 @@ local function generate_l3prefixes_parser(output_file, prefixes)
     / function(accumulator)
       return 'P("' .. table.concat(accumulator, "") .. '")'
     end
+  )
+  local simplified_output_parsers = Cs(
+    (
+      output_date
+      + simplified_output_regular_characters
+    )^0
     * eof
   )
 
@@ -279,6 +296,10 @@ local function generate_l3prefixes_parser(output_file, prefixes)
       local suffix
       assert(node ~= '"')
       suffix = 'P("' .. node .. '")'
+      local maybe_date = dates[path .. node]
+      if maybe_date ~= nil then
+        suffix = suffix .. ' / "' .. maybe_date .. '"'
+      end
       if subparsers[path] ~= nil then
         subparsers[path] = subparsers[path] .. " + " .. suffix
       else
@@ -292,11 +313,11 @@ local function generate_l3prefixes_parser(output_file, prefixes)
       local prefix
       assert(character ~= '"')
       prefix = 'P("' .. character .. '")'
-      local simplified_pattern = lpeg.match(simplified_output_regular_characters, subparsers[path])
+      local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
       local suffix
       if simplified_pattern ~= nil then  -- simple pattern
         suffix = prefix .. " * " .. simplified_pattern
-        local simplified_suffix = lpeg.match(simplified_output_regular_characters, suffix)
+        local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
         if simplified_suffix ~= nil then
           suffix = simplified_suffix
         end
@@ -330,18 +351,18 @@ local output_file = assert(io.open(output_filename, "w"), "Could not open " .. o
 ---- Generate the preamble.
 add_comment(output_file, "LPEG parsers and other information extracted from LaTeX3 data files.")
 add_comment(output_file, string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
-local csnames, l3obsolete_latest_date = parse_l3obsolete()
+local csnames, l3obsolete_dates, l3obsolete_latest_date = parse_l3obsolete()
 add_comment(output_file, string.format('- "l3obsolete.txt" with the latest obsolete entry from %s', l3obsolete_latest_date))
-local prefixes, l3prefixes_latest_date = parse_l3prefixes()
-add_comment(output_file, string.format('- "l3prefixes.csv" with the latest updated prefix from %s', l3prefixes_latest_date))
+local prefixes, l3prefixes_dates, l3prefixes_latest_date = parse_l3prefixes()
+add_comment(output_file, string.format('- "l3prefixes.csv" with the latest registered prefix from %s', l3prefixes_latest_date))
 output_file:write("\n")
 
 ---- Generate the LPEG parsers.
 output_file:write('local lpeg = require("lpeg")\n')
 output_file:write('local P = lpeg.P\n\n')
-generate_l3obsolete_parsers(output_file, csnames)
+generate_l3obsolete_parsers(output_file, l3obsolete_dates, csnames)
 output_file:write("\n")
-generate_l3prefixes_parser(output_file, prefixes)
+generate_l3prefixes_parser(output_file, l3prefixes_dates, prefixes)
 output_file:write([[
 
 return {

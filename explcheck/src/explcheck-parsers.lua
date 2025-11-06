@@ -1,6 +1,6 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
-local registered_prefixes = require("explcheck-latex3").prefixes
+local latex3 = require("explcheck-latex3")
 
 local lpeg = require("lpeg")
 local C, Cc, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cc, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
@@ -359,7 +359,7 @@ local expl3_standard_library_prefixes = (
   + P("use")
   + P("withargs")  -- part of the withargs package
 )
-local function expl3_well_known_csname(other_prefix_texts)
+local function expl3_well_known_csname(l3prefixes_max_first_registered_date, other_prefix_texts)
   local other_prefixes = fail
   for _, prefix_text in ipairs(other_prefix_texts) do
     other_prefixes = (
@@ -368,11 +368,21 @@ local function expl3_well_known_csname(other_prefix_texts)
       * P(prefix_text)
     )
   end
+  local latex3_prefixes = Cmt(
+    latex3.prefixes,
+    function(_, _, maybe_first_registered_date)
+      return (
+        not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
+        or maybe_first_registered_date  -- actual first registered date has been specified in the file `l3prefixes.csv`
+        and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
+      )
+    end
+  )
   local prefix = (
     #(expl3_standard_library_prefixes * (underscore + colon))
     * expl3_standard_library_prefixes
-    + #(registered_prefixes * (underscore + colon))
-    * registered_prefixes
+    + #(latex3_prefixes * (underscore + colon))
+    * latex3_prefixes
     + other_prefixes
   )
   local well_known_function_csname = (
@@ -394,6 +404,19 @@ local function expl3_well_known_csname(other_prefix_texts)
   return (
     well_known_function_csname
     + well_known_variable_or_constant_csname
+  )
+end
+
+local function expl3_deprecated_csname(l3obsolete_max_deprecated_date)
+  return Cmt(
+    latex3.obsolete.deprecated_csname,
+    function(_, _, maybe_deprecated_date)
+      return (
+        not l3obsolete_max_deprecated_date  -- no maximum deprecation date has been specified by us
+        or maybe_deprecated_date  -- actual deprecation date has been specified in the file `l3obsolete.txt`
+        and maybe_deprecated_date <= l3obsolete_max_deprecated_date  -- and this actual date is less than our maximum
+      )
+    end
   )
 end
 
@@ -828,7 +851,7 @@ local expl3_variable_use_csname = Ct(
 
 ---- Messages
 ------ Message names
-local function expl3_well_known_message_name(other_prefix_texts)
+local function expl3_well_known_message_name(l3prefixes_max_first_registered_date, other_prefix_texts)
   local other_prefixes = fail
   for _, prefix_text in ipairs(other_prefix_texts) do
     other_prefixes = (
@@ -837,11 +860,21 @@ local function expl3_well_known_message_name(other_prefix_texts)
       * P(prefix_text)
     )
   end
+  local latex3_prefixes = Cmt(
+    latex3.prefixes,
+    function(_, _, maybe_first_registered_date)
+      return (
+        not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
+        or maybe_first_registered_date  -- actual first registered date has been specified in the file `l3prefixes.csv`
+        and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
+      )
+    end
+  )
   return (
     #(expl3_standard_library_prefixes * slash)
     * expl3_standard_library_prefixes
-    + #(registered_prefixes * slash)
-    * registered_prefixes
+    + #(latex3_prefixes * slash)
+    * latex3_prefixes
     + other_prefixes
   )
 end
@@ -894,6 +927,7 @@ return {
   eof = eof,
   expansionless_argument_specifier = expansionless_argument_specifier,
   expl3_catcodes = expl3_catcodes,
+  expl3_deprecated_csname = expl3_deprecated_csname,
   expl3_endlinechar = expl3_endlinechar,
   expl3_expansion_csname = expl3_expansion_csname,
   expl3_function_call_with_lua_code_argument_csname = expl3_function_call_with_lua_code_argument_csname,

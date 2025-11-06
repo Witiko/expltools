@@ -1,1 +1,2 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex/datatool/datatool-user-examples/datatool-user-example006.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/keytheorems/class-support/keythms-amsart-support.tex

@@ -1,3 +1,5 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex/gs1/GS_set_EAN_control_digit.tex
+/usr/local/texlive/2024/texmf-dist/doc/xelatex/xecjk/xunicode-symbols.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-block.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/abspos/abspos.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/atableau/atableau.sty

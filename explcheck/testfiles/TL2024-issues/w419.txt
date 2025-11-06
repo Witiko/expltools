@@ -1,3 +1,5 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex/gs1/GS_set_EAN_control_digit.tex
+/usr/local/texlive/2024/texmf-dist/doc/lualatex/letgut/letgut.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/base/doc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/base/doc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/bithesis/bitbeamer.cls

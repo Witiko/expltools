@@ -1819,8 +1819,9 @@ local function report_issues(states, main_file_number, options)
 
   --- Report issues apparent from the collected information.
   local imported_prefixes = get_option('imported_prefixes', options, main_pathname)
-  local expl3_well_known_csname = parsers.expl3_well_known_csname(imported_prefixes)
-  local expl3_well_known_message_name = parsers.expl3_well_known_message_name(imported_prefixes)
+  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, main_pathname)
+  local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
+  local expl3_well_known_message_name = parsers.expl3_well_known_message_name(l3prefixes_max_first_registered_date, imported_prefixes)
 
   ---- Report unused private functions.
   for _, defined_private_function_text in ipairs(defined_private_function_texts) do

@@ -1,7 +1,11 @@
+/usr/local/texlive/2024/texmf-dist/doc/latex-dev/l3kernel/l3styleguide.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/expose-expl3-dunkerque-2019/dk19ecrireprem.tex
+/usr/local/texlive/2024/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/atableau/atableau.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/bookshelf/bookshelf.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/chinesechess/chinesechess.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/chronos/chronos.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/circledtext/circledtext.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/clistmap/clistmap.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/create-theorem/create-theorem.sty
@@ -27,6 +31,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/mathcommand/mathcommand.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/nwafuthesis/nwafuthesis.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/pegmatch/pegmatch.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/physics2/physics2.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/precattl/precattl.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/secnum/secnum.sty
