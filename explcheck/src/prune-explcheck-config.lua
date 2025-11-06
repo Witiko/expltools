@@ -157,9 +157,12 @@ local function main(filelist_pathname, results_pathname)
   end
 
   -- Try to remove all options for the individual files from the test results.
-  for _, pathname in ipairs(results.pathnames) do
+  for _, pathname in ipairs(filelist) do
     local expected_issues = results.issues[pathname]
-    assert(expected_issues ~= nil)
+    if expected_issues == nil then
+      expected_issues = new_issues()
+      expected_issues:close()
+    end
     -- If the configuration specifies options for this filename, check them.
     local filename = get_filename(pathname)
     if user_config.filename and user_config.filename[filename] ~= nil then
@@ -190,10 +193,12 @@ local function main(filelist_pathname, results_pathname)
     end
   end
   for key, _ in pairs(visited_sections) do
-    for value, _ in pairs(user_config[key]) do
-      if visited_sections[key][value] == nil then
-        local options_location = string.format('Section [%s."%s"]', key, value)
-        table.insert(key_locations.to_remove, options_location)
+    if user_config[key] ~= nil then
+      for value, _ in pairs(user_config[key]) do
+        if visited_sections[key][value] == nil then
+          local options_location = string.format('Section [%s."%s"]', key, value)
+          table.insert(key_locations.to_remove, options_location)
+        end
       end
     end
   end
