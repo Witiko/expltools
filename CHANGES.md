@@ -67,6 +67,8 @@ integration:
   default settings from the file `.explcheckrc` in the script
   `prune-explcheck-config.lua`.
 
+- Bump actions/checkout from 5 to 6. (contributed by @dependabot in #151)
+
 ## expltools 2025-10-22
 
 ### explcheck v0.15.0
