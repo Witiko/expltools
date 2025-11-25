@@ -23,13 +23,27 @@ local range_flags = ranges.range_flags
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
+local edge_categories = {
+  STATIC = "static",
+  DYNAMIC = "dynamic",
+}
+
+local STATIC = edge_categories.STATIC
+local DYNAMIC = edge_categories.DYNAMIC
+
+local TF_BRANCH = "T- or F-branch of conditional function"
+
 local edge_types = {
   AFTER = "pair of successive code chunks",
+  TF_BRANCH = TF_BRANCH,
+  TF_BRANCH_RETURN = string.format("return from %s", TF_BRANCH),
   FUNCTION_CALL = FUNCTION_CALL,
   FUNCTION_CALL_RETURN = string.format("%s return", FUNCTION_CALL),
 }
 
 local AFTER = edge_types.AFTER
+assert(TF_BRANCH == edge_types.TF_BRANCH)
+local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN  -- luacheck: ignore
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
 local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN  -- luacheck: ignore
 
@@ -96,14 +110,10 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
   end
 end
 
--- Draw edges between chunks.
-local function draw_edges(states, file_number, options)  -- luacheck: ignore options
-  local state = states[file_number]
-
-  local results = state.results
-  if results.edges == nil then
-    results.edges = {}
-  end
+-- Draw "static" edges between chunks. A static edge is known without extra analysis.
+local function draw_static_edges(results)
+  assert(results.edges[STATIC] == nil)
+  results.edges[STATIC] = {}
 
   -- Record edges from skipping ahead to the following chunk in a code segment.
   for _, segment in ipairs(results.segments or {}) do
@@ -124,7 +134,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
           },
           confidence = MAYBE,
         }
-        table.insert(results.edges, edge)
+        table.insert(results.edges[STATIC], edge)
       end
       previous_chunk = chunk
     end
@@ -157,11 +167,34 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
           },
           confidence = confidence,
         }
-        table.insert(results.edges, edge)
+        table.insert(results.edges[STATIC], edge)
       end
       previous_part = segment
     end
   end
+
+  -- TODO: Record edges from conditional functions to their branches and back.
+end
+
+-- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
+local function draw_dynamic_edges(results)
+  assert(results.edges[DYNAMIC] == nil)
+  results.edges[DYNAMIC] = {}
+
+  -- TODO: Record edges from function calls, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
+end
+
+-- Draw edges between chunks.
+local function draw_edges(states, file_number, options)  -- luacheck: ignore options
+  local state = states[file_number]
+
+  local results = state.results
+
+  assert(results.edges == nil)
+  results.edges = {}
+
+  draw_static_edges(results)
+  draw_dynamic_edges(results)
 end
 
 local substeps = {

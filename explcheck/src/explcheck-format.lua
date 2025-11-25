@@ -47,15 +47,23 @@ local function pluralize(singular, count)
     return singular
   else
     local of_index = singular:find(" of ")
+    local from_index = singular:find(" from ")
+    local preposition_index
+    if of_index ~= nil then
+      preposition_index = of_index
+    end
+    if from_index ~= nil and (preposition_index == nil or from_index < preposition_index) then
+      preposition_index = from_index
+    end
     local plural
-    if of_index == nil then
+    if preposition_index == nil then
       if singular:sub(#singular, #singular) == "s" then
         return singular
       else
         plural = singular .. "s"
       end
     else
-      plural = singular:sub(1, of_index - 1) .. "s" .. singular:sub(of_index)
+      plural = singular:sub(1, preposition_index - 1) .. "s" .. singular:sub(preposition_index)
     end
     return plural
   end
