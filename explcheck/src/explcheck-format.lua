@@ -55,17 +55,22 @@ local function pluralize(singular, count)
     if from_index ~= nil and (preposition_index == nil or from_index < preposition_index) then
       preposition_index = from_index
     end
-    local plural
+    local rest
     if preposition_index == nil then
-      if singular:sub(#singular, #singular) == "s" then
-        return singular
-      else
-        plural = singular .. "s"
-      end
+      rest = ""
     else
-      plural = singular:sub(1, preposition_index - 1) .. "s" .. singular:sub(preposition_index)
+      rest = singular:sub(preposition_index)
+      singular = singular:sub(1, preposition_index - 1)
     end
-    return plural
+    local plural
+    if singular:sub(#singular, #singular) == "s" then
+      plural = singular
+    elseif singular:sub(math.max(1, #singular - 1), #singular) == "ch" then
+      plural = singular .. "es"
+    else
+      plural = singular .. "s"
+    end
+    return plural .. rest
   end
 end
 

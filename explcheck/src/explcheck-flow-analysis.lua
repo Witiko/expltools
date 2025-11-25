@@ -5,9 +5,11 @@ local ranges = require("explcheck-ranges")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 
+local segment_types = syntactic_analysis.segment_types
 local statement_types = semantic_analysis.statement_types
 
-local PART = syntactic_analysis.segment_types.PART
+local PART = segment_types.PART
+local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
@@ -43,7 +45,7 @@ local edge_types = {
 
 local AFTER = edge_types.AFTER
 assert(TF_BRANCH == edge_types.TF_BRANCH)
-local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN  -- luacheck: ignore
+local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
 local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN  -- luacheck: ignore
 
@@ -101,7 +103,7 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
       for statement_number, statement in ipairs(segment.statements or {}) do
         if statement.type == OTHER_TOKENS_COMPLEX then
           record_chunk(statement_number, EXCLUSIVE)
-        else
+        elseif first_statement_number == nil then
           first_statement_number = statement_number
         end
       end
@@ -173,7 +175,52 @@ local function draw_static_edges(results)
     end
   end
 
-  -- TODO: Record edges from conditional functions to their branches and back.
+  -- Record edges from conditional functions to their branches and back.
+  for _, from_segment in ipairs(results.segments or {}) do
+    for _, from_chunk in ipairs(from_segment.chunks or {}) do
+      for from_statement_number, from_statement in from_chunk.statement_range:enumerate(from_segment.statements) do
+        for _, call in from_statement.call_range:enumerate(from_segment.calls) do
+          for _, argument in ipairs(call.arguments or {}) do
+            if argument.segment_number ~= nil then
+              local to_segment = results.segments[argument.segment_number]
+              if to_segment.type == TF_TYPE_ARGUMENTS and #to_segment.chunks > 0 then
+                local forward_to_chunk = to_segment.chunks[1]
+                local forward_to_statement_number = forward_to_chunk.statement_range:start()
+                local forward_edge = {
+                  type = TF_BRANCH,
+                  from = {
+                    chunk = from_chunk,
+                    statement_number = from_statement_number,
+                  },
+                  to = {
+                    chunk = forward_to_chunk,
+                    statement_number = forward_to_statement_number,
+                  },
+                  confidence = MAYBE,
+                }
+                table.insert(results.edges[STATIC], forward_edge)
+                local backward_from_chunk = to_segment.chunks[#to_segment.chunks]
+                local backward_from_statement_number = forward_to_chunk.statement_range:stop() + 1
+                local backward_edge = {
+                  type = TF_BRANCH_RETURN,
+                  from = {
+                    chunk = backward_from_chunk,
+                    statement_number = backward_from_statement_number,
+                  },
+                  to = {
+                    chunk = from_chunk,
+                    statement_number = from_statement_number + 1,
+                  },
+                  confidence = DEFINITELY,
+                }
+                table.insert(results.edges[STATIC], backward_edge)
+              end
+            end
+          end
+        end
+      end
+    end
+  end
 end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
