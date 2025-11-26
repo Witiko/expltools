@@ -36,14 +36,14 @@ local DYNAMIC = edge_categories.DYNAMIC
 local TF_BRANCH = "T- or F-branch of conditional function"
 
 local edge_types = {
-  AFTER = "pair of successive code chunks",
+  NEXT_CHUNK = "pair of successive chunks",
   TF_BRANCH = TF_BRANCH,
   TF_BRANCH_RETURN = string.format("return from %s", TF_BRANCH),
   FUNCTION_CALL = FUNCTION_CALL,
   FUNCTION_CALL_RETURN = string.format("%s return", FUNCTION_CALL),
 }
 
-local AFTER = edge_types.AFTER
+local NEXT_CHUNK = edge_types.NEXT_CHUNK
 assert(TF_BRANCH == edge_types.TF_BRANCH)
 local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
@@ -125,7 +125,7 @@ local function draw_static_edges(results)
         local from_statement_number = previous_chunk.statement_range:stop() + 1
         local to_statement_number = chunk.statement_range:start()
         local edge = {
-          type = AFTER,
+          type = NEXT_CHUNK,
           from = {
             chunk = previous_chunk,
             statement_number = from_statement_number,
@@ -158,7 +158,7 @@ local function draw_static_edges(results)
         local are_adjacent = previous_outer_range:stop() + 1 == outer_range:start()
         local confidence = are_adjacent and DEFINITELY or MAYBE
         local edge = {
-          type = AFTER,
+          type = NEXT_CHUNK,
           from = {
             chunk = from_chunk,
             statement_number = from_statement_number,
