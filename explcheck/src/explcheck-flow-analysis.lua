@@ -223,7 +223,7 @@ local function draw_static_edges(results)
   end
 end
 
--- Convert an edge into a tuple.
+-- Convert an edge into a tuple that can be used to index the edge in a table.
 local function edge_as_tuple(edge)
   return
     edge.type,
