@@ -186,7 +186,7 @@ end
 
 -- Check whether two registries only contain issues with the same codes.
 function Issues:has_same_codes_as(other)
-  if not self.closed or not other.close then
+  if not self.closed or not other.closed then
     error('Cannot compared issues between unclosed issue registries')
   end
 
