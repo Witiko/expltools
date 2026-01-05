@@ -1,5 +1,17 @@
 # Changes
 
+## expltools 2026-01-XX
+
+### explcheck v0.17.0
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Bump actions/download-artifact from 6 to 7. (contributed by @dependabot in #153)
+- Bump actions/upload-artifact from 5 to 6. (contributed by @dependabot in #154)
+
 ## expltools 2025-11-24
 
 ### explcheck v0.16.0
