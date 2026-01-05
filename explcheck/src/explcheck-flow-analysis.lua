@@ -273,12 +273,13 @@ local function draw_dynamic_edges(results)
   results.edges[DYNAMIC] = {}
 
   -- Record edges from function calls, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
-  local previous_function_call_edges, current_function_call_edges = nil, {}
+  local previous_function_call_edges
+  local current_function_call_edges = {}
   repeat
     previous_function_call_edges = current_function_call_edges
     -- TODO: Run reaching definitions.
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
-  results.edges[DYNAMIC] = current_call_edges
+  results.edges[DYNAMIC] = current_function_call_edges
 end
 
 -- Draw edges between chunks.
