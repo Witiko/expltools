@@ -223,12 +223,62 @@ local function draw_static_edges(results)
   end
 end
 
+-- Convert an edge into a tuple.
+local function edge_as_tuple(edge)
+  return
+    edge.type,
+    edge.from.chunk,
+    edge.from.statement_number,
+    edge.to.chunk,
+    edge.to.statement_number,
+    edge.confidence
+end
+
+-- Check whether two sets of edges are equivalent.
+local function any_edges_changed(first_edges, second_edges)
+  -- Quickly check using set cardinalities.
+  if #first_edges ~= #second_edges then
+    return true
+  end
+
+  -- Index the first edges.
+  local first_index = {}
+  for _, edge in ipairs(first_edges) do
+    local current_table = first_index
+    for _, value in ipairs({edge_as_tuple(edge)}) do
+      if current_table[value] == nil then
+        current_table[value] = {}
+      end
+      current_table = current_table[value]
+    end
+  end
+
+  -- Compare the second edges with the indexed first edges.
+  for _, edge in ipairs(second_edges) do
+    local current_table = first_index
+    for _, value in ipairs({edge_as_tuple(edge)}) do
+      if current_table[value] == nil then
+        return true
+      end
+      current_table = current_table[value]
+    end
+  end
+
+  return false
+end
+
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
 local function draw_dynamic_edges(results)
   assert(results.edges[DYNAMIC] == nil)
   results.edges[DYNAMIC] = {}
 
-  -- TODO: Record edges from function calls, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
+  -- Record edges from function calls, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
+  local previous_function_call_edges, current_function_call_edges = nil, {}
+  repeat
+    previous_function_call_edges = current_function_call_edges
+    -- TODO: Run reaching definitions.
+  until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
+  results.edges[DYNAMIC] = current_call_edges
 end
 
 -- Draw edges between chunks.
