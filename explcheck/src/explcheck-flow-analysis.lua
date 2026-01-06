@@ -309,11 +309,11 @@ local function draw_dynamic_edges(results)
     -- Run reaching definitions.
     do
       -- TODO: First, index all "static" and our current estimation of the "dynamic" edges by the from- and to-statements.
-      local edge_from_index, edge_to_index = {}, {}
+      local edge_from_index, edge_to_index = {}, {}  -- luacheck: ignore edge_from_index edge_to_index
       -- TODO: Initialize a stack of changed statements to a list of all statements, potentially structured at two levels:
       --       first by chunks and then by individual statement numbers.
       -- TODO: Iterate over the changed statements until convergence.
-      do
+      do  -- luacheck: ignore
         -- TODO: Determine the set of reaching definitions before and after the current statement.
         -- TODO: Update the stack of changed statements.
       end
