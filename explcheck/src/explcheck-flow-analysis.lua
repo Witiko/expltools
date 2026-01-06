@@ -12,6 +12,9 @@ local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
+local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
+local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
+
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
 
 local statement_confidences = semantic_analysis.statement_confidences
@@ -272,11 +275,35 @@ local function draw_dynamic_edges(results)
   assert(results.edges[DYNAMIC] == nil)
   results.edges[DYNAMIC] = {}
 
-  -- Record edges from function calls, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
+  -- Collect lists of function (variant) definition and function call statements.
+  local function_statement_indexes, function_statement_lists = {}, {}
+  for _, statement_type in ipairs({FUNCTION_CALL, FUNCTION_DEFINITION, FUNCTION_VARIANT_DEFINITION}) do
+    function_statement_indexes[statement_type] = {}
+    function_statement_lists[statement_type] = {}
+  end
+  for _, segment in ipairs(results.segments or {}) do
+    for _, chunk in ipairs(segment.chunks or {}) do
+      for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
+        if function_statement_indexes[statement.type] ~= nil then
+          assert(function_statement_lists[statement.type] ~= nil)
+
+          local function_statement_index = function_statement_indexes[statement.type]
+          local function_statement_list = function_statement_lists[statement.type]
+
+          if function_statement_index[chunk] == nil then
+            function_statement_index[chunk] = {}
+          end
+          function_statement_index[chunk][statement_number] = true
+
+          table.insert(function_statement_list, {chunk, statement_number})
+        end
+      end
+    end
+  end
+
+  -- Record edges from function calls to function definitions, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
-  -- TODO: Collect lists of function definition and function call statements, potentially structured at two levels:
-  --       first by chunks and then by individual statement numbers.
   repeat
     previous_function_call_edges = current_function_call_edges
     -- Run reaching definitions.
