@@ -275,9 +275,23 @@ local function draw_dynamic_edges(results)
   -- Record edges from function calls, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
+  -- TODO: Collect lists of function definition and function call statements, potentially structured at two levels:
+  --       first by chunks and then by individual statement numbers.
   repeat
     previous_function_call_edges = current_function_call_edges
-    -- TODO: Run reaching definitions.
+    -- Run reaching definitions.
+    do
+      -- TODO: First, index all "static" and our current estimation of the "dynamic" edges by the from- and to-statements.
+      local edge_from_index, edge_to_index = {}, {}
+      -- TODO: Initialize a stack of changed statements to a list of all statements, potentially structured at two levels:
+      --       first by chunks and then by individual statement numbers.
+      -- TODO: Iterate over the changed statements until convergence.
+      do
+        -- TODO: Determine the set of reaching definitions before and after the current statement.
+        -- TODO: Update the stack of changed statements.
+      end
+    end
+    -- TODO: Update the current estimation of the function call edges.
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
   results.edges[DYNAMIC] = current_function_call_edges
 end
