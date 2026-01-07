@@ -309,7 +309,7 @@ local function draw_dynamic_edges(results)
     -- Run reaching definitions.
     do
       -- First, index all "static" and currently estimated "dynamic" in- and out-edges for each statement.
-      local in_edge_index, out_edge_index = {}, {}  -- luacheck: ignore in_edge_index out_edge_index
+      local in_edge_index, out_edge_index = {}, {}
       for _, index_and_key in ipairs({{in_edge_index, 'to'}, {out_edge_index, 'from'}}) do
         local index, key = table.unpack(index_and_key)
         for _, edges in ipairs({results.edges[STATIC], results.edges[DYNAMIC], current_function_call_edges}) do
@@ -338,8 +338,24 @@ local function draw_dynamic_edges(results)
         end
       end
 
-      -- TODO: Iterate over the changed statements until convergence.
-      do  -- luacheck: ignore
+      -- Iterate over the changed statements until convergence.
+      while #changed_statements > 0 do
+        -- Pick a statement from the stack of changed statements.
+        local chunk_statements = changed_statements[#changed_statements]
+        local chunk, statement_numbers = chunk_statements.chunk, chunk_statements.statement_numbers
+        assert(#statement_numbers > 0)
+        local statement_number = statement_numbers[#statement_numbers]
+        local statement = chunk.segment.statements[statement_number]  -- luacheck: ignore statement
+
+        -- Remove the statement from the stack.
+        if #statement_numbers > 1 then
+          -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
+          statement_numbers[#statement_numbers] = nil
+        else
+          -- Otherwise, remove the chunk from the stack as well.
+          changed_statements[#changed_statements] = nil
+        end
+
         -- TODO: Determine the set of reaching definitions before and after the current statement.
         -- TODO: Update the stack of changed statements.
       end
