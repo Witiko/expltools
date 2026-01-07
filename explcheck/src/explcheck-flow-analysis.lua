@@ -326,8 +326,18 @@ local function draw_dynamic_edges(results)
         end
       end
 
-      -- TODO: Initialize a stack of changed statements to a list of all statements, potentially structured at two levels:
-      --       first by chunks and then by individual statement numbers.
+      -- Initialize a stack of changed statements to a list of all statements.
+      local changed_statements = {}
+      for _, segment in ipairs(results.segments or {}) do
+        for _, chunk in ipairs(segment.chunks or {}) do
+          local chunk_statements = {chunk = chunk, statement_numbers = {}}
+          for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
+            table.insert(chunk_statements.statement_numbers, statement_number)
+          end
+          table.insert(changed_statements, chunk_statements)
+        end
+      end
+
       -- TODO: Iterate over the changed statements until convergence.
       do  -- luacheck: ignore
         -- TODO: Determine the set of reaching definitions before and after the current statement.
