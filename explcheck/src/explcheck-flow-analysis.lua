@@ -365,8 +365,8 @@ local function draw_dynamic_edges(results)
         for _, edge in ipairs(in_edge_index[chunk][statement_number] or {}) do
           local incoming_chunk, incoming_statement_number = edge.from.chunk, edge.from.statement_number
           if reaching_definitions[incoming_chunk] ~= nil then
-            for _, definition in ipairs(reaching_definitions[incoming_chunk][incoming_statement_number] or {}) do
-              table.insert(incoming_definitions_list, definition)
+            for _, incoming_statement in ipairs(reaching_definitions[incoming_chunk][incoming_statement_number] or {}) do
+              table.insert(incoming_definitions_list, incoming_statement)
             end
           end
         end
@@ -376,7 +376,14 @@ local function draw_dynamic_edges(results)
       local current_definitions_list = {}
       if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
         table.insert(current_definitions_list, statement)
-        -- TODO: Invalidate definitions from before the current statement.
+        -- Invalidate definitions of the same control sequence name from before the current statement.
+        local updated_incoming_definitions_list = {}
+        for _, incoming_statement in ipairs(incoming_definitions_list) do
+          if statement.defined_csname ~= incoming_statement.defined_csname then
+            table.insert(updated_incoming_definitions_list, incoming_statement)
+          end
+        end
+        incoming_definitions_list = updated_incoming_definitions_list  -- luacheck: ignore incoming_definitions_list
       end
 
       -- TODO: Determine the set of definitions after the current statement.
