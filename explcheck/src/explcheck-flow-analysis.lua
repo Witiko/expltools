@@ -306,60 +306,74 @@ local function draw_dynamic_edges(results)
   local current_function_call_edges = {}
   repeat
     previous_function_call_edges = current_function_call_edges
+
     -- Run reaching definitions.
-    do
-      -- First, index all "static" and currently estimated "dynamic" in- and out-edges for each statement.
-      local in_edge_index, out_edge_index = {}, {}
-      for _, index_and_key in ipairs({{in_edge_index, 'to'}, {out_edge_index, 'from'}}) do
-        local index, key = table.unpack(index_and_key)
-        for _, edges in ipairs({results.edges[STATIC], results.edges[DYNAMIC], current_function_call_edges}) do
-          for _, edge in ipairs(edges) do
-            local chunk, statement_number = edge[key].chunk, edge[key].statement_number
-            if index[chunk] == nil then
-              index[chunk] = {}
-            end
-            if index[chunk][statement_number] == nil then
-              index[chunk][statement_number] = {}
-            end
-            table.insert(index[chunk][statement_number], edge)
+    local reaching_definitions = {}
+
+    -- First, index all "static" and currently estimated "dynamic" in- and out-edges for each statement.
+    local in_edge_index, out_edge_index = {}, {}
+    for _, index_and_key in ipairs({{in_edge_index, 'to'}, {out_edge_index, 'from'}}) do
+      local index, key = table.unpack(index_and_key)
+      for _, edges in ipairs({results.edges[STATIC], results.edges[DYNAMIC], current_function_call_edges}) do
+        for _, edge in ipairs(edges) do
+          local chunk, statement_number = edge[key].chunk, edge[key].statement_number
+          if index[chunk] == nil then
+            index[chunk] = {}
           end
-        end
-      end
-
-      -- Initialize a stack of changed statements to a list of all statements.
-      local changed_statements = {}
-      for _, segment in ipairs(results.segments or {}) do
-        for _, chunk in ipairs(segment.chunks or {}) do
-          local chunk_statements = {chunk = chunk, statement_numbers = {}}
-          for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
-            table.insert(chunk_statements.statement_numbers, statement_number)
+          if index[chunk][statement_number] == nil then
+            index[chunk][statement_number] = {}
           end
-          table.insert(changed_statements, chunk_statements)
+          table.insert(index[chunk][statement_number], edge)
         end
-      end
-
-      -- Iterate over the changed statements until convergence.
-      while #changed_statements > 0 do
-        -- Pick a statement from the stack of changed statements.
-        local chunk_statements = changed_statements[#changed_statements]
-        local chunk, statement_numbers = chunk_statements.chunk, chunk_statements.statement_numbers
-        assert(#statement_numbers > 0)
-        local statement_number = statement_numbers[#statement_numbers]
-        local statement = chunk.segment.statements[statement_number]  -- luacheck: ignore statement
-
-        -- Remove the statement from the stack.
-        if #statement_numbers > 1 then
-          -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
-          statement_numbers[#statement_numbers] = nil
-        else
-          -- Otherwise, remove the chunk from the stack as well.
-          changed_statements[#changed_statements] = nil
-        end
-
-        -- TODO: Determine the set of reaching definitions before and after the current statement.
-        -- TODO: Update the stack of changed statements.
       end
     end
+
+    -- Initialize a stack of changed statements to a list of all statements.
+    local changed_statements = {}
+    for _, segment in ipairs(results.segments or {}) do
+      for _, chunk in ipairs(segment.chunks or {}) do
+        local chunk_statements = {chunk = chunk, statement_numbers = {}}
+        for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
+          table.insert(chunk_statements.statement_numbers, statement_number)
+        end
+        table.insert(changed_statements, chunk_statements)
+      end
+    end
+
+    -- Iterate over the changed statements until convergence.
+    while #changed_statements > 0 do
+      -- Pick a statement from the stack of changed statements.
+      local chunk_statements = changed_statements[#changed_statements]
+      local chunk, statement_numbers = chunk_statements.chunk, chunk_statements.statement_numbers
+      assert(#statement_numbers > 0)
+      local statement_number = statement_numbers[#statement_numbers]
+      local statement = chunk.segment.statements[statement_number]  -- luacheck: ignore statement
+
+      -- Remove the statement from the stack.
+      if #statement_numbers > 1 then
+        -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
+        statement_numbers[#statement_numbers] = nil
+      else
+        -- Otherwise, remove the chunk from the stack as well.
+        changed_statements[#changed_statements] = nil
+      end
+
+      -- Determine the set of reaching definitions before the current statement.
+      local incoming_reaching_definitions = {}
+      if in_edge_index[chunk] ~= nil then
+        for _, edge in ipairs(in_edge_index[chunk][statement_number] or {}) do
+          local incoming_chunk, incoming_statement_number = edge.from.chunk, edge.from.statement_number
+          if reaching_definitions[incoming_chunk] ~= nil then
+            for _, reaching_definition in ipairs(reaching_definitions[incoming_chunk][incoming_statement_number] or {}) do
+              table.insert(incoming_reaching_definitions, reaching_definition)
+            end
+          end
+        end
+      end
+
+      -- TODO: Update the stack of changed statements.
+    end
+
     -- TODO: Update the current estimation of the function call edges.
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
