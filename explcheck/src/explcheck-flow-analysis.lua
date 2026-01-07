@@ -307,7 +307,7 @@ local function draw_dynamic_edges(results)
   repeat
     previous_function_call_edges = current_function_call_edges
 
-    -- Run reaching definitions.
+    -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
     local reaching_definitions = {}
 
     -- First, index all "static" and currently estimated "dynamic" in- and out-edges for each statement.
@@ -371,6 +371,11 @@ local function draw_dynamic_edges(results)
         end
       end
 
+      -- TODO: Determine the set of definitions from the current statement (i.e. GEN[n]).
+      -- TODO: Determine the set of definitions invalidated by the current statement (i.e. KILL[n]).
+      -- TODO: Determine the set of definitions after the current statement.
+      --       XXX: Do this one first to see what data structures we need for reaching definitions, including GEN[n] and KILL[n]
+      --       from the previous two TODOs.
       -- TODO: Update the stack of changed statements.
     end
 
