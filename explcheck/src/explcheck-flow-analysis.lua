@@ -276,6 +276,7 @@ local function draw_dynamic_edges(results)
   results.edges[DYNAMIC] = {}
 
   -- Collect lists of function (variant) definition and function call statements.
+  -- TODO: Decide whether we need (both of) these.
   local function_statement_indexes, function_statement_lists = {}, {}
   for _, statement_type in ipairs({FUNCTION_CALL, FUNCTION_DEFINITION, FUNCTION_VARIANT_DEFINITION}) do
     function_statement_indexes[statement_type] = {}
@@ -358,24 +359,27 @@ local function draw_dynamic_edges(results)
         changed_statements[#changed_statements] = nil
       end
 
-      -- Determine the set of reaching definitions before the current statement.
-      local incoming_reaching_definitions = {}
+      -- Determine the reaching definitions from before the current statement.
+      local incoming_definitions_list = {}
       if in_edge_index[chunk] ~= nil then
         for _, edge in ipairs(in_edge_index[chunk][statement_number] or {}) do
           local incoming_chunk, incoming_statement_number = edge.from.chunk, edge.from.statement_number
           if reaching_definitions[incoming_chunk] ~= nil then
-            for _, reaching_definition in ipairs(reaching_definitions[incoming_chunk][incoming_statement_number] or {}) do
-              table.insert(incoming_reaching_definitions, reaching_definition)
+            for _, definition in ipairs(reaching_definitions[incoming_chunk][incoming_statement_number] or {}) do
+              table.insert(incoming_definitions_list, definition)
             end
           end
         end
       end
 
-      -- TODO: Determine the set of definitions from the current statement (i.e. GEN[n]).
-      -- TODO: Determine the set of definitions invalidated by the current statement (i.e. KILL[n]).
+      -- TODO: Determine the definitions from the current statement.
+      local current_definitions_list = {}
+      if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+        table.insert(current_definitions_list, statement)
+        -- TODO: Invalidate definitions from before the current statement.
+      end
+
       -- TODO: Determine the set of definitions after the current statement.
-      --       XXX: Do this one first to see what data structures we need for reaching definitions, including GEN[n] and KILL[n]
-      --       from the previous two TODOs.
       -- TODO: Update the stack of changed statements.
     end
 
