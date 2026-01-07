@@ -308,8 +308,24 @@ local function draw_dynamic_edges(results)
     previous_function_call_edges = current_function_call_edges
     -- Run reaching definitions.
     do
-      -- TODO: First, index all "static" and our current estimation of the "dynamic" edges by the from- and to-statements.
-      local edge_from_index, edge_to_index = {}, {}  -- luacheck: ignore edge_from_index edge_to_index
+      -- First, index all "static" and currently estimated "dynamic" in- and out-edges for each statement.
+      local in_edge_index, out_edge_index = {}, {}  -- luacheck: ignore in_edge_index out_edge_index
+      for _, index_and_key in ipairs({{in_edge_index, 'to'}, {out_edge_index, 'from'}}) do
+        local index, key = table.unpack(index_and_key)
+        for _, edges in ipairs({results.edges[STATIC], results.edges[DYNAMIC], current_function_call_edges}) do
+          for _, edge in ipairs(edges) do
+            local chunk, statement_number = edge[key].chunk, edge[key].statement_number
+            if index[chunk] == nil then
+              index[chunk] = {}
+            end
+            if index[chunk][statement_number] == nil then
+              index[chunk][statement_number] = {}
+            end
+            table.insert(index[chunk][statement_number], edge)
+          end
+        end
+      end
+
       -- TODO: Initialize a stack of changed statements to a list of all statements, potentially structured at two levels:
       --       first by chunks and then by individual statement numbers.
       -- TODO: Iterate over the changed statements until convergence.
@@ -320,7 +336,10 @@ local function draw_dynamic_edges(results)
     end
     -- TODO: Update the current estimation of the function call edges.
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
-  results.edges[DYNAMIC] = current_function_call_edges
+
+  for _, edge in ipairs(current_function_call_edges) do
+    table.insert(results.edges[DYNAMIC], edge)
+  end
 end
 
 -- Draw edges between chunks.
