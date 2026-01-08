@@ -401,7 +401,7 @@ local function draw_dynamic_edges(results)
         end
       end
 
-      -- Determine the set of definitions after the current statement.
+      -- Determine the reaching definitions after the current statement.
       local updated_reaching_definitions_list, updated_reaching_definitions_index = {}, {}
       for _, definitions_list in ipairs({incoming_definitions_list, current_definitions_list}) do
         for _, reaching_statement in ipairs(definitions_list) do
@@ -412,12 +412,13 @@ local function draw_dynamic_edges(results)
         end
       end
 
-      -- Determine whether the set of definitions after the current statement has changed.
+      -- Determine whether the reaching definitions after the current statement have changed.
       local function have_reaching_definitions_changed()  -- luacheck: ignore
         -- Determine the previous set of definitions, if any.
         if reaching_definitions_lists[chunk] == nil then
           return true
-        elseif reaching_definitions_lists[chunk][statement_number] == nil then
+        end
+        if reaching_definitions_lists[chunk][statement_number] == nil then
           return true
         end
         local previous_reaching_definitions_list = reaching_definitions_lists[chunk][statement_number]
@@ -439,6 +440,15 @@ local function draw_dynamic_edges(results)
       end
 
       -- TODO: Update the stack of changed statements.
+
+      -- Update the reaching definitions.
+      if reaching_definitions_lists[chunk] == nil then
+        reaching_definitions_lists[chunk] = {}
+      end
+      if reaching_definitions_lists[chunk][statement_number] == nil then
+        reaching_definitions_lists[chunk][statement_number] = {}
+      end
+      reaching_definitions_lists[chunk][statement_number] = updated_reaching_definitions_list
     end
 
     -- TODO: Update the current estimation of the function call edges.
