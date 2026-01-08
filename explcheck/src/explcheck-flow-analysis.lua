@@ -6,10 +6,14 @@ local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 
 local segment_types = syntactic_analysis.segment_types
+
+local csname_types = semantic_analysis.csname_types
 local statement_types = semantic_analysis.statement_types
 
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
+
+local TEXT = csname_types.TEXT
 
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
@@ -372,18 +376,24 @@ local function draw_dynamic_edges(results)
         end
       end
 
-      -- TODO: Determine the definitions from the current statement.
+      -- Determine the definitions from the current statement.
       local current_definitions_list = {}
       if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
         table.insert(current_definitions_list, statement)
         -- Invalidate definitions of the same control sequence name from before the current statement.
-        local updated_incoming_definitions_list = {}
-        for _, incoming_statement in ipairs(incoming_definitions_list) do
-          if statement.defined_csname ~= incoming_statement.defined_csname then
-            table.insert(updated_incoming_definitions_list, incoming_statement)
+        if statement.defined_csname.type == TEXT then
+          local updated_incoming_definitions_list = {}
+          for _, incoming_statement in ipairs(incoming_definitions_list) do
+            if not (
+                  incoming_statement.defined_csname.type == TEXT and
+                  incoming_statement.confidence == DEFINITELY and
+                  incoming_statement.defined_csname.payload == statement.defined_csname.payload
+                ) then
+              table.insert(updated_incoming_definitions_list, incoming_statement)
+            end
           end
+          incoming_definitions_list = updated_incoming_definitions_list  -- luacheck: ignore incoming_definitions_list
         end
-        incoming_definitions_list = updated_incoming_definitions_list  -- luacheck: ignore incoming_definitions_list
       end
 
       -- TODO: Determine the set of definitions after the current statement.
