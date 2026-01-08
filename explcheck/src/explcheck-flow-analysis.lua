@@ -365,13 +365,22 @@ local function draw_dynamic_edges(results)
 
       -- Determine the reaching definitions from before the current statement.
       local incoming_definitions_list = {}
-      if in_edge_index[chunk] ~= nil then
+      local incoming_chunks_and_statement_numbers = {}
+      if statement_number - 1 >= chunk.statement_range:start() then
+        -- Consider implicit edges from previous statements within a chunk.
+        table.insert(incoming_chunks_and_statement_numbers, {chunk, statement_number - 1})
+      end
+      if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
+        -- Consider explicit incoming edges.
         for _, edge in ipairs(in_edge_index[chunk][statement_number] or {}) do
-          local incoming_chunk, incoming_statement_number = edge.from.chunk, edge.from.statement_number
-          if reaching_definitions_lists[incoming_chunk] ~= nil then
-            for _, incoming_statement in ipairs(reaching_definitions_lists[incoming_chunk][incoming_statement_number] or {}) do
-              table.insert(incoming_definitions_list, incoming_statement)
-            end
+           table.insert(incoming_chunks_and_statement_numbers, {edge.from.chunk, edge.from.statement_number})
+        end
+      end
+      for _, incoming_chunk_and_statement_number in ipairs(incoming_chunks_and_statement_numbers) do
+        local incoming_chunk, incoming_statement_number = table.unpack(incoming_chunk_and_statement_number)
+        if reaching_definitions_lists[incoming_chunk] ~= nil then
+          for _, incoming_statement in ipairs(reaching_definitions_lists[incoming_chunk][incoming_statement_number] or {}) do
+            table.insert(incoming_definitions_list, incoming_statement)
           end
         end
       end
