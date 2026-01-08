@@ -313,7 +313,7 @@ local function draw_dynamic_edges(results)
     previous_function_call_edges = current_function_call_edges
 
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
-    local reaching_definitions = {}
+    local reaching_definitions_lists = {}
 
     -- First, index all "static" and currently estimated "dynamic" in- and out-edges for each statement.
     local in_edge_index, out_edge_index = {}, {}
@@ -352,7 +352,7 @@ local function draw_dynamic_edges(results)
       local chunk, statement_numbers = chunk_statements.chunk, chunk_statements.statement_numbers
       assert(#statement_numbers > 0)
       local statement_number = statement_numbers[#statement_numbers]
-      local statement = chunk.segment.statements[statement_number]  -- luacheck: ignore statement
+      local statement = chunk.segment.statements[statement_number]
 
       -- Remove the statement from the stack.
       if #statement_numbers > 1 then
@@ -368,8 +368,8 @@ local function draw_dynamic_edges(results)
       if in_edge_index[chunk] ~= nil then
         for _, edge in ipairs(in_edge_index[chunk][statement_number] or {}) do
           local incoming_chunk, incoming_statement_number = edge.from.chunk, edge.from.statement_number
-          if reaching_definitions[incoming_chunk] ~= nil then
-            for _, incoming_statement in ipairs(reaching_definitions[incoming_chunk][incoming_statement_number] or {}) do
+          if reaching_definitions_lists[incoming_chunk] ~= nil then
+            for _, incoming_statement in ipairs(reaching_definitions_lists[incoming_chunk][incoming_statement_number] or {}) do
               table.insert(incoming_definitions_list, incoming_statement)
             end
           end
@@ -377,26 +377,58 @@ local function draw_dynamic_edges(results)
       end
 
       -- Determine the definitions from the current statement.
-      local current_definitions_list = {}
+      local current_definitions_list, invalidated_definitions_index = {}, {}
       if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
         table.insert(current_definitions_list, statement)
-        -- Invalidate definitions of the same control sequence name from before the current statement.
+        -- Invalidate definitions of the same control sequence names from before the current statement.
         if statement.defined_csname.type == TEXT then
-          local updated_incoming_definitions_list = {}
           for _, incoming_statement in ipairs(incoming_definitions_list) do
-            if not (
-                  incoming_statement.defined_csname.type == TEXT and
-                  incoming_statement.confidence == DEFINITELY and
-                  incoming_statement.defined_csname.payload == statement.defined_csname.payload
-                ) then
-              table.insert(updated_incoming_definitions_list, incoming_statement)
+            if incoming_statement.defined_csname.type == TEXT and
+                incoming_statement.confidence == DEFINITELY and
+                incoming_statement.defined_csname.payload == statement.defined_csname.payload then
+              invalidated_definitions_index[incoming_statement] = true
             end
           end
-          incoming_definitions_list = updated_incoming_definitions_list  -- luacheck: ignore incoming_definitions_list
         end
       end
 
-      -- TODO: Determine the set of definitions after the current statement.
+      -- Determine the set of definitions after the current statement.
+      local updated_reaching_definitions_list, updated_reaching_definitions_index = {}, {}
+      for _, definitions_list in ipairs({incoming_definitions_list, current_definitions_list}) do
+        for _, reaching_statement in ipairs(definitions_list) do
+          if invalidated_definitions_index[reaching_statement] == nil then
+            table.insert(updated_reaching_definitions_list, reaching_statement)
+            updated_reaching_definitions_index[reaching_statement] = true
+          end
+        end
+      end
+
+      -- Determine whether the set of definitions after the current statement has changed.
+      local function have_reaching_definitions_changed()  -- luacheck: ignore
+        -- Determine the previous set of definitions, if any.
+        if reaching_definitions_lists[chunk] == nil then
+          return true
+        elseif reaching_definitions_lists[chunk][statement_number] == nil then
+          return true
+        end
+        local previous_reaching_definitions_list = reaching_definitions_lists[chunk][statement_number]
+        assert(previous_reaching_definitions_list ~= nil)
+
+        -- Quickly check using set cardinalities.
+        if #previous_reaching_definitions_list ~= #updated_reaching_definitions_list then
+          return true
+        end
+
+        -- Compare the updated definitions with the previous definitions.
+        for _, previous_reaching_statement in ipairs(previous_reaching_definitions_list) do
+          if updated_reaching_definitions_index[previous_reaching_statement] == nil then
+            return true
+          end
+        end
+
+        return false
+      end
+
       -- TODO: Update the stack of changed statements.
     end
 
