@@ -280,7 +280,8 @@ local function draw_dynamic_edges(results)
   results.edges[DYNAMIC] = {}
 
   -- Collect lists of function (variant) definition and function call statements.
-  -- TODO: Decide whether we need (both of) these.
+  -- TODO: Decide whether we need (both of) these and for all three statement types.
+  --       Update: It seems that we'll need (some of) the indexes as well for the call return edges.
   local function_statement_indexes, function_statement_lists = {}, {}
   for _, statement_type in ipairs({FUNCTION_CALL, FUNCTION_DEFINITION, FUNCTION_VARIANT_DEFINITION}) do
     function_statement_indexes[statement_type] = {}
@@ -310,8 +311,6 @@ local function draw_dynamic_edges(results)
   local previous_function_call_edges
   local current_function_call_edges = {}
   repeat
-    previous_function_call_edges = current_function_call_edges
-
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
     local reaching_definition_lists = {}
 
@@ -515,7 +514,41 @@ local function draw_dynamic_edges(results)
       reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
     end
 
-    -- TODO: Update the current estimation of the function call edges.
+    -- Update the current estimation of the function call edges.
+    previous_function_call_edges = current_function_call_edges
+    for _, function_call_chunk_and_statement_number in ipairs(function_statement_lists[FUNCTION_CALL]) do
+      -- For each function call, first copy all reaching definitions to a temporary list.
+      local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
+      local function_call_reaching_definition_list = {}
+      for _, reaching_definition in ipairs(reaching_definition_lists[function_call_chunk][function_call_statement_number]) do
+        table.insert(function_call_reaching_definition_list, reaching_definition)
+      end
+
+      -- Then, resolve all function variant calls to the originating function definitions.
+      local reaching_definition_number, seen_reaching_definitions = 1, {}
+      local reaching_function_definitions = {}
+      while reaching_definition_number <= #function_call_reaching_definition_list do
+        local reaching_definition = function_call_reaching_definition_list[reaching_definition_number]
+        -- Detect any loops within the graph.
+        if seen_reaching_definitions[reaching_definition] == nil then
+          goto continue
+        end
+        -- Simply record the function definitions.
+        if reaching_definition.type == FUNCTION_DEFINITION then
+          table.insert(reaching_function_definitions, reaching_definition)
+          goto continue
+        end
+        -- TODO: Resolve the function variant definitions.
+        --       It seems that we'll need not only the reaching definition itself but also its chunk. This is annoying.
+        assert(reaching_definition.type == FUNCTION_VARIANT_DEFINITION)
+
+        ::continue::
+        seen_reaching_definitions[reaching_definition] = true
+        reaching_definition_number = reaching_definition_number + 1
+      end
+
+      -- TODO: Draw the function call edges.
+    end
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   for _, edge in ipairs(current_function_call_edges) do
