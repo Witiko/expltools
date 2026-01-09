@@ -317,13 +317,11 @@ local function draw_dynamic_edges(results)
 
     -- First, index all "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
     local in_edge_index, out_edge_index = {}, {}
-    local pseudo_statements_in_edge_list, pseudo_statements_out_edge_list = {}, {}
-    local pseudo_statements_in_edge_index, pseudo_statements_out_edge_index = {}, {}
-    for _, pseudo_statements_edges_and_key in ipairs({
-          {pseudo_statements_in_edge_list, pseudo_statements_in_edge_index, in_edge_index, 'to'},
-          {pseudo_statements_out_edge_list, pseudo_statements_out_edge_index, out_edge_index, 'from'},
+    for _, edge_index_and_key in ipairs({
+          {in_edge_index, 'to'},
+          {out_edge_index, 'from'},
         }) do
-      local pseudo_statements_list, pseudo_statements_index, edge_index, key = table.unpack(pseudo_statements_edges_and_key)
+      local edge_index, key = table.unpack(edge_index_and_key)
       for _, edges in ipairs({results.edges[STATIC], results.edges[DYNAMIC], current_function_call_edges}) do
         for _, edge in ipairs(edges) do
           local chunk, statement_number = edge[key].chunk, edge[key].statement_number
@@ -334,52 +332,55 @@ local function draw_dynamic_edges(results)
             edge_index[chunk][statement_number] = {}
           end
           table.insert(edge_index[chunk][statement_number], edge)
-          -- Also record incoming/outgoing edges that originate/end in pseudo-statements "after" a chunk.
-          if statement_number > chunk.statement_range:stop() then
-            table.insert(pseudo_statements_list, {chunk, statement_number})
-            if pseudo_statements_index[chunk] == nil then
-               pseudo_statements_index[chunk] = {}
-            end
-            pseudo_statements_index[chunk][statement_number] = true
-          end
         end
       end
     end
 
-    -- TODO: For incoming/outgoing edges that originate/end in pseudo-statements "after" a chunk, index also paths that
-    -- originate/end in actual statements, respectively.
-
     -- Initialize a stack of changed statements to a list of all statements.
-    local changed_statements = {}
+    local changed_statements_list, changed_statements_index = {}, {}
     for _, segment in ipairs(results.segments or {}) do
       for _, chunk in ipairs(segment.chunks or {}) do
-        local chunk_statements = {chunk = chunk, statement_numbers = {}}
+        local chunk_statements = {
+          chunk = chunk,
+          statement_numbers_list = {},
+          statement_numbers_index = {},
+        }
+        local statement_numbers_list = chunk_statements.statement_numbers_list
+        local statement_numbers_index = chunk_statements.statement_numbers_index
         for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
-          table.insert(chunk_statements.statement_numbers, statement_number)
+          table.insert(statement_numbers_list, statement_number)
+          statement_numbers_index[statement_number] = #statement_numbers_list
         end
-        table.insert(changed_statements, chunk_statements)
+        table.insert(changed_statements_list, chunk_statements)
+        changed_statements_index[chunk] = #changed_statements_list
       end
     end
 
     -- Iterate over the changed statements until convergence.
-    while #changed_statements > 0 do
+    while #changed_statements_list > 0 do
       -- Pick a statement from the stack of changed statements.
-      local chunk_statements = changed_statements[#changed_statements]
-      local chunk, statement_numbers = chunk_statements.chunk, chunk_statements.statement_numbers
-      assert(#statement_numbers > 0)
-      local statement_number = statement_numbers[#statement_numbers]
-      local statement = chunk.segment.statements[statement_number]
+      local chunk_statements = changed_statements_list[#changed_statements_list]
+      local chunk = chunk_statements.chunk
+      local statement_numbers_list = chunk_statements.statement_numbers_list
+      local statement_numbers_index = chunk_statements.statement_numbers_index
+      assert(#statement_numbers_list > 0)
+      local statement_number = statement_numbers_list[#statement_numbers_list]
 
       -- Remove the statement from the stack.
-      if #statement_numbers > 1 then
+      if #statement_numbers_list > 1 then
         -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
-        statement_numbers[#statement_numbers] = nil
+        table.remove(statement_numbers_list)
+        statement_numbers_index[statement_number] = nil
       else
         -- Otherwise, remove the chunk from the stack as well.
-        changed_statements[#changed_statements] = nil
+        table.remove(changed_statements_list)
+        changed_statements_index[chunk] = nil
       end
 
-      -- Determine add preceding statements.
+      -- Determine source statements from incoming edges.
+        --
+      -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
+      -- an actual statement to be there but for the purpose of the reaching definitions algorithm, we don't really care.
       local incoming_definition_list = {}
       local incoming_chunks_and_statement_numbers = {}
       if statement_number - 1 >= chunk.statement_range:start() then
@@ -405,15 +406,18 @@ local function draw_dynamic_edges(results)
 
       -- Determine the definitions from the current statement.
       local current_definition_list, invalidated_definition_index = {}, {}
-      if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
-        table.insert(current_definition_list, statement)
-        -- Invalidate definitions of the same control sequence names from before the current statement.
-        if statement.defined_csname.type == TEXT then
-          for _, incoming_statement in ipairs(incoming_definition_list) do
-            if incoming_statement.defined_csname.type == TEXT and
-                incoming_statement.confidence == DEFINITELY and
-                incoming_statement.defined_csname.payload == statement.defined_csname.payload then
-              invalidated_definition_index[incoming_statement] = true
+      if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
+        local statement = chunk.segment.statements[statement_number]
+        if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+          table.insert(current_definition_list, statement)
+          -- Invalidate definitions of the same control sequence names from before the current statement.
+          if statement.defined_csname.type == TEXT then
+            for _, incoming_statement in ipairs(incoming_definition_list) do
+              if incoming_statement.defined_csname.type == TEXT and
+                  incoming_statement.confidence == DEFINITELY and
+                  incoming_statement.defined_csname.payload == statement.defined_csname.payload then
+                invalidated_definition_index[incoming_statement] = true
+              end
             end
           end
         end
@@ -459,8 +463,10 @@ local function draw_dynamic_edges(results)
 
       -- Update the stack of changed statements.
       if have_reaching_definitions_changed() then
-
-        -- Determine all successive statements.
+        -- Determine destination statements of outgoing edges.
+        --
+        -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
+        -- an actual statement to be there but for the purpose of the reaching definitions algorithm, we don't really care.
         local outgoing_chunks_and_statement_numbers = {}
         if statement_number + 1 <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk.
@@ -473,9 +479,30 @@ local function draw_dynamic_edges(results)
           end
         end
 
-        -- TODO: Insert the successive statements into the stack of changed statements.
-        -- TODO: We'll need to index the positions of chunks in `changed_statements` to prevent potential duplicates.
+        -- Insert the successive statements into the stack of changed statements.
+        for _, outgoing_chunk_and_statement_number in ipairs(outgoing_chunks_and_statement_numbers) do
+          local outgoing_chunk, outgoing_statement_number = table.unpack(outgoing_chunk_and_statement_number)
 
+          local outgoing_chunk_statements
+          if changed_statements_index[outgoing_chunk] == nil then
+            outgoing_chunk_statements = {
+              chunk = outgoing_chunk,
+              statement_numbers_list = {},
+              statement_numbers_index = {},
+            }
+            table.insert(changed_statements_list, outgoing_chunk_statements)
+            changed_statements_index[chunk] = #changed_statements_list
+          else
+            outgoing_chunk_statements = changed_statements_list[changed_statements_index[outgoing_chunk]]
+          end
+
+          local outgoing_statement_numbers_list = outgoing_chunk_statements.statement_numbers_list
+          local outgoing_statement_numbers_index = outgoing_chunk_statements.statement_numbers_index
+          if outgoing_statement_numbers_index[outgoing_statement_number] == nil then
+            table.insert(outgoing_statement_numbers_list, outgoing_statement_number)
+            outgoing_statement_numbers_index[outgoing_statement_number] = #outgoing_statement_numbers_list
+          end
+        end
       end
 
       -- Update the reaching definitions.
