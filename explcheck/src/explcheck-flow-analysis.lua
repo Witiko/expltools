@@ -689,6 +689,9 @@ local function draw_dynamic_edges(results)
           -- Resolve the function variant definitions.
           if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][statement_number] ~= nil then
             for _, other_definition in ipairs(reaching_definition_lists[chunk][statement_number]) do
+              local other_chunk, other_statement_number = other_definition.chunk, other_definition.statement_number
+              local other_statement = get_statement(other_chunk, other_statement_number)
+              assert(is_well_behaved(other_statement))
               -- TODO: Index the reaching definitions by `defined_csname.payload`.
               if other_definition.defined_csname.payload == statement.base_csname.payload then
                 local transitive_definition = {
