@@ -377,9 +377,9 @@ local function draw_dynamic_edges(results)
       end
 
       -- Determine source statements from incoming edges.
-        --
+      --
       -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
-      -- an actual statement to be there but for the purpose of the reaching definitions algorithm, we don't really care.
+      -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
       local incoming_definition_list = {}
       local incoming_chunks_and_statement_numbers = {}
       if statement_number - 1 >= chunk.statement_range:start() then
@@ -397,25 +397,30 @@ local function draw_dynamic_edges(results)
       for _, incoming_chunk_and_statement_number in ipairs(incoming_chunks_and_statement_numbers) do
         local incoming_chunk, incoming_statement_number = table.unpack(incoming_chunk_and_statement_number)
         if reaching_definition_lists[incoming_chunk] ~= nil then
-          for _, incoming_statement in ipairs(reaching_definition_lists[incoming_chunk][incoming_statement_number] or {}) do
-            table.insert(incoming_definition_list, incoming_statement)
+          for _, incoming_definition in ipairs(reaching_definition_lists[incoming_chunk][incoming_statement_number] or {}) do
+            table.insert(incoming_definition_list, incoming_definition)
           end
         end
       end
 
       -- Determine the definitions from the current statement.
-      local current_definition_list, invalidated_definition_index = {}, {}
+      local current_definition_list, invalidated_statement_index = {}, {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local statement = chunk.segment.statements[statement_number]
         if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
-          table.insert(current_definition_list, statement)
+          local definition = {
+            statement = statement,
+            chunk = chunk,
+          }
+          table.insert(current_definition_list, definition)
           -- Invalidate definitions of the same control sequence names from before the current statement.
           if statement.defined_csname.type == TEXT then
-            for _, incoming_statement in ipairs(incoming_definition_list) do
+            for _, incoming_definition in ipairs(incoming_definition_list) do
+              local incoming_statement = incoming_definition.statement
               if incoming_statement.defined_csname.type == TEXT and
                   incoming_statement.confidence == DEFINITELY and
                   incoming_statement.defined_csname.payload == statement.defined_csname.payload then
-                invalidated_definition_index[incoming_statement] = true
+                invalidated_statement_index[incoming_statement] = true
               end
             end
           end
@@ -423,12 +428,12 @@ local function draw_dynamic_edges(results)
       end
 
       -- Determine the reaching definitions after the current statement.
-      local updated_reaching_definition_list, updated_reaching_definition_index = {}, {}
+      local updated_reaching_definition_list, updated_reaching_statement_index = {}, {}
       for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
-        for _, reaching_statement in ipairs(definition_list) do
-          if invalidated_definition_index[reaching_statement] == nil then
-            table.insert(updated_reaching_definition_list, reaching_statement)
-            updated_reaching_definition_index[reaching_statement] = true
+        for _, definition in ipairs(definition_list) do
+          if invalidated_statement_index[definition.statement] == nil then
+            table.insert(updated_reaching_definition_list, definition)
+            updated_reaching_statement_index[definition.statement] = true
           end
         end
       end
@@ -451,8 +456,8 @@ local function draw_dynamic_edges(results)
         end
 
         -- Compare the updated definitions with the previous definitions.
-        for _, previous_reaching_statement in ipairs(previous_reaching_definition_list) do
-          if updated_reaching_definition_index[previous_reaching_statement] == nil then
+        for _, definition in ipairs(previous_reaching_definition_list) do
+          if updated_reaching_statement_index[definition.statement] == nil then
             return true
           end
         end
@@ -465,7 +470,7 @@ local function draw_dynamic_edges(results)
         -- Determine destination statements of outgoing edges.
         --
         -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
-        -- an actual statement to be there but for the purpose of the reaching definitions algorithm, we don't really care.
+        -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
         local outgoing_chunks_and_statement_numbers = {}
         if statement_number + 1 <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk.
@@ -520,30 +525,30 @@ local function draw_dynamic_edges(results)
       -- For each function call, first copy all reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
       local function_call_reaching_definition_list = {}
-      for _, reaching_definition in ipairs(reaching_definition_lists[function_call_chunk][function_call_statement_number]) do
-        table.insert(function_call_reaching_definition_list, reaching_definition)
+      for _, definition in ipairs(reaching_definition_lists[function_call_chunk][function_call_statement_number]) do
+        table.insert(function_call_reaching_definition_list, definition)
       end
 
       -- Then, resolve all function variant calls to the originating function definitions.
-      local reaching_definition_number, seen_reaching_definitions = 1, {}
+      local reaching_definition_number, seen_reaching_statements = 1, {}
       local reaching_function_definitions = {}
       while reaching_definition_number <= #function_call_reaching_definition_list do
-        local reaching_definition = function_call_reaching_definition_list[reaching_definition_number]
+        local definition = function_call_reaching_definition_list[reaching_definition_number]
+        local statement, chunk = definition.statement, definition.chunk  -- luacheck: ignore chunk
         -- Detect any loops within the graph.
-        if seen_reaching_definitions[reaching_definition] == nil then
+        if seen_reaching_statements[statement] == nil then
           goto continue
         end
         -- Simply record the function definitions.
-        if reaching_definition.type == FUNCTION_DEFINITION then
-          table.insert(reaching_function_definitions, reaching_definition)
+        if statement.type == FUNCTION_DEFINITION then
+          table.insert(reaching_function_definitions, definition)
           goto continue
         end
         -- TODO: Resolve the function variant definitions.
-        --       It seems that we'll need not only the reaching definition itself but also its chunk. This is annoying.
-        assert(reaching_definition.type == FUNCTION_VARIANT_DEFINITION)
+        assert(statement.type == FUNCTION_VARIANT_DEFINITION)
 
         ::continue::
-        seen_reaching_definitions[reaching_definition] = true
+        seen_reaching_statements[statement] = true
         reaching_definition_number = reaching_definition_number + 1
       end
 
