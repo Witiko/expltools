@@ -9,6 +9,7 @@ local segment_types = syntactic_analysis.segment_types
 
 local csname_types = semantic_analysis.csname_types
 local statement_types = semantic_analysis.statement_types
+local statement_subtypes = semantic_analysis.statement_subtypes
 
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
@@ -18,6 +19,8 @@ local TEXT = csname_types.TEXT
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
+
+local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 
 local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
 
@@ -54,7 +57,7 @@ local NEXT_CHUNK = edge_types.NEXT_CHUNK
 assert(TF_BRANCH == edge_types.TF_BRANCH)
 local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
-local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN  -- luacheck: ignore
+local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN
 
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
@@ -284,7 +287,7 @@ local function draw_dynamic_edges(results)
   local function is_well_behaved(statement)
     local result
     if statement.type == FUNCTION_CALL then
-      result = statement.used_csname.type == TEXT
+      result = statement.used_csname.type == TEXT and statement.subtype == FUNCTION_DEFINITION_DIRECT
     elseif statement.type == FUNCTION_DEFINITION then
       result = statement.defined_csname.type == TEXT
     elseif statement.type == FUNCTION_VARIANT_DEFINITION then
@@ -579,16 +582,18 @@ local function draw_dynamic_edges(results)
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy all reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
-      local function_call_reaching_definition_list = {}
+      local function_call_statement = get_statement(function_call_chunk, function_call_statement_number)
+      assert(is_well_behaved(function_call_statement))
+      local reaching_function_and_variant_definition_list = {}
       for _, definition in ipairs(reaching_definition_lists[function_call_chunk][function_call_statement_number]) do
-        table.insert(function_call_reaching_definition_list, definition)
+        table.insert(reaching_function_and_variant_definition_list, definition)
       end
 
       -- Then, resolve all function variant calls to the originating function definitions.
       local reaching_definition_number, seen_reaching_statements = 1, {}
-      local reaching_function_definitions = {}
-      while reaching_definition_number <= #function_call_reaching_definition_list do
-        local definition = function_call_reaching_definition_list[reaching_definition_number]
+      local reaching_function_definition_list = {}
+      while reaching_definition_number <= #reaching_function_and_variant_definition_list do
+        local definition = reaching_function_and_variant_definition_list[reaching_definition_number]
         local chunk, statement_number = definition.chunk, definition.statement_number
         local statement = get_statement(chunk, statement_number)
         assert(is_well_behaved(statement))
@@ -598,7 +603,7 @@ local function draw_dynamic_edges(results)
         end
         if statement.type == FUNCTION_DEFINITION then
           -- Simply record the function definitions.
-          table.insert(reaching_function_definitions, definition)
+          table.insert(reaching_function_definition_list, definition)
         elseif statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the function variant definitions.
           for _, base_definition_chunk_and_statement_number in ipairs(function_definition_index[statement.base_csname.payload] or {}) do
@@ -607,10 +612,10 @@ local function draw_dynamic_edges(results)
             assert(is_well_behaved(base_statement))
             local base_definition = {
               defined_csname = definition.defined_csname,
-              statement = base_statement,
+              statement_number = base_statement_number,
               chunk = base_chunk,
             }
-            table.insert(function_call_reaching_definition_list, base_definition)
+            table.insert(reaching_function_and_variant_definition_list, base_definition)
           end
         else
           error('Unexpected statement type "' .. statement.type .. '"')
@@ -620,7 +625,42 @@ local function draw_dynamic_edges(results)
         reaching_definition_number = reaching_definition_number + 1
       end
 
-      -- TODO: Draw the function call edges.
+      -- Draw the function call edges.
+      for _, function_definition in ipairs(reaching_function_definition_list) do
+        local function_definition_statement = get_statement(function_definition.chunk, function_definition.statement_number)
+        assert(is_well_behaved(function_definition_statement))
+        local to_segment = results.segments[function_definition_statement.replacement_text_argument.segment_number]
+        local forward_to_chunk = to_segment.chunks[1]
+        local forward_to_statement_number = forward_to_chunk.statement_range:start()
+        local forward_edge = {
+          type = FUNCTION_CALL,
+          from = {
+            chunk = function_call_chunk,
+            statement_number = function_call_statement_number,
+          },
+          to = {
+            chunk = forward_to_chunk,
+            statement_number = forward_to_statement_number,
+          },
+          confidence = MAYBE,  -- TODO: Determine definition confidence.
+        }
+        table.insert(current_function_call_edges, forward_edge)
+        local backward_from_chunk = to_segment.chunks[#to_segment.chunks]
+        local backward_from_statement_number = forward_to_chunk.statement_range:stop() + 1
+        local backward_edge = {
+          type = FUNCTION_CALL_RETURN,
+          from = {
+            chunk = backward_from_chunk,
+            statement_number = backward_from_statement_number,
+          },
+          to = {
+            chunk = function_call_chunk,
+            statement_number = function_call_statement_number + 1,
+          },
+          confidence = MAYBE,  -- TODO: Determine definition confidence.
+        }
+        table.insert(current_function_call_edges, backward_edge)
+      end
     end
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
