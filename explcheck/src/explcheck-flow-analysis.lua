@@ -322,32 +322,18 @@ local function draw_dynamic_edges(results)
     return result
   end
 
-  -- Collect a list of function call statements and an index of function (variant) definitions.
-  local function_call_list, function_definition_index = {}, {}
+  -- Collect a list of function call statements.
+  local function_call_list = {}
   for _, segment in ipairs(results.segments or {}) do
     for _, chunk in ipairs(segment.chunks or {}) do
       for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
-        if statement.type ~= FUNCTION_CALL and statement.type ~= FUNCTION_DEFINITION and statement.type ~= FUNCTION_VARIANT_DEFINITION then
+        if statement.type ~= FUNCTION_CALL then
           goto continue
         end
         if not is_well_behaved(statement) then
           goto continue
         end
-
-        if statement.type == FUNCTION_CALL then
-          if is_well_behaved(statement) then
-            table.insert(function_call_list, {chunk, statement_number})
-          end
-        elseif statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
-          if is_well_behaved(statement) then
-            if function_definition_index[statement.defined_csname.payload] == nil then
-              function_definition_index[statement.defined_csname.payload] = {}
-            end
-            table.insert(function_definition_index[statement.defined_csname.payload], {chunk, statement_number})
-          end
-        else
-          error('Unexpected statement type "' .. statement.type .. '"')
-        end
+        table.insert(function_call_list, {chunk, statement_number})
         ::continue::
       end
     end
