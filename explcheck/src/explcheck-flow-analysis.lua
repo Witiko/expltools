@@ -458,6 +458,8 @@ local function draw_dynamic_edges(results)
 
     -- Iterate over the changed statements until convergence.
     while #changed_statements_list > 0 do
+      -- TODO: Fix infinite loop on file /usr/local/texlive/2024/texmf-dist/tex/latex/antanilipsum/antanilipsum.sty.
+
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
 
