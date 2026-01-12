@@ -759,7 +759,7 @@ local function draw_dynamic_edges(results)
             chunk = function_call_chunk,
             statement_number = function_call_statement_number + 1,
           },
-          confidence = MAYBE,  -- TODO: Determine definition confidence.
+          confidence = MAYBE,
         }
         table.insert(current_function_call_edges, backward_edge)
         ::continue::
