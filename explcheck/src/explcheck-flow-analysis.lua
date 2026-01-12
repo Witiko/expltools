@@ -456,8 +456,6 @@ local function draw_dynamic_edges(results)
 
     -- Iterate over the changed statements until convergence.
     while #changed_statements_list > 0 do
-      -- TODO: Fix infinite loop on file /usr/local/texlive/2024/texmf-dist/tex/latex/antanilipsum/antanilipsum.sty.
-
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
 
@@ -494,6 +492,7 @@ local function draw_dynamic_edges(results)
         local statement = get_statement(chunk, statement_number)
         if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
           local definition = {
+            defined_csname = statement.defined_csname,
             statement_number = statement_number,
             chunk = chunk,
           }
@@ -603,13 +602,15 @@ local function draw_dynamic_edges(results)
     -- Update the current estimation of the function call edges.
     current_function_call_edges = {}
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
-      -- For each function call, first copy all reaching definitions to a temporary list.
+      -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
       local function_call_statement = get_statement(function_call_chunk, function_call_statement_number)
       assert(is_well_behaved(function_call_statement))
       local reaching_function_and_variant_definition_list = {}
       for _, definition in ipairs(reaching_definition_lists[function_call_chunk][function_call_statement_number]) do
-        table.insert(reaching_function_and_variant_definition_list, definition)
+        if definition.defined_csname.payload == function_call_statement.used_csname.payload then
+          table.insert(reaching_function_and_variant_definition_list, definition)
+        end
       end
 
       -- Then, resolve all function variant calls to the originating function definitions.
@@ -617,6 +618,7 @@ local function draw_dynamic_edges(results)
       local reaching_function_definition_list = {}
       while reaching_definition_number <= #reaching_function_and_variant_definition_list do
         local definition = reaching_function_and_variant_definition_list[reaching_definition_number]
+        assert(definition.defined_csname.payload == function_call_statement.used_csname.payload)
         local chunk, statement_number = definition.chunk, definition.statement_number
         local statement = get_statement(chunk, statement_number)
         assert(is_well_behaved(statement))
@@ -635,6 +637,7 @@ local function draw_dynamic_edges(results)
           --  local base_statement = get_statement(base_chunk, base_statement_number)
           --  assert(is_well_behaved(base_statement))
           --  local base_definition = {
+          --    defined_csname = base_statement.defined_csname,
           --    statement_number = base_statement_number,
           --    chunk = base_chunk,
           --  }
@@ -650,6 +653,7 @@ local function draw_dynamic_edges(results)
 
       -- Draw the function call edges.
       for _, function_definition in ipairs(reaching_function_definition_list) do
+        assert(function_definition.defined_csname.payload == function_call_statement.used_csname.payload)
         local function_definition_statement = get_statement(function_definition.chunk, function_definition.statement_number)
         assert(is_well_behaved(function_definition_statement))
         local to_segment = results.segments[function_definition_statement.replacement_text_argument.segment_number]
