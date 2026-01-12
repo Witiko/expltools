@@ -330,8 +330,6 @@ local function draw_dynamic_edges(results)
   end
 
   -- Collect lists of function (variant) definition and function call statements.
-  -- TODO: Decide whether we need (both of) these and for all three statement types.
-  --       Update: It seems that we'll need (some of) the indexes as well for the call return edges.
   local function_statement_indexes, function_statement_lists = {}, {}
   for _, statement_type in ipairs({FUNCTION_CALL, FUNCTION_DEFINITION, FUNCTION_VARIANT_DEFINITION}) do
     function_statement_indexes[statement_type] = {}
