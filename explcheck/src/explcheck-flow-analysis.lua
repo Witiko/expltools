@@ -544,13 +544,8 @@ local function draw_dynamic_edges(results)
           return true
         end
 
-        -- Compare the updated definitions with the previous definitions.
-        for _, definition in ipairs(previous_reaching_definition_list) do
-          local statement = get_statement(definition.chunk, definition.statement_number)
-          if updated_reaching_statement_index[statement] == nil then
-            return true
-          end
-        end
+        -- We don't need to compare the updated definitions with the previous definitions, since we can only ever add new definitions.
+        -- Therefore, the cardinality check is enough.
 
         return false
       end
