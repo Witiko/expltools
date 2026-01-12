@@ -677,6 +677,7 @@ local function draw_dynamic_edges(results)
       assert(is_well_behaved(function_call_statement))
       local reaching_function_and_variant_definition_list = {}
       for _, definition in ipairs(reaching_definition_lists[function_call_chunk][function_call_statement_number]) do
+        -- TODO: Index the reaching definitions by `defined_csname.payload`.
         if definition.defined_csname.payload == function_call_statement.used_csname.payload then
           table.insert(reaching_function_and_variant_definition_list, definition)
         end
@@ -700,18 +701,19 @@ local function draw_dynamic_edges(results)
           table.insert(reaching_function_definition_list, definition)
         elseif statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the function variant definitions.
-          -- TODO: Use the reaching definitions rather than `function_definition_index`, which contains all the definitions.
-          --for _, base_definition_chunk_and_statement_number in ipairs(function_definition_index[statement.base_csname.payload] or {}) do
-          --  local base_chunk, base_statement_number = table.unpack(base_definition_chunk_and_statement_number)
-          --  local base_statement = get_statement(base_chunk, base_statement_number)
-          --  assert(is_well_behaved(base_statement))
-          --  local base_definition = {
-          --    defined_csname = base_statement.defined_csname,
-          --    statement_number = base_statement_number,
-          --    chunk = base_chunk,
-          --  }
-          --  table.insert(reaching_function_and_variant_definition_list, base_definition)
-          --end
+          if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][statement_number] ~= nil then
+            for _, other_definition in ipairs(reaching_definition_lists[chunk][statement_number]) do
+              -- TODO: Index the reaching definitions by `defined_csname.payload`.
+              if other_definition.defined_csname.payload == statement.base_csname.payload then
+                local transitive_definition = {
+                  defined_csname = definition.defined_csname,
+                  statement_number = other_definition.statement_number,
+                  chunk = other_definition.chunk,
+                }
+                table.insert(reaching_function_and_variant_definition_list, transitive_definition)
+              end
+            end
+          end
         else
           error('Unexpected statement type "' .. statement.type .. '"')
         end
