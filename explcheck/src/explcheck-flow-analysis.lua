@@ -287,9 +287,9 @@ local function draw_dynamic_edges(results)
   local function is_well_behaved(statement)
     local result
     if statement.type == FUNCTION_CALL then
-      result = statement.used_csname.type == TEXT and statement.subtype == FUNCTION_DEFINITION_DIRECT
+      result = statement.used_csname.type == TEXT
     elseif statement.type == FUNCTION_DEFINITION then
-      result = statement.defined_csname.type == TEXT
+      result = statement.defined_csname.type == TEXT and statement.subtype == FUNCTION_DEFINITION_DIRECT
     elseif statement.type == FUNCTION_VARIANT_DEFINITION then
       result = statement.base_csname.type == TEXT or statement.defined_csname.type == TEXT
     else
@@ -384,36 +384,9 @@ local function draw_dynamic_edges(results)
 
     -- Initialize a stack of changed statements to a list of all statements.
     local changed_statements_list, changed_statements_index = {}, {}
-    for _, segment in ipairs(results.segments or {}) do
-      for _, chunk in ipairs(segment.chunks or {}) do
-        local chunk_statements = {
-          chunk = chunk,
-          statement_numbers_list = {},
-          statement_numbers_index = {},
-        }
-        local statement_numbers_list = chunk_statements.statement_numbers_list
-        local statement_numbers_index = chunk_statements.statement_numbers_index
-        for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
-          table.insert(statement_numbers_list, statement_number)
-          statement_numbers_index[statement_number] = #statement_numbers_list
-        end
-        table.insert(changed_statements_list, chunk_statements)
-        changed_statements_index[chunk] = #changed_statements_list
-      end
-    end
 
-    -- Resolve a chunk and a statement number to a statement.
-    local function get_statement(chunk, statement_number)
-      local segment = chunk.segment
-      assert(statement_number >= chunk.statement_range:start())
-      assert(statement_number <= chunk.statement_range:stop())
-      local statement = segment.statements[statement_number]
-      assert(statement ~= nil)
-      return statement
-    end
-
-    -- Iterate over the changed statements until convergence.
-    while #changed_statements_list > 0 do
+    -- Pop a changed statement off the top of stack.
+    local function pop_changed_statement()
       -- Pick a statement from the stack of changed statements.
       local chunk_statements = changed_statements_list[#changed_statements_list]
       local chunk = chunk_statements.chunk
@@ -432,6 +405,58 @@ local function draw_dynamic_edges(results)
         table.remove(changed_statements_list)
         changed_statements_index[chunk] = nil
       end
+
+      return chunk, statement_number
+    end
+
+    -- Add a changed statement on the top of the stack.
+    local function add_changed_statement(chunk, statement_number)
+      -- Get the stack of statements for the given chunk, inserting it if it doesn't exist.
+      local chunk_statements
+      if changed_statements_index[chunk] == nil then
+        chunk_statements = {
+          chunk = chunk,
+          statement_numbers_list = {},
+          statement_numbers_index = {},
+        }
+        table.insert(changed_statements_list, chunk_statements)
+        changed_statements_index[chunk] = #changed_statements_list
+      else
+        chunk_statements = changed_statements_list[changed_statements_index[chunk]]
+      end
+
+      -- Insert the statement to the stack if it isn't there already.
+      local statement_numbers_list = chunk_statements.statement_numbers_list
+      local statement_numbers_index = chunk_statements.statement_numbers_index
+      if statement_numbers_index[statement_number] == nil then
+        table.insert(statement_numbers_list, statement_number)
+        statement_numbers_index[statement_number] = #statement_numbers_list
+      end
+    end
+
+    for _, segment in ipairs(results.segments or {}) do
+      for _, chunk in ipairs(segment.chunks or {}) do
+        for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
+          add_changed_statement(chunk, statement_number)
+        end
+        add_changed_statement(chunk, chunk.statement_range:stop() + 1)
+      end
+    end
+
+    -- Resolve a chunk and a statement number to a statement.
+    local function get_statement(chunk, statement_number)
+      local segment = chunk.segment
+      assert(statement_number >= chunk.statement_range:start())
+      assert(statement_number <= chunk.statement_range:stop())
+      local statement = segment.statements[statement_number]
+      assert(statement ~= nil)
+      return statement
+    end
+
+    -- Iterate over the changed statements until convergence.
+    while #changed_statements_list > 0 do
+      -- Pick a statement from the stack of changed statements.
+      local chunk, statement_number = pop_changed_statement()
 
       -- Determine source statements from incoming edges.
       --
@@ -461,7 +486,7 @@ local function draw_dynamic_edges(results)
       end
 
       -- Determine the definitions from the current statement.
-      local current_definition_list, invalidated_statement_index = {}, {}
+      local current_definition_list, invalidated_statement_index, invalidated_statement_list = {}, {}, {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local statement = get_statement(chunk, statement_number)
         if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
@@ -476,7 +501,11 @@ local function draw_dynamic_edges(results)
             for _, incoming_definition in ipairs(incoming_definition_list) do
               local incoming_statement = get_statement(incoming_definition.chunk, incoming_definition.statement_number)
               if incoming_statement.confidence == DEFINITELY and
-                  incoming_statement.defined_csname.payload == statement.defined_csname.payload then
+                  incoming_statement.defined_csname.payload == statement.defined_csname.payload and
+                  incoming_statement ~= statement then
+                if invalidated_statement_index[incoming_statement] == nil then
+                  table.insert(invalidated_statement_list, incoming_statement)
+                end
                 invalidated_statement_index[incoming_statement] = true
               end
             end
@@ -489,10 +518,10 @@ local function draw_dynamic_edges(results)
       for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
         for _, definition in ipairs(definition_list) do
           local statement = get_statement(definition.chunk, definition.statement_number)
-          if invalidated_statement_index[statement] == nil then
+          if invalidated_statement_index[statement] == nil and updated_reaching_statement_index[statement] == nil then
             table.insert(updated_reaching_definition_list, definition)
-            updated_reaching_statement_index[statement] = true
           end
+          updated_reaching_statement_index[statement] = true
         end
       end
 
@@ -515,7 +544,8 @@ local function draw_dynamic_edges(results)
 
         -- Compare the updated definitions with the previous definitions.
         for _, definition in ipairs(previous_reaching_definition_list) do
-          if updated_reaching_statement_index[definition.statement] == nil then
+          local statement = get_statement(definition.chunk, definition.statement_number)
+          if updated_reaching_statement_index[statement] == nil then
             return true
           end
         end
@@ -530,40 +560,21 @@ local function draw_dynamic_edges(results)
         -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
         -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
         local outgoing_chunks_and_statement_numbers = {}
-        if statement_number + 1 <= chunk.statement_range:stop() then
-          -- Consider implicit edges to following statements within a chunk.
+        if statement_number <= chunk.statement_range:stop() then
+          -- Consider implicit edges to following statements within a chunk and pseudo-statements "after" a chunk.
           table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
         end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
           -- Consider explicit incoming edges.
           for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
-             table.insert(incoming_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
+             table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
           end
         end
 
         -- Insert the successive statements into the stack of changed statements.
         for _, outgoing_chunk_and_statement_number in ipairs(outgoing_chunks_and_statement_numbers) do
           local outgoing_chunk, outgoing_statement_number = table.unpack(outgoing_chunk_and_statement_number)
-
-          local outgoing_chunk_statements
-          if changed_statements_index[outgoing_chunk] == nil then
-            outgoing_chunk_statements = {
-              chunk = outgoing_chunk,
-              statement_numbers_list = {},
-              statement_numbers_index = {},
-            }
-            table.insert(changed_statements_list, outgoing_chunk_statements)
-            changed_statements_index[chunk] = #changed_statements_list
-          else
-            outgoing_chunk_statements = changed_statements_list[changed_statements_index[outgoing_chunk]]
-          end
-
-          local outgoing_statement_numbers_list = outgoing_chunk_statements.statement_numbers_list
-          local outgoing_statement_numbers_index = outgoing_chunk_statements.statement_numbers_index
-          if outgoing_statement_numbers_index[outgoing_statement_number] == nil then
-            table.insert(outgoing_statement_numbers_list, outgoing_statement_number)
-            outgoing_statement_numbers_index[outgoing_statement_number] = #outgoing_statement_numbers_list
-          end
+          add_changed_statement(outgoing_chunk, outgoing_statement_number)
         end
       end
 
@@ -577,8 +588,14 @@ local function draw_dynamic_edges(results)
       reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
     end
 
+    -- Make a copy of the current estimation of the function call edges.
+    previous_function_call_edges = {}
+    for _, edge in ipairs(current_function_call_edges) do
+      table.insert(previous_function_call_edges, edge)
+    end
+
     -- Update the current estimation of the function call edges.
-    previous_function_call_edges = current_function_call_edges
+    current_function_call_edges = {}
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy all reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
@@ -598,7 +615,7 @@ local function draw_dynamic_edges(results)
         local statement = get_statement(chunk, statement_number)
         assert(is_well_behaved(statement))
         -- Detect any loops within the graph.
-        if seen_reaching_statements[statement] == nil then
+        if seen_reaching_statements[statement] ~= nil then
           goto continue
         end
         if statement.type == FUNCTION_DEFINITION then
