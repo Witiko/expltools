@@ -279,6 +279,50 @@ local function draw_dynamic_edges(results)
   assert(results.edges[DYNAMIC] == nil)
   results.edges[DYNAMIC] = {}
 
+  -- Check whether a function (variant) definition or a function call statement is well-behaved in the sense that we know its
+  -- control sequence names precisely and not just as a probabilistic pattern.
+  local function is_well_behaved(statement)
+    local result
+    if statement.type == FUNCTION_CALL then
+      result = statement.used_csname.type == TEXT
+    elseif statement.type == FUNCTION_DEFINITION then
+      result = statement.defined_csname.type == TEXT
+    elseif statement.type == FUNCTION_VARIANT_DEFINITION then
+      result = statement.base_csname.type == TEXT or statement.defined_csname.type == TEXT
+    else
+      error('Unexpected statement type "' .. statement.type .. '"')
+    end
+    return result
+  end
+
+  -- Collect a list of function call statements and an index of function (variant) definitions.
+  local function_call_list, function_definition_index = {}, {}
+  for _, segment in ipairs(results.segments or {}) do
+    for _, chunk in ipairs(segment.chunks or {}) do
+      for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
+        if statement.type ~= FUNCTION_CALL and statement.type ~= FUNCTION_DEFINITION and statement.type ~= FUNCTION_VARIANT_DEFINITION then
+          goto continue
+        end
+        if not is_well_behaved(statement) then
+          goto continue
+        end
+
+        if statement.type == FUNCTION_CALL then
+          if is_well_behaved(statement) then
+            table.insert(function_call_list, {chunk, statement_number})
+          end
+        elseif statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+          if is_well_behaved(statement) then
+            function_definition_index[statement.defined_csname.payload] = {chunk, statement_number}
+          end
+        else
+          error('Unexpected statement type "' .. statement.type .. '"')
+        end
+        ::continue::
+      end
+    end
+  end
+
   -- Collect lists of function (variant) definition and function call statements.
   -- TODO: Decide whether we need (both of) these and for all three statement types.
   --       Update: It seems that we'll need (some of) the indexes as well for the call return edges.
@@ -355,6 +399,16 @@ local function draw_dynamic_edges(results)
       end
     end
 
+    -- Resolve a chunk and a statement number to a statement.
+    local function get_statement(chunk, statement_number)
+      local segment = chunk.segment
+      assert(statement_number >= chunk.statement_range:start())
+      assert(statement_number <= chunk.statement_range:stop())
+      local statement = segment.statements[statement_number]
+      assert(statement ~= nil)
+      return statement
+    end
+
     -- Iterate over the changed statements until convergence.
     while #changed_statements_list > 0 do
       -- Pick a statement from the stack of changed statements.
@@ -406,19 +460,19 @@ local function draw_dynamic_edges(results)
       -- Determine the definitions from the current statement.
       local current_definition_list, invalidated_statement_index = {}, {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
-        local statement = chunk.segment.statements[statement_number]
-        if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+        local statement = get_statement(chunk, statement_number)
+        if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
           local definition = {
-            statement = statement,
+            defined_csname = statement.defined_csname,
+            statement_number = statement_number,
             chunk = chunk,
           }
           table.insert(current_definition_list, definition)
           -- Invalidate definitions of the same control sequence names from before the current statement.
           if statement.defined_csname.type == TEXT then
             for _, incoming_definition in ipairs(incoming_definition_list) do
-              local incoming_statement = incoming_definition.statement
-              if incoming_statement.defined_csname.type == TEXT and
-                  incoming_statement.confidence == DEFINITELY and
+              local incoming_statement = get_statement(incoming_definition.chunk, incoming_definition.statement_number)
+              if incoming_statement.confidence == DEFINITELY and
                   incoming_statement.defined_csname.payload == statement.defined_csname.payload then
                 invalidated_statement_index[incoming_statement] = true
               end
@@ -431,9 +485,10 @@ local function draw_dynamic_edges(results)
       local updated_reaching_definition_list, updated_reaching_statement_index = {}, {}
       for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
         for _, definition in ipairs(definition_list) do
-          if invalidated_statement_index[definition.statement] == nil then
+          local statement = get_statement(definition.chunk, definition.statement_number)
+          if invalidated_statement_index[statement] == nil then
             table.insert(updated_reaching_definition_list, definition)
-            updated_reaching_statement_index[definition.statement] = true
+            updated_reaching_statement_index[statement] = true
           end
         end
       end
@@ -521,7 +576,7 @@ local function draw_dynamic_edges(results)
 
     -- Update the current estimation of the function call edges.
     previous_function_call_edges = current_function_call_edges
-    for _, function_call_chunk_and_statement_number in ipairs(function_statement_lists[FUNCTION_CALL]) do
+    for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy all reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
       local function_call_reaching_definition_list = {}
@@ -534,19 +589,32 @@ local function draw_dynamic_edges(results)
       local reaching_function_definitions = {}
       while reaching_definition_number <= #function_call_reaching_definition_list do
         local definition = function_call_reaching_definition_list[reaching_definition_number]
-        local statement, chunk = definition.statement, definition.chunk  -- luacheck: ignore chunk
+        local chunk, statement_number = definition.chunk, definition.statement_number
+        local statement = get_statement(chunk, statement_number)
+        assert(is_well_behaved(statement))
         -- Detect any loops within the graph.
         if seen_reaching_statements[statement] == nil then
           goto continue
         end
-        -- Simply record the function definitions.
         if statement.type == FUNCTION_DEFINITION then
+          -- Simply record the function definitions.
           table.insert(reaching_function_definitions, definition)
-          goto continue
+        elseif statement.type == FUNCTION_VARIANT_DEFINITION then
+          -- Resolve the function variant definitions.
+          for _, base_definition_chunk_and_statement_number in ipairs(function_definition_index[statement.base_csname.payload] or {}) do
+            local base_chunk, base_statement_number = table.unpack(base_definition_chunk_and_statement_number)
+            local base_statement = get_statement(base_chunk, base_statement_number)
+            assert(is_well_behaved(base_statement))
+            local base_definition = {
+              defined_csname = definition.defined_csname,
+              statement = base_statement,
+              chunk = base_chunk,
+            }
+            table.insert(function_call_reaching_definition_list, base_definition)
+          end
+        else
+          error('Unexpected statement type "' .. statement.type .. '"')
         end
-        -- TODO: Resolve the function variant definitions.
-        assert(statement.type == FUNCTION_VARIANT_DEFINITION)
-
         ::continue::
         seen_reaching_statements[statement] = true
         reaching_definition_number = reaching_definition_number + 1
