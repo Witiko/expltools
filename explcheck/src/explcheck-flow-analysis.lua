@@ -370,7 +370,7 @@ local function draw_dynamic_edges(results)
   local current_function_call_edges = {}
   repeat
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
-    local reaching_definition_lists = {}
+    local reaching_definition_lists, reaching_definition_indexes = {}, {}
 
     -- First, index all "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
     local in_edge_index, out_edge_index = {}, {}
@@ -576,12 +576,19 @@ local function draw_dynamic_edges(results)
       end
 
       -- Determine the reaching definitions after the current statement.
-      local updated_reaching_definition_list, updated_reaching_statement_index = {}, {}
+      local updated_reaching_definition_list, updated_reaching_definition_index, updated_reaching_statement_index = {}, {}, {}
       for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
         for _, definition in ipairs(definition_list) do
           local statement = get_statement(definition.chunk, definition.statement_number)
+          assert(is_well_behaved(statement))
           if invalidated_statement_index[statement] == nil and updated_reaching_statement_index[statement] == nil then
             table.insert(updated_reaching_definition_list, definition)
+            -- Also index the reaching definitions by defined control sequence names.
+            local defined_csname = definition.defined_csname.payload
+            if updated_reaching_definition_index[defined_csname] == nil then
+              updated_reaching_definition_index[defined_csname] = {}
+            end
+            table.insert(updated_reaching_definition_index[defined_csname], definition)
           end
           updated_reaching_statement_index[statement] = true
         end
@@ -640,12 +647,17 @@ local function draw_dynamic_edges(results)
 
       -- Update the reaching definitions.
       if reaching_definition_lists[chunk] == nil then
+        assert(reaching_definition_indexes[chunk] == nil)
         reaching_definition_lists[chunk] = {}
+        reaching_definition_indexes[chunk] = {}
       end
       if reaching_definition_lists[chunk][statement_number] == nil then
+        assert(reaching_definition_indexes[chunk][statement_number] == nil)
         reaching_definition_lists[chunk][statement_number] = {}
+        reaching_definition_indexes[chunk][statement_number] = {}
       end
       reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
+      reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
     end
 
     -- Make a copy of the current estimation of the function call edges.
@@ -662,11 +674,11 @@ local function draw_dynamic_edges(results)
       local function_call_statement = get_statement(function_call_chunk, function_call_statement_number)
       assert(is_well_behaved(function_call_statement))
       local reaching_function_and_variant_definition_list = {}
-      for _, definition in ipairs(reaching_definition_lists[function_call_chunk][function_call_statement_number]) do
-        -- TODO: Index the reaching definitions by `defined_csname.payload`.
-        if definition.defined_csname.payload == function_call_statement.used_csname.payload then
-          table.insert(reaching_function_and_variant_definition_list, definition)
-        end
+      local reaching_definition_index = reaching_definition_indexes[function_call_chunk][function_call_statement_number]
+      local used_csname = function_call_statement.used_csname.payload
+      for _, definition in ipairs(reaching_definition_index[used_csname] or {}) do
+        assert(definition.defined_csname.payload == used_csname)
+        table.insert(reaching_function_and_variant_definition_list, definition)
       end
 
       -- Then, resolve all function variant calls to the originating function definitions.
@@ -688,19 +700,19 @@ local function draw_dynamic_edges(results)
         elseif statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the function variant definitions.
           if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][statement_number] ~= nil then
-            for _, other_definition in ipairs(reaching_definition_lists[chunk][statement_number]) do
+            local other_reaching_definition_index = reaching_definition_indexes[chunk][statement_number]
+            local base_csname = statement.base_csname.payload
+            for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
               local other_chunk, other_statement_number = other_definition.chunk, other_definition.statement_number
               local other_statement = get_statement(other_chunk, other_statement_number)
               assert(is_well_behaved(other_statement))
-              -- TODO: Index the reaching definitions by `defined_csname.payload`.
-              if other_definition.defined_csname.payload == statement.base_csname.payload then
-                local transitive_definition = {
-                  defined_csname = definition.defined_csname,
-                  statement_number = other_definition.statement_number,
-                  chunk = other_definition.chunk,
-                }
-                table.insert(reaching_function_and_variant_definition_list, transitive_definition)
-              end
+              assert(other_definition.defined_csname.payload == base_csname)
+              local transitive_definition = {
+                defined_csname = definition.defined_csname,
+                statement_number = other_definition.statement_number,
+                chunk = other_definition.chunk,
+              }
+              table.insert(reaching_function_and_variant_definition_list, transitive_definition)
             end
           end
         else
