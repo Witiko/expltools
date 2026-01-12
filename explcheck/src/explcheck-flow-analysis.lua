@@ -562,6 +562,9 @@ local function draw_dynamic_edges(results)
         local outgoing_chunks_and_statement_numbers = {}
         if statement_number <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk and pseudo-statements "after" a chunk.
+          --
+          -- TODO: Only add implicit edges for statements without outgoing FUNCTION_CALL edges and without two outgoing TF_BRANCH edges.
+          --       These statements will never continue to the following statement immediately but will instead take the out-edges.
           table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
         end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
