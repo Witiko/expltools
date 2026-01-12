@@ -538,6 +538,7 @@ local function draw_dynamic_edges(results)
         end
         local previous_reaching_definition_list = reaching_definition_lists[chunk][statement_number]
         assert(previous_reaching_definition_list ~= nil)
+        assert(#previous_reaching_definition_list <= #updated_reaching_definition_list)
 
         -- Quickly check using set cardinalities.
         if #previous_reaching_definition_list ~= #updated_reaching_definition_list then
