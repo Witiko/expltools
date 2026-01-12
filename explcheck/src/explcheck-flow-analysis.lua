@@ -6,6 +6,7 @@ local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 
 local segment_types = syntactic_analysis.segment_types
+local segment_subtypes = syntactic_analysis.segment_subtypes
 
 local csname_types = semantic_analysis.csname_types
 local statement_types = semantic_analysis.statement_types
@@ -13,6 +14,9 @@ local statement_subtypes = semantic_analysis.statement_subtypes
 
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
+
+local T_TYPE_ARGUMENTS = segment_subtypes.T_TYPE_ARGUMENTS
+local F_TYPE_ARGUMENTS = segment_subtypes.F_TYPE_ARGUMENTS
 
 local TEXT = csname_types.TEXT
 
@@ -58,6 +62,16 @@ assert(TF_BRANCH == edge_types.TF_BRANCH)
 local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
 local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN
+
+local edge_subtypes = {
+  TF_BRANCH = {
+    T_BRANCH = "(return from) T-branch of conditional function",
+    F_BRANCH = "(return from) F-branch of conditional function",
+  },
+}
+
+local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
+local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
@@ -194,10 +208,19 @@ local function draw_static_edges(results)
             if argument.segment_number ~= nil then
               local to_segment = results.segments[argument.segment_number]
               if to_segment.type == TF_TYPE_ARGUMENTS and #to_segment.chunks > 0 then
+                local edge_subtype
+                if to_segment.subtype == T_TYPE_ARGUMENTS then
+                  edge_subtype = T_BRANCH
+                elseif to_segment.subtype == F_TYPE_ARGUMENTS then
+                  edge_subtype = F_BRANCH
+                else
+                  error('Unexpected segment subtype "' .. to_segment.subtype .. '"')
+                end
                 local forward_to_chunk = to_segment.chunks[1]
                 local forward_to_statement_number = forward_to_chunk.statement_range:start()
                 local forward_edge = {
                   type = TF_BRANCH,
+                  subtype = edge_subtype,
                   from = {
                     chunk = from_chunk,
                     statement_number = from_statement_number,
@@ -213,6 +236,7 @@ local function draw_static_edges(results)
                 local backward_from_statement_number = forward_to_chunk.statement_range:stop() + 1
                 local backward_edge = {
                   type = TF_BRANCH_RETURN,
+                  subtype = edge_subtype,
                   from = {
                     chunk = backward_from_chunk,
                     statement_number = backward_from_statement_number,
@@ -380,6 +404,55 @@ local function draw_dynamic_edges(results)
           end
           table.insert(edge_index[chunk][statement_number], edge)
         end
+      end
+    end
+
+    -- Record which statements may immediately continue to the following statements and which may not.
+    local lacks_implicit_out_edges = {}
+    for _, segment in ipairs(results.segments or {}) do
+      for _, chunk in ipairs(segment.chunks or {}) do
+        if out_edge_index[chunk] == nil then
+          goto next_chunk
+        end
+        for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
+          if out_edge_index[chunk][statement_number] == nil then
+            goto next_statement
+          end
+
+          local has_f_branch, has_t_branch = false
+          for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
+            -- Statements with outgoing function calls may not immediately continue to the following statements.
+            if edge.type == FUNCTION_CALL then
+              goto lacks_implicit_out_edge
+            end
+
+            -- Statements with outgoing both T- and F-branches may not immediately continue to the following statements.
+            if edge.type == TF_BRANCH then
+              if edge.subtype == T_BRANCH then
+                has_t_branch = true
+              elseif edge.subtype == F_BRANCH then
+                has_f_branch = true
+              else
+                error('Unexpected edge subtype "' .. edge.subtype .. '"')
+              end
+              if has_t_branch and has_f_branch then
+                goto lacks_implicit_out_edge
+              end
+            end
+          end
+
+          goto next_statement
+
+          ::lacks_implicit_out_edge::
+
+          if lacks_implicit_out_edges[chunk] == nil then
+            lacks_implicit_out_edges[chunk] = {}
+          end
+          lacks_implicit_out_edges[chunk][statement_number] = true
+
+          ::next_statement::
+        end
+        ::next_chunk::
       end
     end
 
@@ -559,10 +632,10 @@ local function draw_dynamic_edges(results)
         local outgoing_chunks_and_statement_numbers = {}
         if statement_number <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk and pseudo-statements "after" a chunk.
-          --
-          -- TODO: Only add implicit edges for statements without outgoing FUNCTION_CALL edges and without two outgoing TF_BRANCH edges.
-          --       These statements will never continue to the following statement immediately but will instead take the out-edges.
-          table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
+          -- Only add implicit edges for statements that may immediately continue to the following statements.
+          if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number] == nil then
+            table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
+          end
         end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
           -- Consider explicit incoming edges.
