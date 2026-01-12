@@ -654,6 +654,9 @@ local function draw_dynamic_edges(results)
         local function_definition_statement = get_statement(function_definition.chunk, function_definition.statement_number)
         assert(is_well_behaved(function_definition_statement))
         local to_segment = results.segments[function_definition_statement.replacement_text_argument.segment_number]
+        if to_segment.chunks == nil or #to_segment.chunks == 0 then
+          goto continue
+        end
         local forward_to_chunk = to_segment.chunks[1]
         local forward_to_statement_number = forward_to_chunk.statement_range:start()
         local forward_edge = {
@@ -684,6 +687,7 @@ local function draw_dynamic_edges(results)
           confidence = MAYBE,  -- TODO: Determine definition confidence.
         }
         table.insert(current_function_call_edges, backward_edge)
+        ::continue::
       end
     end
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
