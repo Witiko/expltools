@@ -540,7 +540,9 @@ local function draw_dynamic_edges(results)
       local incoming_chunks_and_statement_numbers = {}
       if statement_number - 1 >= chunk.statement_range:start() then
         -- Consider implicit edges from previous statements within a chunk.
-        table.insert(incoming_chunks_and_statement_numbers, {chunk, statement_number - 1})
+        if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number - 1] == nil then
+          table.insert(incoming_chunks_and_statement_numbers, {chunk, statement_number - 1})
+        end
       end
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
         -- Consider explicit incoming edges.
@@ -632,13 +634,12 @@ local function draw_dynamic_edges(results)
         local outgoing_chunks_and_statement_numbers = {}
         if statement_number <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk and pseudo-statements "after" a chunk.
-          -- Only add implicit edges for statements that may immediately continue to the following statements.
           if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number] == nil then
             table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
           end
         end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
-          -- Consider explicit incoming edges.
+          -- Consider explicit outgoing edges.
           for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
              table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
           end
