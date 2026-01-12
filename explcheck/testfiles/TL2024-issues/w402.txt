@@ -59,7 +59,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/tabularray/tabularray.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf-debug.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/temporal-logic/temporal-logic.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tilings/tikzlibrarytilings.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tilings/tikzlibrarytilings.polykite.code.tex

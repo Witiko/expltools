@@ -76,7 +76,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf-debug-generic.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf-mc-code-generic.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tagpdf/tagpdf-mc-code-lua.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/temporal-logic/temporal-logic.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/termsim/termsim.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/timechart/timechart.sty

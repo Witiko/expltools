@@ -202,9 +202,6 @@ ignored_issues = ["e301", "e304", "e408"]
 [package.media4svg]
 ignored_issues = ["e301"]
 
-[package.temporal-logic]
-ignored_issues = ["e300"]
-
 [package.xsim]
 ignored_issues = ["e301"]
 
