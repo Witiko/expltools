@@ -316,7 +316,10 @@ local function draw_dynamic_edges(results)
           end
         elseif statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
           if is_well_behaved(statement) then
-            function_definition_index[statement.defined_csname.payload] = {chunk, statement_number}
+            if function_definition_index[statement.defined_csname.payload] == nil then
+              function_definition_index[statement.defined_csname.payload] = {}
+            end
+            table.insert(function_definition_index[statement.defined_csname.payload], {chunk, statement_number})
           end
         else
           error('Unexpected statement type "' .. statement.type .. '"')
@@ -491,7 +494,6 @@ local function draw_dynamic_edges(results)
         local statement = get_statement(chunk, statement_number)
         if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
           local definition = {
-            defined_csname = statement.defined_csname,
             statement_number = statement_number,
             chunk = chunk,
           }
@@ -626,17 +628,17 @@ local function draw_dynamic_edges(results)
           table.insert(reaching_function_definition_list, definition)
         elseif statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the function variant definitions.
-          for _, base_definition_chunk_and_statement_number in ipairs(function_definition_index[statement.base_csname.payload] or {}) do
-            local base_chunk, base_statement_number = table.unpack(base_definition_chunk_and_statement_number)
-            local base_statement = get_statement(base_chunk, base_statement_number)
-            assert(is_well_behaved(base_statement))
-            local base_definition = {
-              defined_csname = definition.defined_csname,
-              statement_number = base_statement_number,
-              chunk = base_chunk,
-            }
-            table.insert(reaching_function_and_variant_definition_list, base_definition)
-          end
+          -- TODO: Use the reaching definitions rather than `function_definition_index`, which contains all the definitions.
+          --for _, base_definition_chunk_and_statement_number in ipairs(function_definition_index[statement.base_csname.payload] or {}) do
+          --  local base_chunk, base_statement_number = table.unpack(base_definition_chunk_and_statement_number)
+          --  local base_statement = get_statement(base_chunk, base_statement_number)
+          --  assert(is_well_behaved(base_statement))
+          --  local base_definition = {
+          --    statement_number = base_statement_number,
+          --    chunk = base_chunk,
+          --  }
+          --  table.insert(reaching_function_and_variant_definition_list, base_definition)
+          --end
         else
           error('Unexpected statement type "' .. statement.type .. '"')
         end
