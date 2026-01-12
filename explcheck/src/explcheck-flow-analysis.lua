@@ -15,8 +15,8 @@ local statement_subtypes = semantic_analysis.statement_subtypes
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
-local T_TYPE_ARGUMENTS = segment_subtypes.T_TYPE_ARGUMENTS
-local F_TYPE_ARGUMENTS = segment_subtypes.F_TYPE_ARGUMENTS
+local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
+local F_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.F_TYPE_ARGUMENTS
 
 local TEXT = csname_types.TEXT
 
