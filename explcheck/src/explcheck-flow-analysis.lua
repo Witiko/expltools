@@ -324,18 +324,27 @@ local function draw_dynamic_edges(results)
     return result
   end
 
-  -- Collect a list of function call statements.
-  local function_call_list = {}
+  -- Collect a list of function (variant) definition and call statements.
+  local function_call_list, function_definition_list = {}, {}
   for _, segment in ipairs(results.segments or {}) do
     for _, chunk in ipairs(segment.chunks or {}) do
       for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
-        if statement.type ~= FUNCTION_CALL then
+        if statement.type ~= FUNCTION_CALL and
+            statement.type ~= FUNCTION_DEFINITION and
+            statement.type ~= FUNCTION_VARIANT_DEFINITION then
           goto continue
         end
         if not is_well_behaved(statement) then
           goto continue
         end
-        table.insert(function_call_list, {chunk, statement_number})
+        if statement.type == FUNCTION_CALL then
+          table.insert(function_call_list, {chunk, statement_number})
+        elseif statement.type == FUNCTION_DEFINITION or
+           statement.type == FUNCTION_VARIANT_DEFINITION then
+          table.insert(function_definition_list, {chunk, statement_number})
+        else
+          error('Unexpected statement type "' .. statement.type .. '"')
+        end
         ::continue::
       end
     end
@@ -444,8 +453,7 @@ local function draw_dynamic_edges(results)
       end
     end
 
-    -- Initialize a stack of changed statements to a list of all statements.
-    -- TODO: Only initialize the stack with well-behaved function (variant) definitions.
+    -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
     -- Pop a changed statement off the top of stack.
@@ -497,13 +505,9 @@ local function draw_dynamic_edges(results)
       end
     end
 
-    for _, segment in ipairs(results.segments or {}) do
-      for _, chunk in ipairs(segment.chunks or {}) do
-        for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
-          add_changed_statement(chunk, statement_number)
-        end
-        add_changed_statement(chunk, chunk.statement_range:stop() + 1)
-      end
+    for _, chunk_and_statement_number in ipairs(function_definition_list) do
+      local chunk, statement_number = table.unpack(chunk_and_statement_number)
+      add_changed_statement(chunk, statement_number)
     end
 
     -- Resolve a chunk and a statement number to a statement.
@@ -687,6 +691,10 @@ local function draw_dynamic_edges(results)
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
+      if reaching_definition_indexes[function_call_chunk] == nil or
+          reaching_definition_indexes[function_call_chunk][function_call_statement_number] == nil then
+        goto next_function_call
+      end
       local function_call_statement = get_statement(function_call_chunk, function_call_statement_number)
       assert(is_well_behaved(function_call_statement))
       local reaching_function_and_variant_definition_list = {}
@@ -708,7 +716,7 @@ local function draw_dynamic_edges(results)
         assert(is_well_behaved(statement))
         -- Detect any loops within the graph.
         if seen_reaching_statements[statement] ~= nil then
-          goto continue
+          goto next_reaching_statement
         end
         if statement.type == FUNCTION_DEFINITION then
           -- Simply record the function definitions.
@@ -734,7 +742,7 @@ local function draw_dynamic_edges(results)
         else
           error('Unexpected statement type "' .. statement.type .. '"')
         end
-        ::continue::
+        ::next_reaching_statement::
         seen_reaching_statements[statement] = true
         reaching_definition_number = reaching_definition_number + 1
       end
@@ -746,7 +754,7 @@ local function draw_dynamic_edges(results)
         assert(is_well_behaved(function_definition_statement))
         local to_segment = results.segments[function_definition_statement.replacement_text_argument.segment_number]
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
-          goto continue
+          goto next_function_definition
         end
         local forward_to_chunk = to_segment.chunks[1]
         local forward_to_statement_number = forward_to_chunk.statement_range:start()
@@ -778,8 +786,9 @@ local function draw_dynamic_edges(results)
           confidence = MAYBE,
         }
         table.insert(current_function_call_edges, backward_edge)
-        ::continue::
+        ::next_function_definition::
       end
+      ::next_function_call::
     end
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
