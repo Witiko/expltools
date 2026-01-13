@@ -565,7 +565,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         -- of the current file.
         for _, state in ipairs(states) do
           for _, part_segment in ipairs(state.results.parts or {}) do
-            if #part_segment.chunks == 0 then
+            if part_segment.chunks == nil or #part_segment.chunks == 0 then
               goto next_part
             end
             local part_chunk = part_segment.chunks[1]
@@ -726,7 +726,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
               goto next_file
             end
             local first_part_segment = state.results.parts[1]
-            if #first_part_segment.chunks == 0 then
+            if first_part_segment.chunks == nil or #first_part_segment.chunks == 0 then
               goto next_file
             end
             local first_part_chunk = first_part_segment.chunks[1]
