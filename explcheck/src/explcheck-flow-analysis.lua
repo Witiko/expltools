@@ -203,8 +203,6 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
       end
       previous_part = segment
     end
-
-    -- TODO: Record edges from the last part of a file to the first parts of all the other files.
   end
 
   -- Record edges from conditional functions to their branches and back.
@@ -342,10 +340,10 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
           if statement.type ~= FUNCTION_CALL and
               statement.type ~= FUNCTION_DEFINITION and
               statement.type ~= FUNCTION_VARIANT_DEFINITION then
-            goto continue
+            goto next_statement
           end
           if not is_well_behaved(statement) then
-            goto continue
+            goto next_statement
           end
           if statement.type == FUNCTION_CALL then
             table.insert(function_call_list, {chunk, statement_number})
@@ -355,7 +353,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
           else
             error('Unexpected statement type "' .. statement.type .. '"')
           end
-          ::continue::
+          ::next_statement::
         end
       end
     end
@@ -544,10 +542,11 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
     while #changed_statements_list > 0 do
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
+      local results = states[chunk.segment.location.file_number].results
 
       -- Determine source statements from incoming edges.
       --
-      -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
+      -- Note: Some of these statements may be pseudo-statements from after a chunk. This would be a problem if we needed
       -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
       local incoming_edge_confidences_chunks_and_statement_numbers = {}
       if statement_number - 1 >= chunk.statement_range:start() then
@@ -557,6 +556,23 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
             incoming_edge_confidences_chunks_and_statement_numbers,
             {DEFINITELY, chunk, statement_number - 1}
           )
+        end
+      end
+      if statement_number == 1 and chunk.segment == results.parts[1] then
+        -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
+        -- of the current file.
+        for _, state in ipairs(states) do
+          for _, part_segment in ipairs(state.results.parts) do
+            if #part_segment.chunks == 0 then
+              goto next_part
+            end
+            local part_chunk = part_segment.chunks[1]
+            table.insert(
+              incoming_edge_confidences_chunks_and_statement_numbers,
+              {MAYBE, part_chunk, part_chunk.statement_range:stop() + 1}
+            )
+            ::next_part::
+          end
         end
       end
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
@@ -590,7 +606,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       -- Determine the definitions from the current statement.
       local current_definition_list, current_definition_confidence_list = {}, {}
       local invalidated_statement_index, invalidated_statement_list = {}, {}
-      if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
+      if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement after a chunk.
         local statement = get_statement(chunk, statement_number)
         if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
           local definition = {
@@ -632,7 +648,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
           assert(is_well_behaved(statement))
           local defined_csname = definition.defined_csname.payload
           if invalidated_statement_index[statement] ~= nil then
-            goto continue
+            goto next_definition
           end
           if current_reaching_statement_index[statement] == nil then
             table.insert(updated_reaching_definition_list, definition)
@@ -659,7 +675,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
             updated_reaching_definition_confidence_list[other_definition_list_number] = combined_confidence
             updated_reaching_definition_confidence_index[defined_csname][other_definition_index_number] = combined_confidence
           end
-          ::continue::
+          ::next_definition::
         end
       end
 
@@ -691,13 +707,26 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       if have_reaching_definitions_changed() then
         -- Determine destination statements of outgoing edges.
         --
-        -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
+        -- Note: Some of these statements may be pseudo-statements from after a chunk. This would be a problem if we needed
         -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
         local outgoing_chunks_and_statement_numbers = {}
         if statement_number <= chunk.statement_range:stop() then
-          -- Consider implicit edges to following statements within a chunk and pseudo-statements "after" a chunk.
+          -- Consider implicit edges to following statements within a chunk and pseudo-statements after a chunk.
           if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number] == nil then
             table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
+          end
+        end
+        if statement_number == chunk.statement_range:stop() + 1 and chunk.segment.type == PART then
+          -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
+          -- files in the file group.
+          for _, state in ipairs(states) do
+            local first_part_segment = state.results.parts[1]
+            if #first_part_segment.chunks == 0 then
+              goto next_file
+            end
+            local first_part_chunk = first_part_segment.chunks[1]
+            table.insert(outgoing_chunks_and_statement_numbers, {first_part_chunk, first_part_chunk.statement_range:start()})
+            ::next_file::
           end
         end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then

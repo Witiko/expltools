@@ -707,7 +707,7 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   local issues = state.issues
   local results = state.results
 
-  results.segments = {}
+  results.segments, results.parts = {}, {}
   for part_number, part_tokens in ipairs(results.tokens) do
     local segment = {
       type = PART,
@@ -724,6 +724,7 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
       },
     }
     table.insert(results.segments, segment)
+    table.insert(results.parts, segment)
     segment.calls = get_calls(results, part_number, segment, issues, content)
   end
 end
