@@ -399,7 +399,9 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
     local in_edge_index, out_edge_index = {}, {}
     local edge_lists = {current_function_call_edges}
     for _, state in ipairs(states) do
-      table.insert(edge_lists, state.results.edges[STATIC])
+      if state.results.edges ~= nil and state.results.edges[STATIC] ~= nil then
+        table.insert(edge_lists, state.results.edges[STATIC])
+      end
     end
     for _, edge_index_and_key in ipairs({
           {in_edge_index, 'to'},
@@ -562,7 +564,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
         -- of the current file.
         for _, state in ipairs(states) do
-          for _, part_segment in ipairs(state.results.parts) do
+          for _, part_segment in ipairs(state.results.parts or {}) do
             if #part_segment.chunks == 0 then
               goto next_part
             end
@@ -720,6 +722,9 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
           -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
           -- files in the file group.
           for _, state in ipairs(states) do
+            if state.results.parts == nil then
+              goto next_file
+            end
             local first_part_segment = state.results.parts[1]
             if #first_part_segment.chunks == 0 then
               goto next_file
@@ -903,6 +908,9 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
 
   -- Record edges.
   for _, state in ipairs(states) do
+    if state.results.edges == nil then
+      state.results.edges = {}
+    end
     state.results.edges[DYNAMIC] = {}
   end
   for _, edge in ipairs(current_function_call_edges) do
