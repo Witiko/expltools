@@ -445,6 +445,7 @@ local function draw_dynamic_edges(results)
     end
 
     -- Initialize a stack of changed statements to a list of all statements.
+    -- TODO: Only initialize the stack with well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
     -- Pop a changed statement off the top of stack.
@@ -759,7 +760,7 @@ local function draw_dynamic_edges(results)
             chunk = forward_to_chunk,
             statement_number = forward_to_statement_number,
           },
-          confidence = MAYBE,  -- TODO: Determine definition confidence.
+          confidence = MAYBE,  -- TODO: Determine definition confidence from `reaching_definition_edge_lists`.
         }
         table.insert(current_function_call_edges, forward_edge)
         local backward_from_chunk = to_segment.chunks[#to_segment.chunks]
@@ -797,7 +798,7 @@ local function draw_edges(states, file_number, options)  -- luacheck: ignore opt
   results.edges = {}
 
   draw_static_edges(results)
-  draw_dynamic_edges(results)
+  draw_dynamic_edges(results)  -- TODO: Draw dynamic edges between all files in the file group, not just individual files.
 end
 
 local substeps = {
