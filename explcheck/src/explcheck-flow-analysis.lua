@@ -907,14 +907,14 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record edges.
-  for _, state in ipairs(states) do
-    if state.results.edges == nil then
-      state.results.edges = {}
-    end
-    state.results.edges[DYNAMIC] = {}
-  end
   for _, edge in ipairs(current_function_call_edges) do
     local results = states[edge.from.chunk.segment.location.file_number].results
+    if results.edges == nil then
+      results.edges = {}
+    end
+    if results.edges[DYNAMIC] == nil then
+      results.edges[DYNAMIC] = {}
+    end
     table.insert(results.edges[DYNAMIC], edge)
   end
 end
