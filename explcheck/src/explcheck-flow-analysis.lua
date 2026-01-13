@@ -51,7 +51,6 @@ local TF_BRANCH = "T- or F-branch of conditional function"
 
 local edge_types = {
   NEXT_CHUNK = "pair of successive chunks",
-  NEXT_STATEMENT = "pair of successive statements",  -- This edge type is implicit and never actually appears.
   TF_BRANCH = TF_BRANCH,
   TF_BRANCH_RETURN = string.format("return from %s", TF_BRANCH),
   FUNCTION_CALL = FUNCTION_CALL,
@@ -59,7 +58,6 @@ local edge_types = {
 }
 
 local NEXT_CHUNK = edge_types.NEXT_CHUNK
-local NEXT_STATEMENT = edge_types.NEXT_STATEMENT
 assert(TF_BRANCH == edge_types.TF_BRANCH)
 local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
@@ -381,7 +379,8 @@ local function draw_dynamic_edges(results)
   local current_function_call_edges = {}
   repeat
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
-    local reaching_definition_lists, reaching_definition_edge_lists, reaching_definition_indexes = {}, {}, {}
+    local reaching_definition_lists, reaching_definition_confidence_lists = {}, {}
+    local reaching_definition_indexes, reaching_definition_confidence_indexes = {}, {}
 
     -- First, index all "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
     local in_edge_index, out_edge_index = {}, {}
@@ -419,7 +418,7 @@ local function draw_dynamic_edges(results)
           local has_f_branch, has_t_branch = false
           for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
             -- Statements with outgoing function calls may not immediately continue to the following statements.
-            if edge.type == FUNCTION_CALL then
+            if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
               goto lacks_implicit_out_edge
             end
 
@@ -529,34 +528,47 @@ local function draw_dynamic_edges(results)
       --
       -- Note: Some of these statements may be pseudo-statements from "after" a chunk. This would be a problem if we needed
       -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
-      local incoming_definition_list, incoming_definition_edge_list = {}, {}
-      local incoming_edges_chunks_and_statement_numbers = {}
+      local incoming_edge_confidences_chunks_and_statement_numbers = {}
       if statement_number - 1 >= chunk.statement_range:start() then
         -- Consider implicit edges from previous statements within a chunk.
         if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number - 1] == nil then
-          table.insert(incoming_edges_chunks_and_statement_numbers, {NEXT_STATEMENT, chunk, statement_number - 1})
+          table.insert(
+            incoming_edge_confidences_chunks_and_statement_numbers,
+            {DEFINITELY, chunk, statement_number - 1}
+          )
         end
       end
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
         -- Consider explicit incoming edges.
         for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
-           table.insert(incoming_edges_chunks_and_statement_numbers, {edge, edge.from.chunk, edge.from.statement_number})
+          table.insert(
+            incoming_edge_confidences_chunks_and_statement_numbers,
+            {edge.confidence, edge.from.chunk, edge.from.statement_number}
+          )
         end
       end
 
       -- Determine the reaching definitions from before the current statement.
-      for _, incoming_edge_chunk_and_statement_number in ipairs(incoming_edges_chunks_and_statement_numbers) do
-        local incoming_edge, incoming_chunk, incoming_statement_number = table.unpack(incoming_edge_chunk_and_statement_number)
-        if reaching_definition_lists[incoming_chunk] ~= nil then
-          for _, incoming_definition in ipairs(reaching_definition_lists[incoming_chunk][incoming_statement_number] or {}) do
+      local incoming_definition_list, incoming_definition_confidence_list = {}, {}
+      for _, incoming_edge_confidence_chunk_and_statement_number in ipairs(incoming_edge_confidences_chunks_and_statement_numbers) do
+        local incoming_edge_confidence, incoming_chunk, incoming_statement_number
+          = table.unpack(incoming_edge_confidence_chunk_and_statement_number)
+        if reaching_definition_lists[incoming_chunk] ~= nil and
+            reaching_definition_lists[incoming_chunk][incoming_statement_number] ~= nil then
+          local reaching_definition_list = reaching_definition_lists[incoming_chunk][incoming_statement_number]
+          local reaching_definition_confidence_list = reaching_definition_confidence_lists[incoming_chunk][incoming_statement_number]
+          for definition_number, incoming_definition in ipairs(reaching_definition_list) do
+            local incoming_definition_confidence = reaching_definition_confidence_list[definition_number]
+            local incoming_confidence = math.min(incoming_edge_confidence, incoming_definition_confidence)
             table.insert(incoming_definition_list, incoming_definition)
-            table.insert(incoming_definition_edge_list, incoming_edge)
+            table.insert(incoming_definition_confidence_list, incoming_confidence)
           end
         end
       end
 
       -- Determine the definitions from the current statement.
-      local current_definition_list, invalidated_statement_index, invalidated_statement_list = {}, {}, {}
+      local current_definition_list, current_definition_confidence_list = {}, {}
+      local invalidated_statement_index, invalidated_statement_list = {}, {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local statement = get_statement(chunk, statement_number)
         if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
@@ -566,6 +578,7 @@ local function draw_dynamic_edges(results)
             chunk = chunk,
           }
           table.insert(current_definition_list, definition)
+          table.insert(current_definition_confidence_list, statement.confidence)
           -- Invalidate definitions of the same control sequence names from before the current statement.
           if statement.defined_csname.type == TEXT then
             for _, incoming_definition in ipairs(incoming_definition_list) do
@@ -584,28 +597,48 @@ local function draw_dynamic_edges(results)
       end
 
       -- Determine the reaching definitions after the current statement.
-      local updated_reaching_definition_list, updated_reaching_definition_edge_list, updated_reaching_definition_index = {}, {}, {}
+      local updated_reaching_definition_list, updated_reaching_definition_confidence_list = {}, {}
+      local updated_reaching_definition_index, updated_reaching_definition_confidence_index = {}, {}
       local current_reaching_statement_index = {}
-      for _, definition_and_definition_edge_list in ipairs({
-            {incoming_definition_list, incoming_definition_edge_list},
-            {current_definition_list, {}},
+      for _, definition_and_definition_confidence_list in ipairs({
+            {incoming_definition_list, incoming_definition_confidence_list},
+            {current_definition_list, current_definition_confidence_list},
           }) do
-        local definition_list, definition_edge_list = table.unpack(definition_and_definition_edge_list)
+        local definition_list, definition_confidence_list = table.unpack(definition_and_definition_confidence_list)
         for definition_number, definition in ipairs(definition_list) do
-          local definition_edge = definition_edge_list[definition_number]
+          local definition_confidence = definition_confidence_list[definition_number]
           local statement = get_statement(definition.chunk, definition.statement_number)
           assert(is_well_behaved(statement))
-          if invalidated_statement_index[statement] == nil and current_reaching_statement_index[statement] == nil then
+          local defined_csname = definition.defined_csname.payload
+          if invalidated_statement_index[statement] ~= nil then
+            goto continue
+          end
+          if current_reaching_statement_index[statement] == nil then
             table.insert(updated_reaching_definition_list, definition)
-            updated_reaching_definition_edge_list[#updated_reaching_definition_list] = definition_edge
+            table.insert(updated_reaching_definition_confidence_list, definition_confidence)
+            assert(#updated_reaching_definition_list == #updated_reaching_definition_confidence_list)
             -- Also index the reaching definitions by defined control sequence names.
-            local defined_csname = definition.defined_csname.payload
             if updated_reaching_definition_index[defined_csname] == nil then
+              assert(updated_reaching_definition_confidence_index[defined_csname] == nil)
               updated_reaching_definition_index[defined_csname] = {}
+              updated_reaching_definition_confidence_index[defined_csname] = {}
             end
             table.insert(updated_reaching_definition_index[defined_csname], definition)
+            table.insert(updated_reaching_definition_confidence_index[defined_csname], definition_confidence)
+            assert(#updated_reaching_definition_index[defined_csname] == #updated_reaching_definition_confidence_index[defined_csname])
+            current_reaching_statement_index[statement] = {
+              #updated_reaching_definition_list,
+              #updated_reaching_definition_index[defined_csname],
+            }
+          else
+            -- For repeated definitions, record the maximum confidence.
+            local other_definition_list_number, other_definition_index_number = table.unpack(current_reaching_statement_index[statement])
+            local other_definition_confidence = updated_reaching_definition_confidence_list[other_definition_list_number]
+            local combined_confidence = math.max(definition_confidence, other_definition_confidence)
+            updated_reaching_definition_confidence_list[other_definition_list_number] = combined_confidence
+            updated_reaching_definition_confidence_index[defined_csname][other_definition_index_number] = combined_confidence
           end
-          current_reaching_statement_index[statement] = true
+          ::continue::
         end
       end
 
@@ -627,7 +660,7 @@ local function draw_dynamic_edges(results)
           return true
         end
 
-        -- We don't need to compare the updated definitions with the previous definitions, since we can only ever add new definitions.
+        -- We don't need to compare the updated definitions with the previous definitions, since we only ever add new definitions.
         -- Therefore, the cardinality check is enough.
 
         return false
@@ -662,22 +695,27 @@ local function draw_dynamic_edges(results)
 
       -- Update the reaching definitions.
       if reaching_definition_lists[chunk] == nil then
-        assert(reaching_definition_edge_lists[chunk] == nil)
         assert(reaching_definition_indexes[chunk] == nil)
+        assert(reaching_definition_confidence_lists[chunk] == nil)
+        assert(reaching_definition_confidence_indexes[chunk] == nil)
         reaching_definition_lists[chunk] = {}
-        reaching_definition_edge_lists[chunk] = {}
         reaching_definition_indexes[chunk] = {}
+        reaching_definition_confidence_lists[chunk] = {}
+        reaching_definition_confidence_indexes[chunk] = {}
       end
       if reaching_definition_lists[chunk][statement_number] == nil then
-        assert(reaching_definition_edge_lists[chunk][statement_number] == nil)
         assert(reaching_definition_indexes[chunk][statement_number] == nil)
+        assert(reaching_definition_confidence_lists[chunk][statement_number] == nil)
+        assert(reaching_definition_confidence_indexes[chunk][statement_number] == nil)
         reaching_definition_lists[chunk][statement_number] = {}
-        reaching_definition_edge_lists[chunk][statement_number] = {}
         reaching_definition_indexes[chunk][statement_number] = {}
+        reaching_definition_confidence_lists[chunk][statement_number] = {}
+        reaching_definition_confidence_indexes[chunk] = {}
       end
       reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
-      reaching_definition_edge_lists[chunk][statement_number] = updated_reaching_definition_edge_list
       reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
+      reaching_definition_confidence_lists[chunk][statement_number] = updated_reaching_definition_confidence_list
+      reaching_definition_confidence_indexes[chunk][statement_number] = updated_reaching_definition_confidence_index
     end
 
     -- Make a copy of the current estimation of the function call edges.
@@ -697,20 +735,24 @@ local function draw_dynamic_edges(results)
       end
       local function_call_statement = get_statement(function_call_chunk, function_call_statement_number)
       assert(is_well_behaved(function_call_statement))
-      local reaching_function_and_variant_definition_list = {}
+      local reaching_function_and_variant_definition_list, reaching_function_and_variant_definition_confidence_list = {}, {}
       local reaching_definition_index = reaching_definition_indexes[function_call_chunk][function_call_statement_number]
+      local reaching_definition_confidence_index
+        = reaching_definition_confidence_indexes[function_call_chunk][function_call_statement_number]
       local used_csname = function_call_statement.used_csname.payload
-      for _, definition in ipairs(reaching_definition_index[used_csname] or {}) do
+      for definition_number, definition in ipairs(reaching_definition_index[used_csname] or {}) do
         assert(definition.defined_csname.payload == used_csname)
         table.insert(reaching_function_and_variant_definition_list, definition)
+        local definition_confidence = reaching_definition_confidence_index[used_csname][definition_number]
+        table.insert(reaching_function_and_variant_definition_confidence_list, definition_confidence)
       end
 
       -- Then, resolve all function variant calls to the originating function definitions.
       local reaching_definition_number, seen_reaching_statements = 1, {}
-      local reaching_function_definition_list = {}
+      local reaching_function_definition_list, reaching_function_definition_confidence_list = {}, {}
       while reaching_definition_number <= #reaching_function_and_variant_definition_list do
         local definition = reaching_function_and_variant_definition_list[reaching_definition_number]
-        assert(definition.defined_csname.payload == function_call_statement.used_csname.payload)
+        local definition_confidence = reaching_function_and_variant_definition_confidence_list[reaching_definition_number]
         local chunk, statement_number = definition.chunk, definition.statement_number
         local statement = get_statement(chunk, statement_number)
         assert(is_well_behaved(statement))
@@ -721,22 +763,24 @@ local function draw_dynamic_edges(results)
         if statement.type == FUNCTION_DEFINITION then
           -- Simply record the function definitions.
           table.insert(reaching_function_definition_list, definition)
+          table.insert(reaching_function_definition_confidence_list, definition_confidence)
+          assert(#reaching_function_definition_list == #reaching_function_definition_confidence_list)
         elseif statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the function variant definitions.
           if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][statement_number] ~= nil then
             local other_reaching_definition_index = reaching_definition_indexes[chunk][statement_number]
+            local other_reaching_definition_confidence_index = reaching_definition_confidence_indexes[chunk][statement_number]
             local base_csname = statement.base_csname.payload
-            for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
+            for other_definition_number, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
+              local other_definition_confidence = other_reaching_definition_confidence_index[base_csname][other_definition_number]
               local other_chunk, other_statement_number = other_definition.chunk, other_definition.statement_number
               local other_statement = get_statement(other_chunk, other_statement_number)
               assert(is_well_behaved(other_statement))
               assert(other_definition.defined_csname.payload == base_csname)
-              local transitive_definition = {
-                defined_csname = definition.defined_csname,
-                statement_number = other_definition.statement_number,
-                chunk = other_definition.chunk,
-              }
-              table.insert(reaching_function_and_variant_definition_list, transitive_definition)
+              table.insert(reaching_function_and_variant_definition_list, other_definition)
+              local combined_confidence = math.min(definition_confidence, other_definition_confidence)
+              table.insert(reaching_function_and_variant_definition_confidence_list, combined_confidence)
+              assert(#reaching_function_and_variant_definition_list, reaching_function_and_variant_definition_confidence_list)
             end
           end
         else
@@ -748,14 +792,26 @@ local function draw_dynamic_edges(results)
       end
 
       -- Draw the function call edges.
-      for _, function_definition in ipairs(reaching_function_definition_list) do
-        assert(function_definition.defined_csname.payload == function_call_statement.used_csname.payload)
+      for function_definition_number, function_definition in ipairs(reaching_function_definition_list) do
         local function_definition_statement = get_statement(function_definition.chunk, function_definition.statement_number)
         assert(is_well_behaved(function_definition_statement))
         local to_segment = results.segments[function_definition_statement.replacement_text_argument.segment_number]
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
           goto next_function_definition
         end
+
+        -- Determine the edge confidence.
+        local forward_edge_confidence
+        if #reaching_function_definition_list > 1 then
+          -- If there are multiple definitions for this function call, then it's uncertain which one will be used.
+          forward_edge_confidence = MAYBE
+        else
+          -- Otherwise, use the minimum of the function definition statement confidence and the edge confidences along
+          -- the maximum-confidence path from the function definition statement to the function call statement.
+          forward_edge_confidence = reaching_function_definition_confidence_list[function_definition_number]
+        end
+
+        -- Draw the edges.
         local forward_to_chunk = to_segment.chunks[1]
         local forward_to_statement_number = forward_to_chunk.statement_range:start()
         local forward_edge = {
@@ -768,7 +824,7 @@ local function draw_dynamic_edges(results)
             chunk = forward_to_chunk,
             statement_number = forward_to_statement_number,
           },
-          confidence = MAYBE,  -- TODO: Determine definition confidence from `reaching_definition_edge_lists`.
+          confidence = forward_edge_confidence,
         }
         table.insert(current_function_call_edges, forward_edge)
         local backward_from_chunk = to_segment.chunks[#to_segment.chunks]
