@@ -137,7 +137,13 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
 end
 
 -- Draw "static" edges between chunks. A static edge is known without extra analysis.
-local function draw_static_edges(results)
+local function draw_static_edges(states, file_number, options)  -- luacheck: ignore options
+  local state = states[file_number]
+
+  local results = state.results
+
+  assert(results.edges == nil)
+  results.edges = {}
   assert(results.edges[STATIC] == nil)
   results.edges[STATIC] = {}
 
@@ -197,6 +203,8 @@ local function draw_static_edges(results)
       end
       previous_part = segment
     end
+
+    -- TODO: Record edges from the last part of a file to the first parts of all the other files.
   end
 
   -- Record edges from conditional functions to their branches and back.
@@ -302,9 +310,12 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
-local function draw_dynamic_edges(results)
-  assert(results.edges[DYNAMIC] == nil)
-  results.edges[DYNAMIC] = {}
+local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number options
+  -- Draw dynamic edges once between all files in the file group, not just individual files.
+  if states.drew_dynamic_edges ~= nil then
+    return
+  end
+  states.drew_dynamic_edges = true
 
   -- Check whether a function (variant) definition or a function call statement is well-behaved in the sense that we know its
   -- control sequence names precisely and not just as a probabilistic pattern.
@@ -324,26 +335,28 @@ local function draw_dynamic_edges(results)
 
   -- Collect a list of function (variant) definition and call statements.
   local function_call_list, function_definition_list = {}, {}
-  for _, segment in ipairs(results.segments or {}) do
-    for _, chunk in ipairs(segment.chunks or {}) do
-      for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
-        if statement.type ~= FUNCTION_CALL and
-            statement.type ~= FUNCTION_DEFINITION and
-            statement.type ~= FUNCTION_VARIANT_DEFINITION then
-          goto continue
+  for _, state in ipairs(states) do
+    for _, segment in ipairs(state.results.segments or {}) do
+      for _, chunk in ipairs(segment.chunks or {}) do
+        for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
+          if statement.type ~= FUNCTION_CALL and
+              statement.type ~= FUNCTION_DEFINITION and
+              statement.type ~= FUNCTION_VARIANT_DEFINITION then
+            goto continue
+          end
+          if not is_well_behaved(statement) then
+            goto continue
+          end
+          if statement.type == FUNCTION_CALL then
+            table.insert(function_call_list, {chunk, statement_number})
+          elseif statement.type == FUNCTION_DEFINITION or
+             statement.type == FUNCTION_VARIANT_DEFINITION then
+            table.insert(function_definition_list, {chunk, statement_number})
+          else
+            error('Unexpected statement type "' .. statement.type .. '"')
+          end
+          ::continue::
         end
-        if not is_well_behaved(statement) then
-          goto continue
-        end
-        if statement.type == FUNCTION_CALL then
-          table.insert(function_call_list, {chunk, statement_number})
-        elseif statement.type == FUNCTION_DEFINITION or
-           statement.type == FUNCTION_VARIANT_DEFINITION then
-          table.insert(function_definition_list, {chunk, statement_number})
-        else
-          error('Unexpected statement type "' .. statement.type .. '"')
-        end
-        ::continue::
       end
     end
   end
@@ -354,27 +367,29 @@ local function draw_dynamic_edges(results)
     function_statement_indexes[statement_type] = {}
     function_statement_lists[statement_type] = {}
   end
-  for _, segment in ipairs(results.segments or {}) do
-    for _, chunk in ipairs(segment.chunks or {}) do
-      for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
-        if function_statement_indexes[statement.type] ~= nil then
-          assert(function_statement_lists[statement.type] ~= nil)
+  for _, state in ipairs(states) do
+    for _, segment in ipairs(state.results.segments or {}) do
+      for _, chunk in ipairs(segment.chunks or {}) do
+        for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
+          if function_statement_indexes[statement.type] ~= nil then
+            assert(function_statement_lists[statement.type] ~= nil)
 
-          local function_statement_index = function_statement_indexes[statement.type]
-          local function_statement_list = function_statement_lists[statement.type]
+            local function_statement_index = function_statement_indexes[statement.type]
+            local function_statement_list = function_statement_lists[statement.type]
 
-          if function_statement_index[chunk] == nil then
-            function_statement_index[chunk] = {}
+            if function_statement_index[chunk] == nil then
+              function_statement_index[chunk] = {}
+            end
+            function_statement_index[chunk][statement_number] = true
+
+            table.insert(function_statement_list, {chunk, statement_number})
           end
-          function_statement_index[chunk][statement_number] = true
-
-          table.insert(function_statement_list, {chunk, statement_number})
         end
       end
     end
   end
 
-  -- Record edges from function calls to function definitions, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
+  -- Determine edges from function calls to function definitions, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
   repeat
@@ -384,12 +399,16 @@ local function draw_dynamic_edges(results)
 
     -- First, index all "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
     local in_edge_index, out_edge_index = {}, {}
+    local edge_lists = {current_function_call_edges}
+    for _, state in ipairs(states) do
+      table.insert(edge_lists, state.results.edges[STATIC])
+    end
     for _, edge_index_and_key in ipairs({
           {in_edge_index, 'to'},
           {out_edge_index, 'from'},
         }) do
       local edge_index, key = table.unpack(edge_index_and_key)
-      for _, edges in ipairs({results.edges[STATIC], results.edges[DYNAMIC], current_function_call_edges}) do
+      for _, edges in ipairs(edge_lists) do
         for _, edge in ipairs(edges) do
           local chunk, statement_number = edge[key].chunk, edge[key].statement_number
           if edge_index[chunk] == nil then
@@ -405,50 +424,52 @@ local function draw_dynamic_edges(results)
 
     -- Record which statements may immediately continue to the following statements and which may not.
     local lacks_implicit_out_edges = {}
-    for _, segment in ipairs(results.segments or {}) do
-      for _, chunk in ipairs(segment.chunks or {}) do
-        if out_edge_index[chunk] == nil then
-          goto next_chunk
-        end
-        for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
-          if out_edge_index[chunk][statement_number] == nil then
-            goto next_statement
+    for _, state in ipairs(states) do
+      for _, segment in ipairs(state.results.segments or {}) do
+        for _, chunk in ipairs(segment.chunks or {}) do
+          if out_edge_index[chunk] == nil then
+            goto next_chunk
           end
-
-          local has_f_branch, has_t_branch = false
-          for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
-            -- Statements with outgoing function calls may not immediately continue to the following statements.
-            if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
-              goto lacks_implicit_out_edge
+          for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
+            if out_edge_index[chunk][statement_number] == nil then
+              goto next_statement
             end
 
-            -- Statements with outgoing both T- and F-branches may not immediately continue to the following statements.
-            if edge.type == TF_BRANCH then
-              if edge.subtype == T_BRANCH then
-                has_t_branch = true
-              elseif edge.subtype == F_BRANCH then
-                has_f_branch = true
-              else
-                error('Unexpected edge subtype "' .. edge.subtype .. '"')
-              end
-              if has_t_branch and has_f_branch then
+            local has_f_branch, has_t_branch = false
+            for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
+              -- Statements with outgoing function calls may not immediately continue to the following statements.
+              if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
                 goto lacks_implicit_out_edge
               end
+
+              -- Statements with outgoing both T- and F-branches may not immediately continue to the following statements.
+              if edge.type == TF_BRANCH then
+                if edge.subtype == T_BRANCH then
+                  has_t_branch = true
+                elseif edge.subtype == F_BRANCH then
+                  has_f_branch = true
+                else
+                  error('Unexpected edge subtype "' .. edge.subtype .. '"')
+                end
+                if has_t_branch and has_f_branch then
+                  goto lacks_implicit_out_edge
+                end
+              end
             end
+
+            goto next_statement
+
+            ::lacks_implicit_out_edge::
+
+            if lacks_implicit_out_edges[chunk] == nil then
+              lacks_implicit_out_edges[chunk] = {}
+            end
+            lacks_implicit_out_edges[chunk][statement_number] = true
+
+            ::next_statement::
           end
-
-          goto next_statement
-
-          ::lacks_implicit_out_edge::
-
-          if lacks_implicit_out_edges[chunk] == nil then
-            lacks_implicit_out_edges[chunk] = {}
-          end
-          lacks_implicit_out_edges[chunk][statement_number] = true
-
-          ::next_statement::
+          ::next_chunk::
         end
-        ::next_chunk::
       end
     end
 
@@ -795,6 +816,9 @@ local function draw_dynamic_edges(results)
       for function_definition_number, function_definition in ipairs(reaching_function_definition_list) do
         local function_definition_statement = get_statement(function_definition.chunk, function_definition.statement_number)
         assert(is_well_behaved(function_definition_statement))
+
+        -- Determine the segment of the function definition replacement text.
+        local results = states[function_definition.chunk.segment.location.file_number].results
         local to_segment = results.segments[function_definition_statement.replacement_text_argument.segment_number]
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
           goto next_function_definition
@@ -848,27 +872,20 @@ local function draw_dynamic_edges(results)
     end
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
+  -- Record edges.
+  for _, state in ipairs(states) do
+    state.results.edges[DYNAMIC] = {}
+  end
   for _, edge in ipairs(current_function_call_edges) do
+    local results = states[edge.from.chunk.segment.location.file_number].results
     table.insert(results.edges[DYNAMIC], edge)
   end
 end
 
--- Draw edges between chunks.
-local function draw_edges(states, file_number, options)  -- luacheck: ignore options
-  local state = states[file_number]
-
-  local results = state.results
-
-  assert(results.edges == nil)
-  results.edges = {}
-
-  draw_static_edges(results)
-  draw_dynamic_edges(results)  -- TODO: Draw dynamic edges between all files in the file group, not just individual files.
-end
-
 local substeps = {
   collect_chunks,
-  draw_edges,
+  draw_static_edges,
+  draw_dynamic_edges,
 }
 
 return {
