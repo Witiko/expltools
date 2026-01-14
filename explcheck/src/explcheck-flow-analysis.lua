@@ -765,7 +765,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         reaching_definition_lists[chunk][statement_number] = {}
         reaching_definition_indexes[chunk][statement_number] = {}
         reaching_definition_confidence_lists[chunk][statement_number] = {}
-        reaching_definition_confidence_indexes[chunk] = {}
+        reaching_definition_confidence_indexes[chunk][statement_number] = {}
       end
       reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
       reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
