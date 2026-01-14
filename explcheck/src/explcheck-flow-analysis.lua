@@ -251,6 +251,10 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                     chunk = from_chunk,
                     statement_number = from_statement_number + 1,
                   },
+                  -- TODO: Use the same confidence for the backward edge instead of always using DEFINITELY. Rationale: A function
+                  -- defined only in a single branch should not propagate to the (pseudo-)statement after the conditional function
+                  -- with the confidence DEFINITELY.
+                  -- TODO: Also update <https://witiko.github.io/Expl3-Linter-11.5/>, which also makes this mistake.
                   confidence = DEFINITELY,
                 }
                 table.insert(results.edges[STATIC], backward_edge)
@@ -308,7 +312,7 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
-local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number options
+local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number
   -- Draw dynamic edges once between all files in the file group, not just individual files.
   if states.drew_dynamic_edges ~= nil then
     return
@@ -317,6 +321,10 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
 
   -- Check whether a function (variant) definition or a function call statement is well-behaved in the sense that we know its
   -- control sequence names precisely and not just as a probabilistic pattern.
+  --
+  -- TODO: Skip statements from files in the current file group that have never reached the flow analysis. We can check this
+  -- by also passing in `chunk` and checking that `states[chunk.segment.location.file_number].results.edges ~= nil`. We should
+  -- likely also check this in all `for _, state in ipairs(states) do`-loops by continuing if `state.results.edges == nil`.
   local function is_well_behaved(statement)
     local result
     if statement.type == FUNCTION_CALL then
@@ -390,7 +398,20 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   -- Determine edges from function calls to function definitions, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
+  local max_reaching_definition_inner_loops = get_option('max_reaching_definition_inner_loops', options)
+  local max_reaching_definition_outer_loops = get_option('max_reaching_definition_outer_loops', options)
+  local outer_loop_number = 1
   repeat
+    -- Guard against long (infinite?) loops.
+    if outer_loop_number > max_reaching_definition_outer_loops then
+      error(
+        string.format(
+          "Reaching definitions took more than %d outer loops, try increasing the `max_reaching_definition_outer_loops` Lua option",
+          max_reaching_definition_outer_loops
+        )
+      )
+    end
+
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
     local reaching_definition_lists, reaching_definition_confidence_lists = {}, {}
     local reaching_definition_indexes, reaching_definition_confidence_indexes = {}, {}
@@ -423,6 +444,9 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
     end
 
     -- Record which statements may immediately continue to the following statements and which may not.
+    --
+    -- TODO: Add a MAYBE edge from conditional functions with only a T- or an F-type argument, not both. Idea: Instead of recording
+    -- the lack of an implicit edge, record the edge confidence with a default of DEFINITELY by the way of a metatable.
     local lacks_implicit_out_edges = {}
     for _, state in ipairs(states) do
       for _, segment in ipairs(state.results.segments or {}) do
@@ -541,7 +565,18 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
     end
 
     -- Iterate over the changed statements until convergence.
+    local inner_loop_number = 1
     while #changed_statements_list > 0 do
+      -- Guard against long (infinite?) loops.
+      if inner_loop_number > max_reaching_definition_inner_loops then
+        error(
+          string.format(
+            "Reaching definitions took more than %d inner loops, try increasing the `max_reaching_definition_inner_loops` Lua option",
+            max_reaching_definition_inner_loops
+          )
+        )
+      end
+
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
       local results = states[chunk.segment.location.file_number].results
@@ -553,6 +588,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       local incoming_edge_confidences_chunks_and_statement_numbers = {}
       if statement_number - 1 >= chunk.statement_range:start() then
         -- Consider implicit edges from previous statements within a chunk.
+        --
+        -- TODO: Add a MAYBE edge from conditional functions with only a T- or an F-type argument, not both.
         if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number - 1] == nil then
           table.insert(
             incoming_edge_confidences_chunks_and_statement_numbers,
@@ -563,6 +600,9 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       if statement_number == 1 and chunk.segment == results.parts[1] then
         -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
         -- of the current file.
+        --
+        -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statements of all files in
+        -- the current file group to the first top-level statement of the current file.
         for other_file_number, state in ipairs(states) do
           if other_file_number == chunk.segment.location.file_number then
             goto next_file
@@ -592,6 +632,12 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       end
 
       -- Determine the reaching definitions from before the current statement.
+      --
+      -- TODO: Special-case reaching definitions from T- and F-branches of conditional functions thus: If reaching definitions
+      -- for the same statement comes from both T- and F-branches, disregard the edge confidences and record only a single reaching
+      -- definition for the statement with a confidence that corresponds to the minimum confidence of both definitions.
+      -- After this change, function definitions from before a conditional function call should reach the (pseudo)-statements after
+      -- the call with confidence `DEFINITELY` rather than just `MAYBE`, as they do now.
       local incoming_definition_list, incoming_definition_confidence_list = {}, {}
       for _, incoming_edge_confidence_chunk_and_statement_number in ipairs(incoming_edge_confidences_chunks_and_statement_numbers) do
         local incoming_edge_confidence, incoming_chunk, incoming_statement_number
@@ -706,6 +752,10 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         -- We don't need to compare the updated definitions with the previous definitions, since we only ever add new definitions.
         -- Therefore, the cardinality check is enough.
 
+        -- TODO: Also check whether the definition confidences have changed. While this should affect correctness, check the number
+        -- of iterations of the reaching definitions algo with and without checking. The number of iterations should increase with
+        -- checking.
+
         return false
       end
 
@@ -718,6 +768,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         local outgoing_chunks_and_statement_numbers = {}
         if statement_number <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk and pseudo-statements after a chunk.
+          --
+          -- TODO: Add a MAYBE edge from conditional functions with only a T- or an F-type argument, not both.
           if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number] == nil then
             table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
           end
@@ -725,6 +777,9 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         if statement_number == chunk.statement_range:stop() + 1 and chunk.segment.type == PART then
           -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
           -- files in the file group.
+          --
+          -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statement of the current file
+          -- to the first top-level statements of all other files in the current file group.
           for other_file_number, state in ipairs(states) do
             if other_file_number == chunk.segment.location.file_number then
               goto next_file
@@ -778,6 +833,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
       reaching_definition_confidence_lists[chunk][statement_number] = updated_reaching_definition_confidence_list
       reaching_definition_confidence_indexes[chunk][statement_number] = updated_reaching_definition_confidence_index
+
+      inner_loop_number = inner_loop_number + 1
     end
 
     -- Make a copy of the current estimation of the function call edges.
@@ -870,6 +927,11 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         end
 
         -- Determine the edge confidence.
+        --
+        -- TODO: Use the same confidence for the backward edge instead of always using MAYBE. Rationale: We must not confuse
+        -- multiplicity of potential call sites with confidence: A function defined during a function call will _always_ propagate
+        -- to _all_ call sites if the calls themselves have the confidence DEFINITELY, regardless of how many there are.
+        -- TODO: Also update <https://witiko.github.io/Expl3-Linter-11.5/>, which also makes this mistake.
         local forward_edge_confidence
         if #reaching_function_definition_list > 1 then
           -- If there are multiple definitions for this function call, then it's uncertain which one will be used.
@@ -915,6 +977,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       end
       ::next_function_call::
     end
+
+    outer_loop_number = outer_loop_number + 1
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record edges.

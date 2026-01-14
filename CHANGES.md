@@ -4,6 +4,22 @@
 
 ### explcheck v0.17.0
 
+#### Development
+
+- Implement reaching definitions algorithm for function (variant) definitions
+  to the flow analysis. (#152)
+
+  This algorithm has been described in some detail in [a recent blog
+  post][Expl3-Linter-11.5].
+
+   [Expl3-Linter-11.5]: https://witiko.github.io/Expl3-Linter-11.5/ "Static analysis of expl3 programs (11½): Chunks, edges, flow graphs, confidence, and reaching definitions"
+
+- Add Lua options `max_reaching_definition_inner_loops` and
+  `max_reaching_definition_outer_loops`.
+
+  These options help guard against long (infinite?) loops of the reaching
+  definitions algorithm.
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
