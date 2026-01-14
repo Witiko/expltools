@@ -853,7 +853,11 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
 
         -- Determine the segment of the function definition replacement text.
         local results = states[function_definition.chunk.segment.location.file_number].results
-        local to_segment = results.segments[function_definition_statement.replacement_text_argument.segment_number]
+        local to_segment_number = function_definition_statement.replacement_text_argument.segment_number
+        if to_segment_number == nil then
+          goto next_function_definition
+        end
+        local to_segment = results.segments[to_segment_number]
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
           goto next_function_definition
         end
