@@ -579,7 +579,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
 
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
-      local results = states[chunk.segment.location.file_number].results
+      local results = states[chunk.segment.location.file_number].results  -- luacheck: ignore results
 
       -- Determine source statements from incoming edges.
       --
@@ -597,30 +597,30 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
           )
         end
       end
-      if statement_number == 1 and chunk.segment == results.parts[1] then
-        -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
-        -- of the current file.
-        --
-        -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statements of all files in
-        -- the current file group to the first top-level statement of the current file.
-        for other_file_number, state in ipairs(states) do
-          if other_file_number == chunk.segment.location.file_number then
-            goto next_file
-          end
-          for _, part_segment in ipairs(state.results.parts or {}) do
-            if part_segment.chunks == nil or #part_segment.chunks == 0 then
-              goto next_part
-            end
-            local part_chunk = part_segment.chunks[1]
-            table.insert(
-              incoming_edge_confidences_chunks_and_statement_numbers,
-              {MAYBE, part_chunk, part_chunk.statement_range:stop() + 1}
-            )
-            ::next_part::
-          end
-          ::next_file::
-        end
-      end
+      --if statement_number == 1 and chunk.segment == results.parts[1] then
+      --  -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
+      --  -- of the current file.
+      --  --
+      --  -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statements of all files in
+      --  -- the current file group to the first top-level statement of the current file.
+      --  for other_file_number, state in ipairs(states) do
+      --    if other_file_number == chunk.segment.location.file_number then
+      --      goto next_file
+      --    end
+      --    for _, part_segment in ipairs(state.results.parts or {}) do
+      --      if part_segment.chunks == nil or #part_segment.chunks == 0 then
+      --        goto next_part
+      --      end
+      --      local part_chunk = part_segment.chunks[1]
+      --      table.insert(
+      --        incoming_edge_confidences_chunks_and_statement_numbers,
+      --        {MAYBE, part_chunk, part_chunk.statement_range:stop() + 1}
+      --      )
+      --      ::next_part::
+      --    end
+      --    ::next_file::
+      --  end
+      --end
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
         -- Consider explicit incoming edges.
         for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
@@ -774,28 +774,28 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
             table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
           end
         end
-        if statement_number == chunk.statement_range:stop() + 1 and chunk.segment.type == PART then
-          -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
-          -- files in the file group.
-          --
-          -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statement of the current file
-          -- to the first top-level statements of all other files in the current file group.
-          for other_file_number, state in ipairs(states) do
-            if other_file_number == chunk.segment.location.file_number then
-              goto next_file
-            end
-            if state.results.parts == nil then
-              goto next_file
-            end
-            local first_part_segment = state.results.parts[1]
-            if first_part_segment.chunks == nil or #first_part_segment.chunks == 0 then
-              goto next_file
-            end
-            local first_part_chunk = first_part_segment.chunks[1]
-            table.insert(outgoing_chunks_and_statement_numbers, {first_part_chunk, first_part_chunk.statement_range:start()})
-            ::next_file::
-          end
-        end
+        --if statement_number == chunk.statement_range:stop() + 1 and chunk.segment.type == PART then
+        --  -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
+        --  -- files in the file group.
+        --  --
+        --  -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statement of the current file
+        --  -- to the first top-level statements of all other files in the current file group.
+        --  for other_file_number, state in ipairs(states) do
+        --    if other_file_number == chunk.segment.location.file_number then
+        --      goto next_file
+        --    end
+        --    if state.results.parts == nil then
+        --      goto next_file
+        --    end
+        --    local first_part_segment = state.results.parts[1]
+        --    if first_part_segment.chunks == nil or #first_part_segment.chunks == 0 then
+        --      goto next_file
+        --    end
+        --    local first_part_chunk = first_part_segment.chunks[1]
+        --    table.insert(outgoing_chunks_and_statement_numbers, {first_part_chunk, first_part_chunk.statement_range:start()})
+        --    ::next_file::
+        --  end
+        --end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
           -- Consider explicit outgoing edges.
           for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
