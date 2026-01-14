@@ -601,6 +601,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       --  -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
       --  -- of the current file.
       --  --
+      --  -- TODO: Revert commit 6b55ef8.
       --  -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statements of all files in
       --  -- the current file group to the first top-level statement of the current file.
       --  for other_file_number, state in ipairs(states) do
@@ -778,6 +779,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         --  -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
         --  -- files in the file group.
         --  --
+        --  -- TODO: Revert commit 6b55ef8.
         --  -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statement of the current file
         --  -- to the first top-level statements of all other files in the current file group.
         --  for other_file_number, state in ipairs(states) do
