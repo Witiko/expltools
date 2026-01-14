@@ -563,8 +563,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       if statement_number == 1 and chunk.segment == results.parts[1] then
         -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
         -- of the current file.
-        for file_number, state in ipairs(states) do
-          if file_number == chunk.segment.location.file_number then
+        for other_file_number, state in ipairs(states) do
+          if other_file_number == chunk.segment.location.file_number then
             goto next_file
           end
           for _, part_segment in ipairs(state.results.parts or {}) do
@@ -725,8 +725,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         if statement_number == chunk.statement_range:stop() + 1 and chunk.segment.type == PART then
           -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
           -- files in the file group.
-          for file_number, state in ipairs(states) do
-            if file_number == chunk.segment.location.file_number then
+          for other_file_number, state in ipairs(states) do
+            if other_file_number == chunk.segment.location.file_number then
               goto next_file
             end
             if state.results.parts == nil then
