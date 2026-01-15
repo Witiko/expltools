@@ -315,6 +315,8 @@ end
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
 local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number
   -- Skip `expl3-code.tex` to see if the processing converges on other files from TeX Live.
+  --
+  -- TODO: Revert commit 1a6f825.
   local pathname_group = {}
   for _, state in ipairs(states) do
     if get_basename(state.pathname) == "expl3-code.tex" then
@@ -850,6 +852,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
     end
 
     -- Record the numbers of inner loops in a file.
+  --
+  -- TODO: Revert commit 1a6f825.
     local inner_loop_numbers_file = assert(io.open("/tmp/inner-loop-numbers.txt", "a"))
     assert(
       inner_loop_numbers_file:write(
@@ -1007,6 +1011,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record the numbers of outer loops in a file.
+  --
+  -- TODO: Revert commit 1a6f825.
   local outer_loop_numbers_file = assert(io.open("/tmp/outer-loop-numbers.txt", "a"))
   assert(
     outer_loop_numbers_file:write(

@@ -157,6 +157,7 @@ jobs:
           name: ${{ matrix.release }}-issues
           path: |
             issues/
+      # TODO: Revert commit 1a6f825.
       - name: Upload numbers of reaching definition loops
         uses: actions/upload-artifact@v6
         with:
