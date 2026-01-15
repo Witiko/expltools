@@ -319,7 +319,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   -- TODO: Revert commit 1a6f825.
   local pathname_group = {}
   for _, state in ipairs(states) do
-    if get_basename(state.pathname) == "expl3-code.tex" then
+    local basename = get_basename(state.pathname)
+    if basename == "expl3-code.tex" or basename == "acro-examples.sty" then
       return
     end
     table.insert(pathname_group, state.pathname)
