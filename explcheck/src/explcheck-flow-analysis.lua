@@ -4,6 +4,7 @@ local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
+local get_basename = require("explcheck-utils").get_basename
 
 local segment_types = syntactic_analysis.segment_types
 local segment_subtypes = syntactic_analysis.segment_subtypes
@@ -313,6 +314,15 @@ end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
 local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number
+  -- Skip `expl3-code.tex` to see if the processing converges on other files from TeX Live.
+  local pathname_group = {}
+  for _, state in ipairs(states) do
+    if get_basename(state.pathname) == "expl3-code.tex" then
+      return
+    end
+    table.insert(pathname_group, state.pathname)
+  end
+
   -- Draw dynamic edges once between all files in the file group, not just individual files.
   if states.drew_dynamic_edges ~= nil then
     return
@@ -839,6 +849,19 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       inner_loop_number = inner_loop_number + 1
     end
 
+    -- Record the numbers of inner loops in a file.
+    local inner_loop_numbers_file = assert(io.open("/tmp/inner-loop-numbers.txt", "a"))
+    assert(
+      inner_loop_numbers_file:write(
+        string.format(
+          "%d %s\n",
+          inner_loop_number - 1,
+          table.concat(pathname_group, ', ')
+        )
+      )
+    )
+    assert(inner_loop_numbers_file:close())
+
     -- Make a copy of the current estimation of the function call edges.
     previous_function_call_edges = {}
     for _, edge in ipairs(current_function_call_edges) do
@@ -982,6 +1005,19 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
 
     outer_loop_number = outer_loop_number + 1
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
+
+  -- Record the numbers of outer loops in a file.
+  local outer_loop_numbers_file = assert(io.open("/tmp/outer-loop-numbers.txt", "a"))
+  assert(
+    outer_loop_numbers_file:write(
+      string.format(
+        "%d %s\n",
+        outer_loop_number - 1,
+        table.concat(pathname_group, ', ')
+      )
+    )
+  )
+  assert(outer_loop_numbers_file:close())
 
   -- Record edges.
   for _, edge in ipairs(current_function_call_edges) do
