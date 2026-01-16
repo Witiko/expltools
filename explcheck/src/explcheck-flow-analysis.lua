@@ -321,7 +321,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   local should_continue = false
   for _, state in ipairs(states) do
     local basename = get_basename(state.pathname)
-    if basename == "enumext.sty" then
+    if basename == "fontspec-luatex.sty" then
       should_continue = true
     end
     table.insert(pathname_group, state.pathname)
