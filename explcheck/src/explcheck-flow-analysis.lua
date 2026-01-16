@@ -318,13 +318,17 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   --
   -- TODO: Revert commit 1a6f825.
   local pathname_group = {}
+  local should_continue = false
   for _, state in ipairs(states) do
     local basename = get_basename(state.pathname)
     if basename == "expl3-code.tex" or basename == "acro-examples.sty" or basename == "chemmacros-2015-02-08.sty" or
         basename == "enumext.sty" or basename == "fontspec-luatex.sty" or basename == "semantex.sty" then
-      return
+      should_continue = true
     end
     table.insert(pathname_group, state.pathname)
+  end
+  if not should_continue then
+    return
   end
 
   -- Draw dynamic edges once between all files in the file group, not just individual files.
