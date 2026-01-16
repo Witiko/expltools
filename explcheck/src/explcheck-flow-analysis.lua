@@ -321,7 +321,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   local should_continue = false
   for _, state in ipairs(states) do
     local basename = get_basename(state.pathname)
-    if basename == "chemmacros-2015-02-08.sty" then
+    if basename == "enumext.sty" then
       should_continue = true
     end
     table.insert(pathname_group, state.pathname)
