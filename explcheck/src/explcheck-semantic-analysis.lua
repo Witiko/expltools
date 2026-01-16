@@ -1888,6 +1888,11 @@ local function report_issues(states, main_file_number, options)
     elseif defined_csname_texts_anywhere[csname] or maybe_defined_csname_texts[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
+      statement.used_csname = {
+        payload = csname,
+        transcript = csname,
+        type = TEXT
+      }
       if defined_csname_texts_anywhere[csname] then
         statement.confidence = DEFINITELY
       elseif maybe_defined_csname_texts[csname] then

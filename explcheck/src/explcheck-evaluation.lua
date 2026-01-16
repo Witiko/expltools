@@ -241,12 +241,15 @@ local function count_edges(analysis_results)
   local num_edges, num_edges_total
   if analysis_results.edges ~= nil then
     num_edges = {}
-    num_edges_total = #analysis_results.edges
-    for _, edge in ipairs(analysis_results.edges) do
-      if num_edges[edge.type] == nil then
-        num_edges[edge.type] = 0
+    num_edges_total = 0
+    for _, edges in pairs(analysis_results.edges) do
+      num_edges_total = num_edges_total + #edges
+      for _, edge in ipairs(edges) do
+        if num_edges[edge.type] == nil then
+          num_edges[edge.type] = 0
+        end
+        num_edges[edge.type] = num_edges[edge.type] + 1
       end
-      num_edges[edge.type] = num_edges[edge.type] + 1
     end
   end
   return num_edges, num_edges_total

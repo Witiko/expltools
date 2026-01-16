@@ -14,17 +14,24 @@ local humanize = format.humanize
 local pluralize = format.pluralize
 local titlecase = format.titlecase
 
+local get_basename = utils.get_basename
+local process_files = utils.process_files
+local group_pathnames = utils.group_pathnames
+
 local new_file_results = evaluation.new_file_results
 local new_aggregate_results = evaluation.new_aggregate_results
 
+local files_from = arg[1]
+local output_issue_dirname = arg[2]
+
 -- Process all input files and export issues and code coverage.
-local function main(pathname_groups, output_issue_dirname)
+local function main(pathname_groups)
   local issue_pathnames = {}
   local aggregate_evaluation_results = new_aggregate_results()
-  for _, pathname_group in ipairs(pathname_groups) do
+  for pathname_group_number, pathname_group in ipairs(pathname_groups) do
     local is_ok, error_message = xpcall(function()
       -- Run all processing steps and collect issues and analysis results.
-      local states = utils.process_files(pathname_group)
+      local states = process_files(pathname_group)
       assert(#states == #pathname_group)
       for pathname_number, state in ipairs(states) do
         assert(pathname_group[pathname_number] == state.pathname)
@@ -47,6 +54,31 @@ local function main(pathname_groups, output_issue_dirname)
     if not is_ok then
       error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
     end
+    -- Display the current status.
+    print(
+      string.format(
+        '[%s] Finished %s out of %s file groups in "%s" (last group: "%s"%s%s)',
+        os.date(),
+        humanize(pathname_group_number),
+        humanize(#pathname_groups),
+        files_from,
+        get_basename(pathname_group[1]),
+        #pathname_group > 1 and string.format(
+          " and %s other %s",
+          humanize(#pathname_group - 1),
+          pluralize("file", #pathname_group - 1)
+        ) or "",
+        pathname_group_number < #pathname_groups and string.format(
+          ', next group: "%s"%s',
+          get_basename(pathname_groups[pathname_group_number + 1][1]),
+          #pathname_groups[pathname_group_number + 1] > 1 and string.format(
+            " and %s other %s",
+            humanize(#pathname_groups[pathname_group_number + 1] - 1),
+            pluralize("file", #pathname_groups[pathname_group_number + 1] - 1)
+          ) or ""
+        ) or ""
+      )
+    )
   end
   -- Sort and export issues.
   local output_issue_files = {}
@@ -86,9 +118,6 @@ local function main(pathname_groups, output_issue_dirname)
   assert(output_coverage_file:close())
 end
 
-local files_from = arg[1]
-local output_issue_dirname = arg[2]
-
 -- Collect pathnames.
 local input_pathnames, allow_pathname_separators = {}, {}
 local file = assert(io.open(files_from, "r"))
@@ -98,6 +127,6 @@ for pathname in file:lines() do
 end
 
 -- Group pathnames.
-local input_pathname_groups = utils.group_pathnames(input_pathnames, nil, allow_pathname_separators)
+local input_pathname_groups = group_pathnames(input_pathnames, nil, allow_pathname_separators)
 
-main(input_pathname_groups, output_issue_dirname)
+main(input_pathname_groups)

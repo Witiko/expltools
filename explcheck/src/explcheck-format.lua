@@ -47,17 +47,30 @@ local function pluralize(singular, count)
     return singular
   else
     local of_index = singular:find(" of ")
-    local plural
-    if of_index == nil then
-      if singular:sub(#singular, #singular) == "s" then
-        return singular
-      else
-        plural = singular .. "s"
-      end
-    else
-      plural = singular:sub(1, of_index - 1) .. "s" .. singular:sub(of_index)
+    local from_index = singular:find(" from ")
+    local preposition_index
+    if of_index ~= nil then
+      preposition_index = of_index
     end
-    return plural
+    if from_index ~= nil and (preposition_index == nil or from_index < preposition_index) then
+      preposition_index = from_index
+    end
+    local rest
+    if preposition_index == nil then
+      rest = ""
+    else
+      rest = singular:sub(preposition_index)
+      singular = singular:sub(1, preposition_index - 1)
+    end
+    local plural
+    if singular:sub(#singular, #singular) == "s" then
+      plural = singular
+    elseif singular:sub(math.max(1, #singular - 1), #singular) == "ch" then
+      plural = singular .. "es"
+    else
+      plural = singular .. "s"
+    end
+    return plural .. rest
   end
 end
 
