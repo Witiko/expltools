@@ -55,6 +55,9 @@ local function main(pathname_groups)
       error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
     end
     -- Display the current status.
+    --
+    -- TODO: After running several explcheck processes using GNU Parallel, include the worker number, which can be passed
+    -- to this script using the `{#}` replacement string in GNU Parallel.
     print(
       string.format(
         '[%s] Finished %s out of %s file groups in "%s" (last group: "%s"%s%s)',
@@ -99,6 +102,9 @@ local function main(pathname_groups)
     assert(output_issue_files[code]:close())
   end
   -- Export coverage.
+  --
+  -- TODO: After running several explcheck processes using GNU Parallel, compute the code coverage in a
+  -- separate script from the partial results of each worker.
   local output_coverage_file = assert(io.open(string.format("%s/COVERAGE", output_issue_dirname), "w"))
   local num_total_bytes = aggregate_evaluation_results.num_total_bytes
   local num_expl_bytes = aggregate_evaluation_results.num_expl_bytes
