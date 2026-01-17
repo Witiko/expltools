@@ -341,16 +341,13 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   end
 
   -- Collect a list of function (variant) definition and call statements.
-  --
-  -- TODO: Only start with function definitions, not function variant definitions.
   local function_call_list, function_definition_list = {}, {}
   for _, state in ipairs(states) do
     for _, segment in ipairs(state.results.segments or {}) do
       for _, chunk in ipairs(segment.chunks or {}) do
         for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
           if statement.type ~= FUNCTION_CALL and
-              statement.type ~= FUNCTION_DEFINITION and
-              statement.type ~= FUNCTION_VARIANT_DEFINITION then
+              statement.type ~= FUNCTION_DEFINITION then
             goto next_statement
           end
           if not is_well_behaved(statement) then
@@ -358,8 +355,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
           end
           if statement.type == FUNCTION_CALL then
             table.insert(function_call_list, {chunk, statement_number})
-          elseif statement.type == FUNCTION_DEFINITION or
-             statement.type == FUNCTION_VARIANT_DEFINITION then
+          elseif statement.type == FUNCTION_DEFINITION then
             table.insert(function_definition_list, {chunk, statement_number})
           else
             error('Unexpected statement type "' .. statement.type .. '"')
