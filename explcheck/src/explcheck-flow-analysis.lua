@@ -357,6 +357,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
   end
 
   -- Collect a list of function (variant) definition and call statements.
+  --
+  -- TODO: Only start with function definitions, not function variant definitions.
   local function_call_list, function_definition_list = {}, {}
   for _, state in ipairs(states) do
     for _, segment in ipairs(state.results.segments or {}) do
@@ -515,6 +517,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
     end
 
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
+    --
+    -- TODO: Only start with function definitions, not function variant definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
     -- Pop a changed statement off the top of stack.
