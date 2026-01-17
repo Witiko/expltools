@@ -1,5 +1,5 @@
 #!/usr/bin/env texlua
--- A command-line interface for the static analyzer explcheck that exports issues and code coverage into separate files.
+-- Process a list of pathnames with explcheck, collecting issues and code coverage.
 
 local kpse = require("kpse")
 kpse.set_program_name("texlua", "collect-explcheck-issues-and-code-coverage")
@@ -9,10 +9,8 @@ local format = require("explcheck-format")
 local utils = require("explcheck-utils")
 local sort_issues = require("explcheck-issues").sort_issues
 
-local format_ratio = format.format_ratio
 local humanize = format.humanize
 local pluralize = format.pluralize
-local titlecase = format.titlecase
 
 local get_basename = utils.get_basename
 local process_files = utils.process_files
@@ -21,118 +19,91 @@ local group_pathnames = utils.group_pathnames
 local new_file_results = evaluation.new_file_results
 local new_aggregate_results = evaluation.new_aggregate_results
 
-local files_from = arg[1]
-local output_issue_dirname = arg[2]
-
--- Process all input files and export issues and code coverage.
-local function main(pathname_groups)
-  local issue_pathnames = {}
-  local aggregate_evaluation_results = new_aggregate_results()
-  for pathname_group_number, pathname_group in ipairs(pathname_groups) do
-    local is_ok, error_message = xpcall(function()
-      -- Run all processing steps and collect issues and analysis results.
-      local states = process_files(pathname_group)
-      assert(#states == #pathname_group)
-      for pathname_number, state in ipairs(states) do
-        assert(pathname_group[pathname_number] == state.pathname)
-        -- Record issues.
-        local issues = state.issues
-        for _, issue_table in ipairs({issues.warnings, issues.errors}) do
-          for _, issue in ipairs(sort_issues(issue_table)) do
-            local code = issue[1]
-            if issue_pathnames[code] == nil then
-              issue_pathnames[code] = {}
-            end
-            issue_pathnames[code][state.pathname] = true
-          end
-        end
-        -- Update the aggregate evaluation results.
-        local file_evaluation_results = new_file_results(state)
-        aggregate_evaluation_results:add(file_evaluation_results)
-      end
-    end, debug.traceback)
-    if not is_ok then
-      error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
-    end
-    -- Display the current status.
-    --
-    -- TODO: After running several explcheck processes using GNU Parallel, include the worker number, which can be passed
-    -- to this script using the `{#}` replacement string in GNU Parallel.
-    print(
-      string.format(
-        '[%s] Finished %s out of %s file groups in "%s" (last group: "%s"%s%s)',
-        os.date(),
-        humanize(pathname_group_number),
-        humanize(#pathname_groups),
-        files_from,
-        get_basename(pathname_group[1]),
-        #pathname_group > 1 and string.format(
-          " and %s other %s",
-          humanize(#pathname_group - 1),
-          pluralize("file", #pathname_group - 1)
-        ) or "",
-        pathname_group_number < #pathname_groups and string.format(
-          ', next group: "%s"%s',
-          get_basename(pathname_groups[pathname_group_number + 1][1]),
-          #pathname_groups[pathname_group_number + 1] > 1 and string.format(
-            " and %s other %s",
-            humanize(#pathname_groups[pathname_group_number + 1] - 1),
-            pluralize("file", #pathname_groups[pathname_group_number + 1] - 1)
-          ) or ""
-        ) or ""
-      )
-    )
-  end
-  -- Sort and export issues.
-  local output_issue_files = {}
-  for code, pathnames in pairs(issue_pathnames) do
-    local sorted_pathnames = {}
-    for pathname, _ in pairs(pathnames) do
-      table.insert(sorted_pathnames, pathname)
-    end
-    table.sort(sorted_pathnames)
-    for _, pathname in ipairs(sorted_pathnames) do
-      if output_issue_files[code] == nil then
-        output_issue_files[code] = assert(io.open(string.format("%s/%s.txt", output_issue_dirname, code), "w"))
-      end
-      output_issue_files[code]:write(pathname, "\n")
-    end
-  end
-  for code, _ in pairs(output_issue_files) do
-    assert(output_issue_files[code]:close())
-  end
-  -- Export coverage.
-  --
-  -- TODO: After running several explcheck processes using GNU Parallel, compute the code coverage in a
-  -- separate script from the partial results of each worker.
-  local output_coverage_file = assert(io.open(string.format("%s/COVERAGE", output_issue_dirname), "w"))
-  local num_total_bytes = aggregate_evaluation_results.num_total_bytes
-  local num_expl_bytes = aggregate_evaluation_results.num_expl_bytes
-  local num_tokens = aggregate_evaluation_results.num_tokens
-  local num_well_understood_tokens = aggregate_evaluation_results.num_well_understood_tokens
-  output_coverage_file:write(
-    string.format(
-      "%s well-understood expl3 %s (%s of %s expl3 tokens, ~%s of %s total bytes)\n",
-      titlecase(humanize(num_well_understood_tokens)),
-      pluralize("token", num_well_understood_tokens),
-      format_ratio(num_well_understood_tokens, num_tokens),
-      humanize(num_tokens),
-      format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes),
-      humanize(num_total_bytes)
-    )
-  )
-  assert(output_coverage_file:close())
-end
+local input_file_pathname_template = arg[1]
+local output_issue_file_pathname_template = arg[2]
+local output_coverage_file_pathname_template = arg[3]
+local worker_number = tonumber(arg[4])
 
 -- Collect pathnames.
 local input_pathnames, allow_pathname_separators = {}, {}
-local file = assert(io.open(files_from, "r"))
-for pathname in file:lines() do
+local input_file_pathname = string.format(input_file_pathname_template, worker_number)
+local input_file = assert(io.open(input_file_pathname, "r"))
+for pathname in input_file:lines() do
   table.insert(input_pathnames, pathname)
   table.insert(allow_pathname_separators, false)
 end
+assert(input_file:close())
 
 -- Group pathnames.
 local input_pathname_groups = group_pathnames(input_pathnames, nil, allow_pathname_separators)
 
-main(input_pathname_groups)
+-- Collect and export issues.
+local output_issue_file_pathname = string.format(output_issue_file_pathname_template, worker_number)
+local output_issue_file = assert(io.open(output_issue_file_pathname, "w"))
+local aggregate_evaluation_results = new_aggregate_results()
+for pathname_group_number, pathname_group in ipairs(input_pathname_groups) do
+  local is_ok, error_message = xpcall(function()
+    -- Run all processing steps and collect issues and analysis results.
+    local states = process_files(pathname_group)
+    assert(#states == #pathname_group)
+    for pathname_number, state in ipairs(states) do
+      assert(pathname_group[pathname_number] == state.pathname)
+      -- Record issues.
+      local issues = state.issues
+      for _, issue_table in ipairs({issues.warnings, issues.errors}) do
+        for _, issue in ipairs(sort_issues(issue_table)) do
+          local code = issue[1]
+          assert(output_issue_file:write(string.format('%s %s\n', code, state.pathname)))
+        end
+      end
+      -- Update the aggregate evaluation results.
+      local file_evaluation_results = new_file_results(state)
+      aggregate_evaluation_results:add(file_evaluation_results)
+    end
+  end, debug.traceback)
+  if not is_ok then
+    error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
+  end
+  -- Display the current status.
+  print(
+    string.format(
+      '[Worker %02d, %s] Finished %s out of %s file groups in "%s" (last group: "%s"%s%s)',
+      worker_number,
+      os.date(),
+      humanize(pathname_group_number),
+      humanize(#input_pathname_groups),
+      input_file_pathname,
+      get_basename(pathname_group[1]),
+      #pathname_group > 1 and string.format(
+        " and %s other %s",
+        humanize(#pathname_group - 1),
+        pluralize("file", #pathname_group - 1)
+      ) or "",
+      pathname_group_number < #input_pathname_groups and string.format(
+        ', next group: "%s"%s',
+        get_basename(input_pathname_groups[pathname_group_number + 1][1]),
+        #input_pathname_groups[pathname_group_number + 1] > 1 and string.format(
+          " and %s other %s",
+          humanize(#input_pathname_groups[pathname_group_number + 1] - 1),
+          pluralize("file", #input_pathname_groups[pathname_group_number + 1] - 1)
+        ) or ""
+      ) or ""
+    )
+  )
+end
+assert(output_issue_file:close())
+
+-- Export code coverage.
+local output_coverage_file_pathname = string.format(output_coverage_file_pathname_template, worker_number)
+local output_coverage_file = assert(io.open(output_coverage_file_pathname, "w"))
+assert(
+  output_coverage_file:write(
+    string.format("%d %d %d %d\n",
+      aggregate_evaluation_results.num_total_bytes,
+      aggregate_evaluation_results.num_expl_bytes,
+      aggregate_evaluation_results.num_tokens,
+      aggregate_evaluation_results.num_well_understood_tokens
+    )
+  )
+)
+assert(output_coverage_file:close())

@@ -4,7 +4,6 @@ local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
-local get_basename = require("explcheck-utils").get_basename
 
 local segment_types = syntactic_analysis.segment_types
 local segment_subtypes = syntactic_analysis.segment_subtypes
