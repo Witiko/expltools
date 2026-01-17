@@ -314,22 +314,6 @@ end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
 local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number
-  -- Skip `expl3-code.tex` to see if the processing converges on other files from TeX Live.
-  --
-  -- TODO: Revert commit 1a6f825.
-  local pathname_group = {}
-  local should_continue = false
-  for _, state in ipairs(states) do
-    local basename = get_basename(state.pathname)
-    if basename == "expl3-code.tex" then
-      should_continue = true
-    end
-    table.insert(pathname_group, state.pathname)
-  end
-  if not should_continue then
-    return
-  end
-
   -- Draw dynamic edges once between all files in the file group, not just individual files.
   if states.drew_dynamic_edges ~= nil then
     return
@@ -856,24 +840,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
       reaching_definition_confidence_lists[chunk][statement_number] = updated_reaching_definition_confidence_list
       reaching_definition_confidence_indexes[chunk][statement_number] = updated_reaching_definition_confidence_index
-
-      inner_loop_number = inner_loop_number + 1
     end
-
-    -- Record the numbers of inner loops in a file.
-  --
-  -- TODO: Revert commit 1a6f825.
-    local inner_loop_numbers_file = assert(io.open("/tmp/inner-loop-numbers.txt", "a"))
-    assert(
-      inner_loop_numbers_file:write(
-        string.format(
-          "%d %s\n",
-          inner_loop_number - 1,
-          table.concat(pathname_group, ', ')
-        )
-      )
-    )
-    assert(inner_loop_numbers_file:close())
 
     -- Make a copy of the current estimation of the function call edges.
     previous_function_call_edges = {}
@@ -1015,24 +982,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       end
       ::next_function_call::
     end
-
-    outer_loop_number = outer_loop_number + 1
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
-
-  -- Record the numbers of outer loops in a file.
-  --
-  -- TODO: Revert commit 1a6f825.
-  local outer_loop_numbers_file = assert(io.open("/tmp/outer-loop-numbers.txt", "a"))
-  assert(
-    outer_loop_numbers_file:write(
-      string.format(
-        "%d %s\n",
-        outer_loop_number - 1,
-        table.concat(pathname_group, ', ')
-      )
-    )
-  )
-  assert(outer_loop_numbers_file:close())
 
   -- Record edges.
   for _, edge in ipairs(current_function_call_edges) do
