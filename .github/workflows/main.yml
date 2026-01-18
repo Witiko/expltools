@@ -75,9 +75,9 @@ jobs:
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Run explcheck
+        env:
+          LUAINPUTS: explcheck/src
         run: |
-          set -e
-          export LUAINPUTS=explcheck/src
           find */support -type f '(' -name '*.tex' -o -name '*.sty' -o -name '*.cls' ')' -exec \
             texlua explcheck/src/explcheck.lua {} +
   shellcheck:
@@ -144,10 +144,11 @@ jobs:
 
           apt update
           apt install -qy parallel
-      - name: Run explcheck
+      - name: Collect package files
+        env:
+          LUAINPUTS: explcheck/src
         run: |
           set -e
-          export LUAINPUTS=explcheck/src
 
           # Collect the full list of package files.
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -print 1> unsorted-files.txt
@@ -158,6 +159,11 @@ jobs:
           # Split the sorted files into N chunks, where N is the available number of CPUs, making sure that files
           # from the same directory that can be grouped by explcheck are kept together.
           texlua explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $(nproc)
+      - name: Run explcheck
+        env:
+          LUAINPUTS: explcheck/src
+        run: |
+          set -e
 
           # Process the sorted chunks with explcheck in parallel, collecting issues and code coverage.
           parallel --line-buffer --jobs $(nproc) --halt now,fail=1 -- \
@@ -181,11 +187,20 @@ jobs:
         run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
       - name: Check if the configuration is minimal
         if: matrix.release == 'latest'
+        env:
+          LUAINPUTS: explcheck/src
         run: |
           set -e
-          export LUAINPUTS=explcheck/src
 
-          texlua explcheck/ci/prune-explcheck-config.lua files.txt issues/
+          # Collect all options and prepare task files for them.
+          texlua explcheck/ci/collect-options-to-check.lua files.txt task-%05d.txt
+
+          # Check the different options in parallel.
+          parallel --line-buffer --jobs $(nproc) --halt never -- \
+            texlua explcheck/ci/check-option.lua files.txt issues/ {} \
+            ::: task-*.txt
+
+          echo 'Could not remove any sections or options.'
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, shellcheck, unit-tests, regression-tests]

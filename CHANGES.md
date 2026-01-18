@@ -28,7 +28,7 @@ integration:
 - Bump actions/download-artifact from 6 to 7. (contributed by @dependabot in #153)
 - Bump actions/upload-artifact from 5 to 6. (contributed by @dependabot in #154)
 - Display processing progress in the CI. (#152)
-- Run processing on multiple CPUs in parallel in the CI. (#152)
+- Analyze package files using multiple CPUs in the CI. (#152)
 
 ## expltools 2025-11-24
 

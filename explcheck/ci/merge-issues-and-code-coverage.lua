@@ -24,7 +24,7 @@ for input_issue_file_number = 1, num_input_files do
   local input_issue_file = assert(io.open(input_issue_file_pathname, "r"))
 
   for input_issue_code_and_pathname in input_issue_file:lines() do
-    local code, pathname = input_issue_code_and_pathname:match("([^ ]+) (.+)")
+    local code, pathname = input_issue_code_and_pathname:match("^([^ ]+) (.+)$")
     if issue_pathnames[code] == nil then
       issue_pathnames[code] = {}
     end
@@ -61,7 +61,7 @@ for input_coverage_file_number = 1, num_input_files do
 
   local coverage_values = assert(input_coverage_file:read("*line"))
   local current_num_total_bytes, current_num_expl_bytes, current_num_tokens, current_num_well_understood_tokens
-    = coverage_values:match("(%d+) (%d+) (%d+) (%d+)")
+    = coverage_values:match("^(%d+) (%d+) (%d+) (%d+)$")
   num_total_bytes = num_total_bytes + tonumber(current_num_total_bytes)
   num_expl_bytes = num_expl_bytes + tonumber(current_num_expl_bytes)
   num_tokens = num_tokens + tonumber(current_num_tokens)

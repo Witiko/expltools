@@ -67,11 +67,12 @@ for pathname_group_number, pathname_group in ipairs(input_pathname_groups) do
   -- Display the current status.
   print(
     string.format(
-      '[Worker %02d, %s] Finished %s out of %s file groups in "%s" (last group: "%s"%s%s)',
+      '[Worker %02d, %s] Finished %s out of %s %s in "%s" (last group: "%s"%s%s).',
       worker_number,
       os.date(),
       humanize(pathname_group_number),
       humanize(#input_pathname_groups),
+      pluralize("file group", #input_pathname_groups),
       input_file_pathname,
       get_basename(pathname_group[1]),
       #pathname_group > 1 and string.format(

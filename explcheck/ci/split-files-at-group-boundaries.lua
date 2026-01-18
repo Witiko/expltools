@@ -4,7 +4,11 @@
 local kpse = require("kpse")
 kpse.set_program_name("texlua", "split-files-at-group-boundaries")
 
+local format = require("explcheck-format")
 local utils = require("explcheck-utils")
+
+local humanize = format.humanize
+local pluralize = format.pluralize
 
 local group_pathnames = utils.group_pathnames
 
@@ -23,6 +27,17 @@ assert(input_file:close())
 
 -- Group pathnames.
 local input_pathname_groups = group_pathnames(input_pathnames, nil, allow_pathname_separators)
+
+print(
+  string.format(
+    'Collected %s %s forming %s %s from the file "%s".',
+    humanize(#input_pathnames),
+    pluralize('package file', #input_pathnames),
+    humanize(#input_pathname_groups),
+    pluralize('file group', #input_pathname_groups),
+    input_file_pathname
+  )
+)
 
 -- Open output files.
 local output_files = {}
