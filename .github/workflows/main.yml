@@ -157,16 +157,16 @@ jobs:
 
           # Split the sorted files into N chunks, where N is the available number of CPUs, making sure that files
           # from the same directory that can be grouped by explcheck are kept together.
-          texlua explcheck/src/split-files-at-group-boundaries.lua files.txt files-%02d.txt $(nproc)
+          texlua explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $(nproc)
 
           # Process the sorted chunks with explcheck in parallel, collecting issues and code coverage.
-          parallel --line-buffer --jobs $(nproc) -- \
-            texlua explcheck/src/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
+          parallel --line-buffer --jobs $(nproc) --halt now,fail=1 -- \
+            texlua explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
             ::: $(seq 1 $(nproc))
 
           # Merge the issues and code coverage collected from the sorted chunks.
           mkdir issues
-          texlua explcheck/src/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues issues/COVERAGE $(nproc)
+          texlua explcheck/ci/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues/ issues/COVERAGE $(nproc)
       - name: Print code coverage
         run: cat issues/COVERAGE
       - name: Upload issues and code coverage
@@ -184,7 +184,8 @@ jobs:
         run: |
           set -e
           export LUAINPUTS=explcheck/src
-          texlua explcheck/src/prune-explcheck-config.lua files.txt issues/
+
+          texlua explcheck/ci/prune-explcheck-config.lua files.txt issues/
   artifacts:
     name: Build and publish artifacts
     needs: [luacheck, explcheck, shellcheck, unit-tests, regression-tests]
