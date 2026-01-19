@@ -312,6 +312,10 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
+--
+-- TODO: We could likely speed things up greatly if we reduced the graph to a set of nodes that we care about (function definitions and
+-- calls) connected them with pseudo-edges that represented the maximum-confidence paths between the nodes in the original graph. Then, we
+-- would run the reaching definitions algo on this much smaller graph.
 local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number
   -- Draw dynamic edges once between all files in the file group, not just individual files.
   if states.drew_dynamic_edges ~= nil then
