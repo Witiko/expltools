@@ -77,20 +77,46 @@ end
 
 -- Read the task file.
 local input_task = assert(io.open(input_task_pathname, "r"))
-local section, subsection, option_key = assert(input_task:read("*line"):match("^([^ ]*) (.*) ([^ ]*)$"))
+local section, subsection, option_key, table_index = assert(input_task:read("*line"):match("^([^ ]*) (.*) ([^ ]*) (%d+)$"))
+table_index = tonumber(table_index)
 local options = user_config[section][subsection]
 local task_pathnames = {}
 for pathname in input_task:lines() do
   table.insert(task_pathnames, pathname)
 end
 
--- Try to remove an option in the current section of the config file.
+-- Determine the option location and how it should be checked based on its type.
+local options_location = string.format('section [%s."%s"]', section, subsection)
+local option_value = options[option_key]
+assert(option_value ~= nil)
+local option_key_location, updated_option_value
+if type(option_value) == 'string' or type(option_value) == 'number' or type(option_value) == 'boolean' then
+  assert(table_index == 0)
+  updated_option_value = default_config.defaults[option_key]
+  assert(updated_option_value ~= nil)
+  option_key_location = string.format('Option "%s" in %s', option_key, options_location)
+else
+  assert(type(option_value) == 'table')
+  assert(table_index ~= 0)
+  local option_item = option_value[table_index]
+  assert(option_item ~= nil)
+  option_key_location = string.format('Item "%s" in option "%s" in %s', option_item, option_key, options_location)
+  updated_option_value = {}
+  for other_table_index = 1, #option_value do
+    if table_index ~= other_table_index then
+      local other_option_item = option_value[other_table_index]
+      table.insert(updated_option_value, other_option_item)
+    end
+  end
+end
+
+-- Check the option for every file that it affects.
 local option_key_locations = {
   seen = {},
   results = {},
 }
 
-local function try_to_remove_option(pathname, option_key_location, default_option_value, expected_issues)
+for _, pathname in ipairs(task_pathnames) do
   if option_key_locations.results[option_key_location] == nil then
     table.insert(option_key_locations.seen, option_key_location)
     option_key_locations.results[option_key_location] = {}
@@ -100,7 +126,7 @@ local function try_to_remove_option(pathname, option_key_location, default_optio
   local pathname_group_number, pathname_group, pathname_number = table.unpack(pathname_group_index[pathname])
   if pathname_group_results[pathname_group_number] == nil or
       pathname_group_results[pathname_group_number][option_key_location] == nil then
-    local updated_options = {[option_key] = default_option_value}
+    local updated_options = {[option_key] = updated_option_value}
     local states = process_files(pathname_group, updated_options)
     assert(#states == #pathname_group)
 
@@ -118,56 +144,33 @@ local function try_to_remove_option(pathname, option_key_location, default_optio
   local actual_issues = pathname_group_results[pathname_group_number][option_key_location][pathname_number]
 
   -- Compare the expected results of the static analysis with the actual results.
-  local result = actual_issues:has_same_codes_as(expected_issues)
-  table.insert(option_key_locations.results[option_key_location], result)
-end
-
-local options_location = string.format('section [%s."%s"]', section, subsection)
-for _, pathname in ipairs(task_pathnames) do
   local expected_issues = results.issues[pathname]
   if expected_issues == nil then
     expected_issues = new_issues()
     expected_issues:close()
   end
-  local option_value = options[option_key]
-  assert(option_value ~= nil)
-  if type(option_value) == 'string' or type(option_value) == 'number' or type(option_value) == 'boolean' then
-    local default_option_value = default_config.defaults[option_key]
-    assert(default_option_value ~= nil)
-    local option_key_location = string.format('Option "%s" in %s', option_key, options_location)
-    try_to_remove_option(pathname, option_key_location, default_option_value, expected_issues)
-  elseif type(option_value) == 'table' then
-    for i, item in ipairs(option_value) do
-      local option_key_location = string.format('Item "%s" in option "%s" in %s', item, option_key, options_location)
-      local smaller_option_value = {}
-      for j = 1, #option_value do
-        if i ~= j then
-          table.insert(smaller_option_value, option_value[j])
-        end
-      end
-      try_to_remove_option(pathname, option_key_location, smaller_option_value, expected_issues)
-    end
-  end
+  local result = actual_issues:has_same_codes_as(expected_issues)
+  table.insert(option_key_locations.results[option_key_location], result)
 end
 
 -- Collect all options that can be removed without affecting any files from the test results.
 option_key_locations.to_remove = {}
-for _, option_key_location in ipairs(option_key_locations.seen) do
-  for _, result in ipairs(option_key_locations.results[option_key_location]) do
+for _, seen_option_key_location in ipairs(option_key_locations.seen) do
+  for _, result in ipairs(option_key_locations.results[seen_option_key_location]) do
     if not result then
       goto skip_option_key_location
     end
   end
-  table.insert(option_key_locations.to_remove, option_key_location)
+  table.insert(option_key_locations.to_remove, seen_option_key_location)
   ::skip_option_key_location::
 end
 
 -- Print the results.
-for _, option_key_location in ipairs(option_key_locations.to_remove) do
+for _, redundant_option_key_location in ipairs(option_key_locations.to_remove) do
   print(
     string.format(
       '%s can be removed from the file "%s".',
-      option_key_location,
+      redundant_option_key_location,
       user_config_pathname
     )
   )

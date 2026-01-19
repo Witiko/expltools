@@ -77,6 +77,19 @@ local output_task_number = 0
 for _, section_and_subsection in ipairs(visited_section_list) do
   local section, subsection = table.unpack(section_and_subsection)
   local pathnames = visited_section_pathnames[section][subsection]
+
+  -- Export a task file.
+  local function create_task(header)
+    output_task_number = output_task_number + 1
+    local output_task_pathname = string.format(output_task_pathname_template, output_task_number)
+    local output_task = assert(io.open(output_task_pathname, "w"))
+    assert(output_task:write(header))
+    for _, pathname in ipairs(pathnames) do
+      assert(output_task:write(string.format('%s\n', pathname)))
+    end
+    assert(output_task:close())
+  end
+
   local options = user_config[section][subsection]
   local option_keys = {}
   for key, _ in pairs(options) do
@@ -84,16 +97,21 @@ for _, section_and_subsection in ipairs(visited_section_list) do
   end
   table.sort(option_keys)
   for _, option_key in ipairs(option_keys) do
-    output_task_number = output_task_number + 1
-    local output_task_pathname = string.format(output_task_pathname_template, output_task_number)
-    local output_task = assert(io.open(output_task_pathname, "w"))
-    assert(output_task:write(string.format('%s %s %s\n', section, subsection, option_key)))
-    for _, pathname in ipairs(pathnames) do
-      assert(output_task:write(string.format('%s\n', pathname)))
+    local option_value = options[option_key]
+    assert(option_value ~= nil)
+    if type(option_value) == 'string' or type(option_value) == 'number' or type(option_value) == 'boolean' then
+      create_task(string.format('%s %s %s 0\n', section, subsection, option_key))
+    else
+      assert(type(option_value) == 'table')
+      assert(#option_value > 0)
+      for table_index = 1, #option_value do
+        create_task(string.format('%s %s %s %d\n', section, subsection, option_key, table_index))
+      end
     end
-    assert(output_task:close())
   end
 end
+
+-- Print the results.
 print(
   string.format(
     'Collected %s %s affecting %s %s from the files "%s" and "%s".',
