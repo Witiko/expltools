@@ -312,10 +312,6 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
---
--- TODO: We could likely speed things up greatly if we reduced the graph to a set of nodes that we care about (function definitions and
--- calls) connected them with pseudo-edges that represented the maximum-confidence paths between the nodes in the original graph. Then, we
--- would run the reaching definitions algo on this much smaller graph.
 local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number
   -- Draw dynamic edges once between all files in the file group, not just individual files.
   if states.drew_dynamic_edges ~= nil then
@@ -444,6 +440,11 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         end
       end
     end
+
+    -- TODO: Add `NEXT_INTERESTING_STATEMENT` pseudo-edges to `in_edge_index` and `out_edge_index`. These pseudo-edges will connect
+    -- the first statements in a chunk, the pseudo-statements after a chunk, and any "interesting" statements, i.e. statements with
+    -- any incoming and outgoing edges other than `NEXT_INTERESTING_STATEMENT`. This will allow us to stop considering the implicit
+    -- `NEXT_STATEMENT` edges below and greatly reduce the number of nodes and edges in the analyzed graph.
 
     -- Record which statements may immediately continue to the following statements and which may not.
     --
@@ -628,6 +629,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       --end
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
         -- Consider explicit incoming edges.
+        --
+        -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
         for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
           table.insert(
             incoming_edge_confidences_chunks_and_statement_numbers,
@@ -804,6 +807,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         --end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
           -- Consider explicit outgoing edges.
+          --
+          -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
           for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
              table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
           end
