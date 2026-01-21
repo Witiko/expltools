@@ -389,7 +389,7 @@ local function draw_dynamic_edges(states, _, options)
     local reaching_definition_indexes, reaching_definition_confidence_indexes = {}, {}
 
     -- First, index all "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
-    local in_edge_index, out_edge_index = {}, {}
+    local explicit_in_edge_index, explicit_out_edge_index = {}, {}
     local edge_lists = {current_function_call_edges}
     for _, state in ipairs(states) do
       local edge_category_list = {}
@@ -404,8 +404,8 @@ local function draw_dynamic_edges(states, _, options)
       end
     end
     for _, edge_index_and_key in ipairs({
-          {in_edge_index, 'to'},
-          {out_edge_index, 'from'},
+          {explicit_in_edge_index, 'to'},
+          {explicit_out_edge_index, 'from'},
         }) do
       local edge_index, key = table.unpack(edge_index_and_key)
       for _, edges in ipairs(edge_lists) do
@@ -431,21 +431,21 @@ local function draw_dynamic_edges(states, _, options)
     for _, state in ipairs(states) do
       for _, segment in ipairs(state.results.segments or {}) do
         for _, chunk in ipairs(segment.chunks or {}) do
-          if out_edge_index[chunk] == nil then
+          if explicit_out_edge_index[chunk] == nil then
             goto next_chunk
           end
           for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
-            if out_edge_index[chunk][statement_number] == nil then
+            if explicit_out_edge_index[chunk][statement_number] == nil then
               goto next_statement
             end
 
             local has_f_branch, has_t_branch = false
-            for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
+            for _, edge in ipairs(explicit_out_edge_index[chunk][statement_number]) do
               -- Statements with outgoing function calls may not immediately continue to the following statements.
               --
               -- TODO: What if there are both `FUNCTION_CALL` and `TF_BRANCH` edges? The correct interpretation is that
-              -- `FUNCTION_CALL` is considered first, which seems to be the way `out_edge_index` is ordered at the moment,
-              -- but we can't rely on that and should consider `FUNCTION_CALL` before `TF_BRANCH` first regardless.
+              -- `FUNCTION_CALL` is considered first, which seems to be the way `explicit_out_edge_index` is ordered at
+              -- the moment, but we can't rely on that and should consider `FUNCTION_CALL` before `TF_BRANCH` first regardless.
               if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
                 goto lacks_implicit_out_edge
               end
@@ -483,11 +483,17 @@ local function draw_dynamic_edges(states, _, options)
       end
     end
 
-    -- TODO: Add `NEXT_INTERESTING_STATEMENT` pseudo-edges to `in_edge_index` and `out_edge_index`. These pseudo-edges will connect
-    -- the first statements in a chunk, the pseudo-statements after a chunk, and any "interesting" statements, i.e. statements with
-    -- any incoming and outgoing edges other than `NEXT_INTERESTING_STATEMENT` or statements that lack implicit out-edges (see
-    -- above). This will allow us to stop considering the implicit `NEXT_STATEMENT` edges below and greatly reduce the number of
-    -- nodes and edges in the analyzed graph.
+    -- TODO: Define `implicit_in_edge_index` and `implicit_out_edge_index`.
+    --
+    -- TODO: Add `NEXT_INTERESTING_STATEMENT` pseudo-edges to `implicit_in_edge_index` and `implicit_out_edge_index`. These
+    -- pseudo-edges will connect the first statements in a chunk, the pseudo-statements after a chunk, and any "interesting"
+    -- statements, i.e. statements with any incoming and outgoing edges other than `NEXT_INTERESTING_STATEMENT` or statements that
+    -- lack implicit out-edges (see above). This will allow us to stop considering the implicit `NEXT_STATEMENT` edges below and
+    -- greatly reduce the number of nodes and edges in the analyzed graph.
+    --
+    -- TODO: Add `NEXT_FILE` pseudo-edges to `implicit_in_edge_index` and `implicit_out_edge_index`. These pseudo-edges will
+    -- connect the pseudo-statements after parts of all files in the file group to the first part of all other files in the file
+    -- group.
 
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
@@ -580,10 +586,9 @@ local function draw_dynamic_edges(states, _, options)
       -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
       local incoming_edge_confidences_chunks_and_statement_numbers = {}
       if statement_number - 1 >= chunk.statement_range:start() then
-        -- Consider implicit edges from previous statements within a chunk.
+        -- Consider implicit incoming edges.
         --
-        -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
-        -- TODO: Add a `MAYBE` edge from conditional functions with only a T- or an F-type argument, not both.
+        -- TODO: Use `implicit_in_edge_index` instead and merge with the below if-statement.
         if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number - 1] == nil then
           table.insert(
             incoming_edge_confidences_chunks_and_statement_numbers,
@@ -591,34 +596,9 @@ local function draw_dynamic_edges(states, _, options)
           )
         end
       end
-      --if statement_number == 1 and chunk.segment == results.parts[1] then
-      --  -- Consider implicit edges from pseudo-statements after parts of all files in the file group to the first part
-      --  -- of the current file.
-      --  --
-      --  -- TODO: Revert commit 6b55ef8.
-      --  -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statements of all files in
-      --  -- the current file group to the first top-level statement of the current file.
-      --  for other_file_number, state in ipairs(states) do
-      --    if other_file_number == chunk.segment.location.file_number then
-      --      goto next_file
-      --    end
-      --    for _, part_segment in ipairs(state.results.parts or {}) do
-      --      if part_segment.chunks == nil or #part_segment.chunks == 0 then
-      --        goto next_part
-      --      end
-      --      local part_chunk = part_segment.chunks[1]
-      --      table.insert(
-      --        incoming_edge_confidences_chunks_and_statement_numbers,
-      --        {MAYBE, part_chunk, part_chunk.statement_range:stop() + 1}
-      --      )
-      --      ::next_part::
-      --    end
-      --    ::next_file::
-      --  end
-      --end
-      if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
+      if explicit_in_edge_index[chunk] ~= nil and explicit_in_edge_index[chunk][statement_number] ~= nil then
         -- Consider explicit incoming edges.
-        for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
+        for _, edge in ipairs(explicit_in_edge_index[chunk][statement_number]) do
           table.insert(
             incoming_edge_confidences_chunks_and_statement_numbers,
             {edge.confidence, edge.from.chunk, edge.from.statement_number}
@@ -764,38 +744,14 @@ local function draw_dynamic_edges(states, _, options)
         if statement_number <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk and pseudo-statements after a chunk.
           --
-          -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
-          -- TODO: Add a `MAYBE` edge from conditional functions with only a T- or an F-type argument, not both.
+          -- TODO: Use `implicit_out_edge_index` instead and merge with the below if-statement.
           if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number] == nil then
             table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
           end
         end
-        --if statement_number == chunk.statement_range:stop() + 1 and chunk.segment.type == PART then
-        --  -- Consider implicit edges from pseudo-statements after a part of the current file to the first parts of all other
-        --  -- files in the file group.
-        --  --
-        --  -- TODO: Revert commit 6b55ef8.
-        --  -- TODO: Only consider implicit edges from pseudo-statements after the last top-level statement of the current file
-        --  -- to the first top-level statements of all other files in the current file group.
-        --  for other_file_number, state in ipairs(states) do
-        --    if other_file_number == chunk.segment.location.file_number then
-        --      goto next_file
-        --    end
-        --    if state.results.parts == nil then
-        --      goto next_file
-        --    end
-        --    local first_part_segment = state.results.parts[1]
-        --    if first_part_segment.chunks == nil or #first_part_segment.chunks == 0 then
-        --      goto next_file
-        --    end
-        --    local first_part_chunk = first_part_segment.chunks[1]
-        --    table.insert(outgoing_chunks_and_statement_numbers, {first_part_chunk, first_part_chunk.statement_range:start()})
-        --    ::next_file::
-        --  end
-        --end
-        if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
+        if explicit_out_edge_index[chunk] ~= nil and explicit_out_edge_index[chunk][statement_number] ~= nil then
           -- Consider explicit outgoing edges.
-          for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
+          for _, edge in ipairs(explicit_out_edge_index[chunk][statement_number]) do
              table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
           end
         end
