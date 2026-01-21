@@ -778,20 +778,30 @@ local function draw_dynamic_edges(states, _, options)
           return true
         end
         local previous_reaching_definition_list = reaching_definition_lists[chunk][statement_number]
+        local previous_reaching_definition_confidence_list = reaching_definition_confidence_lists[chunk][statement_number]
         assert(previous_reaching_definition_list ~= nil)
+        assert(previous_reaching_definition_confidence_list ~= nil)
         assert(#previous_reaching_definition_list <= #updated_reaching_definition_list)
+        assert(#previous_reaching_definition_confidence_list <= #updated_reaching_definition_confidence_list)
 
-        -- Quickly check using set cardinalities.
+        -- Quickly check for inequality using set cardinalities.
         if #previous_reaching_definition_list ~= #updated_reaching_definition_list then
           return true
         end
 
-        -- We don't need to compare the updated definitions with the previous definitions, since we only ever add new definitions.
-        -- Therefore, the cardinality check is enough.
-
-        -- TODO: Also check whether the definition confidences have changed. While this should affect correctness, check the number
-        -- of iterations of the reaching definitions algo with and without checking. The number of iterations should increase with
-        -- checking.
+        -- Check that the definitions and their confidences are the same.
+        for previous_definition_number, definition in ipairs(previous_reaching_definition_list) do
+          local statement = get_statement(definition.chunk, definition.statement_number)
+          if current_reaching_statement_index[statement] == nil then
+            return true
+          end
+          local updated_definition_list_number, _ = table.unpack(current_reaching_statement_index[statement])
+          local previous_definition_confidence = previous_reaching_definition_confidence_list[previous_definition_number]
+          local updated_definition_confidence = updated_reaching_definition_confidence_list[updated_definition_list_number]
+          if previous_definition_confidence ~= updated_definition_confidence then
+            return true
+          end
+        end
 
         return false
       end
