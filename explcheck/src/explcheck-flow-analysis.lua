@@ -524,8 +524,6 @@ local function draw_dynamic_edges(states, _, options)
                   chunk = chunk,
                   statement_number = statement_number,
                 },
-                -- TODO: Incorporate the code from the previous check using `lacks_implicit_out_edges` to determine
-                -- confidence and invalidate `current_interesting_statement_number`.
                 confidence = edge_confidence,
               }
               index_edge(implicit_in_edge_index, 'to', edge)
@@ -677,12 +675,6 @@ local function draw_dynamic_edges(states, _, options)
       end
 
       -- Determine the reaching definitions from before the current statement.
-      --
-      -- TODO: Special-case reaching definitions from T- and F-branches of conditional functions thus: If reaching definitions
-      -- for the same statement comes from both T- and F-branches, disregard the edge confidences and record only a single reaching
-      -- definition for the statement with a confidence that corresponds to the minimum confidence of both definitions.
-      -- After this change, function definitions from before a conditional function call should reach the (pseudo)-statements after
-      -- the call with confidence `DEFINITELY` rather than just `MAYBE`, as they do now.
       local incoming_definition_list, incoming_definition_confidence_list = {}, {}
       for _, incoming_edge_confidence_chunk_and_statement_number in ipairs(incoming_edge_confidences_chunks_and_statement_numbers) do
         local incoming_edge_confidence, incoming_chunk, incoming_statement_number
