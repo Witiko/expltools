@@ -392,11 +392,15 @@ local function draw_dynamic_edges(states, _, options)
     local in_edge_index, out_edge_index = {}, {}
     local edge_lists = {current_function_call_edges}
     for _, state in ipairs(states) do
-      for _, edge_category in ipairs(edge_categories) do
+      local edge_category_list = {}
+      for edge_category, _ in pairs(state.results.edges or {}) do
+        table.insert(edge_category_list, edge_category)
+      end
+      table.sort(edge_category_list)
+      for _, edge_category in ipairs(edge_category_list) do
         local edges = state.results.edges[edge_category]
-        if edges ~= nil then
-          table.insert(edge_lists, edges)
-        end
+        assert(edges ~= nil)
+        table.insert(edge_lists, edges)
       end
     end
     for _, edge_index_and_key in ipairs({
