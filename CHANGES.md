@@ -14,6 +14,21 @@
 
    [Expl3-Linter-11.5]: https://witiko.github.io/Expl3-Linter-11.5/ "Static analysis of expl3 programs (11½): Chunks, edges, flow graphs, confidence, and reaching definitions"
 
+  Flow analysis remains disabled by default. To enable it, set the Lua option
+  `stop_after = "flow analysis"` either in your Lua code, if any, or your
+  configuration file.
+
+  After this change, you may already see preliminary flow analysis results in
+  explcheck's verbose output. However, unless explcheck understands your file
+  sufficiently well, it will typically stop before reaching the flow analysis
+  step and will report this in the verbose output.
+
+  If explcheck reaches semantic analysis, you can encourage it to proceed to
+  flow analysis by decreasing the Lua option `min_code_coverage` towards zero.
+  If explcheck bails out earlier, try disabling `stop_early_when_confused` or,
+  ideally, improve your code quality and contribute to expltools so that it can
+  understand your code better. 😉
+
 - Add Lua options `max_reaching_definition_inner_loops` and
   `max_reaching_definition_outer_loops`. (#152)
 
