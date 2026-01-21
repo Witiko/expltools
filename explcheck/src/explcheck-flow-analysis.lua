@@ -367,34 +367,6 @@ local function draw_dynamic_edges(states, _, options)
     ::next_file::
   end
 
-  -- Collect lists of function (variant) definition and function call statements.
-  local function_statement_indexes, function_statement_lists = {}, {}
-  for _, statement_type in ipairs({FUNCTION_CALL, FUNCTION_DEFINITION, FUNCTION_VARIANT_DEFINITION}) do
-    function_statement_indexes[statement_type] = {}
-    function_statement_lists[statement_type] = {}
-  end
-  for _, state in ipairs(states) do
-    for _, segment in ipairs(state.results.segments or {}) do
-      for _, chunk in ipairs(segment.chunks or {}) do
-        for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
-          if function_statement_indexes[statement.type] ~= nil then
-            assert(function_statement_lists[statement.type] ~= nil)
-
-            local function_statement_index = function_statement_indexes[statement.type]
-            local function_statement_list = function_statement_lists[statement.type]
-
-            if function_statement_index[chunk] == nil then
-              function_statement_index[chunk] = {}
-            end
-            function_statement_index[chunk][statement_number] = true
-
-            table.insert(function_statement_list, {chunk, statement_number})
-          end
-        end
-      end
-    end
-  end
-
   -- Determine edges from function calls to function definitions, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
