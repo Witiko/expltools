@@ -336,7 +336,7 @@ local function draw_dynamic_edges(states, _, options)
     return result
   end
 
-  -- Collect a list of function (variant) definition and call statements.
+  -- Collect a list of function definition and call statements.
   local function_call_list, function_definition_list = {}, {}
   for file_number, state in ipairs(states) do
     -- Skip statements from files in the current file group that haven't reached the flow analysis.
@@ -506,8 +506,6 @@ local function draw_dynamic_edges(states, _, options)
     -- nodes and edges in the analyzed graph.
 
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
-    --
-    -- TODO: Only start with function definitions, not function variant definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
     -- Pop a changed statement off the top of stack.
