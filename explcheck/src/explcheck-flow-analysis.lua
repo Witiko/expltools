@@ -51,6 +51,8 @@ local TF_BRANCH = "T- or F-branch of conditional function"
 
 local edge_types = {
   NEXT_CHUNK = "pair of successive chunks",
+  NEXT_INTERESTING_STATEMENT = "pair of successive interesting statements",  -- Only used internally in `draw_dynamic_edges()`.
+  NEXT_FILE = "potential insertion of another file from the current file group",  -- Only used internally in `draw_dynamic_edges()`.
   TF_BRANCH = TF_BRANCH,
   TF_BRANCH_RETURN = string.format("return from %s", TF_BRANCH),
   FUNCTION_CALL = FUNCTION_CALL,
@@ -58,6 +60,8 @@ local edge_types = {
 }
 
 local NEXT_CHUNK = edge_types.NEXT_CHUNK
+local NEXT_INTERESTING_STATEMENT = edge_types.NEXT_INTERESTING_STATEMENT
+local NEXT_FILE = edge_types.NEXT_FILE
 assert(TF_BRANCH == edge_types.TF_BRANCH)
 local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
@@ -174,16 +178,18 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
 
   -- Record edges from skipping ahead to the following expl3 part.
   local previous_part
-  for _, segment in ipairs(results.segments or {}) do
-    if segment.type == PART and segment.chunks ~= nil and #segment.chunks > 0 then
-      if previous_part ~= nil then
+  for _, part in ipairs(results.parts or {}) do
+    if part.chunks ~= nil and #part.chunks > 0 then
+      if previous_part == nil then
+        results.first_part_with_chunks = part
+      else
         local from_chunk = previous_part.chunks[#previous_part.chunks]
         local from_statement_number = from_chunk.statement_range:stop() + 1
-        local to_chunk = segment.chunks[1]
+        local to_chunk = part.chunks[1]
         local to_statement_number = to_chunk.statement_range:start()
         -- Determine whether the parts are immediately adjacent.
         local previous_outer_range = results.outer_expl_ranges[previous_part.location.part_number]
-        local outer_range = results.outer_expl_ranges[segment.location.part_number]
+        local outer_range = results.outer_expl_ranges[part.location.part_number]
         assert(previous_outer_range:stop() < outer_range:start())
         local are_adjacent = previous_outer_range:stop() + 1 == outer_range:start()
         local confidence = are_adjacent and DEFINITELY or MAYBE
@@ -201,7 +207,7 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
         }
         table.insert(results.edges[STATIC], edge)
       end
-      previous_part = segment
+      previous_part = part
     end
   end
 
@@ -336,7 +342,18 @@ local function draw_dynamic_edges(states, _, options)
     return result
   end
 
-  -- Collect a list of function definition and call statements.
+  -- Resolve a chunk and a statement number to a statement.
+  local function get_statement(chunk, statement_number)
+    local segment = chunk.segment
+    assert(statement_number >= chunk.statement_range:start())
+    assert(statement_number <= chunk.statement_range:stop())
+    assert(file_reached_flow_analysis(chunk.segment.location.file_number))
+    local statement = segment.statements[statement_number]
+    assert(statement ~= nil)
+    return statement
+  end
+
+  -- Collect a list of well-behaved function definition and call statements.
   local function_call_list, function_definition_list = {}, {}
   for file_number, state in ipairs(states) do
     -- Skip statements from files in the current file group that haven't reached the flow analysis.
@@ -388,7 +405,21 @@ local function draw_dynamic_edges(states, _, options)
     local reaching_definition_lists, reaching_definition_confidence_lists = {}, {}
     local reaching_definition_indexes, reaching_definition_confidence_indexes = {}, {}
 
-    -- First, index all "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
+    -- Index an edge in an edge index.
+    local function index_edge(edge_index, index_key, edge)
+      assert(file_reached_flow_analysis(edge.from.chunk.segment.location.file_number))
+      assert(file_reached_flow_analysis(edge.to.chunk.segment.location.file_number))
+      local chunk, statement_number = edge[index_key].chunk, edge[index_key].statement_number
+      if edge_index[chunk] == nil then
+        edge_index[chunk] = {}
+      end
+      if edge_index[chunk][statement_number] == nil then
+        edge_index[chunk][statement_number] = {}
+      end
+      table.insert(edge_index[chunk][statement_number], edge)
+    end
+
+    -- Index all explicit "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
     local explicit_in_edge_index, explicit_out_edge_index = {}, {}
     local edge_lists = {current_function_call_edges}
     for _, state in ipairs(states) do
@@ -403,25 +434,31 @@ local function draw_dynamic_edges(states, _, options)
         table.insert(edge_lists, edges)
       end
     end
-    for _, edge_index_and_key in ipairs({
-          {explicit_in_edge_index, 'to'},
-          {explicit_out_edge_index, 'from'},
-        }) do
-      local edge_index, key = table.unpack(edge_index_and_key)
-      for _, edges in ipairs(edge_lists) do
-        for _, edge in ipairs(edges) do
-          assert(file_reached_flow_analysis(edge.from.chunk.segment.location.file_number))
-          assert(file_reached_flow_analysis(edge.to.chunk.segment.location.file_number))
-          local chunk, statement_number = edge[key].chunk, edge[key].statement_number
-          if edge_index[chunk] == nil then
-            edge_index[chunk] = {}
-          end
-          if edge_index[chunk][statement_number] == nil then
-            edge_index[chunk][statement_number] = {}
-          end
-          table.insert(edge_index[chunk][statement_number], edge)
-        end
+    for _, edges in ipairs(edge_lists) do
+      for _, edge in ipairs(edges) do
+        index_edge(explicit_in_edge_index, 'to', edge)
+        index_edge(explicit_out_edge_index, 'from', edge)
       end
+    end
+
+    -- Check whether a statement is interesting.
+    local function is_interesting(chunk, statement_number)
+      -- Chunk boundaries are interesting.
+      if statement_number == chunk.statement_range:start() or statement_number == chunk.statement_range:stop() + 1 then
+        return true
+      end
+      -- (Pseudo-)statements with incoming or outgoing explicit edges are interesting.
+      if explicit_in_edge_index[chunk] ~= nil and explicit_in_edge_index[chunk][statement_number] ~= nil
+          or explicit_out_edge_index[chunk] ~= nil and explicit_out_edge_index[chunk][statement_number] ~= nil then
+        return true
+      end
+      -- Well-behaved statements are interesting.
+      local statement = get_statement(chunk, statement_number)
+      if (statement.type == FUNCTION_CALL or statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
+          and is_well_behaved(statement) then
+        return true
+      end
+      return false
     end
 
     -- Record which statements may immediately continue to the following statements and which may not.
@@ -483,17 +520,91 @@ local function draw_dynamic_edges(states, _, options)
       end
     end
 
-    -- TODO: Define `implicit_in_edge_index` and `implicit_out_edge_index`.
-    --
-    -- TODO: Add `NEXT_INTERESTING_STATEMENT` pseudo-edges to `implicit_in_edge_index` and `implicit_out_edge_index`. These
-    -- pseudo-edges will connect the first statements in a chunk, the pseudo-statements after a chunk, and any "interesting"
-    -- statements, i.e. statements with any incoming and outgoing edges other than `NEXT_INTERESTING_STATEMENT` or statements that
-    -- lack implicit out-edges (see above). This will allow us to stop considering the implicit `NEXT_STATEMENT` edges below and
-    -- greatly reduce the number of nodes and edges in the analyzed graph.
-    --
     -- TODO: Add `NEXT_FILE` pseudo-edges to `implicit_in_edge_index` and `implicit_out_edge_index`. These pseudo-edges will
     -- connect the pseudo-statements after parts of all files in the file group to the first part of all other files in the file
     -- group.
+
+    -- Index all implicit incoming and outgoing pseudo-edges as well.
+    local implicit_in_edge_index, implicit_out_edge_index = {}, {}
+    for file_number, state in ipairs(states) do
+      -- Skip statements from files in the current file group that haven't reached the flow analysis.
+      if not file_reached_flow_analysis(file_number) then
+        goto next_file
+      end
+      for _, segment in ipairs(state.results.segments or {}) do
+
+        -- Add an implicit edge between the pseudo-statements "after" every expl3 part to the first statements of the first
+        -- parts of all other files in the current file group.
+        if segment.type == PART and #segment.chunks > 0 then
+          local from_chunk = segment.chunks[#segment.chunks]
+          local from_statement_number = from_chunk.statement_range:stop() + 1
+          for other_file_number, other_state in ipairs(states) do
+            if file_number == other_file_number then
+              goto next_other_file
+            end
+            if not file_reached_flow_analysis(other_file_number) then
+              goto next_other_file
+            end
+            if other_state.results.first_part_with_chunks == nil then
+              goto next_other_file
+            end
+            local to_chunk = other_state.results.first_part_with_chunks.chunks[1]
+            local to_statement_number = to_chunk.statement_range:start()
+            local edge = {
+              type = NEXT_FILE,
+              from = {
+                chunk = from_chunk,
+                statement_number = from_statement_number,
+              },
+              to = {
+                chunk = to_chunk,
+                statement_number = to_statement_number,
+              },
+              confidence = MAYBE,
+            }
+            index_edge(implicit_in_edge_index, 'to', edge)
+            index_edge(implicit_out_edge_index, 'from', edge)
+            ::next_other_file::
+          end
+        end
+
+        for _, chunk in ipairs(segment.chunks or {}) do
+          local previous_interesting_statement_number
+
+          -- Add an implicit edge between pairs of successive interesting statements.
+          local function record_interesting_statement(statement_number)
+            assert(is_interesting(chunk, statement_number))
+            if previous_interesting_statement_number ~= nil then
+              local edge = {
+                type = NEXT_INTERESTING_STATEMENT,
+                from = {
+                  chunk = chunk,
+                  statement_number = previous_interesting_statement_number,
+                },
+                to = {
+                  chunk = chunk,
+                  statement_number = statement_number,
+                },
+                -- TODO: Incorporate the code from the previous check using `lacks_implicit_out_edges` to determine
+                -- confidence and invalidate `current_interesting_statement_number`.
+                confidence = DEFINITELY,
+              }
+              index_edge(implicit_in_edge_index, 'to', edge)
+              index_edge(implicit_out_edge_index, 'from', edge)
+            end
+            previous_interesting_statement_number = statement_number
+          end
+
+          for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
+            if is_interesting(chunk, statement_number) then
+              record_interesting_statement(statement_number)
+            end
+          end
+          record_interesting_statement(chunk.statement_range:stop() + 1)
+        end
+      end
+      ::next_file::
+    end
 
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
@@ -552,17 +663,6 @@ local function draw_dynamic_edges(states, _, options)
       add_changed_statement(chunk, statement_number)
     end
 
-    -- Resolve a chunk and a statement number to a statement.
-    local function get_statement(chunk, statement_number)
-      local segment = chunk.segment
-      assert(statement_number >= chunk.statement_range:start())
-      assert(statement_number <= chunk.statement_range:stop())
-      assert(file_reached_flow_analysis(chunk.segment.location.file_number))
-      local statement = segment.statements[statement_number]
-      assert(statement ~= nil)
-      return statement
-    end
-
     -- Iterate over the changed statements until convergence.
     local inner_loop_number = 1
     while #changed_statements_list > 0 do
@@ -585,24 +685,14 @@ local function draw_dynamic_edges(states, _, options)
       -- Note: Some of these statements may be pseudo-statements from after a chunk. This would be a problem if we needed
       -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
       local incoming_edge_confidences_chunks_and_statement_numbers = {}
-      if statement_number - 1 >= chunk.statement_range:start() then
-        -- Consider implicit incoming edges.
-        --
-        -- TODO: Use `implicit_in_edge_index` instead and merge with the below if-statement.
-        if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number - 1] == nil then
-          table.insert(
-            incoming_edge_confidences_chunks_and_statement_numbers,
-            {DEFINITELY, chunk, statement_number - 1}
-          )
-        end
-      end
-      if explicit_in_edge_index[chunk] ~= nil and explicit_in_edge_index[chunk][statement_number] ~= nil then
-        -- Consider explicit incoming edges.
-        for _, edge in ipairs(explicit_in_edge_index[chunk][statement_number]) do
-          table.insert(
-            incoming_edge_confidences_chunks_and_statement_numbers,
-            {edge.confidence, edge.from.chunk, edge.from.statement_number}
-          )
+      for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
+        if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
+          for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
+            table.insert(
+              incoming_edge_confidences_chunks_and_statement_numbers,
+              {edge.confidence, edge.from.chunk, edge.from.statement_number}
+            )
+          end
         end
       end
 
@@ -741,18 +831,11 @@ local function draw_dynamic_edges(states, _, options)
         -- Note: Some of these statements may be pseudo-statements from after a chunk. This would be a problem if we needed
         -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
         local outgoing_chunks_and_statement_numbers = {}
-        if statement_number <= chunk.statement_range:stop() then
-          -- Consider implicit edges to following statements within a chunk and pseudo-statements after a chunk.
-          --
-          -- TODO: Use `implicit_out_edge_index` instead and merge with the below if-statement.
-          if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number] == nil then
-            table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
-          end
-        end
-        if explicit_out_edge_index[chunk] ~= nil and explicit_out_edge_index[chunk][statement_number] ~= nil then
-          -- Consider explicit outgoing edges.
-          for _, edge in ipairs(explicit_out_edge_index[chunk][statement_number]) do
-             table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
+        for _, out_edge_index in ipairs({explicit_out_edge_index, implicit_out_edge_index}) do
+          if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
+            for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
+               table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
+            end
           end
         end
 

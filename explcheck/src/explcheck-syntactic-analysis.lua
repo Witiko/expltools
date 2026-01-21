@@ -19,7 +19,7 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local token_types = {
-  ARGUMENT = "argument",
+  ARGUMENT = "argument",  -- This token type will never be produced by the lexical analysis, only syntactic and later analyses.
 }
 
 local CONTROL_SEQUENCE = lexical_analysis.token_types.CONTROL_SEQUENCE
