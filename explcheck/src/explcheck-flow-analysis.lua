@@ -932,19 +932,14 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         end
 
         -- Determine the edge confidence.
-        --
-        -- TODO: Use the same confidence for the backward edge instead of always using MAYBE. Rationale: We must not confuse
-        -- multiplicity of potential call sites with confidence: A function defined during a function call will _always_ propagate
-        -- to _all_ call sites if the calls themselves have the confidence DEFINITELY, regardless of how many there are.
-        -- TODO: Also update <https://witiko.github.io/Expl3-Linter-11.5/>, which also makes this mistake.
-        local forward_edge_confidence
+        local edge_confidence
         if #reaching_function_definition_list > 1 then
           -- If there are multiple definitions for this function call, then it's uncertain which one will be used.
-          forward_edge_confidence = MAYBE
+          edge_confidence = MAYBE
         else
           -- Otherwise, use the minimum of the function definition statement confidence and the edge confidences along
           -- the maximum-confidence path from the function definition statement to the function call statement.
-          forward_edge_confidence = reaching_function_definition_confidence_list[function_definition_number]
+          edge_confidence = reaching_function_definition_confidence_list[function_definition_number]
         end
 
         -- Draw the edges.
@@ -960,7 +955,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
             chunk = forward_to_chunk,
             statement_number = forward_to_statement_number,
           },
-          confidence = forward_edge_confidence,
+          confidence = edge_confidence,
         }
         table.insert(current_function_call_edges, forward_edge)
         local backward_from_chunk = to_segment.chunks[#to_segment.chunks]
@@ -975,7 +970,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
             chunk = function_call_chunk,
             statement_number = function_call_statement_number + 1,
           },
-          confidence = MAYBE,
+          confidence = edge_confidence,
         }
         table.insert(current_function_call_edges, backward_edge)
         ::next_function_definition::
