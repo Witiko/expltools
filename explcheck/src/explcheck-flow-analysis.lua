@@ -326,8 +326,8 @@ local function draw_dynamic_edges(states, _, options)
     return states[file_number].results.edges ~= nil
   end
 
-  -- Check whether a function (variant) definition or a function call statement is well-behaved in the sense that we know its
-  -- control sequence names precisely and not just as a probabilistic pattern.
+  -- Check whether a function (variant) definition or a function call statement is "well-behaved". A statement is well-behaved
+  -- when we know its control sequence names precisely and not just as a probabilistic pattern.
   local function is_well_behaved(statement)
     local result
     if statement.type == FUNCTION_CALL then
@@ -441,7 +441,8 @@ local function draw_dynamic_edges(states, _, options)
       end
     end
 
-    -- Check whether a statement is interesting.
+    -- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
+    -- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
     local function is_interesting(chunk, statement_number)
       -- Chunk boundaries are interesting.
       if statement_number == chunk.statement_range:start() or statement_number == chunk.statement_range:stop() + 1 then
@@ -461,69 +462,6 @@ local function draw_dynamic_edges(states, _, options)
       return false
     end
 
-    -- Record which statements may immediately continue to the following statements and which may not.
-    --
-    -- TODO: Merge with the check below (the `NEXT_INTERESTING_STATEMENT` pseudo-edges).
-    local lacks_implicit_out_edges = {}
-    for _, state in ipairs(states) do
-      for _, segment in ipairs(state.results.segments or {}) do
-        for _, chunk in ipairs(segment.chunks or {}) do
-          if explicit_out_edge_index[chunk] == nil then
-            goto next_chunk
-          end
-          for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
-            if explicit_out_edge_index[chunk][statement_number] == nil then
-              goto next_statement
-            end
-
-            local has_f_branch, has_t_branch = false
-            for _, edge in ipairs(explicit_out_edge_index[chunk][statement_number]) do
-              -- Statements with outgoing function calls may not immediately continue to the following statements.
-              --
-              -- TODO: What if there are both `FUNCTION_CALL` and `TF_BRANCH` edges? The correct interpretation is that
-              -- `FUNCTION_CALL` is considered first, which seems to be the way `explicit_out_edge_index` is ordered at
-              -- the moment, but we can't rely on that and should consider `FUNCTION_CALL` before `TF_BRANCH` first regardless.
-              if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
-                goto lacks_implicit_out_edge
-              end
-
-              -- Statements with outgoing both T- and F-branches may not immediately continue to the following statements.
-              if edge.type == TF_BRANCH then
-                if edge.subtype == T_BRANCH then
-                  has_t_branch = true
-                elseif edge.subtype == F_BRANCH then
-                  has_f_branch = true
-                else
-                  error('Unexpected edge subtype "' .. edge.subtype .. '"')
-                end
-              end
-            end
-            -- TODO: But what about statements with only a T- or F-branch? These should continue to the following statements
-            -- with the confidence of `MAYBE`, not `DEFINITELY`.
-            if has_t_branch and has_f_branch then
-              goto lacks_implicit_out_edge
-            end
-
-            goto next_statement
-
-            ::lacks_implicit_out_edge::
-
-            if lacks_implicit_out_edges[chunk] == nil then
-              lacks_implicit_out_edges[chunk] = {}
-            end
-            lacks_implicit_out_edges[chunk][statement_number] = true
-
-            ::next_statement::
-          end
-          ::next_chunk::
-        end
-      end
-    end
-
-    -- TODO: Add `NEXT_FILE` pseudo-edges to `implicit_in_edge_index` and `implicit_out_edge_index`. These pseudo-edges will
-    -- connect the pseudo-statements after parts of all files in the file group to the first part of all other files in the file
-    -- group.
-
     -- Index all implicit incoming and outgoing pseudo-edges as well.
     local implicit_in_edge_index, implicit_out_edge_index = {}, {}
     for file_number, state in ipairs(states) do
@@ -533,7 +471,7 @@ local function draw_dynamic_edges(states, _, options)
       end
       for _, segment in ipairs(state.results.segments or {}) do
 
-        -- Add an implicit edge between the pseudo-statements "after" every expl3 part to the first statements of the first
+        -- Add an implicit pseudo-edge between the pseudo-statements "after" every expl3 part to the first statements of the first
         -- parts of all other files in the current file group.
         if segment.type == PART and #segment.chunks > 0 then
           local from_chunk = segment.chunks[#segment.chunks]
@@ -570,8 +508,9 @@ local function draw_dynamic_edges(states, _, options)
 
         for _, chunk in ipairs(segment.chunks or {}) do
           local previous_interesting_statement_number
+          local edge_confidence = DEFINITELY
 
-          -- Add an implicit edge between pairs of successive interesting statements.
+          -- Add an implicit pseudo-edge between pairs of successive interesting statements.
           local function record_interesting_statement(statement_number)
             assert(is_interesting(chunk, statement_number))
             if previous_interesting_statement_number ~= nil then
@@ -587,17 +526,58 @@ local function draw_dynamic_edges(states, _, options)
                 },
                 -- TODO: Incorporate the code from the previous check using `lacks_implicit_out_edges` to determine
                 -- confidence and invalidate `current_interesting_statement_number`.
-                confidence = DEFINITELY,
+                confidence = edge_confidence,
               }
               index_edge(implicit_in_edge_index, 'to', edge)
               index_edge(implicit_out_edge_index, 'from', edge)
             end
             previous_interesting_statement_number = statement_number
+            edge_confidence = DEFINITELY
           end
 
           for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
             if is_interesting(chunk, statement_number) then
               record_interesting_statement(statement_number)
+              -- For interesting statements with explicit out-edges, optionally cancel or change the confidence of the
+              -- implicit pseudo-edge towards the next interesting statement.
+              local has_t_branch, has_f_branch = false, false
+              if explicit_out_edge_index[chunk] ~= nil and explicit_out_edge_index[chunk][statement_number] ~= nil then
+                for _, edge in ipairs(explicit_out_edge_index[chunk][statement_number]) do
+                  -- For function calls, cancel the implicit pseudo-edge towards the next interesting statement; instead,
+                  -- the reaching definitions will be routed through the replacement text of the function, at whose end
+                  -- we'll return to the (interesting) statement following the function call.
+                  if edge.type == FUNCTION_CALL then
+                    previous_interesting_statement_number = nil
+                    goto skip_other_out_edges
+                  end
+                  -- For outgoing T- and F-branches of conditional functions, the behavior depends on whether both branches
+                  -- are present. If the conditional function has a function call edge, we use the previously described behavior.
+                  if edge.type == TF_BRANCH then
+                    if edge.subtype == T_BRANCH then
+                      has_t_branch = true
+                    else
+                      assert(edge.subtype == F_BRANCH)
+                      has_f_branch = true
+                    end
+                  end
+                end
+                -- If the conditional function has no function call edge and has both a T- and an F-branch, cancel the implicit
+                -- pseudo-edge towards the next interesting statement; instead, the reaching definitions will be routed through
+                -- the branches, at whose end we'll return to the (interesting) statement following the conditional function call.
+                if has_t_branch and has_f_branch then
+                  previous_interesting_statement_number = nil
+                -- If the conditional function has no function call edge and has only a T- or only an F-branch, reduce the
+                -- confidence of the implicit pseudo-edge towards the next interesting statement to `MAYBE`, since we'll maybe
+                -- not take that branch and advance to the following statement instead.
+                elseif has_t_branch or has_f_branch then
+                  edge_confidence = MAYBE
+                end
+                -- TODO: Since both branches are represented by edges with confidence `MAYBE`, a naive implementation would reduce
+                -- the confidence of all reaching definitions that would pass through such a conditional function. To prevent this,
+                -- we'll need to restore the original confidences in the (interesting) statement immediately following the
+                -- conditional function call.
+                ::skip_other_out_edges::
+              end
             end
           end
           record_interesting_statement(chunk.statement_range:stop() + 1)
