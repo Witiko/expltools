@@ -425,6 +425,8 @@ local function draw_dynamic_edges(states, _, options)
     end
 
     -- Record which statements may immediately continue to the following statements and which may not.
+    --
+    -- TODO: Merge with the check below (the `NEXT_INTERESTING_STATEMENT` pseudo-edges).
     local lacks_implicit_out_edges = {}
     for _, state in ipairs(states) do
       for _, segment in ipairs(state.results.segments or {}) do
@@ -440,6 +442,10 @@ local function draw_dynamic_edges(states, _, options)
             local has_f_branch, has_t_branch = false
             for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
               -- Statements with outgoing function calls may not immediately continue to the following statements.
+              --
+              -- TODO: What if there are both `FUNCTION_CALL` and `TF_BRANCH` edges? The correct interpretation is that
+              -- `FUNCTION_CALL` is considered first, which seems to be the way `out_edge_index` is ordered at the moment,
+              -- but we can't rely on that and should consider `FUNCTION_CALL` before `TF_BRANCH` first regardless.
               if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
                 goto lacks_implicit_out_edge
               end
@@ -453,10 +459,12 @@ local function draw_dynamic_edges(states, _, options)
                 else
                   error('Unexpected edge subtype "' .. edge.subtype .. '"')
                 end
-                if has_t_branch and has_f_branch then
-                  goto lacks_implicit_out_edge
-                end
               end
+            end
+            -- TODO: But what about statements with only a T- or F-branch? These should continue to the following statements
+            -- with the confidence of `MAYBE`, not `DEFINITELY`.
+            if has_t_branch and has_f_branch then
+              goto lacks_implicit_out_edge
             end
 
             goto next_statement
@@ -909,6 +917,8 @@ local function draw_dynamic_edges(states, _, options)
           goto next_function_definition
         end
         local to_segment = results.segments[to_segment_number]
+
+        -- Elide function calls with empty replacement texts.
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
           goto next_function_definition
         end
