@@ -308,19 +308,20 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
-local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ignore file_number
+local function draw_dynamic_edges(states, _, options)
   -- Draw dynamic edges once between all files in the file group, not just individual files.
   if states.drew_dynamic_edges ~= nil then
     return
   end
   states.drew_dynamic_edges = true
 
+  -- Check that a file in the current group reached the flow analysis.
+  local function file_reached_flow_analysis(file_number)
+    return states[file_number].results.edges ~= nil
+  end
+
   -- Check whether a function (variant) definition or a function call statement is well-behaved in the sense that we know its
   -- control sequence names precisely and not just as a probabilistic pattern.
-  --
-  -- TODO: Skip statements from files in the current file group that have never reached the flow analysis. We can check this
-  -- by also passing in `chunk` and checking that `states[chunk.segment.location.file_number].results.edges ~= nil`. We should
-  -- likely also check this in all `for _, state in ipairs(states) do`-loops by continuing if `state.results.edges == nil`.
   local function is_well_behaved(statement)
     local result
     if statement.type == FUNCTION_CALL then
@@ -337,7 +338,11 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
 
   -- Collect a list of function (variant) definition and call statements.
   local function_call_list, function_definition_list = {}, {}
-  for _, state in ipairs(states) do
+  for file_number, state in ipairs(states) do
+    -- Skip statements from files in the current file group that haven't reached the flow analysis.
+    if not file_reached_flow_analysis(file_number) then
+      goto next_file
+    end
     for _, segment in ipairs(state.results.segments or {}) do
       for _, chunk in ipairs(segment.chunks or {}) do
         for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
@@ -359,6 +364,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         end
       end
     end
+    ::next_file::
   end
 
   -- Collect lists of function (variant) definition and function call statements.
@@ -414,8 +420,11 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
     local in_edge_index, out_edge_index = {}, {}
     local edge_lists = {current_function_call_edges}
     for _, state in ipairs(states) do
-      if state.results.edges ~= nil and state.results.edges[STATIC] ~= nil then
-        table.insert(edge_lists, state.results.edges[STATIC])
+      for _, edge_category in ipairs(edge_categories) do
+        local edges = state.results.edges[edge_category]
+        if edges ~= nil then
+          table.insert(edge_lists, edges)
+        end
       end
     end
     for _, edge_index_and_key in ipairs({
@@ -425,6 +434,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       local edge_index, key = table.unpack(edge_index_and_key)
       for _, edges in ipairs(edge_lists) do
         for _, edge in ipairs(edges) do
+          assert(file_reached_flow_analysis(edge.from.chunk.segment.location.file_number))
+          assert(file_reached_flow_analysis(edge.to.chunk.segment.location.file_number))
           local chunk, statement_number = edge[key].chunk, edge[key].statement_number
           if edge_index[chunk] == nil then
             edge_index[chunk] = {}
@@ -436,11 +447,6 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         end
       end
     end
-
-    -- TODO: Add `NEXT_INTERESTING_STATEMENT` pseudo-edges to `in_edge_index` and `out_edge_index`. These pseudo-edges will connect
-    -- the first statements in a chunk, the pseudo-statements after a chunk, and any "interesting" statements, i.e. statements with
-    -- any incoming and outgoing edges other than `NEXT_INTERESTING_STATEMENT`. This will allow us to stop considering the implicit
-    -- `NEXT_STATEMENT` edges below and greatly reduce the number of nodes and edges in the analyzed graph.
 
     -- Record which statements may immediately continue to the following statements and which may not.
     --
@@ -495,6 +501,12 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         end
       end
     end
+
+    -- TODO: Add `NEXT_INTERESTING_STATEMENT` pseudo-edges to `in_edge_index` and `out_edge_index`. These pseudo-edges will connect
+    -- the first statements in a chunk, the pseudo-statements after a chunk, and any "interesting" statements, i.e. statements with
+    -- any incoming and outgoing edges other than `NEXT_INTERESTING_STATEMENT` or statements that lack implicit out-edges (see
+    -- above). This will allow us to stop considering the implicit `NEXT_STATEMENT` edges below and greatly reduce the number of
+    -- nodes and edges in the analyzed graph.
 
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     --
@@ -560,6 +572,7 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       local segment = chunk.segment
       assert(statement_number >= chunk.statement_range:start())
       assert(statement_number <= chunk.statement_range:stop())
+      assert(file_reached_flow_analysis(chunk.segment.location.file_number))
       local statement = segment.statements[statement_number]
       assert(statement ~= nil)
       return statement
@@ -590,7 +603,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       if statement_number - 1 >= chunk.statement_range:start() then
         -- Consider implicit edges from previous statements within a chunk.
         --
-        -- TODO: Add a MAYBE edge from conditional functions with only a T- or an F-type argument, not both.
+        -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
+        -- TODO: Add a `MAYBE` edge from conditional functions with only a T- or an F-type argument, not both.
         if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number - 1] == nil then
           table.insert(
             incoming_edge_confidences_chunks_and_statement_numbers,
@@ -625,8 +639,6 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
       --end
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
         -- Consider explicit incoming edges.
-        --
-        -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
         for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
           table.insert(
             incoming_edge_confidences_chunks_and_statement_numbers,
@@ -773,7 +785,8 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         if statement_number <= chunk.statement_range:stop() then
           -- Consider implicit edges to following statements within a chunk and pseudo-statements after a chunk.
           --
-          -- TODO: Add a MAYBE edge from conditional functions with only a T- or an F-type argument, not both.
+          -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
+          -- TODO: Add a `MAYBE` edge from conditional functions with only a T- or an F-type argument, not both.
           if lacks_implicit_out_edges[chunk] == nil or lacks_implicit_out_edges[chunk][statement_number] == nil then
             table.insert(outgoing_chunks_and_statement_numbers, {chunk, statement_number + 1})
           end
@@ -803,8 +816,6 @@ local function draw_dynamic_edges(states, file_number, options)  -- luacheck: ig
         --end
         if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
           -- Consider explicit outgoing edges.
-          --
-          -- TODO: Add `NEXT_INTERESTING_STATEMENT` edges to `in_edge_index` and stop considering these implicit edges.
           for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
              table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
           end
