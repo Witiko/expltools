@@ -449,9 +449,6 @@ local function draw_dynamic_edges(states, _, options)
     end
 
     -- Record which statements may immediately continue to the following statements and which may not.
-    --
-    -- TODO: Add a MAYBE edge from conditional functions with only a T- or an F-type argument, not both. Idea: Instead of recording
-    -- the lack of an implicit edge, record the edge confidence with a default of DEFINITELY by the way of a metatable.
     local lacks_implicit_out_edges = {}
     for _, state in ipairs(states) do
       for _, segment in ipairs(state.results.segments or {}) do
