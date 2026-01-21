@@ -251,11 +251,7 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                     chunk = from_chunk,
                     statement_number = from_statement_number + 1,
                   },
-                  -- TODO: Use the same confidence for the backward edge instead of always using DEFINITELY. Rationale: A function
-                  -- defined only in a single branch should not propagate to the (pseudo-)statement after the conditional function
-                  -- with the confidence DEFINITELY.
-                  -- TODO: Also update <https://witiko.github.io/Expl3-Linter-11.5/>, which also makes this mistake.
-                  confidence = DEFINITELY,
+                  confidence = MAYBE,
                 }
                 table.insert(results.edges[STATIC], backward_edge)
               end
