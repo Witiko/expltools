@@ -837,31 +837,31 @@ local function draw_dynamic_edges(states, _, options)
           local outgoing_chunk, outgoing_statement_number = table.unpack(outgoing_chunk_and_statement_number)
           add_changed_statement(outgoing_chunk, outgoing_statement_number)
         end
-      end
 
-      -- Update the reaching definitions.
-      if reaching_definition_lists[chunk] == nil then
-        assert(reaching_definition_indexes[chunk] == nil)
-        assert(reaching_definition_confidence_lists[chunk] == nil)
-        assert(reaching_definition_confidence_indexes[chunk] == nil)
-        reaching_definition_lists[chunk] = {}
-        reaching_definition_indexes[chunk] = {}
-        reaching_definition_confidence_lists[chunk] = {}
-        reaching_definition_confidence_indexes[chunk] = {}
+        -- Update the reaching definitions.
+        if reaching_definition_lists[chunk] == nil then
+          assert(reaching_definition_indexes[chunk] == nil)
+          assert(reaching_definition_confidence_lists[chunk] == nil)
+          assert(reaching_definition_confidence_indexes[chunk] == nil)
+          reaching_definition_lists[chunk] = {}
+          reaching_definition_indexes[chunk] = {}
+          reaching_definition_confidence_lists[chunk] = {}
+          reaching_definition_confidence_indexes[chunk] = {}
+        end
+        if reaching_definition_lists[chunk][statement_number] == nil then
+          assert(reaching_definition_indexes[chunk][statement_number] == nil)
+          assert(reaching_definition_confidence_lists[chunk][statement_number] == nil)
+          assert(reaching_definition_confidence_indexes[chunk][statement_number] == nil)
+          reaching_definition_lists[chunk][statement_number] = {}
+          reaching_definition_indexes[chunk][statement_number] = {}
+          reaching_definition_confidence_lists[chunk][statement_number] = {}
+          reaching_definition_confidence_indexes[chunk][statement_number] = {}
+        end
+        reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
+        reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
+        reaching_definition_confidence_lists[chunk][statement_number] = updated_reaching_definition_confidence_list
+        reaching_definition_confidence_indexes[chunk][statement_number] = updated_reaching_definition_confidence_index
       end
-      if reaching_definition_lists[chunk][statement_number] == nil then
-        assert(reaching_definition_indexes[chunk][statement_number] == nil)
-        assert(reaching_definition_confidence_lists[chunk][statement_number] == nil)
-        assert(reaching_definition_confidence_indexes[chunk][statement_number] == nil)
-        reaching_definition_lists[chunk][statement_number] = {}
-        reaching_definition_indexes[chunk][statement_number] = {}
-        reaching_definition_confidence_lists[chunk][statement_number] = {}
-        reaching_definition_confidence_indexes[chunk][statement_number] = {}
-      end
-      reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
-      reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
-      reaching_definition_confidence_lists[chunk][statement_number] = updated_reaching_definition_confidence_list
-      reaching_definition_confidence_indexes[chunk][statement_number] = updated_reaching_definition_confidence_index
 
       inner_loop_number = inner_loop_number + 1
     end
