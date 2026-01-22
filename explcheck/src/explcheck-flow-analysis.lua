@@ -667,7 +667,6 @@ local function draw_dynamic_edges(states, _, options)
 
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
-      local results = states[chunk.segment.location.file_number].results  -- luacheck: ignore results
 
       -- Determine the reaching definitions from before the current statement.
       local incoming_definition_list, incoming_definition_confidence_list = {}, {}
