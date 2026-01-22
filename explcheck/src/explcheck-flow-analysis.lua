@@ -402,8 +402,17 @@ local function draw_dynamic_edges(states, _, options)
     end
 
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
-    local reaching_definition_lists, reaching_definition_confidence_lists = {}, {}
-    local reaching_definition_indexes, reaching_definition_confidence_indexes = {}, {}
+    --
+    -- First of, we will track the reaching definitions themselves.
+    local reaching_definition_lists, reaching_definition_indexes = {}, {}
+    -- For each definition, we will also track its confidence across statements in a separate table.
+    local reaching_definition_confidence_lists, reaching_definition_confidence_indexes = {}, {}
+    -- Furthermore, we will maintain a distributed stack of edges at which the confidence of a definition was last weakened.
+    -- TODO: This allows us to strengthen the confidence again in selected cases such as conditional function calls like
+    -- `\example:TF { ... } { ... }`, where reaching definitions initially bifurcate into the T- and F-branches with weakened
+    -- confidence, but we would like to restore the original confidence after both branches rejoin, unless the definitions were
+    -- killed or further weakened in either branch.
+    local reaching_definition_confidence_weakening_edges = {}  -- luacheck: ignore reaching_definition_confidence_weakening_edges
 
     -- Index an edge in an edge index.
     local function index_edge(edge_index, index_key, edge)
@@ -566,14 +575,10 @@ local function draw_dynamic_edges(states, _, options)
                   previous_interesting_statement_number = nil
                 -- If the conditional function has no function call edge and has only a T- or only an F-branch, reduce the
                 -- confidence of the implicit pseudo-edge towards the next interesting statement to `MAYBE`, since we'll maybe
-                -- not take that branch and advance to the following statement instead.
+                -- not take that branch and advance to that statement instead.
                 elseif has_t_branch or has_f_branch then
                   edge_confidence = MAYBE
                 end
-                -- TODO: Since both branches are represented by edges with confidence `MAYBE`, a naive implementation would reduce
-                -- the confidence of all reaching definitions that would pass through such a conditional function. To prevent this,
-                -- we'll need to restore the original confidences in the (interesting) statement immediately following the
-                -- conditional function call.
                 ::skip_other_out_edges::
               end
             end
