@@ -851,6 +851,8 @@ local function draw_dynamic_edges(states, _, options)
       reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
       reaching_definition_confidence_lists[chunk][statement_number] = updated_reaching_definition_confidence_list
       reaching_definition_confidence_indexes[chunk][statement_number] = updated_reaching_definition_confidence_index
+
+      inner_loop_number = inner_loop_number + 1
     end
 
     -- Make a copy of the current estimation of the function call edges.
@@ -990,6 +992,8 @@ local function draw_dynamic_edges(states, _, options)
       end
       ::next_function_call::
     end
+
+    outer_loop_number = outer_loop_number + 1
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record edges.
