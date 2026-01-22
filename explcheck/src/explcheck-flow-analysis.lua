@@ -542,20 +542,26 @@ local function draw_dynamic_edges(states, _, options)
             edge_confidence = DEFINITELY
           end
 
-          for statement_number, _ in chunk.statement_range:enumerate(segment.statements) do
+          for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
             if is_interesting(chunk, statement_number) then
               record_interesting_statement(statement_number)
-              -- For interesting statements with explicit out-edges, optionally cancel or change the confidence of the
-              -- implicit pseudo-edge towards the next interesting statement.
+
+              -- For potential function calls, reduce the confidence of the implicit pseudo-edge towards the next interesting
+              -- statement, since we'll maybe not take that pseudo-edge and make the function call instead.
+              if statement.type == FUNCTION_CALL then
+                edge_confidence = MAYBE
+                goto next_statement
+              end
+
               local has_t_branch, has_f_branch = false, false
               if explicit_out_edge_index[chunk] ~= nil and explicit_out_edge_index[chunk][statement_number] ~= nil then
                 for _, edge in ipairs(explicit_out_edge_index[chunk][statement_number]) do
-                  -- For function calls, cancel the implicit pseudo-edge towards the next interesting statement; instead,
-                  -- the reaching definitions will be routed through the replacement text of the function, at whose end
+                  -- For fully-resolved function calls, cancel the implicit pseudo-edge towards the next interesting statement;
+                  -- instead, the reaching definitions will be routed through the replacement text of the function, at whose end
                   -- we'll return to the (interesting) statement following the function call.
-                  if edge.type == FUNCTION_CALL then
+                  if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
                     previous_interesting_statement_number = nil
-                    goto skip_other_out_edges
+                    goto next_statement
                   end
                   -- For outgoing T- and F-branches of conditional functions, the behavior depends on whether both branches
                   -- are present. If the conditional function has a function call edge, we use the previously described behavior.
@@ -574,14 +580,14 @@ local function draw_dynamic_edges(states, _, options)
                 if has_t_branch and has_f_branch then
                   previous_interesting_statement_number = nil
                 -- If the conditional function has no function call edge and has only a T- or only an F-branch, reduce the
-                -- confidence of the implicit pseudo-edge towards the next interesting statement to `MAYBE`, since we'll maybe
-                -- not take that branch and advance to that statement instead.
+                -- confidence of the implicit pseudo-edge towards the next interesting statement, since we'll maybe not take that
+                -- pseudo-edge and enter the branch instead.
                 elseif has_t_branch or has_f_branch then
                   edge_confidence = MAYBE
                 end
-                ::skip_other_out_edges::
               end
             end
+            ::next_statement::
           end
           record_interesting_statement(chunk.statement_range:stop() + 1)
         end
