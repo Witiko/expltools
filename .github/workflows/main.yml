@@ -182,6 +182,13 @@ jobs:
           name: ${{ matrix.release }}-issues
           path: |
             issues/
+      - name: Upload numbers of reaching definition loops
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.release }}-loop-numbers
+          path: |
+            /tmp/inner-loop-numbers.txt
+            /tmp/outer-loop-numbers.txt
       - name: Compare issues against the baselines
         if: matrix.release != 'latest'
         run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
