@@ -669,36 +669,22 @@ local function draw_dynamic_edges(states, _, options)
       local chunk, statement_number = pop_changed_statement()
       local results = states[chunk.segment.location.file_number].results  -- luacheck: ignore results
 
-      -- Determine source statements from incoming edges.
-      --
-      -- Note: Some of these statements may be pseudo-statements from after a chunk. This would be a problem if we needed
-      -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
-      local incoming_edge_confidences_chunks_and_statement_numbers = {}
+      -- Determine the reaching definitions from before the current statement.
+      local incoming_definition_list, incoming_definition_confidence_list = {}, {}
       for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
         if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
           for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
-            table.insert(
-              incoming_edge_confidences_chunks_and_statement_numbers,
-              {edge.confidence, edge.from.chunk, edge.from.statement_number}
-            )
-          end
-        end
-      end
-
-      -- Determine the reaching definitions from before the current statement.
-      local incoming_definition_list, incoming_definition_confidence_list = {}, {}
-      for _, incoming_edge_confidence_chunk_and_statement_number in ipairs(incoming_edge_confidences_chunks_and_statement_numbers) do
-        local incoming_edge_confidence, incoming_chunk, incoming_statement_number
-          = table.unpack(incoming_edge_confidence_chunk_and_statement_number)
-        if reaching_definition_lists[incoming_chunk] ~= nil and
-            reaching_definition_lists[incoming_chunk][incoming_statement_number] ~= nil then
-          local reaching_definition_list = reaching_definition_lists[incoming_chunk][incoming_statement_number]
-          local reaching_definition_confidence_list = reaching_definition_confidence_lists[incoming_chunk][incoming_statement_number]
-          for definition_number, incoming_definition in ipairs(reaching_definition_list) do
-            local incoming_definition_confidence = reaching_definition_confidence_list[definition_number]
-            local incoming_confidence = math.min(incoming_edge_confidence, incoming_definition_confidence)
-            table.insert(incoming_definition_list, incoming_definition)
-            table.insert(incoming_definition_confidence_list, incoming_confidence)
+            if reaching_definition_lists[edge.from.chunk] ~= nil and
+                reaching_definition_lists[edge.from.chunk][edge.from.statement_number] ~= nil then
+              local reaching_definition_list = reaching_definition_lists[edge.from.chunk][edge.from.statement_number]
+              local reaching_definition_confidence_list = reaching_definition_confidence_lists[edge.from.chunk][edge.from.statement_number]
+              for definition_number, incoming_definition in ipairs(reaching_definition_list) do
+                local incoming_definition_confidence = reaching_definition_confidence_list[definition_number]
+                local incoming_confidence = math.min(edge.confidence, incoming_definition_confidence)
+                table.insert(incoming_definition_list, incoming_definition)
+                table.insert(incoming_definition_confidence_list, incoming_confidence)
+              end
+            end
           end
         end
       end
@@ -819,23 +805,13 @@ local function draw_dynamic_edges(states, _, options)
 
       -- Update the stack of changed statements.
       if have_reaching_definitions_changed() then
-        -- Determine destination statements of outgoing edges.
-        --
-        -- Note: Some of these statements may be pseudo-statements from after a chunk. This would be a problem if we needed
-        -- actual statements to be there but for the purpose of the reaching definitions algorithm, we don't really care.
-        local outgoing_chunks_and_statement_numbers = {}
+        -- Insert the successive statements into the stack of changed statements.
         for _, out_edge_index in ipairs({explicit_out_edge_index, implicit_out_edge_index}) do
           if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
             for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
-               table.insert(outgoing_chunks_and_statement_numbers, {edge.to.chunk, edge.to.statement_number})
+              add_changed_statement(edge.to.chunk, edge.to.statement_number)
             end
           end
-        end
-
-        -- Insert the successive statements into the stack of changed statements.
-        for _, outgoing_chunk_and_statement_number in ipairs(outgoing_chunks_and_statement_numbers) do
-          local outgoing_chunk, outgoing_statement_number = table.unpack(outgoing_chunk_and_statement_number)
-          add_changed_statement(outgoing_chunk, outgoing_statement_number)
         end
 
         -- Update the reaching definitions.
