@@ -77,6 +77,14 @@ local edge_subtypes = {
 local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
+local weakening_pseudoedges = {
+  NO_EDGES = "this reaching definition has not yet been weakened by an edge",
+  MANY_POSSIBLE_EDGES = "more than one edge may have weakened this reaching definition",
+}
+
+local NO_EDGES = weakening_pseudoedges.NO_EDGES
+local MANY_POSSIBLE_EDGES = weakening_pseudoedges.MANY_POSSIBLE_EDGES
+
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
 local function is_confused(pathname, results, options)
@@ -412,7 +420,7 @@ local function draw_dynamic_edges(states, _, options)
     -- `\example:TF { ... } { ... }`, where reaching definitions initially bifurcate into the T- and F-branches with weakened
     -- confidence, but we would like to restore the original confidence after both branches rejoin, unless the definitions were
     -- killed or further weakened in either branch.
-    local reaching_definition_confidence_weakening_edges = {}  -- luacheck: ignore reaching_definition_confidence_weakening_edges
+    local reaching_definition_confidence_weakening_edge_lists = {}
 
     -- Index an edge in an edge index.
     local function index_edge(edge_index, index_key, edge)
@@ -670,6 +678,7 @@ local function draw_dynamic_edges(states, _, options)
 
       -- Determine the reaching definitions from before the current statement.
       local incoming_definition_list, incoming_definition_confidence_list = {}, {}
+      local incoming_definition_confidence_weakening_edge_list = {}
       for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
         if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
           for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
@@ -677,12 +686,30 @@ local function draw_dynamic_edges(states, _, options)
                 reaching_definition_lists[edge.from.chunk][edge.from.statement_number] ~= nil then
               local reaching_definition_list = reaching_definition_lists[edge.from.chunk][edge.from.statement_number]
               local reaching_definition_confidence_list = reaching_definition_confidence_lists[edge.from.chunk][edge.from.statement_number]
+              local reaching_definition_confidence_weakening_edge_list
+                = reaching_definition_confidence_weakening_edge_lists[edge.from.chunk][edge.from.statement_number]
+              assert(reaching_definition_confidence_list ~= nil)
+              assert(reaching_definition_confidence_weakening_edge_list ~= nil)
               for definition_number, incoming_definition in ipairs(reaching_definition_list) do
                 local incoming_definition_confidence = reaching_definition_confidence_list[definition_number]
-                local incoming_confidence = math.min(edge.confidence, incoming_definition_confidence)
+                local incoming_definition_confidence_weakening_edge = reaching_definition_confidence_weakening_edge_list[definition_number]
+
+                -- Weaken the definition confidence using edge confidence.
+                local weakening_edge, weakened_confidence
+                if edge.confidence < incoming_definition_confidence then
+                  weakening_edge = edge
+                  weakened_confidence = edge.confidence
+                else
+                  weakening_edge = incoming_definition_confidence_weakening_edge
+                  weakened_confidence = incoming_definition_confidence
+                end
+
                 table.insert(incoming_definition_list, incoming_definition)
-                table.insert(incoming_definition_confidence_list, incoming_confidence)
+                table.insert(incoming_definition_confidence_list, weakened_confidence)
+                table.insert(incoming_definition_confidence_weakening_edge_list, weakening_edge)
               end
+              assert(#incoming_definition_list == #incoming_definition_confidence_list)
+              assert(#incoming_definition_list == #incoming_definition_confidence_weakening_edge_list)
             end
           end
         end
@@ -690,6 +717,7 @@ local function draw_dynamic_edges(states, _, options)
 
       -- Determine the definitions from the current statement.
       local current_definition_list, current_definition_confidence_list = {}, {}
+      local current_definition_confidence_weakening_edge_list = {}
       local invalidated_statement_index, invalidated_statement_list = {}, {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement after a chunk.
         local statement = get_statement(chunk, statement_number)
@@ -701,6 +729,7 @@ local function draw_dynamic_edges(states, _, options)
           }
           table.insert(current_definition_list, definition)
           table.insert(current_definition_confidence_list, statement.confidence)
+          table.insert(current_definition_confidence_weakening_edge_list, NO_EDGES)
           -- Invalidate definitions of the same control sequence names from before the current statement.
           if statement.defined_csname.type == TEXT then
             for _, incoming_definition in ipairs(incoming_definition_list) do
@@ -715,51 +744,71 @@ local function draw_dynamic_edges(states, _, options)
               end
             end
           end
+          assert(#current_definition_list == #current_definition_confidence_list)
+          assert(#current_definition_list == #current_definition_confidence_weakening_edge_list)
         end
       end
 
       -- Determine the reaching definitions after the current statement.
-      local updated_reaching_definition_list, updated_reaching_definition_confidence_list = {}, {}
-      local updated_reaching_definition_index, updated_reaching_definition_confidence_index = {}, {}
+      local updated_definition_list, updated_definition_confidence_list = {}, {}
+      local updated_definition_confidence_weakening_edge_list = {}
+      local updated_definition_index, updated_definition_confidence_index = {}, {}
       local current_reaching_statement_index = {}
-      for _, definition_and_definition_confidence_list in ipairs({
-            {incoming_definition_list, incoming_definition_confidence_list},
-            {current_definition_list, current_definition_confidence_list},
+      for _, definition_confidence_and_weakening_edge_list in ipairs({
+            {incoming_definition_list, incoming_definition_confidence_list, incoming_definition_confidence_weakening_edge_list},
+            {current_definition_list, current_definition_confidence_list, current_definition_confidence_weakening_edge_list},
           }) do
-        local definition_list, definition_confidence_list = table.unpack(definition_and_definition_confidence_list)
+        local definition_list, definition_confidence_list, definition_confidence_weakening_edge_list
+          = table.unpack(definition_confidence_and_weakening_edge_list)
         for definition_number, definition in ipairs(definition_list) do
           local definition_confidence = definition_confidence_list[definition_number]
+          local definition_confidence_weakening_edge = definition_confidence_weakening_edge_list[definition_number]
           local statement = get_statement(definition.chunk, definition.statement_number)
           assert(is_well_behaved(statement))
           local defined_csname = definition.defined_csname.payload
+          -- Skip invalidated definitions.
           if invalidated_statement_index[statement] ~= nil then
             goto next_definition
           end
+          -- Record the first occurrence of a definition.
           if current_reaching_statement_index[statement] == nil then
-            table.insert(updated_reaching_definition_list, definition)
-            table.insert(updated_reaching_definition_confidence_list, definition_confidence)
-            assert(#updated_reaching_definition_list == #updated_reaching_definition_confidence_list)
+            table.insert(updated_definition_list, definition)
+            table.insert(updated_definition_confidence_list, definition_confidence)
+            table.insert(updated_definition_confidence_weakening_edge_list, definition_confidence_weakening_edge)
             -- Also index the reaching definitions by defined control sequence names.
-            if updated_reaching_definition_index[defined_csname] == nil then
-              assert(updated_reaching_definition_confidence_index[defined_csname] == nil)
-              updated_reaching_definition_index[defined_csname] = {}
-              updated_reaching_definition_confidence_index[defined_csname] = {}
+            if updated_definition_index[defined_csname] == nil then
+              assert(updated_definition_confidence_index[defined_csname] == nil)
+              updated_definition_index[defined_csname] = {}
+              updated_definition_confidence_index[defined_csname] = {}
             end
-            table.insert(updated_reaching_definition_index[defined_csname], definition)
-            table.insert(updated_reaching_definition_confidence_index[defined_csname], definition_confidence)
-            assert(#updated_reaching_definition_index[defined_csname] == #updated_reaching_definition_confidence_index[defined_csname])
+            table.insert(updated_definition_index[defined_csname], definition)
+            table.insert(updated_definition_confidence_index[defined_csname], definition_confidence)
+            assert(#updated_definition_index[defined_csname] == #updated_definition_confidence_index[defined_csname])
             current_reaching_statement_index[statement] = {
-              #updated_reaching_definition_list,
-              #updated_reaching_definition_index[defined_csname],
+              #updated_definition_list,
+              #updated_definition_index[defined_csname],
             }
+          -- For repeated occurrences of a definition, strengthen its confidence.
           else
-            -- For repeated definitions, record the maximum confidence.
             local other_definition_list_number, other_definition_index_number = table.unpack(current_reaching_statement_index[statement])
-            local other_definition_confidence = updated_reaching_definition_confidence_list[other_definition_list_number]
-            local combined_confidence = math.max(definition_confidence, other_definition_confidence)
-            updated_reaching_definition_confidence_list[other_definition_list_number] = combined_confidence
-            updated_reaching_definition_confidence_index[defined_csname][other_definition_index_number] = combined_confidence
+            local other_definition_confidence = updated_definition_confidence_list[other_definition_list_number]
+            local other_definition_confidence_weakening_edge
+              = updated_definition_confidence_weakening_edge_list[other_definition_list_number]
+
+            -- If the current occurrence has a higher confidence, replace the previous occurrence with it.
+            if definition_confidence > other_definition_confidence then
+              updated_definition_confidence_list[other_definition_list_number] = definition_confidence
+              updated_definition_confidence_index[defined_csname][other_definition_index_number] = definition_confidence
+              updated_definition_confidence_weakening_edge_list[other_definition_list_number] = definition_confidence_weakening_edge
+            -- If several occurrences have the same confidence but a different confidence weakening edge, record that.
+            elseif definition_confidence == other_definition_confidence
+                and definition_confidence_weakening_edge ~= other_definition_confidence_weakening_edge then
+              updated_definition_confidence_weakening_edge_list[other_definition_list_number] = MANY_POSSIBLE_EDGES
+            end
           end
+          assert(#updated_definition_list == #updated_definition_confidence_list)
+          assert(#updated_definition_list == #updated_definition_confidence_weakening_edge_list)
+          assert(#updated_definition_index[defined_csname] == #updated_definition_confidence_index[defined_csname])
           ::next_definition::
         end
       end
@@ -773,28 +822,39 @@ local function draw_dynamic_edges(states, _, options)
         if reaching_definition_lists[chunk][statement_number] == nil then
           return true
         end
-        local previous_reaching_definition_list = reaching_definition_lists[chunk][statement_number]
-        local previous_reaching_definition_confidence_list = reaching_definition_confidence_lists[chunk][statement_number]
-        assert(previous_reaching_definition_list ~= nil)
-        assert(previous_reaching_definition_confidence_list ~= nil)
-        assert(#previous_reaching_definition_list <= #updated_reaching_definition_list)
-        assert(#previous_reaching_definition_confidence_list <= #updated_reaching_definition_confidence_list)
+        local previous_definition_list = reaching_definition_lists[chunk][statement_number]
+        local previous_definition_confidence_list = reaching_definition_confidence_lists[chunk][statement_number]
+        local previous_definition_confidence_weakening_edge_list
+          = reaching_definition_confidence_weakening_edge_lists[chunk][statement_number]
+        assert(previous_definition_list ~= nil)
+        assert(previous_definition_confidence_list ~= nil)
+        assert(previous_definition_confidence_weakening_edge_list ~= nil)
+        assert(#previous_definition_list <= #updated_definition_list)
+        assert(#previous_definition_confidence_list <= #updated_definition_confidence_list)
+        assert(#previous_definition_confidence_weakening_edge_list <= #updated_definition_confidence_weakening_edge_list)
 
         -- Quickly check for inequality using set cardinalities.
-        if #previous_reaching_definition_list ~= #updated_reaching_definition_list then
+        if #previous_definition_list ~= #updated_definition_list then
           return true
         end
 
         -- Check that the definitions and their confidences are the same.
-        for previous_definition_number, definition in ipairs(previous_reaching_definition_list) do
+        for previous_definition_number, definition in ipairs(previous_definition_list) do
           local statement = get_statement(definition.chunk, definition.statement_number)
           if current_reaching_statement_index[statement] == nil then
             return true
           end
           local updated_definition_list_number, _ = table.unpack(current_reaching_statement_index[statement])
-          local previous_definition_confidence = previous_reaching_definition_confidence_list[previous_definition_number]
-          local updated_definition_confidence = updated_reaching_definition_confidence_list[updated_definition_list_number]
+          local previous_definition_confidence = previous_definition_confidence_list[previous_definition_number]
+          local updated_definition_confidence = updated_definition_confidence_list[updated_definition_list_number]
           if previous_definition_confidence ~= updated_definition_confidence then
+            return true
+          end
+          local previous_definition_confidence_weakening_edge
+            = previous_definition_confidence_weakening_edge_list[previous_definition_number]
+          local updated_definition_confidence_weakening_edge
+            = updated_definition_confidence_weakening_edge_list[updated_definition_list_number]
+          if previous_definition_confidence_weakening_edge ~= updated_definition_confidence_weakening_edge then
             return true
           end
         end
@@ -818,24 +878,29 @@ local function draw_dynamic_edges(states, _, options)
           assert(reaching_definition_indexes[chunk] == nil)
           assert(reaching_definition_confidence_lists[chunk] == nil)
           assert(reaching_definition_confidence_indexes[chunk] == nil)
+          assert(reaching_definition_confidence_weakening_edge_lists[chunk] == nil)
           reaching_definition_lists[chunk] = {}
           reaching_definition_indexes[chunk] = {}
           reaching_definition_confidence_lists[chunk] = {}
           reaching_definition_confidence_indexes[chunk] = {}
+          reaching_definition_confidence_weakening_edge_lists[chunk] = {}
         end
         if reaching_definition_lists[chunk][statement_number] == nil then
           assert(reaching_definition_indexes[chunk][statement_number] == nil)
           assert(reaching_definition_confidence_lists[chunk][statement_number] == nil)
           assert(reaching_definition_confidence_indexes[chunk][statement_number] == nil)
+          assert(reaching_definition_confidence_weakening_edge_lists[chunk][statement_number] == nil)
           reaching_definition_lists[chunk][statement_number] = {}
           reaching_definition_indexes[chunk][statement_number] = {}
           reaching_definition_confidence_lists[chunk][statement_number] = {}
           reaching_definition_confidence_indexes[chunk][statement_number] = {}
+          reaching_definition_confidence_weakening_edge_lists[chunk][statement_number] = {}
         end
-        reaching_definition_lists[chunk][statement_number] = updated_reaching_definition_list
-        reaching_definition_indexes[chunk][statement_number] = updated_reaching_definition_index
-        reaching_definition_confidence_lists[chunk][statement_number] = updated_reaching_definition_confidence_list
-        reaching_definition_confidence_indexes[chunk][statement_number] = updated_reaching_definition_confidence_index
+        reaching_definition_lists[chunk][statement_number] = updated_definition_list
+        reaching_definition_indexes[chunk][statement_number] = updated_definition_index
+        reaching_definition_confidence_lists[chunk][statement_number] = updated_definition_confidence_list
+        reaching_definition_confidence_indexes[chunk][statement_number] = updated_definition_confidence_index
+        reaching_definition_confidence_weakening_edge_lists[chunk][statement_number] = updated_definition_confidence_weakening_edge_list
       end
 
       inner_loop_number = inner_loop_number + 1
