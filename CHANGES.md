@@ -29,6 +29,9 @@
   ideally, improve your code quality and contribute to expltools so that it can
   understand your code better. 😉
 
+- In the syntactic analysis, fix the assignment of segment numbers to T- and
+  F-type arguments. (#152)
+
 - Add Lua options `max_reaching_definition_inner_loops` and
   `max_reaching_definition_outer_loops`. (#152)
 

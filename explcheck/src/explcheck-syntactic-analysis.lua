@@ -614,8 +614,8 @@ local function get_calls(results, part_number, segment, issues, content)
                     },
                   }
                   table.insert(results.segments, nested_segment)
-                  nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
                   argument.segment_number = #results.segments
+                  nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
                 end
                 record_argument(argument)
                 next_token_number = map_forward(next_grouping.stop)
