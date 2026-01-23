@@ -102,7 +102,7 @@ local function format_statement(chunk, statement_number)
 end
 
 -- Get a text representation of an edge.
-local function format_edge(edge)
+local function format_edge(edge)  -- luacheck: ignore
   return string.format(
     "%96s  -- %20s (confidence: %3.0f%%) -->  %s",
     format_statement(edge.from.chunk, edge.from.statement_number),
