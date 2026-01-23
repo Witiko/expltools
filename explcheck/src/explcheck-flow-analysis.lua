@@ -417,6 +417,8 @@ local function draw_dynamic_edges(states, _, options)
     -- First of, we will track the reaching definitions themselves.
     local reaching_definition_lists, reaching_definition_indexes = {}, {}
     -- For each definition, we will also track its confidence across statements in a separate table.
+    --
+    -- TODO: Could we have the confidences and confidence weakening edges as part of the definition objects?
     local reaching_definition_confidence_lists, reaching_definition_confidence_indexes = {}, {}
     -- Furthermore, we will maintain a distributed stack of edges at which the confidence of a definition was last weakened.
     -- TODO: This allows us to strengthen the confidence again in selected cases such as conditional function calls like
