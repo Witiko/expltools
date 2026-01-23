@@ -776,8 +776,9 @@ local function draw_dynamic_edges(states, _, options)
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement after a chunk.
         local statement = get_statement(chunk, statement_number)
         if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
+          assert(statement.defined_csname.type == TEXT)
           local definition = {
-            defined_csname = statement.defined_csname,
+            csname = statement.defined_csname.payload,
             statement_number = statement_number,
             chunk = chunk,
           }
@@ -785,17 +786,15 @@ local function draw_dynamic_edges(states, _, options)
           table.insert(current_definition_confidence_list, statement.confidence)
           table.insert(current_definition_confidence_weakening_edge_list, NO_EDGES)
           -- Invalidate definitions of the same control sequence names from before the current statement.
-          if statement.defined_csname.type == TEXT then
-            for _, incoming_definition in ipairs(incoming_definition_list) do
-              local incoming_statement = get_statement(incoming_definition.chunk, incoming_definition.statement_number)
-              if incoming_statement.confidence == DEFINITELY and
-                  incoming_statement.defined_csname.payload == statement.defined_csname.payload and
-                  incoming_statement ~= statement then
-                if invalidated_statement_index[incoming_statement] == nil then
-                  table.insert(invalidated_statement_list, incoming_statement)
-                end
-                invalidated_statement_index[incoming_statement] = true
+          for _, incoming_definition in ipairs(incoming_definition_list) do
+            local incoming_statement = get_statement(incoming_definition.chunk, incoming_definition.statement_number)
+            if incoming_statement.confidence == DEFINITELY and
+                incoming_statement.defined_csname.payload == definition.csname and
+                incoming_statement ~= statement then
+              if invalidated_statement_index[incoming_statement] == nil then
+                table.insert(invalidated_statement_list, incoming_statement)
               end
+              invalidated_statement_index[incoming_statement] = true
             end
           end
           assert(#current_definition_list == #current_definition_confidence_list)
@@ -819,7 +818,6 @@ local function draw_dynamic_edges(states, _, options)
           local definition_confidence_weakening_edge = definition_confidence_weakening_edge_list[definition_number]
           local statement = get_statement(definition.chunk, definition.statement_number)
           assert(is_well_behaved(statement))
-          local defined_csname = definition.defined_csname.payload
           -- Skip invalidated definitions.
           if invalidated_statement_index[statement] ~= nil then
             goto next_definition
@@ -830,17 +828,17 @@ local function draw_dynamic_edges(states, _, options)
             table.insert(updated_definition_confidence_list, definition_confidence)
             table.insert(updated_definition_confidence_weakening_edge_list, definition_confidence_weakening_edge)
             -- Also index the reaching definitions by defined control sequence names.
-            if updated_definition_index[defined_csname] == nil then
-              assert(updated_definition_confidence_index[defined_csname] == nil)
-              updated_definition_index[defined_csname] = {}
-              updated_definition_confidence_index[defined_csname] = {}
+            if updated_definition_index[definition.csname] == nil then
+              assert(updated_definition_confidence_index[definition.csname] == nil)
+              updated_definition_index[definition.csname] = {}
+              updated_definition_confidence_index[definition.csname] = {}
             end
-            table.insert(updated_definition_index[defined_csname], definition)
-            table.insert(updated_definition_confidence_index[defined_csname], definition_confidence)
-            assert(#updated_definition_index[defined_csname] == #updated_definition_confidence_index[defined_csname])
+            table.insert(updated_definition_index[definition.csname], definition)
+            table.insert(updated_definition_confidence_index[definition.csname], definition_confidence)
+            assert(#updated_definition_index[definition.csname] == #updated_definition_confidence_index[definition.csname])
             current_reaching_statement_index[statement] = {
               #updated_definition_list,
-              #updated_definition_index[defined_csname],
+              #updated_definition_index[definition.csname],
             }
           -- For repeated occurrences of a definition, strengthen its confidence.
           else
@@ -852,7 +850,7 @@ local function draw_dynamic_edges(states, _, options)
             -- If the current occurrence has a higher confidence, replace the previous occurrence with it.
             if definition_confidence > other_definition_confidence then
               updated_definition_confidence_list[other_definition_list_number] = definition_confidence
-              updated_definition_confidence_index[defined_csname][other_definition_index_number] = definition_confidence
+              updated_definition_confidence_index[definition.csname][other_definition_index_number] = definition_confidence
               updated_definition_confidence_weakening_edge_list[other_definition_list_number] = definition_confidence_weakening_edge
             -- If several occurrences have the same confidence but a different confidence weakening edge, record that.
             elseif definition_confidence == other_definition_confidence
@@ -862,7 +860,7 @@ local function draw_dynamic_edges(states, _, options)
           end
           assert(#updated_definition_list == #updated_definition_confidence_list)
           assert(#updated_definition_list == #updated_definition_confidence_weakening_edge_list)
-          assert(#updated_definition_index[defined_csname] == #updated_definition_confidence_index[defined_csname])
+          assert(#updated_definition_index[definition.csname] == #updated_definition_confidence_index[definition.csname])
           ::next_definition::
         end
       end
@@ -983,7 +981,7 @@ local function draw_dynamic_edges(states, _, options)
         = reaching_definition_confidence_indexes[function_call_chunk][function_call_statement_number]
       local used_csname = function_call_statement.used_csname.payload
       for definition_number, definition in ipairs(reaching_definition_index[used_csname] or {}) do
-        assert(definition.defined_csname.payload == used_csname)
+        assert(definition.csname == used_csname)
         table.insert(reaching_function_and_variant_definition_list, definition)
         local definition_confidence = reaching_definition_confidence_index[used_csname][definition_number]
         table.insert(reaching_function_and_variant_definition_confidence_list, definition_confidence)
@@ -1018,7 +1016,7 @@ local function draw_dynamic_edges(states, _, options)
               local other_chunk, other_statement_number = other_definition.chunk, other_definition.statement_number
               local other_statement = get_statement(other_chunk, other_statement_number)
               assert(is_well_behaved(other_statement))
-              assert(other_definition.defined_csname.payload == base_csname)
+              assert(other_definition.csname == base_csname)
               table.insert(reaching_function_and_variant_definition_list, other_definition)
               local combined_confidence = math.min(definition_confidence, other_definition_confidence)
               table.insert(reaching_function_and_variant_definition_confidence_list, combined_confidence)
