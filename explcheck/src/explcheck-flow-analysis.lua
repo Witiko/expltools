@@ -255,12 +255,13 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                   -- conditional function caller, we maybe enter the branch and definitely return back, from the viewpoint
                   -- of the reaching definitions, the reaching definitions are definitely propagated to both branches. In regular
                   -- function calls, this may not be the case when there are multiple callers but then that's caused by the number
-                  -- of different callers, not the confidences of the call edges themselves. Perhaps we need two different notions
-                  -- of confidence: forward confidence (do I definitely take that edge?) and backward confidence (did I definitely
-                  -- take that edge?). Furthermore, some of this seems implicit: forward confidence can't be definite if there are
-                  -- multiple out-edges from the from-statement and, conversely, backward confidence can't be definite if there are
-                  -- multiple in-edges to the to-statement; if nothing less, we should at least assert this during the reaching
-                  -- definition analysis.
+                  -- of different callers, not (only) the confidences of the call edges themselves. Perhaps we need two different
+                  -- notions of confidence: forward confidence (do I definitely take that edge?) and backward confidence (did I
+                  -- definitely take that edge?). Furthermore, some of this seems implicit: forward confidence can't be definite if
+                  -- there are multiple out-edges from the from-statement and, conversely, backward confidence can't be definite if
+                  -- there are multiple in-edges to the to-statement. If nothing less, we should at least assert this during the
+                  -- reaching definition analysis. Ideally, we would be able to remove these explicit confidences for most edges
+                  -- and determine them during the analysis from the in- and out-degrees of different statements.
                   confidence = MAYBE,
                 }
                 local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
