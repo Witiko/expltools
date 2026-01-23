@@ -77,13 +77,13 @@ local edge_subtypes = {
 local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
-local weakening_pseudoedges = {
+local confidence_weakening_pseudoedges = {
   NO_EDGES = "this reaching definition has not yet been weakened by an edge",
   MANY_POSSIBLE_EDGES = "more than one edge may have weakened this reaching definition",
 }
 
-local NO_EDGES = weakening_pseudoedges.NO_EDGES
-local MANY_POSSIBLE_EDGES = weakening_pseudoedges.MANY_POSSIBLE_EDGES
+local NO_EDGES = confidence_weakening_pseudoedges.NO_EDGES
+local MANY_POSSIBLE_EDGES = confidence_weakening_pseudoedges.MANY_POSSIBLE_EDGES
 
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
