@@ -251,6 +251,16 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                     chunk = branch_edge_to_chunk,
                     statement_number = branch_edge_to_statement_number,
                   },
+                  -- TODO: This doesn't seem to work for the reaching definitions analysis. While from the viewpoint of the
+                  -- conditional function caller, we maybe enter the branch and definitely return back, from the viewpoint
+                  -- of the reaching definitions, the reaching definitions are definitely propagated to both branches. In regular
+                  -- function calls, this may not be the case when there are multiple callers but then that's caused by the number
+                  -- of different callers, not the confidences of the call edges themselves. Perhaps we need two different notions
+                  -- of confidence: forward confidence (do I definitely take that edge?) and backward confidence (did I definitely
+                  -- take that edge?). Furthermore, some of this seems implicit: forward confidence can't be definite if there are
+                  -- multiple out-edges from the from-statement and, conversely, backward confidence can't be definite if there are
+                  -- multiple in-edges to the to-statement; if nothing less, we should at least assert this during the reaching
+                  -- definition analysis.
                   confidence = MAYBE,
                 }
                 local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
