@@ -236,9 +236,9 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                 else
                   error('Unexpected segment subtype "' .. to_segment.subtype .. '"')
                 end
-                local forward_to_chunk = to_segment.chunks[1]
-                local forward_to_statement_number = forward_to_chunk.statement_range:start()
-                local forward_edge = {
+                local branch_edge_to_chunk = to_segment.chunks[1]
+                local branch_edge_to_statement_number = branch_edge_to_chunk.statement_range:start()
+                local branch_edge = {
                   type = TF_BRANCH,
                   subtype = edge_subtype,
                   from = {
@@ -246,20 +246,19 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                     statement_number = from_statement_number,
                   },
                   to = {
-                    chunk = forward_to_chunk,
-                    statement_number = forward_to_statement_number,
+                    chunk = branch_edge_to_chunk,
+                    statement_number = branch_edge_to_statement_number,
                   },
                   confidence = MAYBE,
                 }
-                table.insert(results.edges[STATIC], forward_edge)
-                local backward_from_chunk = to_segment.chunks[#to_segment.chunks]
-                local backward_from_statement_number = forward_to_chunk.statement_range:stop() + 1
-                local backward_edge = {
+                local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
+                local return_edge_from_statement_number = branch_edge_to_chunk.statement_range:stop() + 1
+                local return_edge = {
                   type = TF_BRANCH_RETURN,
                   subtype = edge_subtype,
                   from = {
-                    chunk = backward_from_chunk,
-                    statement_number = backward_from_statement_number,
+                    chunk = return_edge_from_chunk,
+                    statement_number = return_edge_from_statement_number,
                   },
                   to = {
                     chunk = from_chunk,
@@ -267,7 +266,11 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                   },
                   confidence = MAYBE,
                 }
-                table.insert(results.edges[STATIC], backward_edge)
+                -- The following attributes are specific to the edge types.
+                branch_edge.return_edge = return_edge
+                return_edge.branch_edge = branch_edge
+                table.insert(results.edges[STATIC], branch_edge)
+                table.insert(results.edges[STATIC], return_edge)
               end
             end
           end
@@ -1009,28 +1012,27 @@ local function draw_dynamic_edges(states, _, options)
         end
 
         -- Draw the edges.
-        local forward_to_chunk = to_segment.chunks[1]
-        local forward_to_statement_number = forward_to_chunk.statement_range:start()
-        local forward_edge = {
+        local call_edge_to_chunk = to_segment.chunks[1]
+        local call_edge_to_statement_number = call_edge_to_chunk.statement_range:start()
+        local call_edge = {
           type = FUNCTION_CALL,
           from = {
             chunk = function_call_chunk,
             statement_number = function_call_statement_number,
           },
           to = {
-            chunk = forward_to_chunk,
-            statement_number = forward_to_statement_number,
+            chunk = call_edge_to_chunk,
+            statement_number = call_edge_to_statement_number,
           },
           confidence = edge_confidence,
         }
-        table.insert(current_function_call_edges, forward_edge)
-        local backward_from_chunk = to_segment.chunks[#to_segment.chunks]
-        local backward_from_statement_number = forward_to_chunk.statement_range:stop() + 1
-        local backward_edge = {
+        local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
+        local return_edge_from_statement_number = call_edge_to_chunk.statement_range:stop() + 1
+        local return_edge = {
           type = FUNCTION_CALL_RETURN,
           from = {
-            chunk = backward_from_chunk,
-            statement_number = backward_from_statement_number,
+            chunk = return_edge_from_chunk,
+            statement_number = return_edge_from_statement_number,
           },
           to = {
             chunk = function_call_chunk,
@@ -1038,7 +1040,11 @@ local function draw_dynamic_edges(states, _, options)
           },
           confidence = edge_confidence,
         }
-        table.insert(current_function_call_edges, backward_edge)
+        -- The following attributes are specific to the edge types.
+        call_edge.return_edge = return_edge
+        return_edge.call_edge = call_edge
+        table.insert(current_function_call_edges, call_edge)
+        table.insert(current_function_call_edges, return_edge)
         ::next_function_definition::
       end
       ::next_function_call::
