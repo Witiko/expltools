@@ -87,6 +87,48 @@ local confidence_weakening_pseudoedges = {
 local NO_EDGES = confidence_weakening_pseudoedges.NO_EDGES
 local MANY_POSSIBLE_EDGES = confidence_weakening_pseudoedges.MANY_POSSIBLE_EDGES
 
+-- Resolve a chunk and a statement number to a statement.
+local function _get_statement(chunk, statement_number)
+  local segment = chunk.segment
+  assert(statement_number >= chunk.statement_range:start())
+  assert(statement_number <= chunk.statement_range:stop())
+  local statement = segment.statements[statement_number]
+  assert(statement ~= nil)
+  return statement
+end
+
+-- Get a text representation of a statement or a pseudo-statement "after" a chunk.
+local function format_statement(chunk, statement_number)
+  local statement_text
+  if statement_number == chunk.statement_range:stop() + 1 then
+    statement_text = "pseudo-statement after a chunk"
+  else
+    local statement = _get_statement(chunk, statement_number)
+    statement_text = string.format(
+      "statement #%d (%s) in a chunk",
+      statement_number,
+      statement.type
+    )
+  end
+  local segment_text = string.format(
+    'from segment "%s" at depth %d',
+    chunk.segment.type,
+    chunk.segment.nesting_depth
+  )
+  return string.format("%s %s", statement_text, segment_text)
+end
+
+-- Get a text representation of an edge.
+local function format_edge(edge)
+  return string.format(
+    "%95s  -- %20s (confidence: %3.0f%%) -->  %s",
+    format_statement(edge.from.chunk, edge.from.statement_number),
+    edge.type,
+    edge.confidence * 100,
+    format_statement(edge.to.chunk, edge.to.statement_number)
+  )
+end
+
 -- Determine whether the semantic analysis step is too confused by the results
 -- of the previous steps to run.
 local function is_confused(pathname, results, options)
@@ -368,13 +410,8 @@ local function draw_dynamic_edges(states, _, options)
 
   -- Resolve a chunk and a statement number to a statement.
   local function get_statement(chunk, statement_number)
-    local segment = chunk.segment
-    assert(statement_number >= chunk.statement_range:start())
-    assert(statement_number <= chunk.statement_range:stop())
     assert(file_reached_flow_analysis(chunk.segment.location.file_number))
-    local statement = segment.statements[statement_number]
-    assert(statement ~= nil)
-    return statement
+    return _get_statement(chunk, statement_number)
   end
 
   -- Collect a list of well-behaved function definition and call statements.
