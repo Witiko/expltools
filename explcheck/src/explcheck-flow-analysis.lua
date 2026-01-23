@@ -101,29 +101,22 @@ end
 local function format_statement(chunk, statement_number)
   local statement_text
   if statement_number == chunk.statement_range:stop() + 1 then
-    statement_text = "pseudo-statement after a chunk"
+    statement_text = string.format("pseudo-statement #%d after a chunk", statement_number)
   else
     local statement = _get_statement(chunk, statement_number)
-    statement_text = string.format(
-      "statement #%d (%s) in a chunk",
-      statement_number,
-      statement.type
-    )
+    statement_text = string.format("statement #%d (%s) in a chunk", statement_number, statement.subtype or statement.type)
   end
   local segment_text = string.format(
-    'from segment "%s" at depth %d',
-    chunk.segment.type,
-    chunk.segment.nesting_depth
-  )
+    'from segment "%s" at depth %d', chunk.segment.subtype or chunk.segment.type, chunk.segment.nesting_depth)
   return string.format("%s %s", statement_text, segment_text)
 end
 
 -- Get a text representation of an edge.
 local function format_edge(edge)
   return string.format(
-    "%95s  -- %20s (confidence: %3.0f%%) -->  %s",
+    "%96s  -- %20s (confidence: %3.0f%%) -->  %s",
     format_statement(edge.from.chunk, edge.from.statement_number),
-    edge.type,
+    edge.subtype or edge.type,
     edge.confidence * 100,
     format_statement(edge.to.chunk, edge.to.statement_number)
   )
