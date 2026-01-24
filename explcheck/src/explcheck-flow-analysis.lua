@@ -52,6 +52,7 @@ local TF_BRANCH = "T- or F-branch of conditional function"
 local edge_types = {
   NEXT_CHUNK = "pair of successive chunks",
   NEXT_INTERESTING_STATEMENT = "pair of successive interesting statements",  -- Only used internally in `draw_dynamic_edges()`.
+  -- TODO: Make `NEXT_FILE` a static edge, defined in `draw_static_edges()`.
   NEXT_FILE = "potential insertion of another file from the current file group",  -- Only used internally in `draw_dynamic_edges()`.
   TF_BRANCH = TF_BRANCH,
   TF_BRANCH_RETURN = string.format("return from %s", TF_BRANCH),
