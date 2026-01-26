@@ -702,8 +702,6 @@ local function draw_dynamic_edges(states, _, options)
 
       -- Collect reaching definitions from the incoming edges.
       local incoming_edge_list = {}
-      local incoming_edge_index, incoming_edge_indexed_type_index = {}, {}  -- luacheck: ignore
-      local incoming_predecessor_chunk_list, incoming_predecessor_statement_number_lists = {}, {}  -- luacheck: ignore
       for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
         if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
           for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
