@@ -25,7 +25,7 @@ min_unclosed_grouping_ratio = 0.2
 min_simple_tokens_in_csname_pattern = 5
 porcelain = false
 stop_early_when_confused = true
-stop_after = "flow analysis"  # TODO: Revert commit 30f6b141.
+stop_after = "semantic analysis"
 suppressed_issue_map = {
   w200 = ["s412", "s413", "s414"],
 }
