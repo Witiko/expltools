@@ -320,19 +320,7 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                     chunk = branch_edge_to_chunk,
                     statement_number = branch_edge_to_statement_number,
                   },
-                  -- TODO: This doesn't seem to work for the reaching definitions analysis. While from the viewpoint of the
-                  -- conditional function caller, we maybe enter the branch and definitely return back, from the viewpoint
-                  -- of the reaching definitions, the reaching definitions are definitely propagated to both branches. In regular
-                  -- function calls, this may not be the case when there are multiple callers but then that's caused by the number
-                  -- of different callers, not (only) the confidences of the call edges themselves. Perhaps we need two different
-                  -- notions of confidence: forward confidence (do I definitely take that edge?) and backward confidence (did I
-                  -- definitely take that edge?). Furthermore, some of this seems implicit: forward confidence can't be definite if
-                  -- there are multiple out-edges from the from-statement and, conversely, backward confidence can't be definite if
-                  -- there are multiple in-edges to the to-statement. If nothing less, we should at least assert this during the
-                  -- reaching definition analysis. Ideally, we would be able to remove these explicit confidences for most edges
-                  -- and determine them during the analysis from the in- and out-degrees of different statements. After that,
-                  -- we'll need to also update the relevant parts of <https://witiko.github.io/Expl3-Linter-11.5/>.
-                  confidence = MAYBE,
+                  confidence = DEFINITELY,
                   -- The following attribute is specific to the type.
                   subtype = edge_subtype,
                 }
@@ -348,7 +336,7 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
                     chunk = from_chunk,
                     statement_number = from_statement_number + 1,
                   },
-                  confidence = MAYBE,
+                  confidence = DEFINITELY,
                   -- The following attribute is specific to the type.
                   subtype = edge_subtype,
                 }
@@ -634,11 +622,6 @@ local function draw_dynamic_edges(states, _, options)
                 -- the branches, at whose end we'll return to the (interesting) statement following the conditional function call.
                 if has_t_branch and has_f_branch then
                   previous_interesting_statement_number = nil
-                -- If the conditional function has no function call edge and has only a T- or only an F-branch, reduce the
-                -- confidence of the implicit pseudo-edge towards the next interesting statement, since we'll maybe not take that
-                -- pseudo-edge and enter the branch instead.
-                elseif has_t_branch or has_f_branch then
-                  edge_confidence = MAYBE
                 end
               end
             end
@@ -723,8 +706,7 @@ local function draw_dynamic_edges(states, _, options)
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
 
-      -- Collect the incoming edges and set up data structures to determine whether we could strengthen the confidence of
-      -- some of the reaching definitions from before the current statement.
+      -- Collect reaching definitions from the incoming edges.
       local incoming_edge_list = {}
       local incoming_edge_index, incoming_edge_indexed_type_index = {}, {}  -- luacheck: ignore
       local incoming_predecessor_chunk_list, incoming_predecessor_statement_number_lists = {}, {}  -- luacheck: ignore
@@ -732,39 +714,6 @@ local function draw_dynamic_edges(states, _, options)
         if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
           for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
             table.insert(incoming_edge_list, edge)
-            -- Index incoming edges with common predecessor statements whose incoming reaching definitions have confidence that
-            -- we could potentially strengthen.
-            -- TODO: Use these after we have fixed how edge confidences are determined.
-            if edge.type == TF_BRANCH_RETURN or edge.type == NEXT_INTERESTING_STATEMENT then
-              local predecessor_edge, edge_indexed_type
-              if edge.type == TF_BRANCH_RETURN then
-                predecessor_edge = edge.branch_edge
-                edge_indexed_type = edge.subtype
-              elseif edge.type == NEXT_INTERESTING_STATEMENT then
-                predecessor_edge = edge
-                edge_indexed_type = edge.type
-              else
-                error('Unexpected edge type "' .. edge.type .. '"')
-              end
-              local predecessor_chunk = predecessor_edge.from.chunk
-              local predecessor_statement_number = predecessor_edge.from.statement_number
-              if incoming_edge_index[predecessor_chunk] == nil then
-                assert(incoming_edge_indexed_type_index[predecessor_chunk] == nil)
-                assert(incoming_predecessor_statement_number_lists[predecessor_chunk] == nil)
-                incoming_edge_index[predecessor_chunk] = {}
-                incoming_edge_indexed_type_index[predecessor_chunk] = {}
-                table.insert(incoming_predecessor_chunk_list, predecessor_chunk)
-                incoming_predecessor_statement_number_lists[predecessor_chunk] = {}
-              end
-              if incoming_edge_index[predecessor_chunk][predecessor_statement_number] == nil then
-                assert(incoming_edge_indexed_type_index[predecessor_chunk][predecessor_statement_number] == nil)
-                incoming_edge_index[predecessor_chunk][predecessor_statement_number] = {}
-                incoming_edge_indexed_type_index[predecessor_chunk][predecessor_statement_number] = {}
-                table.insert(incoming_predecessor_statement_number_lists[predecessor_chunk], predecessor_statement_number)
-              end
-              table.insert(incoming_edge_index[predecessor_chunk][predecessor_statement_number], edge)
-              table.insert(incoming_edge_indexed_type_index[predecessor_chunk][predecessor_statement_number], edge_indexed_type)
-            end
           end
         end
       end
@@ -781,11 +730,11 @@ local function draw_dynamic_edges(states, _, options)
               assert(reaching_definition_confidence_list ~= nil)
               for definition_number, definition in ipairs(reaching_definition_list) do
                 table.insert(incoming_definition_list, definition)
-                -- Potentially weaken the confidence of the definition using the incoming edge confidence.
-                --
                 -- TODO: If all in-edges have a definition, keep the unweakened definition. For ease of implementation, keep this
                 -- task until after we have updated how definition confidences are determined and stored.
                 local definition_confidence = reaching_definition_confidence_list[definition_number]
+                -- TODO: Determine the effective edge confidences according to the algorithm described in
+                -- <https://witiko.github.io/Expl3-Linter-11.5/#confidence>
                 local updated_definition_confidence = math.min(edge.confidence, definition_confidence)
                 table.insert(incoming_definition_confidence_list, updated_definition_confidence)
               end
