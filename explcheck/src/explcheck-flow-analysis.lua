@@ -1069,7 +1069,7 @@ local function draw_dynamic_edges(states, _, options)
           confidence = edge_confidence,
         }
         local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
-        local return_edge_from_statement_number = call_edge_to_chunk.statement_range:stop() + 1
+        local return_edge_from_statement_number = return_edge_from_chunk.statement_range:stop() + 1
         local return_edge = {
           type = FUNCTION_CALL_RETURN,
           from = {
