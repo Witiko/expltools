@@ -272,7 +272,7 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
         local outer_range = results.outer_expl_ranges[part.location.part_number]
         assert(previous_outer_range:stop() < outer_range:start())
         local are_adjacent = previous_outer_range:stop() + 1 == outer_range:start()
-        local confidence = are_adjacent and DEFINITELY or MAYBE
+        local edge_confidence = are_adjacent and DEFINITELY or MAYBE
         local edge = {
           type = NEXT_CHUNK,
           from = {
@@ -283,7 +283,7 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
             chunk = to_chunk,
             statement_number = to_statement_number,
           },
-          confidence = confidence,
+          confidence = edge_confidence,
         }
         table.insert(results.edges[STATIC], edge)
       end
