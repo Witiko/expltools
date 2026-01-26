@@ -627,6 +627,34 @@ local function draw_dynamic_edges(states, _, options)
       ::next_file::
     end
 
+    -- Determine the effective confidence of an edge, as described in <https://witiko.github.io/Expl3-Linter-11.5/#confidence>.
+    local function get_effective_confidence(edge)
+      -- Determine the out-degree of the edge's starting point.
+      local out_degree = 0
+      for _, out_edge_index in ipairs({explicit_out_edge_index, implicit_out_edge_index}) do
+        if out_edge_index[edge.from.chunk] ~= nil and out_edge_index[edge.from.chunk][edge.from.statement_number] ~= nil then
+          out_degree = out_degree + #out_edge_index[edge.from.chunk][edge.from.statement_number]
+        end
+      end
+      assert(out_degree > 0)
+      if out_degree > 1 then
+        return MAYBE
+      end
+      -- Determine the in-degree of the edge's endpoint.
+      local in_degree = 0
+      for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
+        if in_edge_index[edge.to.chunk] ~= nil and in_edge_index[edge.to.chunk][edge.to.statement_number] ~= nil then
+          in_degree = in_degree + #in_edge_index[edge.to.chunk][edge.to.statement_number]
+        end
+      end
+      assert(in_degree > 0)
+      if in_degree > 1 then
+        return MAYBE
+      end
+      -- If both degrees are one, then return the edge confidence.
+      return edge.confidence
+    end
+
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
@@ -715,20 +743,18 @@ local function draw_dynamic_edges(states, _, options)
       for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
         if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
           for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
+            local effective_edge_confidence = get_effective_confidence(edge)
             if reaching_definition_lists[edge.from.chunk] ~= nil and
                 reaching_definition_lists[edge.from.chunk][edge.from.statement_number] ~= nil then
               local reaching_definition_list = reaching_definition_lists[edge.from.chunk][edge.from.statement_number]
               for _, definition in ipairs(reaching_definition_list) do
                 -- Weaken the definition confidence with the edge confidence.
                 --
-                -- TODO: Determine the effective edge confidences according to the algorithm described in
-                -- <https://witiko.github.io/Expl3-Linter-11.5/#confidence>
-                --
                 -- TODO: If all in-edges have a definition, keep the unweakened definition.
                 local updated_definition
-                if edge.confidence < definition.confidence then
+                if effective_edge_confidence < definition.confidence then
                   updated_definition = make_shallow_copy(definition)
-                  updated_definition.confidence = edge.confidence
+                  updated_definition.confidence = effective_edge_confidence
                 else
                   updated_definition = definition
                 end
