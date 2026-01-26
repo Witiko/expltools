@@ -40,6 +40,16 @@ local function get_parent(pathname)
   end
 end
 
+-- Makes a shallow copy of a Lua table.
+local function make_shallow_copy(original_table)
+  assert(type(original_table) == "table")
+  local copied_table = {}
+  for key, value in pairs(original_table) do
+    copied_table[key] = value
+  end
+  return copied_table
+end
+
 -- Return all parameters unchanged, mostly used for no-op map-back and map-forward functions.
 local function identity(...)
   return ...
@@ -272,5 +282,6 @@ return {
   get_suffix = get_suffix,
   group_pathnames = group_pathnames,
   identity = identity,
+  make_shallow_copy = make_shallow_copy,
   process_files = process_files,
 }
