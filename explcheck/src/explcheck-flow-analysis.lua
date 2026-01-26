@@ -12,7 +12,6 @@ local csname_types = semantic_analysis.csname_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
 
-local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
 local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
@@ -52,8 +51,7 @@ local TF_BRANCH = "T- or F-branch of conditional function"
 local edge_types = {
   NEXT_CHUNK = "pair of successive chunks",
   NEXT_INTERESTING_STATEMENT = "pair of successive interesting statements",  -- Only used internally in `draw_dynamic_edges()`.
-  -- TODO: Make `NEXT_FILE` a static edge, defined in `draw_static_edges()`.
-  NEXT_FILE = "potential insertion of another file from the current file group",  -- Only used internally in `draw_dynamic_edges()`.
+  NEXT_FILE = "potential insertion of another file from the current file group",
   TF_BRANCH = TF_BRANCH,
   TF_BRANCH_RETURN = string.format("return from %s", TF_BRANCH),
   FUNCTION_CALL = FUNCTION_CALL,
@@ -77,6 +75,11 @@ local edge_subtypes = {
 
 local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
+
+-- Check whether a file reached the flow analysis.
+local function _file_reached_flow_analysis(states, file_number)
+  return states[file_number].results.reached_flow_analysis ~= nil
+end
 
 -- Resolve a chunk and a statement number to a statement.
 local function _get_statement(chunk, statement_number)
@@ -147,6 +150,9 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
 
   local results = state.results
 
+  assert(results.reached_flow_analysis == nil)
+  results.reached_flow_analysis = true
+
   for _, segment in ipairs(results.segments or {}) do
     segment.chunks = {}
     local first_statement_number
@@ -187,6 +193,11 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
   assert(results.edges[STATIC] == nil)
   results.edges[STATIC] = {}
 
+  -- Check whether a file in the current group reached the flow analysis.
+  local function file_reached_flow_analysis(other_file_number)
+    return _file_reached_flow_analysis(states, other_file_number)
+  end
+
   -- Record edges from skipping ahead to the following chunk in a code segment.
   for _, segment in ipairs(results.segments or {}) do
     local previous_chunk
@@ -212,12 +223,45 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
     end
   end
 
-  -- Record edges from skipping ahead to the following expl3 part.
+  -- Record edges from skipping ahead to the following expl3 part as well as from potentially inputting the current file
+  -- after the expl3 parts of other files from the current file group.
   local previous_part
   for _, part in ipairs(results.parts or {}) do
-    if part.chunks ~= nil and #part.chunks > 0 then
-      if previous_part == nil then
-        results.first_part_with_chunks = part
+    if #part.chunks > 0 then
+      if previous_part == nil then  -- The first part in the current file with some chunks.
+        local to_chunk = part.chunks[1]
+        local to_statement_number = to_chunk.statement_range:start()
+        for other_file_number, other_state in ipairs(states) do
+          -- Skip statements from files in the current file group that haven't reached the flow analysis.
+          if not file_reached_flow_analysis(other_file_number) then
+            goto next_other_file
+          end
+          if file_number == other_file_number then
+            goto next_other_file
+          end
+          for _, other_part in ipairs(other_state.results.parts or {}) do
+            if #other_part.chunks == 0 then
+              goto next_other_part
+            end
+            local from_chunk = other_part.chunks[#other_part.chunks]
+            local from_statement_number = from_chunk.statement_range:stop() + 1
+            local edge = {
+              type = NEXT_FILE,
+              from = {
+                chunk = from_chunk,
+                statement_number = from_statement_number,
+              },
+              to = {
+                chunk = to_chunk,
+                statement_number = to_statement_number,
+              },
+              confidence = MAYBE,
+            }
+            table.insert(results.edges[STATIC], edge)
+            ::next_other_part::
+          end
+          ::next_other_file::
+        end
       else
         local from_chunk = previous_part.chunks[#previous_part.chunks]
         local from_statement_number = from_chunk.statement_range:stop() + 1
@@ -374,9 +418,9 @@ local function draw_dynamic_edges(states, _, options)
   end
   states.drew_dynamic_edges = true
 
-  -- Check that a file in the current group reached the flow analysis.
+  -- Check whether a file in the current group reached the flow analysis.
   local function file_reached_flow_analysis(file_number)
-    return states[file_number].results.edges ~= nil
+    return _file_reached_flow_analysis(states, file_number)
   end
 
   -- Check whether a function (variant) definition or a function call statement is "well-behaved". A statement is well-behaved
@@ -526,42 +570,6 @@ local function draw_dynamic_edges(states, _, options)
         goto next_file
       end
       for _, segment in ipairs(state.results.segments or {}) do
-
-        -- Add an implicit pseudo-edge between the pseudo-statements "after" every expl3 part to the first statements of the first
-        -- parts of all other files in the current file group.
-        if segment.type == PART and #segment.chunks > 0 then
-          local from_chunk = segment.chunks[#segment.chunks]
-          local from_statement_number = from_chunk.statement_range:stop() + 1
-          for other_file_number, other_state in ipairs(states) do
-            if file_number == other_file_number then
-              goto next_other_file
-            end
-            if not file_reached_flow_analysis(other_file_number) then
-              goto next_other_file
-            end
-            if other_state.results.first_part_with_chunks == nil then
-              goto next_other_file
-            end
-            local to_chunk = other_state.results.first_part_with_chunks.chunks[1]
-            local to_statement_number = to_chunk.statement_range:start()
-            local edge = {
-              type = NEXT_FILE,
-              from = {
-                chunk = from_chunk,
-                statement_number = from_statement_number,
-              },
-              to = {
-                chunk = to_chunk,
-                statement_number = to_statement_number,
-              },
-              confidence = MAYBE,
-            }
-            index_edge(implicit_in_edge_index, 'to', edge)
-            index_edge(implicit_out_edge_index, 'from', edge)
-            ::next_other_file::
-          end
-        end
-
         for _, chunk in ipairs(segment.chunks or {}) do
           local previous_interesting_statement_number
           local edge_confidence = DEFINITELY
