@@ -80,7 +80,7 @@ local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
 -- Check whether a file reached the flow analysis.
 local function _file_reached_flow_analysis(states, file_number)
-  return states[file_number].results.reached_flow_analysis ~= nil
+  return states[file_number].results.edges ~= nil
 end
 
 -- Resolve a chunk and a statement number to a statement.
@@ -152,9 +152,6 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
 
   local results = state.results
 
-  assert(results.reached_flow_analysis == nil)
-  results.reached_flow_analysis = true
-
   for _, segment in ipairs(results.segments or {}) do
     segment.chunks = {}
     local first_statement_number
@@ -184,8 +181,8 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
   end
 end
 
--- Draw "static" edges between chunks. A static edge is known without extra analysis.
-local function draw_static_edges(states, file_number, options)  -- luacheck: ignore options
+-- Draw "static" edges between chunks withing a single file. A static edge is known without extra analysis.
+local function draw_file_local_static_edges(states, file_number, options)  -- luacheck: ignore options
   local state = states[file_number]
 
   local results = state.results
@@ -194,11 +191,6 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
   results.edges = {}
   assert(results.edges[STATIC] == nil)
   results.edges[STATIC] = {}
-
-  -- Check whether a file in the current group reached the flow analysis.
-  local function file_reached_flow_analysis(other_file_number)
-    return _file_reached_flow_analysis(states, other_file_number)
-  end
 
   -- Record edges from skipping ahead to the following chunk in a code segment.
   for _, segment in ipairs(results.segments or {}) do
@@ -225,45 +217,13 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
     end
   end
 
-  -- Record edges from skipping ahead to the following expl3 part as well as from potentially inputting the current file
-  -- after the expl3 parts of other files from the current file group.
+  -- Record edges from skipping ahead to the following expl3 part.
   local previous_part
   for _, part in ipairs(results.parts or {}) do
     if #part.chunks > 0 then
-      if previous_part == nil then  -- The first part in the current file with some chunks.
-        local to_chunk = part.chunks[1]
-        local to_statement_number = to_chunk.statement_range:start()
-        for other_file_number, other_state in ipairs(states) do
-          -- Skip statements from files in the current file group that haven't reached the flow analysis.
-          if not file_reached_flow_analysis(other_file_number) then
-            goto next_other_file
-          end
-          if file_number == other_file_number then
-            goto next_other_file
-          end
-          for _, other_part in ipairs(other_state.results.parts or {}) do
-            if #other_part.chunks == 0 then
-              goto next_other_part
-            end
-            local from_chunk = other_part.chunks[#other_part.chunks]
-            local from_statement_number = from_chunk.statement_range:stop() + 1
-            local edge = {
-              type = NEXT_FILE,
-              from = {
-                chunk = from_chunk,
-                statement_number = from_statement_number,
-              },
-              to = {
-                chunk = to_chunk,
-                statement_number = to_statement_number,
-              },
-              confidence = MAYBE,
-            }
-            table.insert(results.edges[STATIC], edge)
-            ::next_other_part::
-          end
-          ::next_other_file::
-        end
+      results.last_part_with_chunks = part
+      if previous_part == nil then
+        results.first_part_with_chunks = part
       else
         local from_chunk = previous_part.chunks[#previous_part.chunks]
         local from_statement_number = from_chunk.statement_range:stop() + 1
@@ -356,6 +316,64 @@ local function draw_static_edges(states, file_number, options)  -- luacheck: ign
   end
 end
 
+-- Draw "static" edges between chunks between all files in a file group. A static edge is known without extra analysis.
+local function draw_group_wide_static_edges(states, _, options)  -- luacheck: ignore options
+  -- Draw static edges once between all files in the file group, not just individual files.
+  if states.drew_static_edges ~= nil then
+    return
+  end
+  states.drew_static_edges = true
+
+  -- Check whether a file in the current group reached the flow analysis.
+  local function file_reached_flow_analysis(file_number)
+    return _file_reached_flow_analysis(states, file_number)
+  end
+
+  -- Record edges from potentially inputting a file from the file group after every other file from the file group.
+  for file_number, state in ipairs(states) do
+    if not file_reached_flow_analysis(file_number) then
+      goto next_file
+    end
+    if state.results.last_part_with_chunks == nil then
+      goto next_file
+    end
+    local from_segment = state.results.last_part_with_chunks
+    local from_chunk = from_segment.chunks[#from_segment.chunks]
+    assert(from_chunk ~= nil)
+    local from_statement_number = from_chunk.statement_range:stop() + 1
+    for other_file_number, other_state in ipairs(states) do
+      if not file_reached_flow_analysis(other_file_number) then
+        goto next_other_file
+      end
+      if file_number == other_file_number then
+        goto next_other_file
+      end
+      if other_state.results.first_part_with_chunks == nil then
+        goto next_other_file
+      end
+      local to_segment = other_state.results.first_part_with_chunks
+      local to_chunk = to_segment.chunks[1]
+      assert(to_chunk ~= nil)
+      local to_statement_number = to_chunk.statement_range:start()
+      local edge = {
+        type = NEXT_FILE,
+        from = {
+          chunk = from_chunk,
+          statement_number = from_statement_number,
+        },
+        to = {
+          chunk = to_chunk,
+          statement_number = to_statement_number,
+        },
+        confidence = MAYBE,
+      }
+      table.insert(state.results.edges[STATIC], edge)
+      ::next_other_file::
+    end
+    ::next_file::
+  end
+end
+
 -- Convert an edge into a tuple that can be used to index the edge in a table.
 local function edge_as_tuple(edge)
   return
@@ -400,8 +418,8 @@ local function any_edges_changed(first_edges, second_edges)
   return false
 end
 
--- Draw "dynamic" edges between chunks. A dynamic edge requires estimation.
-local function draw_dynamic_edges(states, _, options)
+-- Draw "dynamic" edges between chunks between all files in a file group. A dynamic edge requires estimation.
+local function draw_group_wide_dynamic_edges(states, _, options)
   -- Draw dynamic edges once between all files in the file group, not just individual files.
   if states.drew_dynamic_edges ~= nil then
     return
@@ -1094,8 +1112,9 @@ end
 
 local substeps = {
   collect_chunks,
-  draw_static_edges,
-  draw_dynamic_edges,
+  draw_file_local_static_edges,
+  draw_group_wide_static_edges,
+  draw_group_wide_dynamic_edges,
 }
 
 return {
