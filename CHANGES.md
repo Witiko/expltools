@@ -6,6 +6,8 @@
 
 #### Development
 
+This version of explcheck has implemented the following new features:
+
 - Implement reaching definitions algorithm for function (variant) definitions
   to the flow analysis. (#152)
 
@@ -35,8 +37,8 @@
 - Add Lua options `max_reaching_definition_inner_loops` and
   `max_reaching_definition_outer_loops`. (#152)
 
-  These options help guard against long (infinite?) loops of the reaching
-  definitions algorithm.
+  These options help guard against the reaching definitions algorithm failing
+  to converge fast.
 
 #### Continuous integration
 
