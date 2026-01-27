@@ -102,7 +102,7 @@ end
 
 local function print_version()
   print("explcheck (expltools ${DATE}) ${VERSION}")
-  print("Copyright (c) 2024-2025 Vít Starý Novotný")
+  print("Copyright (c) 2024-2026 Vít Starý Novotný")
   print("Licenses: LPPL 1.3 or later, GNU GPL v2 or later")
 end
 

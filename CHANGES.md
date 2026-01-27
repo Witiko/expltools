@@ -1,8 +1,42 @@
 # Changes
 
-## expltools 2026-01-XX
+## expltools 2026-01-27
 
 ### explcheck v0.17.0
+
+#### Development
+
+- Implement reaching definitions algorithm for function (variant) definitions
+  to the flow analysis. (#152)
+
+  This algorithm has been described in some detail in [a recent blog
+  post][Expl3-Linter-11.5].
+
+   [Expl3-Linter-11.5]: https://witiko.github.io/Expl3-Linter-11.5/ "Static analysis of expl3 programs (11½): Chunks, edges, flow graphs, confidence, and reaching definitions"
+
+  Flow analysis remains disabled by default. To enable it, set the Lua option
+  `stop_after = "flow analysis"` either in your Lua code, if any, or your
+  configuration file.
+
+  After this change, you may already see preliminary flow analysis results in
+  explcheck's verbose output. However, unless explcheck understands your file
+  sufficiently well, it will typically stop before reaching the flow analysis
+  step and will report this in the verbose output.
+
+  If explcheck reaches semantic analysis, you can encourage it to proceed to
+  flow analysis by decreasing the Lua option `min_code_coverage` towards zero.
+  If explcheck bails out earlier, try disabling `stop_early_when_confused` or,
+  ideally, improve your code quality and contribute to expltools so that it can
+  understand your code better. 😉
+
+- In the syntactic analysis, fix the assignment of segment numbers to `T`- and
+  `F`-type arguments. (#152)
+
+- Add Lua options `max_reaching_definition_inner_loops` and
+  `max_reaching_definition_outer_loops`. (#152)
+
+  These options help guard against long (infinite?) loops of the reaching
+  definitions algorithm.
 
 #### Continuous integration
 
@@ -10,7 +44,14 @@ This version of explcheck has made the following changes to our continuous
 integration:
 
 - Bump actions/download-artifact from 6 to 7. (contributed by @dependabot in #153)
+
 - Bump actions/upload-artifact from 5 to 6. (contributed by @dependabot in #154)
+
+- Display processing progress in the CI. (#152)
+
+- Analyze package files using multiple CPUs in the CI. (#152)
+
+  This speeds up the CI by ca 40% from ca 25 minutes to ca 15 minutes.
 
 ## expltools 2025-11-24
 

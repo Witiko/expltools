@@ -19,7 +19,7 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local token_types = {
-  ARGUMENT = "argument",
+  ARGUMENT = "argument",  -- This token type will never be produced by the lexical analysis, only syntactic and later analyses.
 }
 
 local CONTROL_SEQUENCE = lexical_analysis.token_types.CONTROL_SEQUENCE
@@ -38,11 +38,21 @@ local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 local segment_types = {
   PART = "expl3 part",
-  TF_TYPE_ARGUMENTS = "T-type or F-type argument",
+  TF_TYPE_ARGUMENTS = "T- or F-type argument",
 }
 
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
+
+local segment_subtypes = {
+  TF_TYPE_ARGUMENTS = {
+    T_TYPE_ARGUMENTS = "T-type argument",
+    F_TYPE_ARGUMENTS = "F-type argument",
+  },
+}
+
+local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
+local F_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.F_TYPE_ARGUMENTS
 
 -- Get the token range for a given call.
 local function get_call_token_range(calls)
@@ -593,6 +603,7 @@ local function get_calls(results, part_number, segment, issues, content)
                 if argument_specifier == "T" or argument_specifier == "F" then
                   local nested_segment = {
                     type = TF_TYPE_ARGUMENTS,
+                    subtype = argument_specifier == "T" and T_TYPE_ARGUMENTS or F_TYPE_ARGUMENTS,
                     location = segment.location,
                     nesting_depth = segment.nesting_depth + 1,
                     transformed_tokens = {
@@ -603,8 +614,8 @@ local function get_calls(results, part_number, segment, issues, content)
                     },
                   }
                   table.insert(results.segments, nested_segment)
-                  nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
                   argument.segment_number = #results.segments
+                  nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
                 end
                 record_argument(argument)
                 next_token_number = map_forward(next_grouping.stop)
@@ -696,7 +707,7 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   local issues = state.issues
   local results = state.results
 
-  results.segments = {}
+  results.segments, results.parts = {}, {}
   for part_number, part_tokens in ipairs(results.tokens) do
     local segment = {
       type = PART,
@@ -713,6 +724,7 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
       },
     }
     table.insert(results.segments, segment)
+    table.insert(results.parts, segment)
     segment.calls = get_calls(results, part_number, segment, issues, content)
   end
 end
@@ -730,6 +742,7 @@ return {
   is_confused = is_confused,
   name = "syntactic analysis",
   segment_types = segment_types,
+  segment_subtypes = segment_subtypes,
   substeps = substeps,
   token_types = token_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
