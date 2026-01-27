@@ -770,6 +770,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             -- Otherwise, always use the combined edge confidence of `MAYBE`, regardless of the actual edge confidences.
             combined_edge_confidence = MAYBE
           end
+          assert(combined_edge_confidence >= MAYBE, "Edges shouldn't have confidences less than MAYBE")
           -- Weaken the definition confidence with the combined edge confidence.
           local updated_definition
           if combined_edge_confidence < definition.confidence then
@@ -795,6 +796,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             statement_number = statement_number,
             chunk = chunk,
           }
+          assert(definition.confidence >= MAYBE, "Function definitions shouldn't have confidences less than MAYBE")
           table.insert(current_definition_list, definition)
           -- Invalidate definitions of the same control sequence names from before the current statement.
           for _, incoming_definition in ipairs(incoming_definition_list) do
@@ -1008,6 +1010,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           -- the maximum-confidence path from the function definition statement to the function call statement.
           edge_confidence = function_definition.confidence
         end
+        assert(edge_confidence >= MAYBE, "Function call edges shouldn't have confidences less than MAYBE")
 
         -- Draw the edges.
         local call_edge_to_chunk = to_segment.chunks[1]
