@@ -742,7 +742,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 in_degree = in_degree + 1
                 local reaching_definition_list = reaching_definition_lists[edge.from.chunk][edge.from.statement_number]
                 for _, definition in ipairs(reaching_definition_list) do
-                  -- First, record the different incoming definitions together with the corresponding edge confidences.
+                  -- Record the different incoming definitions together with the corresponding edge confidences.
                   if original_incoming_definition_index[definition] == nil then
                     assert(original_incoming_definition_edge_confidence_lists[definition] == nil)
                     table.insert(original_incoming_definition_list, definition)
