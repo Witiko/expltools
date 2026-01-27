@@ -16,9 +16,9 @@ This version of explcheck has implemented the following new features:
 
    [Expl3-Linter-11.5]: https://witiko.github.io/Expl3-Linter-11.5/ "Static analysis of expl3 programs (11½): Chunks, edges, flow graphs, confidence, and reaching definitions"
 
-  Flow analysis remains disabled by default. To enable it, set the Lua option
-  `stop_after = "flow analysis"` either in your Lua code, if any, or your
-  configuration file.
+  Flow analysis remains disabled by default, since no issues are reported from
+  it yet. To enable it, set the Lua option `stop_after = "flow analysis"`
+  either in your Lua code or your configuration file.
 
   After this change, you may already see preliminary flow analysis results in
   explcheck's verbose output. However, unless explcheck understands your file
