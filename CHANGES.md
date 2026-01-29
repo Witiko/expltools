@@ -1,5 +1,20 @@
 # Changes
 
+## expltools 2026-02-XX
+
+### explcheck v0.18.0
+
+#### Development
+
+This version of explcheck has implemented the following new features and other
+improvements:
+
+- Specify syntax highlighting for configuration files. (contributed by
+  @muzimuzhi in #157)
+
+- Speed up `Issues:ignore()` with early non-overlap checks. (contributed by
+  the GitHub Copilot coding agent in #158)
+
 ## expltools 2026-01-27
 
 ### explcheck v0.17.0
