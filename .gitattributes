@@ -1,0 +1,4 @@
+# override the syntax highlighting used on GitHub.com
+# https://github.com/github-linguist/linguist/blob/main/docs/overrides.md
+.explcheckrc linguist-language=toml
+latexmkrc linguist-language=perl
