@@ -15,6 +15,11 @@ improvements:
 - Speed up `Issues:ignore()` with early non-overlap checks. (contributed by
   the GitHub Copilot coding agent in #158)
 
+  This improves processing time by about 5% for an average package file in the
+  current TeX Live, and by up to 40% for files with thousands of detected issues,
+  where a large number of `Issues:ignore()` calls previously incurred significant
+  overhead.
+
 ## expltools 2026-01-27
 
 ### explcheck v0.17.0
