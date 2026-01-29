@@ -110,11 +110,23 @@ function Issues:ignore(ignored_issue)
 
   -- Determine which issues should be ignored.
   local function match_issue_range(issue_range)
-    return (
-      issue_range:start() >= ignored_issue.range:start() and issue_range:start() <= ignored_issue.range:stop()  -- issue starts within range
-      or issue_range:start() <= ignored_issue.range:start() and issue_range:stop() >= ignored_issue.range:stop() -- issue in middle of range
-      or issue_range:stop() >= ignored_issue.range:start() and issue_range:stop() <= ignored_issue.range:stop()  -- issue ends within range
-    )
+    local issue_start, issue_stop = issue_range:start(), issue_range:stop()
+    local ignored_issue_start, ignored_issue_stop = ignored_issue.range:start(), ignored_issue.range:stop()
+    -- Cheaply check for cases that can never overlap.
+    if issue_start > ignored_issue_stop or issue_stop < ignored_issue_start then
+      return false
+    end
+    -- Check for overlapping ranges.
+    if issue_start >= ignored_issue_start and issue_start <= ignored_issue_stop then  -- issue starts within range
+      return true
+    end
+    if issue_start <= ignored_issue_start and issue_stop >= ignored_issue_stop then  -- issue is in the middle of range
+      return true
+    end
+    if issue_stop >= ignored_issue_start and issue_stop <= ignored_issue_stop then  -- issue ends within range
+      return true
+    end
+    return false
   end
   local function match_issue_identifier(identifier)
     -- Match the prefix of an issue, allowing us to ignore whole sets of issues with prefixes like "s" or "w4".
