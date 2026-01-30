@@ -141,13 +141,16 @@ local function analyze_and_report_issues(states, file_number, options)
 
   local function unexpected_pattern(pattern, code, message, test, include_context)
     return Ct(Cp() * pattern * Cp()) / function(range_table)
-      local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
-      local context
-      if include_context then
-        context = transformed_content:sub(range_start, range_end - 1)
+      if input_ended then
+        return
       end
+      local range_start, range_end = range_table[#range_table - 1], range_table[#range_table]
       local range = new_range(range_start, range_end, EXCLUSIVE, #transformed_content, map_back, #content)
-      if not input_ended and (test == nil or test(range)) then
+      if test == nil or test(range) then
+        local context
+        if include_context then
+          context = transformed_content:sub(range_start, range_end - 1)
+        end
         issues:add(code, message, range, context)
       end
     end
