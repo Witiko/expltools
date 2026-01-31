@@ -9,16 +9,17 @@
 This version of explcheck has implemented the following new features and other
 improvements:
 
+- Speed up processing steps before flow analysis. (#158, #159)
+
+  This improves processing time by about 12% for an average package file in the
+  current TeX Live, and by up to 70% for large files like `expl3-code.tex`.
+
+#### Documentation
+
+This version of explcheck has made the following improvements to the documentation:
+
 - Specify syntax highlighting for configuration files. (contributed by
   @muzimuzhi in #157)
-
-- Speed up `Issues:ignore()` with early non-overlap checks. (contributed by
-  the GitHub Copilot coding agent in #158)
-
-  This improves processing time by about 5% for an average package file in the
-  current TeX Live, and by up to 40% for files with thousands of detected issues,
-  where a large number of `Issues:ignore()` calls previously incurred significant
-  overhead.
 
 ## expltools 2026-01-27
 
