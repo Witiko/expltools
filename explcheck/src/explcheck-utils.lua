@@ -244,6 +244,7 @@ local function process_files(pathnames, options)
         process_with_substep(states, file_number, options)
         if substep_number == #step.substeps then
           -- If the step ended with errors for this file, skip all following steps for this file.
+          state.issues:commit_ignores()
           if step_number < #step_filenames and fail_fast and #state.issues.errors > 0 then
             state.results.stopped_early = {
               when = string.format("after %s", step.name),
