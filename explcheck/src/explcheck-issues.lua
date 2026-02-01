@@ -20,8 +20,8 @@ function Issues.new(cls, pathname, content, options)
   -- Initialize the class.
   self.closed = false
   --- Issue tables
-  for _, issue_table_number in ipairs({"errors", "warnings"}) do
-    self[issue_table_number] = {
+  for _, issue_table_name in ipairs({"errors", "warnings"}) do
+    self[issue_table_name] = {
       _identifier_index = {},
       _range_index = new_range_index(1, #content),
       _ignored_index = {},
