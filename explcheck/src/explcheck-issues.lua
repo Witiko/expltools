@@ -17,8 +17,13 @@ function Issues.new(cls, pathname, options)
   -- Initialize the class.
   self.closed = false
   --- Issue tables
-  self.errors = {_identifier_index = {}, _ignored_index = {}, _num_ignored = 0}
-  self.warnings = {_identifier_index = {}, _ignored_index = {}, _num_ignored = 0}
+  for _, issue_table_number in ipairs({"errors", "warnings"}) do
+    self[issue_table_number] = {
+      _identifier_index = {},
+      _ignored_index = {},
+      _num_ignored = 0,
+    }
+  end
   --- Seen issues
   self.seen_issues = {}
   --- Suppressed issues
