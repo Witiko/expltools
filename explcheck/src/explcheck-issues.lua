@@ -17,8 +17,8 @@ function Issues.new(cls, pathname, options)
   -- Initialize the class.
   self.closed = false
   --- Issue tables
-  self.errors = {_identifier_index = {}, _ignored_index = {_any = false}}
-  self.warnings = {_identifier_index = {}, _ignored_index = {_any = false}}
+  self.errors = {_identifier_index = {}, _ignored_index = {}, _num_ignored = 0}
+  self.warnings = {_identifier_index = {}, _ignored_index = {}, _num_ignored = 0}
   --- Seen issues
   self.seen_issues = {}
   --- Suppressed issues
@@ -29,6 +29,7 @@ function Issues.new(cls, pathname, options)
   end
   --- Ignored issues
   self.ignored_issues = {}
+  self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
   for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
     self:ignore({identifier_prefix = issue_identifier})
   end
@@ -220,8 +221,10 @@ function Issues:ignore(ignored_issue)
       if ignored_issue.check(issue) then
         -- If the issue has been ignored, record that fact and schedule the issue for a later removal.
         ignored_issue.seen = true
-        issue_table._ignored_index[issue_number] = true
-        issue_table._ignored_index._any = true
+        if issue_table._ignored_index[issue_number] == nil then
+          issue_table._ignored_index[issue_number] = true
+          issue_table._num_ignored = issue_table._num_ignored + 1
+        end
       end
     end
 
@@ -236,6 +239,11 @@ function Issues:ignore(ignored_issue)
       for issue_number, _ in ipairs(issue_table) do
         check_issue(issue_number)
       end
+    end
+
+    -- If many issues were already scheduled for a later removal, remove them now.
+    if issue_table._num_ignored >= self.max_ignored_issue_ratio * #issue_table then
+      self:commit_ignores({issue_table})
     end
   end
 
@@ -276,10 +284,10 @@ function Issues:has_same_codes_as(other)
 end
 
 -- Remove all issues that were previously scheduled to be ignored.
-function Issues:commit_ignores()
-  for _, issue_table in ipairs({self.warnings, self.errors}) do
+function Issues:commit_ignores(issue_tables)
+  for _, issue_table in ipairs(issue_tables or {self.warnings, self.errors}) do
     local removed_identifiers = {}
-    if not issue_table._ignored_index._any then
+    if issue_table._num_ignored == 0 then
       goto next_issue_table
     end
 
@@ -301,7 +309,8 @@ function Issues:commit_ignores()
     end
 
     -- Clear the schedule.
-    issue_table._ignored_index = {_any = false}
+    issue_table._ignored_index = {}
+    issue_table._num_ignored = 0
 
     -- Rebuild all identifier indexes for removed issue identifiers.
     for identifier, _ in pairs(removed_identifiers) do
@@ -342,6 +351,7 @@ function Issues:close()
   for _, issue_table in ipairs({self.warnings, self.errors}) do
     issue_table._identifier_index = nil
     issue_table._ignored_index = nil
+    issue_table._num_ignored = nil
   end
   self.seen_issues = nil
   self.ignored_issues = nil
