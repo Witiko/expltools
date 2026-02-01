@@ -108,8 +108,11 @@ function Issues:ignore(ignored_issue)
     error('Cannot ignore issues in a closed issue registry')
   end
 
+  local is_exact_identifier
   if ignored_issue.identifier_prefix ~= nil then
     ignored_issue.identifier_prefix = normalize_identifier(ignored_issue.identifier_prefix)
+    assert(#ignored_issue.identifier_prefix <= 4)
+    is_exact_identifier = #ignored_issue.identifier_prefix == 4
   end
 
   -- Determine whether an issue should be ignored based on its byte range and the ignored byte range.
@@ -134,9 +137,17 @@ function Issues:ignore(ignored_issue)
   end
 
   -- Determine whether an issue should be ignored based on its identifier and the ignored identifier prefix.
-  local function match_issue_identifier(identifier)
-    return identifier:sub(1, #ignored_issue.identifier_prefix) == ignored_issue.identifier_prefix
+  local match_issue_identifier
+  if is_exact_identifier then
+    function match_issue_identifier(identifier)
+      return identifier == ignored_issue.identifier_prefix
+    end
+  else
+    function match_issue_identifier(identifier)
+      return identifier:sub(1, #ignored_issue.identifier_prefix) == ignored_issue.identifier_prefix
+    end
   end
+  assert(match_issue_identifier ~= nil)
 
   -- Determine which issues should be ignored.
   local issue_tables, issue_number_lists
@@ -161,8 +172,14 @@ function Issues:ignore(ignored_issue)
     -- Prevent any issues with the given identifier.
     assert(ignored_issue.identifier_prefix ~= nil)
     local issue_table = self:_get_issue_table(ignored_issue.identifier_prefix)
+    local issue_number_list = issue_table._identifier_index[ignored_issue.identifier_prefix]
     issue_tables = {issue_table}
-    issue_number_lists = {issue_table._identifier_index[ignored_issue.identifier_prefix]}
+    if issue_number_list == nil and is_exact_identifier then
+      -- If we are ignoring an exact identifier and there is no index, then we know that there are no matching issues and there is
+      -- no need to scan all issues.
+      issue_number_list = {}
+    end
+    issue_number_lists = {issue_number_list}
     ignored_issue.check = function(issue)
       local issue_identifier = issue[1]
       return match_issue_identifier(issue_identifier)
@@ -171,8 +188,14 @@ function Issues:ignore(ignored_issue)
     -- Prevent any issues with the given identifier that are also either within the given range or file-wide.
     assert(ignored_issue.range ~= nil and ignored_issue.identifier_prefix ~= nil)
     local issue_table = self:_get_issue_table(ignored_issue.identifier_prefix)
+    local issue_number_list = issue_table._identifier_index[ignored_issue.identifier_prefix]
     issue_tables = {issue_table}
-    issue_number_lists = {issue_table._identifier_index[ignored_issue.identifier_prefix]}
+    if issue_number_list == nil and is_exact_identifier then
+      -- If we are ignoring an exact identifier and there is no index, then we know that there are no matching issues and there is
+      -- no need to scan all issues.
+      issue_number_list = {}
+    end
+    issue_number_lists = {issue_number_list}
     ignored_issue.check = function(issue)
       local issue_identifier = issue[1]
       local issue_range = issue[3]
