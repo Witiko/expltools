@@ -315,8 +315,6 @@ function Issues:commit_ignores()
     end
     ::next_issue_table::
   end
-
-  -- Next, update all issue identifier indexes that need updating.
 end
 
 -- Close the issue registry, preventing future modifications and report all needlessly ignored issues.
