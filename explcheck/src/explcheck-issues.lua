@@ -87,6 +87,10 @@ function Issues:add(identifier, message, range, context)
   local issue = {identifier, message, range, context}
 
   -- Determine if the issue should be ignored.
+  --
+  -- TODO: Instead of running all `check()` functions, use efficient data structures such as prefix trees for identifier (prefixes)
+  -- and segment trees for ranges, so that we can determine whether an issue should be ignored in time O(n log n) instead of O(n).
+  -- The segment trees should be implemented in the file `explcheck-ranges.lua`.
   for _, ignored_issue in ipairs(self.ignored_issues) do
     if ignored_issue.check(issue) then
       ignored_issue.seen = true
@@ -213,6 +217,10 @@ function Issues:ignore(ignored_issue)
   assert(issue_number_lists ~= nil)
 
   -- Remove the issue if it has already been added.
+  --
+  -- TODO: Instead of using `check()` functions, use efficient data structures such as prefix trees for identifier (prefixes) and
+  -- segment trees for ranges, so that we can determine which past issues should be removed in time O(n log n) instead of O(n).
+  -- The segment trees should be implemented in the file `explcheck-ranges.lua`.
   for issue_table_number, issue_table in ipairs(issue_tables) do
 
     -- Check a single issue from the current issue table.
@@ -249,6 +257,10 @@ function Issues:ignore(ignored_issue)
   end
 
   -- Prevent the issue from being added later.
+  --
+  -- TODO: Instead of using `check()` functions, use efficient data structures such as prefix trees for identifier (prefixes) and
+  -- segment trees for ranges, so that we can determine whether a future issue should be ignored in time O(n log n) instead of
+  -- O(n). The segment trees should be implemented in the file `explcheck-ranges.lua`.
   table.insert(self.ignored_issues, ignored_issue)
 end
 
