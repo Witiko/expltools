@@ -112,6 +112,7 @@ function Issues:ignore(ignored_issue)
   local is_exact_identifier
   if ignored_issue.identifier_prefix ~= nil then
     ignored_issue.identifier_prefix = normalize_identifier(ignored_issue.identifier_prefix)
+    assert(#ignored_issue.identifier_prefix >= 1)
     assert(#ignored_issue.identifier_prefix <= 4)
     is_exact_identifier = #ignored_issue.identifier_prefix == 4
   end
