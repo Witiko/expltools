@@ -9,7 +9,8 @@
 This version of explcheck has implemented the following new features and other
 improvements:
 
-- Speed up processing steps before flow analysis. (#158..#160)
+- Speed up processing steps before flow analysis, add Lua option
+  `max_ignored_issue_ratio`. (#158..#160)
 
   This improves processing time by about 15% for an average package file in the
   current TeX Live, and by up to 300% for large files like `expl3-code.tex`.
