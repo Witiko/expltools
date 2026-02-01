@@ -200,13 +200,14 @@ local function process_files(pathnames, options)
   local states = {}
   for _, pathname in ipairs(pathnames) do
     local file = assert(io.open(pathname, "r"))
+    local content = assert(file:read("*a"))
+    assert(file:close())
     local state = {
       pathname = pathname,
-      content = assert(file:read("*a")),
-      issues = new_issues(pathname, options),
+      content = content,
+      issues = new_issues(pathname, content, options),
       results = {},
     }
-    assert(file:close())
     table.insert(states, state)
   end
   assert(#states == #pathnames)

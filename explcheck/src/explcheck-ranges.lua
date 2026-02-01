@@ -1,4 +1,4 @@
--- A class for working with index ranges in arrays.
+-- Classes for working with index ranges in arrays.
 
 local Range = {}
 
@@ -191,8 +191,10 @@ end
 
 -- Check whether two ranges overlap.
 function Range:intersects(other_range)
-  assert(#self ~= 0 and #other_range ~= 0)
   -- Cheaply check for cases that can never overlap.
+  if #self == 0 or #other_range == 0 then
+    return false
+  end
   if other_range:start() > self:stop() or other_range:stop() < self:start() then
     return false
   end
@@ -223,9 +225,33 @@ function Range:__tostring()
   end
 end
 
+local RangeIndex = {}
+
+-- Create a new range index, where all the stored ranges fall within a bounding range.
+function RangeIndex.new(cls, min_range_start, max_range_end)
+  -- Instantiate the class.
+  local self = {}
+  setmetatable(self, cls)
+  cls.__index = cls
+  -- Initialize the class.
+  self.bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
+  self.max_tree_depth = #self.bounding_range > 0 and math.log(#self.bounding_range) / math.log(2) or 0
+end
+
+function RangeIndex:add(range, value)  -- luacheck: ignore self range value
+  -- TODO
+end
+
+function RangeIndex:get_intersecting_ranges(range)  -- luacheck: ignore self range
+  -- TODO
+end
+
 return {
   new_range = function(...)
     return Range:new(...)
+  end,
+  new_range_index = function(...)
+    return RangeIndex:new(...)
   end,
   range_flags = range_flags,
 }
