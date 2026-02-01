@@ -3,7 +3,7 @@
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 
-local new_range_index = ranges.new_range_index
+local new_range_tree = ranges.new_range_tree
 
 local Issues = {}
 
@@ -23,7 +23,7 @@ function Issues.new(cls, pathname, content, options)
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
       _identifier_index = {},
-      _range_index = new_range_index(1, #content),
+      _range_index = new_range_tree(1, #content),
       _ignored_index = {},
       _num_ignored = 0,
     }

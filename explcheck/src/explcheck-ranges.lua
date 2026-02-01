@@ -225,10 +225,10 @@ function Range:__tostring()
   end
 end
 
-local RangeIndex = {}
+local RangeTree = {}
 
 -- Create a new range index, where all the stored ranges fall within a bounding range.
-function RangeIndex.new(cls, min_range_start, max_range_end)
+function RangeTree.new(cls, min_range_start, max_range_end)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
@@ -238,11 +238,11 @@ function RangeIndex.new(cls, min_range_start, max_range_end)
   self.max_tree_depth = #self.bounding_range > 0 and math.log(#self.bounding_range) / math.log(2) or 0
 end
 
-function RangeIndex:add(range, value)  -- luacheck: ignore self range value
+function RangeTree:add(range, value)  -- luacheck: ignore self range value
   -- TODO
 end
 
-function RangeIndex:get_intersecting_ranges(range)  -- luacheck: ignore self range
+function RangeTree:get_intersecting_ranges(range)  -- luacheck: ignore self range
   -- TODO
 end
 
@@ -250,8 +250,8 @@ return {
   new_range = function(...)
     return Range:new(...)
   end,
-  new_range_index = function(...)
-    return RangeIndex:new(...)
+  new_range_tree = function(...)
+    return RangeTree:new(...)
   end,
   range_flags = range_flags,
 }

@@ -64,7 +64,10 @@ do
       if seen_pathnames[pathname] == nil then
         seen_pathnames[pathname] = true
         table.insert(results.pathnames, pathname)
-        results.issues[pathname] = new_issues()
+        local file = assert(io.open(pathname, "r"))
+        local content = assert(file:read("*a"))
+        assert(file:close())
+        results.issues[pathname] = new_issues(pathname, content)
       end
       results.issues[pathname]:add(issue)
     end
