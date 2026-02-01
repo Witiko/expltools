@@ -238,10 +238,12 @@ function RangeTree.new(cls, min_range_start, max_range_end)
   self.max_tree_depth = #self.bounding_range > 0 and math.log(#self.bounding_range) / math.log(2) or 0
 end
 
+-- Add a new range into the tree together with an associated value.
 function RangeTree:add(range, value)  -- luacheck: ignore self range value
   -- TODO
 end
 
+-- Get all indexed ranges that intersect a given range and their associated values.
 function RangeTree:get_intersecting_ranges(range)  -- luacheck: ignore self range
   -- TODO
 end

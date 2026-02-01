@@ -1,13 +1,12 @@
 -- A registry of warnings and errors identified by different processing steps.
 
 local get_option = require("explcheck-config").get_option
-local ranges = require("explcheck-ranges")
-
-local new_range_tree = ranges.new_range_tree
+local new_prefix_tree = require("explcheck-utils").new_prefix_tree  -- luacheck: ignore new_prefix_tree
+local new_range_tree = require("explcheck-ranges").new_range_tree
 
 local Issues = {}
 
--- Normalize an issue identifier.
+-- Normalize an issue identifier or its prefix.
 local function normalize_identifier(identifier)
   return identifier:lower()
 end
