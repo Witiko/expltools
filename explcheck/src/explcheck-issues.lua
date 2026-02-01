@@ -123,23 +123,7 @@ function Issues:ignore(ignored_issue)
 
   -- Determine whether an issue should be ignored based on its byte range and the ignored byte range.
   local function match_issue_range(issue_range)
-    local issue_start, issue_stop = issue_range:start(), issue_range:stop()
-    local ignored_issue_start, ignored_issue_stop = ignored_issue.range:start(), ignored_issue.range:stop()
-    -- Cheaply check for cases that can never overlap.
-    if issue_start > ignored_issue_stop or issue_stop < ignored_issue_start then
-      return false
-    end
-    -- Check for overlapping ranges.
-    if issue_start >= ignored_issue_start and issue_start <= ignored_issue_stop then  -- issue starts within range
-      return true
-    end
-    if issue_start <= ignored_issue_start and issue_stop >= ignored_issue_stop then  -- issue is in the middle of range
-      return true
-    end
-    if issue_stop >= ignored_issue_start and issue_stop <= ignored_issue_stop then  -- issue ends within range
-      return true
-    end
-    return false
+    return ignored_issue.range:intersects(issue_range)
   end
 
   -- Determine whether an issue should be ignored based on its identifier and the ignored identifier prefix.

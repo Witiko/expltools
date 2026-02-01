@@ -130,15 +130,18 @@ end
 
 -- Get the length of the range.
 function Range:__len()
-  if self:start() == 0 then
-    assert(self:stop() == 0)
-    return 0  -- empty range
-  elseif self:stop() < self:start() then
-    assert(self:stop() == self:start() - 1)
-    return 0  -- empty range
-  else
-    return self:stop() - self:start() + 1  -- non-empty range
+  if self.range_length == nil then
+    if self:start() == 0 then
+      assert(self:stop() == 0)
+      self.range_length = 0  -- empty range
+    elseif self:stop() < self:start() then
+      assert(self:stop() == self:start() - 1)
+      self.range_length = 0  -- empty range
+    else
+      self.range_length = self:stop() - self:start() + 1  -- non-empty range
+    end
   end
+  return self.range_length
 end
 
 -- Get an iterator over pairs of indices and items from the original array within the range.
@@ -184,6 +187,26 @@ function Range:new_range_from_subranges(get_subrange, subarray_size)
       subarray_size
     )
   end
+end
+
+-- Check whether two ranges overlap.
+function Range:intersects(other_range)
+  assert(#self ~= 0 and #other_range ~= 0)
+  -- Cheaply check for cases that can never overlap.
+  if other_range:start() > self:stop() or other_range:stop() < self:start() then
+    return false
+  end
+  -- Check for overlapping ranges.
+  if other_range:start() >= self:start() and other_range:start() <= self:stop() then  -- issue starts within range
+    return true
+  end
+  if other_range:start() <= self:start() and other_range:stop() >= self:stop() then  -- issue is in the middle of range
+    return true
+  end
+  if other_range:stop() >= self:start() and other_range:stop() <= self:stop() then  -- issue ends within range
+    return true
+  end
+  return false
 end
 
 -- Get a string representation of the range.
