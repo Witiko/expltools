@@ -17,8 +17,8 @@ function Issues.new(cls, pathname, options)
   -- Initialize the class.
   self.closed = false
   --- Issue tables
-  self.errors = {_identifier_index = {}, _ignored_index = {_any = false}}
-  self.warnings = {_identifier_index = {}, _ignored_index = {_any = false}}
+  self.errors = {_identifier_index = {}, _ignored_index = {}, _num_ignored = 0}
+  self.warnings = {_identifier_index = {}, _ignored_index = {}, _num_ignored = 0}
   --- Seen issues
   self.seen_issues = {}
   --- Suppressed issues
@@ -29,6 +29,7 @@ function Issues.new(cls, pathname, options)
   end
   --- Ignored issues
   self.ignored_issues = {}
+  self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
   for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
     self:ignore({identifier_prefix = issue_identifier})
   end
@@ -108,8 +109,11 @@ function Issues:ignore(ignored_issue)
     error('Cannot ignore issues in a closed issue registry')
   end
 
+  local is_exact_identifier
   if ignored_issue.identifier_prefix ~= nil then
     ignored_issue.identifier_prefix = normalize_identifier(ignored_issue.identifier_prefix)
+    assert(#ignored_issue.identifier_prefix <= 4)
+    is_exact_identifier = #ignored_issue.identifier_prefix == 4
   end
 
   -- Determine whether an issue should be ignored based on its byte range and the ignored byte range.
@@ -134,9 +138,17 @@ function Issues:ignore(ignored_issue)
   end
 
   -- Determine whether an issue should be ignored based on its identifier and the ignored identifier prefix.
-  local function match_issue_identifier(identifier)
-    return identifier:sub(1, #ignored_issue.identifier_prefix) == ignored_issue.identifier_prefix
+  local match_issue_identifier
+  if is_exact_identifier then
+    function match_issue_identifier(identifier)
+      return identifier == ignored_issue.identifier_prefix
+    end
+  else
+    function match_issue_identifier(identifier)
+      return identifier:sub(1, #ignored_issue.identifier_prefix) == ignored_issue.identifier_prefix
+    end
   end
+  assert(match_issue_identifier ~= nil)
 
   -- Determine which issues should be ignored.
   local issue_tables, issue_number_lists
@@ -161,8 +173,14 @@ function Issues:ignore(ignored_issue)
     -- Prevent any issues with the given identifier.
     assert(ignored_issue.identifier_prefix ~= nil)
     local issue_table = self:_get_issue_table(ignored_issue.identifier_prefix)
+    local issue_number_list = issue_table._identifier_index[ignored_issue.identifier_prefix]
     issue_tables = {issue_table}
-    issue_number_lists = {issue_table._identifier_index[ignored_issue.identifier_prefix]}
+    if issue_number_list == nil and is_exact_identifier then
+      -- If we are ignoring an exact identifier and there is no index, then we know that there are no matching issues and there is
+      -- no need to scan all issues.
+      issue_number_list = {}
+    end
+    issue_number_lists = {issue_number_list}
     ignored_issue.check = function(issue)
       local issue_identifier = issue[1]
       return match_issue_identifier(issue_identifier)
@@ -171,8 +189,14 @@ function Issues:ignore(ignored_issue)
     -- Prevent any issues with the given identifier that are also either within the given range or file-wide.
     assert(ignored_issue.range ~= nil and ignored_issue.identifier_prefix ~= nil)
     local issue_table = self:_get_issue_table(ignored_issue.identifier_prefix)
+    local issue_number_list = issue_table._identifier_index[ignored_issue.identifier_prefix]
     issue_tables = {issue_table}
-    issue_number_lists = {issue_table._identifier_index[ignored_issue.identifier_prefix]}
+    if issue_number_list == nil and is_exact_identifier then
+      -- If we are ignoring an exact identifier and there is no index, then we know that there are no matching issues and there is
+      -- no need to scan all issues.
+      issue_number_list = {}
+    end
+    issue_number_lists = {issue_number_list}
     ignored_issue.check = function(issue)
       local issue_identifier = issue[1]
       local issue_range = issue[3]
@@ -197,8 +221,10 @@ function Issues:ignore(ignored_issue)
       if ignored_issue.check(issue) then
         -- If the issue has been ignored, record that fact and schedule the issue for a later removal.
         ignored_issue.seen = true
-        issue_table._ignored_index[issue_number] = true
-        issue_table._ignored_index._any = true
+        if issue_table._ignored_index[issue_number] == nil then
+          issue_table._ignored_index[issue_number] = true
+          issue_table._num_ignored = issue_table._num_ignored + 1
+        end
       end
     end
 
@@ -213,6 +239,11 @@ function Issues:ignore(ignored_issue)
       for issue_number, _ in ipairs(issue_table) do
         check_issue(issue_number)
       end
+    end
+
+    -- If many issues were already scheduled for a later removal, remove them now.
+    if issue_table._num_ignored >= self.max_ignored_issue_ratio * #issue_table then
+      self:commit_ignores({issue_table})
     end
   end
 
@@ -253,10 +284,10 @@ function Issues:has_same_codes_as(other)
 end
 
 -- Remove all issues that were previously scheduled to be ignored.
-function Issues:commit_ignores()
-  for _, issue_table in ipairs({self.warnings, self.errors}) do
+function Issues:commit_ignores(issue_tables)
+  for _, issue_table in ipairs(issue_tables or {self.warnings, self.errors}) do
     local removed_identifiers = {}
-    if not issue_table._ignored_index._any then
+    if issue_table._num_ignored == 0 then
       goto next_issue_table
     end
 
@@ -278,7 +309,8 @@ function Issues:commit_ignores()
     end
 
     -- Clear the schedule.
-    issue_table._ignored_index = {_any = false}
+    issue_table._ignored_index = {}
+    issue_table._num_ignored = 0
 
     -- Rebuild all identifier indexes for removed issue identifiers.
     for identifier, _ in pairs(removed_identifiers) do
@@ -292,8 +324,6 @@ function Issues:commit_ignores()
     end
     ::next_issue_table::
   end
-
-  -- Next, update all issue identifier indexes that need updating.
 end
 
 -- Close the issue registry, preventing future modifications and report all needlessly ignored issues.
@@ -321,7 +351,10 @@ function Issues:close()
   for _, issue_table in ipairs({self.warnings, self.errors}) do
     issue_table._identifier_index = nil
     issue_table._ignored_index = nil
+    issue_table._num_ignored = nil
   end
+  self.seen_issues = nil
+  self.ignored_issues = nil
 
   -- Close the registry.
   self.closed = true
