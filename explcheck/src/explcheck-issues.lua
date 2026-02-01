@@ -11,7 +11,7 @@ local function normalize_identifier(identifier)
   return identifier:lower()
 end
 
-function Issues.new(cls, pathname, content, options)
+function Issues.new(cls, pathname, content_length, options)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
@@ -22,7 +22,7 @@ function Issues.new(cls, pathname, content, options)
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
       _identifier_index = {},
-      _range_index = new_range_tree(1, #content),
+      _range_index = new_range_tree(1, content_length),
       _ignored_index = {},
       _num_ignored = 0,
     }

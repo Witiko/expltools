@@ -205,7 +205,7 @@ local function process_files(pathnames, options)
     local state = {
       pathname = pathname,
       content = content,
-      issues = new_issues(pathname, content, options),
+      issues = new_issues(pathname, #content, options),
       results = {},
     }
     table.insert(states, state)
