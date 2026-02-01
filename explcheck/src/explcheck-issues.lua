@@ -54,6 +54,9 @@ function Issues:add(identifier, message, range, context)
   if self.closed then
     error('Cannot add issues to a closed issue registry')
   end
+  if range ~= nil and #range == 0 then
+    error('Cannot ignore an empty byte range')
+  end
 
   identifier = normalize_identifier(identifier)
 
@@ -112,12 +115,21 @@ function Issues:ignore(ignored_issue)
   if self.closed then
     error('Cannot ignore issues in a closed issue registry')
   end
+  if ignored_issue.range ~= nil and #ignored_issue.range == 0 then
+    error('Cannot ignore an empty byte range')
+  end
+  if ignored_issue.identifier_prefix ~= nil then
+    if #ignored_issue.identifier_prefix == 0 then
+      error('Cannot ignore an empty identifier prefix')
+    elseif #ignored_issue.identifier_prefix > 4 then
+      error('An identifier prefix cannot be longer than four characters')
+    end
+  end
 
+  -- Normalize the ignored identifier (prefix) and determine whether it's an exact identifier or a prefix.
   local is_exact_identifier
   if ignored_issue.identifier_prefix ~= nil then
     ignored_issue.identifier_prefix = normalize_identifier(ignored_issue.identifier_prefix)
-    assert(#ignored_issue.identifier_prefix >= 1)
-    assert(#ignored_issue.identifier_prefix <= 4)
     is_exact_identifier = #ignored_issue.identifier_prefix == 4
   end
 
