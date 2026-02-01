@@ -343,6 +343,8 @@ function Issues:close()
     issue_table._identifier_index = nil
     issue_table._ignored_index = nil
   end
+  self.seen_issues = nil
+  self.ignored_issues = nil
 
   -- Close the registry.
   self.closed = true
