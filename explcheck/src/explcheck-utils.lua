@@ -278,6 +278,9 @@ end
 local PrefixTree = {}
 
 -- Create a new prefix tree.
+--
+-- This is an uncompressed prefix tree based on Lua tables. To keep the retrieval constant time and the heap fragmentation low, it
+-- should only be used for the storage of short strings with few distinct prefixes, such as issue identifiers.
 function PrefixTree.new(cls)
   -- Instantiate the class.
   local self = {}
