@@ -191,24 +191,16 @@ end
 
 -- Check whether two ranges overlap.
 function Range:intersects(other_range)
-  -- Cheaply check for cases that can never overlap.
   if #self == 0 or #other_range == 0 then
     return false
   end
-  if other_range:start() > self:stop() or other_range:stop() < self:start() then
+  if self:start() > other_range:stop() then
     return false
   end
-  -- Check for overlapping ranges.
-  if other_range:start() >= self:start() and other_range:start() <= self:stop() then  -- issue starts within range
-    return true
+  if self:stop() < other_range:start() then
+    return false
   end
-  if other_range:start() <= self:start() and other_range:stop() >= self:stop() then  -- issue is in the middle of range
-    return true
-  end
-  if other_range:stop() >= self:start() and other_range:stop() <= self:stop() then  -- issue ends within range
-    return true
-  end
-  return false
+  return true
 end
 
 -- Get a string representation of the range.
