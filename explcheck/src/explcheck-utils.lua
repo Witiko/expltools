@@ -275,34 +275,6 @@ local function process_files(pathnames, options)
   return states
 end
 
-local PrefixTree = {}
-
--- Create a new prefix tree.
---
--- This is an uncompressed prefix tree based on Lua tables. To keep the retrieval constant time and the heap fragmentation low, it
--- should only be used for the storage of short strings with few distinct prefixes, such as issue identifiers.
-function PrefixTree.new(cls)
-  -- Instantiate the class.
-  local self = {}
-  setmetatable(self, cls)
-  cls.__index = cls
-end
-
--- Add a new string into the tree together with an associated value.
-function PrefixTree:add(text, value)  -- luacheck: ignore self text value
-  -- TODO
-end
-
--- Get all indexed strings that share a given prefix and their associated values.
-function PrefixTree:get_values_with_prefix(prefix)  -- luacheck: ignore self prefix
-  -- TODO
-end
-
--- Get all indexed prefixes for a given string and their associated values.
-function PrefixTree:get_prefixes(text)  -- luacheck: ignore self text
-  -- TODO
-end
-
 return {
   check_pathname = check_pathname,
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
@@ -313,8 +285,5 @@ return {
   group_pathnames = group_pathnames,
   identity = identity,
   make_shallow_copy = make_shallow_copy,
-  new_prefix_tree = function(...)
-    return PrefixTree:new(...)
-  end,
   process_files = process_files,
 }

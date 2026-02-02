@@ -203,6 +203,20 @@ function Range:intersects(other_range)
   return true
 end
 
+-- Check whether one range fully contains another.
+function Range:contains(other_range)
+  if not self:intersects(other_range) then
+    return false
+  end
+  if self:start() > other_range:start() then
+    return false
+  end
+  if self:stop() < other_range:stop() then
+    return false
+  end
+  return true
+end
+
 -- Get a string representation of the range.
 function Range:__tostring()
   if #self == 0 then
@@ -219,24 +233,50 @@ end
 
 local RangeTree = {}
 
--- Create a new range index, where all the stored ranges fall within a bounding range.
+-- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range and where all values
+-- associated with the ranges must be unique.
 function RangeTree.new(cls, min_range_start, max_range_end)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
   cls.__index = cls
   -- Initialize the class.
-  self.bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
-  self.max_tree_depth = #self.bounding_range > 0 and math.log(#self.bounding_range) / math.log(2) or 0
+  self.root_bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
+  self.range_list = {}
+  self.value_list = {}
+  --self.max_tree_depth = #self.root_bounding_range > 0 and math.log(#self.root_bounding_range) / math.log(2) or 0
 end
 
 -- Add a new range into the tree together with an associated value.
-function RangeTree:add(range, value)  -- luacheck: ignore self range value
-  -- TODO
+function RangeTree:add(range, value)
+  assert(self.root_bounding_range:contains(range))
+  table.insert(self.range_list, range)
+  table.insert(self.value_list, value)
+  assert(#self.range_list == #self.value_list)
+  -- TODO: After `#self.range_list > self.max_tree_depth`, reindex `self.range_list` in a segment tree.
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
-function RangeTree:get_intersecting_ranges(range)  -- luacheck: ignore self range
+function RangeTree:get_intersecting_ranges(range)
+  local i = 0
+  return function()
+    while true do
+      i = i + 1
+      if i <= #self.range_list then
+        local other_range = self.range_list[i]
+        if range:intersects(other_range) then
+          local value = self.value_list[i]
+          return other_range, value
+        end
+      else
+        return nil
+      end
+    end
+  end
+end
+
+-- Remove one or more values from the index.
+function RangeTree:remove(values)  -- luacheck: ignore self values
   -- TODO
 end
 

@@ -1,7 +1,7 @@
 -- A registry of warnings and errors identified by different processing steps.
 
 local get_option = require("explcheck-config").get_option
-local new_prefix_tree = require("explcheck-utils").new_prefix_tree  -- luacheck: ignore new_prefix_tree
+local new_prefix_tree = require("explcheck-trie").new_prefix_tree
 local new_range_tree = require("explcheck-ranges").new_range_tree
 
 local Issues = {}
@@ -21,7 +21,7 @@ function Issues.new(cls, pathname, content_length, options)
   --- Issue tables
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
-      _identifier_index = {},
+      _identifier_index = new_prefix_tree(),
       _range_index = new_range_tree(1, content_length),
       _ignored_index = {},
       _num_ignored = 0,
@@ -36,7 +36,10 @@ function Issues.new(cls, pathname, content_length, options)
     self.suppressed_issue_map[issue_identifier] = suppressed_issues
   end
   --- Ignored issues
-  self.ignored_issues = {}
+  self.ignored_issues = {
+    _identifier_index = new_prefix_tree(),
+    _range_index = new_range_tree(1, content_length),
+  }
   self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
   for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
     self:ignore({identifier_prefix = issue_identifier})
@@ -112,10 +115,11 @@ function Issues:add(identifier, message, range, context)
   -- Add the issue to the table of issues.
   local issue_table = self:_get_issue_table(identifier)
   table.insert(issue_table, issue)
-  if issue_table._identifier_index[identifier] == nil then
-    issue_table._identifier_index[identifier] = {}
+  local issue_number = #issue_table
+  issue_table._identifier_index:add(identifier, issue_number)
+  if range ~= nil then
+    issue_table._range_index:add(range, issue_number)
   end
-  table.insert(issue_table._identifier_index[identifier], #issue_table)
 end
 
 -- Prevent issues from being present in the table of issues.
@@ -127,6 +131,7 @@ function Issues:ignore(ignored_issue)
     error('Cannot ignore an empty byte range')
   end
   if ignored_issue.identifier_prefix ~= nil then
+    assert(ignored_issue.range ~= nil)
     if #ignored_issue.identifier_prefix == 0 then
       error('Cannot ignore an empty identifier prefix')
     elseif #ignored_issue.identifier_prefix > 4 then
@@ -134,138 +139,77 @@ function Issues:ignore(ignored_issue)
     end
   end
 
-  -- Normalize the ignored identifier (prefix) and determine whether it's an exact identifier or a prefix.
-  local is_exact_identifier
+  -- Normalize the ignored identifier (prefix).
   if ignored_issue.identifier_prefix ~= nil then
     ignored_issue.identifier_prefix = normalize_identifier(ignored_issue.identifier_prefix)
-    is_exact_identifier = #ignored_issue.identifier_prefix == 4
   end
 
-  -- Determine whether an issue should be ignored based on its byte range and the ignored byte range.
-  local function match_issue_range(issue_range)
-    return ignored_issue.range:intersects(issue_range)
+  -- Ignore future issues.
+  if ignored_issue.range ~= nil then
+    self.ignored_issues._range_index:add(ignored_issue.range, ignored_issue)
+  end
+  if ignored_issue.range ~= nil then
+    self.ignored_issues._identifier_index:add(ignored_issue.identifier_prefix, ignored_issue)
   end
 
-  -- Determine whether an issue should be ignored based on its identifier and the ignored identifier prefix.
-  local match_issue_identifier
-  if is_exact_identifier then
-    function match_issue_identifier(identifier)
-      return identifier == ignored_issue.identifier_prefix
-    end
-  else
-    function match_issue_identifier(identifier)
-      return identifier:sub(1, #ignored_issue.identifier_prefix) == ignored_issue.identifier_prefix
-    end
-  end
-  assert(match_issue_identifier ~= nil)
-
-  -- Determine which issues should be ignored.
+  -- Determine which current issues should be ignored.
   local issue_tables, issue_number_lists
-  if ignored_issue.identifier_prefix == nil and ignored_issue.range == nil then
-    -- Prevent any issues.
-    issue_tables = {self.warnings, self.errors}
-    issue_number_lists = {}
-    ignored_issue.check = function() return true end
-  elseif ignored_issue.identifier_prefix == nil then
+  if ignored_issue.identifier_prefix == nil then
+    assert(ignored_issue.range ~= nil)
     -- Prevent any issues within the given range.
     issue_tables = {self.warnings, self.errors}
-    issue_number_lists = {}
-    ignored_issue.check = function(issue)
-      local issue_range = issue[3]
-      if issue_range == nil then  -- file-wide issue
-        return false
-      else  -- ranged issue
-        return match_issue_range(issue_range)
+    issue_number_lists = {{}, {}}
+    for issue_table_number, issue_table in ipairs(issue_tables) do
+      local issue_number_list = issue_number_lists[issue_table_number]
+      for _, issue_number in issue_table._range_index:get_intersecting_ranges(ignored_issue.range) do
+        table.insert(issue_number_list, issue_number)
       end
-    end
-  elseif ignored_issue.range == nil then
-    -- Prevent any issues with the given identifier.
-    assert(ignored_issue.identifier_prefix ~= nil)
-    local issue_table = self:_get_issue_table(ignored_issue.identifier_prefix)
-    local issue_number_list = issue_table._identifier_index[ignored_issue.identifier_prefix]
-    issue_tables = {issue_table}
-    if issue_number_list == nil and is_exact_identifier then
-      -- If we are ignoring an exact identifier and there is no index, then we know that there are no matching issues and there is
-      -- no need to scan all issues.
-      issue_number_list = {}
-    end
-    issue_number_lists = {issue_number_list}
-    ignored_issue.check = function(issue)
-      local issue_identifier = issue[1]
-      return match_issue_identifier(issue_identifier)
     end
   else
-    -- Prevent any issues with the given identifier that are also either within the given range or file-wide.
-    assert(ignored_issue.range ~= nil and ignored_issue.identifier_prefix ~= nil)
+    assert(ignored_issue.identifier_prefix ~= nil)
+    -- Prevent any issues with the given identifier.
     local issue_table = self:_get_issue_table(ignored_issue.identifier_prefix)
-    local issue_number_list = issue_table._identifier_index[ignored_issue.identifier_prefix]
-    issue_tables = {issue_table}
-    if issue_number_list == nil and is_exact_identifier then
-      -- If we are ignoring an exact identifier and there is no index, then we know that there are no matching issues and there is
-      -- no need to scan all issues.
+    local issue_number_list_from_identifiers, issue_number_index_from_identifiers = {}, {}
+    for _, issue_number in issue_table._identifier_index:get_prefixed_by(ignored_issue.identifier_prefix) do
+      table.insert(issue_number_list_from_identifiers, issue_number)
+      issue_number_index_from_identifiers[issue_number] = true
+    end
+    local issue_number_list
+    if ignored_issue.range ~= nil then
+      -- If a range is also given, intersect the results of the identifier query with the results of the range query.
       issue_number_list = {}
-    end
-    issue_number_lists = {issue_number_list}
-    ignored_issue.check = function(issue)
-      local issue_identifier = issue[1]
-      local issue_range = issue[3]
-      if issue_range == nil then  -- file-wide issue
-        return match_issue_identifier(issue_identifier)
-      else  -- ranged issue
-        return match_issue_range(issue_range) and match_issue_identifier(issue_identifier)
+      for _, issue_number in issue_table._range_index:get_intersecting_ranges(ignored_issue.range) do
+        if issue_number_index_from_identifiers[issue_number] ~= nil then
+          table.insert(issue_number_list, issue_number)
+        end
       end
+    else
+      issue_number_list = issue_number_list_from_identifiers
     end
+    issue_tables = {issue_table}
+    issue_number_lists = {issue_number_list}
   end
-  assert(ignored_issue.check ~= nil)
   assert(issue_tables ~= nil)
   assert(issue_number_lists ~= nil)
 
-  -- Remove the issue if it has already been added.
-  --
-  -- TODO: Instead of using `check()` functions, use efficient data structures such as prefix trees for identifier (prefixes) and
-  -- segment trees for ranges, so that we can determine which past issues should be removed in time O(log n) instead of O(n).
-  -- The segment trees should be implemented in the file `explcheck-ranges.lua`.
+  -- Remove current issues that should be ignored.
   for issue_table_number, issue_table in ipairs(issue_tables) do
-
-    -- Check a single issue from the current issue table.
-    local function check_issue(issue_number)
-      local issue = issue_table[issue_number]
-      assert(issue ~= nil)
-      if ignored_issue.check(issue) then
-        -- If the issue has been ignored, record that fact and schedule the issue for a later removal.
-        ignored_issue.seen = true
-        if issue_table._ignored_index[issue_number] == nil then
-          issue_table._ignored_index[issue_number] = true
-          issue_table._num_ignored = issue_table._num_ignored + 1
-        end
-      end
-    end
-
     local issue_numbers = issue_number_lists[issue_table_number]
-    if issue_numbers ~= nil then
-      -- If the ignored issue has a corresponding index, check just the indexed issues.
-      for _, issue_number in ipairs(issue_numbers) do
-        check_issue(issue_number)
-      end
-    else
-      -- Otherwise, check all issues (slow).
-      for issue_number, _ in ipairs(issue_table) do
-        check_issue(issue_number)
+    assert(issue_numbers ~= nil)
+    for _, issue_number in ipairs(issue_numbers) do
+      ignored_issue.seen = true
+      -- Schedule an issue for later removal.
+      if issue_table._ignored_index[issue_number] == nil then
+        issue_table._ignored_index[issue_number] = true
+        issue_table._num_ignored = issue_table._num_ignored + 1
       end
     end
 
     -- If many issues were already scheduled for a later removal, remove them now.
     if issue_table._num_ignored >= self.max_ignored_issue_ratio * #issue_table then
-      self:commit_ignores({issue_table})
+      self:commit_ignores({issue_tables = {issue_table}})
     end
   end
-
-  -- Prevent the issue from being added later.
-  --
-  -- TODO: Instead of using `check()` functions, use efficient data structures such as prefix trees for identifier (prefixes) and
-  -- segment trees for ranges, so that we can determine whether a future issue should be ignored in time O(log n) instead of
-  -- O(n). The segment trees should be implemented in the file `explcheck-ranges.lua`.
-  table.insert(self.ignored_issues, ignored_issue)
 end
 
 -- Check whether two registries only contain issues with the same codes.
@@ -301,19 +245,21 @@ function Issues:has_same_codes_as(other)
 end
 
 -- Remove all issues that were previously scheduled to be ignored.
-function Issues:commit_ignores(issue_tables)
-  for _, issue_table in ipairs(issue_tables or {self.warnings, self.errors}) do
-    local removed_identifiers = {}
+function Issues:commit_ignores(how)
+  for _, issue_table in ipairs(how.issue_tables or {self.warnings, self.errors}) do
     if issue_table._num_ignored == 0 then
       goto next_issue_table
     end
 
     -- Remove the issues.
-    local filtered_issues = {}
+    local removed_issues, removed_ranged_issues, filtered_issues = {}, {}, {}
     for issue_number, issue in ipairs(issue_table) do
       if issue_table._ignored_index[issue_number] then
-        local identifier = issue[1]
-        removed_identifiers[identifier] = true
+        table.insert(removed_issues, issue)
+        local range = issue[1]
+        if range ~= nil then
+          table.insert(removed_ranged_issues, issue)
+        end
       else
         table.insert(filtered_issues, issue)
       end
@@ -329,15 +275,10 @@ function Issues:commit_ignores(issue_tables)
     issue_table._ignored_index = {}
     issue_table._num_ignored = 0
 
-    -- Rebuild all identifier indexes for removed issue identifiers.
-    for identifier, _ in pairs(removed_identifiers) do
-      issue_table._identifier_index[identifier] = {}
-    end
-    for issue_number, issue in ipairs(filtered_issues) do
-      local identifier = issue[1]
-      if removed_identifiers[identifier] then
-        table.insert(issue_table._identifier_index[identifier], issue_number)
-      end
+    if not how.skip_index_rebuild then
+      -- Rebuild all issue indexes.
+      issue_table._identifier_index:remove(removed_issues)
+      issue_table._range_index:remove(removed_ranged_issues)
     end
     ::next_issue_table::
   end
@@ -362,11 +303,12 @@ function Issues:close()
   end
 
   -- Remove all issues that were previously scheduled to be ignored.
-  self:commit_ignores()
+  self:commit_ignores({skip_index_rebuild = true})
 
   -- Clear indexes, since we wouldn't need them anymore.
   for _, issue_table in ipairs({self.warnings, self.errors}) do
     issue_table._identifier_index = nil
+    issue_table._range_index = nil
     issue_table._ignored_index = nil
     issue_table._num_ignored = nil
   end
