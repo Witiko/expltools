@@ -289,17 +289,17 @@ function PrefixTree.new(cls)
 end
 
 -- Add a new string into the tree together with an associated value.
-function PrefixTree:add(text, value)  -- luacheck: ignore self identifier value
+function PrefixTree:add(text, value)  -- luacheck: ignore self text value
   -- TODO
 end
 
 -- Get all indexed strings that share a given prefix and their associated values.
-function PrefixTree:get_values_with_prefix(prefix)  -- luacheck: ignore prefix
+function PrefixTree:get_values_with_prefix(prefix)  -- luacheck: ignore self prefix
   -- TODO
 end
 
 -- Get all indexed prefixes for a given string and their associated values.
-function PrefixTree:get_prefixes(text)  -- luacheck: ignore text
+function PrefixTree:get_prefixes(text)  -- luacheck: ignore self text
   -- TODO
 end
 
