@@ -112,6 +112,9 @@ function Issues:add(identifier, message, range, context)
   -- Look for ignored issues with the given identifier or its prefix.
   --
   -- TODO: Also handle the case where `ignored_issue.identifier == nil`, i.e. ignored issues that are only ranged (`% noqa`).
+  --
+  -- TODO: Also mark the corresponding issue as `seen`; perhaps don't short-circuit like we did before PR #161 either, in case
+  -- we are matched by multiple ignored issues?
   for _, ignored_issue in self.ignored_issues._identifier_index:get_prefixes_of(identifier) do
     if range == nil or ignored_issue.range == nil then
       -- If a range was not given, check just the identifier.
