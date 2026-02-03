@@ -16,11 +16,19 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Install additional packages
+      - name: Install Luacheck
         run: |
           set -e
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends lua-check
+      - name: Install LuaLS
+        run: |
+          set -e
+          sudo apt -qy update
+          sudo apt -qy install build-essential procps curl file git
+          NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew install lua-language-server
       - name: Install TeX Live
         uses: TeX-Live/setup-texlive-action@v3
         with:
@@ -51,10 +59,16 @@ jobs:
               print > fname
             }
           ' README.md
-      - name: Run luacheck
+      - name: Run Luacheck
         run: |
           find explcheck README-*.lua -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec \
             luacheck {} +
+      - name: Run LuaLS
+        run: |
+          cd explcheck/src
+          rm explcheck-toml.lua
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          lua-language-server --check=. --checklevel=Hint
   explcheck:
     name: Check code style (expl3)
     runs-on: ubuntu-latest

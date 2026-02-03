@@ -82,6 +82,7 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
   output_file:write('local obsolete = {}\n')
   output_file:write('do\n')
   output_file:write('  local any, eof = P(1), P(-1)\n')
+  output_file:write('  ---@diagnostic disable-next-line:unused-local\n')
   output_file:write('  local wildcard = any^0  -- luacheck: ignore wildcard\n\n')
 
   -- In order to minimize the size and speed of the parsers, first construct prefix trees of the obsolete names.
@@ -221,7 +222,7 @@ local function parse_l3prefixes()
     + C((any - S(',\n"'))^0)  -- unquoted field
   )
   local csv_fields = Ct(csv_field * (P(",") * csv_field)^0) * (lpeg.P("\n") + eof)
-  input_file:read("*line")  -- skip the header on the first line
+  local _ = input_file:read("*line")  -- skip the header on the first line
   for line in input_file:lines() do
     local values = lpeg.match(csv_fields, line)
     assert(#values == 9)

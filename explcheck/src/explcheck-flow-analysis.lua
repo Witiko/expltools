@@ -93,7 +93,7 @@ local function _get_statement(chunk, statement_number)
 end
 
 -- Get a text representation of a statement or a pseudo-statement "after" a chunk.
-local function format_statement(chunk, statement_number)
+local function format_statement(chunk, statement_number)  ---@diagnostic disable-line:unused-function
   local statement_text
   if statement_number == chunk.statement_range:stop() + 1 then
     statement_text = string.format("pseudo-statement #%d after a chunk", statement_number)
@@ -107,6 +107,7 @@ local function format_statement(chunk, statement_number)
 end
 
 -- Get a text representation of an edge.
+---@diagnostic disable-next-line:unused-function, unused-local
 local function format_edge(edge)  -- luacheck: ignore
   return string.format(
     "%96s  -- %20s (confidence: %3.0f%%) -->  %s",
@@ -146,6 +147,7 @@ local function is_confused(pathname, results, options)
 end
 
 -- Collect chunks of known statements.
+---@diagnostic disable-next-line:unused-local
 local function collect_chunks(states, file_number, options)  -- luacheck: ignore options
   local state = states[file_number]
 
@@ -181,6 +183,7 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
 end
 
 -- Draw "static" edges between chunks withing a single file. A static edge is known without extra analysis.
+---@diagnostic disable-next-line:unused-local
 local function draw_file_local_static_edges(states, file_number, options)  -- luacheck: ignore options
   local state = states[file_number]
 
@@ -316,6 +319,7 @@ local function draw_file_local_static_edges(states, file_number, options)  -- lu
 end
 
 -- Draw "static" edges between chunks between all files in a file group. A static edge is known without extra analysis.
+---@diagnostic disable-next-line:unused-local
 local function draw_group_wide_static_edges(states, _, options)  -- luacheck: ignore options
   -- Draw static edges once between all files in the file group, not just individual files.
   if states.drew_static_edges ~= nil then

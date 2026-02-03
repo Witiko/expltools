@@ -720,6 +720,7 @@ local function analyze(states, file_number, options)
               -- determine the defined csnames
               for _, condition_table in ipairs(conditions) do
                 local condition, condition_confidence = table.unpack(condition_table)
+                assert(type(condition_confidence) == "number")
                 local base_conditional_csname = get_conditional_function_csname(base_csname_stem, base_argument_specifiers, condition)
                 local defined_conditional_csname = get_conditional_function_csname(base_csname_stem, argument_specifiers, condition)
                 local confidence = math.min(argument_specifiers.confidence, condition_confidence)
@@ -841,6 +842,8 @@ local function analyze(states, file_number, options)
               if doubly_transformed_tokens == nil then  -- we couldn't parse the replacement text
                 goto skip_replacement_text  -- record partial information
               end
+              assert(second_map_back ~= nil)
+              assert(second_map_forward ~= nil)
               local function map_back(...) return first_map_back(second_map_back(...)) end
               local function map_forward(...) return second_map_forward(first_map_forward(...)) end
               local nested_segment = {

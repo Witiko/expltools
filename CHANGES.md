@@ -23,6 +23,17 @@ This version of explcheck has made the following improvements to the documentati
 - Specify syntax highlighting for configuration files. (contributed by
   @muzimuzhi in #157)
 
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Check Lua code using [the Lua Language Server (LuaLS)][LuaLS] in addition to
+  [Luacheck][]. (#161)
+
+ [LuaLS]: https://github.com/LuaLS/lua-language-server
+ [Luacheck]: https://github.com/mpeterv/luacheck
+
 ## expltools 2026-01-27
 
 ### explcheck v0.17.0

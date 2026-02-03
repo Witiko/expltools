@@ -74,8 +74,6 @@ function Issues:add(identifier, message, range, context)
   -- Discard duplicate issues.
   local range_start = (range ~= nil and range:start()) or false
   local range_end = (range ~= nil and range:stop()) or false
-  -- TODO: Let's also check the project using lua-language-server in the CI using `lua-language-server --check=. --checklevel=Hint`
-  -- and setting up a file `.luarc.json`, so that we ignore third-party files like `explcheck-toml.lua`.
   assert(range_start ~= nil and range_end ~= nil)
   if self.seen_issues[identifier] == nil then
     self.seen_issues[identifier] = {}
