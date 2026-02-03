@@ -277,7 +277,34 @@ end
 
 -- Remove one or more values from the index.
 function RangeTree:remove(values)  -- luacheck: ignore self values
-  -- TODO
+  -- Index the values to be removed.
+  local removed_value_index = {}
+  for _, value in ipairs(values) do
+    removed_value_index[value] = true
+  end
+  -- Collect all remaining ranges and values.
+  local filtered_ranges, filtered_values = {}, {}
+  for value_number, value in ipairs(self.value_list) do
+    if removed_value_index[value] then
+      goto continue
+    end
+    local range = self.test_list[value_number]
+    table.insert(filtered_ranges, range)
+    table.insert(filtered_values, value)
+    assert(#filtered_ranges == #filtered_values)
+    ::continue::
+  end
+  -- Clear the segment tree.
+  self.range_list = {}
+  self.value_list = {}
+  -- Index the remaining ranges and values.
+  --
+  -- TODO: Only reindex the whole tree if this would be easier than doing the removal.
+  -- Build an index of the removed values.
+  for range_number, range in ipairs(filtered_ranges) do
+    local value = filtered_values[range_number]
+    self:add(range, value)
+  end
 end
 
 return {
