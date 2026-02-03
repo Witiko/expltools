@@ -97,20 +97,32 @@ function Issues:add(identifier, message, range, context)
     end
   end
 
-  -- Construct the issue.
-  local issue = {identifier, message, range, context}
-
   -- Determine if the issue should be ignored.
-  --
-  -- TODO: Instead of running all `check()` functions, use efficient data structures such as prefix trees for identifier (prefixes)
-  -- and segment trees for ranges, so that we can determine whether an issue should be ignored in time O(log n) instead of O(n).
-  -- The segment trees should be implemented in the file `explcheck-ranges.lua`.
-  for _, ignored_issue in ipairs(self.ignored_issues) do
-    if ignored_issue.check(issue) then
-      ignored_issue.seen = true
-      return
+  local ignored_issues_index_by_range
+  if range ~= nil then
+    -- Look for ignored issues within the given range.
+    ignored_issues_index_by_range = {}
+    for _, ignored_issue in self.ignored_issues._range_index:get_intersecting_ranges(range) do
+      ignored_issues_index_by_range[ignored_issue] = ignored_issue
+      any_ignored_issue_within_range = false
     end
   end
+  -- Look for ignored issues with the given identifier or its prefix.
+  for _, ignored_issue in issue_table._identifier_index:get_prefixes_of(identifier) do
+    if range == nil or ignored_issue.range == nil then
+      -- If a range was not given, check just the identifier.
+      return
+    else
+      -- If a range was also given, check both the identifier and the range.
+      assert(ignored_issues_index_by_range ~= nil)
+      if ignored_issues_index_by_range[ignored_issue] ~= nil then
+        return
+      end
+    end
+  end
+
+  -- Construct the issue.
+  local issue = {identifier, message, range, context}
 
   -- Add the issue to the table of issues.
   local issue_table = self:_get_issue_table(identifier)
@@ -148,7 +160,7 @@ function Issues:ignore(ignored_issue)
   if ignored_issue.range ~= nil then
     self.ignored_issues._range_index:add(ignored_issue.range, ignored_issue)
   end
-  if ignored_issue.range ~= nil then
+  if ignored_issue.identifier_prefix ~= nil then
     self.ignored_issues._identifier_index:add(ignored_issue.identifier_prefix, ignored_issue)
   end
 
@@ -176,7 +188,7 @@ function Issues:ignore(ignored_issue)
     end
     local issue_number_list
     if ignored_issue.range ~= nil then
-      -- If a range is also given, intersect the results of the identifier query with the results of the range query.
+      -- If a range was also given, intersect the results of the identifier query with the results of the range query.
       issue_number_list = {}
       for _, issue_number in issue_table._range_index:get_intersecting_ranges(ignored_issue.range) do
         if issue_number_index_from_identifiers[issue_number] ~= nil then
