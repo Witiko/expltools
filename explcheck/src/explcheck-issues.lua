@@ -257,7 +257,8 @@ end
 
 -- Remove all issues that were previously scheduled to be ignored.
 function Issues:commit_ignores(how)
-  for _, issue_table in ipairs(how.issue_tables or {self.warnings, self.errors}) do
+  local issue_tables = how and how.issue_tables or {self.warnings, self.errors}
+  for _, issue_table in ipairs(issue_tables) do
     if issue_table._num_ignored == 0 then
       goto next_issue_table
     end
@@ -286,7 +287,8 @@ function Issues:commit_ignores(how)
     issue_table._ignored_index = {}
     issue_table._num_ignored = 0
 
-    if not how.skip_index_rebuild then
+    local skip_index_rebuild = how and how.skip_index_rebuild
+    if not skip_index_rebuild then
       -- Rebuild all issue indexes.
       issue_table._identifier_index:remove(removed_issues)
       issue_table._range_index:remove(removed_ranged_issues)
