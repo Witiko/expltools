@@ -74,6 +74,8 @@ function Issues:add(identifier, message, range, context)
   -- Discard duplicate issues.
   local range_start = (range ~= nil and range:start()) or false
   local range_end = (range ~= nil and range:stop()) or false
+  -- TODO: Let's also check the project using lua-language-server in the CI using `lua-language-server --check=. --checklevel=Hint`
+  -- and setting up a file `.luarc.json`, so that we ignore third-party files like `explcheck-toml.lua`.
   assert(range_start ~= nil and range_end ~= nil)
   if self.seen_issues[identifier] == nil then
     self.seen_issues[identifier] = {}
@@ -108,6 +110,8 @@ function Issues:add(identifier, message, range, context)
     end
   end
   -- Look for ignored issues with the given identifier or its prefix.
+  --
+  -- TODO: Also handle the case where `ignored_issue.identifier == nil`, i.e. ignored issues that are only ranged (`% noqa`).
   for _, ignored_issue in self.ignored_issues._identifier_index:get_prefixes_of(identifier) do
     if range == nil or ignored_issue.range == nil then
       -- If a range was not given, check just the identifier.
