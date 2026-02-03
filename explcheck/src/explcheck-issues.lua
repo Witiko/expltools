@@ -104,11 +104,10 @@ function Issues:add(identifier, message, range, context)
     ignored_issues_index_by_range = {}
     for _, ignored_issue in self.ignored_issues._range_index:get_intersecting_ranges(range) do
       ignored_issues_index_by_range[ignored_issue] = ignored_issue
-      any_ignored_issue_within_range = false
     end
   end
   -- Look for ignored issues with the given identifier or its prefix.
-  for _, ignored_issue in issue_table._identifier_index:get_prefixes_of(identifier) do
+  for _, ignored_issue in self.ignored_issues._identifier_index:get_prefixes_of(identifier) do
     if range == nil or ignored_issue.range == nil then
       -- If a range was not given, check just the identifier.
       return
