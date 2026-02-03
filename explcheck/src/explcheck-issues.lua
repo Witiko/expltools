@@ -163,6 +163,7 @@ function Issues:ignore(ignored_issue)
   end
 
   -- Ignore future issues.
+  table.insert(self.ignored_issues, ignored_issue)
   if ignored_issue.range ~= nil then
     self.ignored_issues._range_index:add(ignored_issue.range, ignored_issue)
   end
