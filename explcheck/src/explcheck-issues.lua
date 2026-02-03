@@ -272,15 +272,9 @@ function Issues:commit_ignores(how)
     end
 
     -- Remove the issues.
-    local removed_issues, removed_ranged_issues, filtered_issues = {}, {}, {}
+    local filtered_issues = {}
     for issue_number, issue in ipairs(issue_table) do
-      if issue_table._ignored_index[issue_number] then
-        table.insert(removed_issues, issue)
-        local range = issue[1]
-        if range ~= nil then
-          table.insert(removed_ranged_issues, issue)
-        end
-      else
+      if issue_table._ignored_index[issue_number] == nil then
         table.insert(filtered_issues, issue)
       end
     end
@@ -298,8 +292,15 @@ function Issues:commit_ignores(how)
     local skip_index_rebuild = how and how.skip_index_rebuild
     if not skip_index_rebuild then
       -- Rebuild all issue indexes.
-      issue_table._identifier_index:remove(removed_issues)
-      issue_table._range_index:remove(removed_ranged_issues)
+      issue_table._identifier_index:clear()
+      issue_table._range_index:clear()
+      for issue_number, issue in ipairs(issue_table) do
+        local identifier, range = issue[1], issue[3]
+        issue_table._identifier_index:add(identifier, issue_number)
+        if range ~= nil then
+          issue_table._range_index:add(range, issue_number)
+        end
+      end
     end
     ::next_issue_table::
   end

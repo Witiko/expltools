@@ -13,10 +13,15 @@ function PrefixTree.new(cls)
   setmetatable(self, cls)
   cls.__index = cls
   -- Initialize the class.
+  self:clear()
+  return self
+end
+
+-- Remove all values from the index.
+function PrefixTree:clear()
   self.tree_root = {}
   self.text_list = {}
   self.value_list = {}
-  return self
 end
 
 -- Add a new text into the tree together with an associated value.
@@ -133,39 +138,6 @@ function PrefixTree:get_prefixes_of(text)
         end
       end
     end
-  end
-end
-
--- Remove one or more values from the index.
-function PrefixTree:remove(values)
-  -- Index the values to be removed.
-  local removed_value_index = {}
-  for _, value in ipairs(values) do
-    removed_value_index[value] = true
-  end
-  -- Collect all remaining texts and values.
-  local filtered_texts, filtered_values = {}, {}
-  for value_number, value in ipairs(self.value_list) do
-    if removed_value_index[value] then
-      goto continue
-    end
-    local text = self.text_list[value_number]
-    table.insert(filtered_texts, text)
-    table.insert(filtered_values, value)
-    assert(#filtered_texts == #filtered_values)
-    ::continue::
-  end
-  -- Clear the prefix tree.
-  self.tree_root = {}
-  self.text_list = {}
-  self.value_list = {}
-  -- Index the remaining texts and values.
-  --
-  -- TODO: Only reindex the whole tree if this would be easier than doing the removal.
-  -- Build an index of the removed values.
-  for text_number, text in ipairs(filtered_texts) do
-    local value = filtered_values[text_number]
-    self:add(text, value)
   end
 end
 
