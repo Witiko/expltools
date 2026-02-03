@@ -142,13 +142,13 @@ function Issues:ignore(ignored_issue)
     error('Cannot ignore an empty byte range')
   end
   if ignored_issue.identifier_prefix ~= nil then
-    assert(ignored_issue.range ~= nil)
     if #ignored_issue.identifier_prefix == 0 then
       error('Cannot ignore an empty identifier prefix')
     elseif #ignored_issue.identifier_prefix > 4 then
       error('An identifier prefix cannot be longer than four characters')
     end
   end
+  assert(ignored_issue.identifier_prefix ~= nil or ignored_issue.range ~= nil)
 
   -- Normalize the ignored identifier (prefix).
   if ignored_issue.identifier_prefix ~= nil then

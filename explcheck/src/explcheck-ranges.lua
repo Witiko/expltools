@@ -245,6 +245,7 @@ function RangeTree.new(cls, min_range_start, max_range_end)
   self.range_list = {}
   self.value_list = {}
   --self.max_tree_depth = #self.root_bounding_range > 0 and math.log(#self.root_bounding_range) / math.log(2) or 0
+  return self
 end
 
 -- Add a new range into the tree together with an associated value.
@@ -288,7 +289,7 @@ function RangeTree:remove(values)  -- luacheck: ignore self values
     if removed_value_index[value] then
       goto continue
     end
-    local range = self.test_list[value_number]
+    local range = self.range_list[value_number]
     table.insert(filtered_ranges, range)
     table.insert(filtered_values, value)
     assert(#filtered_ranges == #filtered_values)

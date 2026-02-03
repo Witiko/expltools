@@ -16,6 +16,7 @@ function PrefixTree.new(cls)
   self.tree_root = {}
   self.text_list = {}
   self.value_list = {}
+  return self
 end
 
 -- Add a new text into the tree together with an associated value.
@@ -148,7 +149,7 @@ function PrefixTree:remove(values)
     if removed_value_index[value] then
       goto continue
     end
-    local text = self.test_list[value_number]
+    local text = self.text_list[value_number]
     table.insert(filtered_texts, text)
     table.insert(filtered_values, value)
     assert(#filtered_texts == #filtered_values)
