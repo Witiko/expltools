@@ -74,6 +74,7 @@ function Issues:add(identifier, message, range, context)
   -- Discard duplicate issues.
   local range_start = (range ~= nil and range:start()) or false
   local range_end = (range ~= nil and range:stop()) or false
+  assert(range_start ~= nil and range_end ~= nil)
   if self.seen_issues[identifier] == nil then
     self.seen_issues[identifier] = {}
   end
