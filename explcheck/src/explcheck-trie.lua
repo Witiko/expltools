@@ -6,7 +6,7 @@ local PrefixTree = {}
 --
 -- This is an uncompressed prefix tree based on Lua tables. To keep the retrieval constant time and the heap fragmentation low, it
 -- should only be used for the storage of short texts with few distinct prefixes, such as issue identifiers. Strings are stored
--- together with associated values, which must be unique.
+-- together with associated values.
 function PrefixTree.new(cls)
   -- Instantiate the class.
   local self = {}
@@ -25,7 +25,7 @@ function PrefixTree:clear()
 end
 
 -- Add a new text into the tree together with an associated value.
-function PrefixTree:add(text, value)  -- luacheck: ignore self text value
+function PrefixTree:add(text, value)
   assert(#text > 0)
   -- Find the node corresponding to the text in the tree, creating it if it doesn't exist.
   local current_node = self.tree_root
@@ -41,7 +41,7 @@ function PrefixTree:add(text, value)  -- luacheck: ignore self text value
     current_node = current_node[character]
   end
   assert(current_node ~= self.tree_root)
-  -- Record the value.
+  -- Record the text and the value.
   if current_node._value_number_list == nil then
     current_node._value_number_list = {}
   end
@@ -60,7 +60,9 @@ function PrefixTree:get_prefixed_by(prefix)
   for character_number = 1, #prefix do
     local character = prefix:sub(character_number, character_number)
     if current_prefix_node[character] == nil then
-      return function() return nil end
+      return function()
+        return nil
+      end
     end
     current_prefix_node = current_prefix_node[character]
   end

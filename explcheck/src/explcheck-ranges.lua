@@ -172,6 +172,18 @@ function Range:enumerate(original_array, map_back)
   end
 end
 
+-- Split a range in half, producing two new subranges.
+function Range:bisect()
+  assert(#self > 1)
+  local midpoint = self:start() + math.floor((self:stop() - self:start()) / 2)
+  local left_subrange_size, right_subrange_size = midpoint - self:start() + 1, self:stop() - midpoint
+  local left_subrange = Range:new(self:start(), midpoint, INCLUSIVE, self:stop())
+  local right_subrange = Range:new(midpoint + 1, self:stop(), INCLUSIVE, self:stop())
+  assert(#left_subrange == left_subrange_size)
+  assert(#right_subrange == right_subrange_size)
+  return left_subrange, right_subrange
+end
+
 -- Given a range where each index maps into a list of non-decreasing sub-ranges, produce a new range that start with the start
 -- of the first sub-range and ends with the end of the last sub-range.
 function Range:new_range_from_subranges(get_subrange, subarray_size)
@@ -233,8 +245,7 @@ end
 
 local RangeTree = {}
 
--- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range and where all values
--- associated with the ranges must be unique.
+-- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range.
 function RangeTree.new(cls, min_range_start, max_range_end)
   -- Instantiate the class.
   local self = {}
@@ -249,17 +260,63 @@ end
 
 -- Clear all values from the index.
 function RangeTree:clear()
+  self.tree_root = nil
   self.range_list = {}
   self.value_list = {}
 end
 
--- Add a new range into the tree together with an associated value.
+-- Add a new range into the index together with an associated value.
 function RangeTree:add(range, value)
   assert(self.root_bounding_range:contains(range))
   table.insert(self.range_list, range)
   table.insert(self.value_list, value)
   assert(#self.range_list == #self.value_list)
-  -- TODO: After `#self.range_list > self.max_tree_depth`, reindex `self.range_list` in a segment tree.
+  local value_number = #self.value_list
+
+  -- Add a new range into the segment tree with an associated value.
+  ---@diagnostic disable-next-line:redefined-local
+  local function add_to_tree(range, value_number)  -- luacheck: ignore range value_number
+    assert(self.tree_root ~= nil)
+    -- Find the node corresponding to the range in the tree, creating it if it doesn't exist.
+    local current_node = self.tree_root
+    while not range:contains(current_node._range) do
+      if current_node._left_subnode == nil then
+        assert(current_node._right_subnode == nil)
+        assert(#current_node._range > 1)
+        local left_subrange, right_subrange = current_node._range:bisect()
+        assert(#left_subrange > 0)
+        assert(#right_subrange > 0)
+        current_node._left_subnode = {_range = left_subrange}
+        current_node._right_subnode = {_range = right_subrange}
+      end
+      if range:intersects(current_node._left_subnode._range) then
+        current_node = current_node._left_subnode
+      else
+        assert(range:intersects(current_node._right_subnode._range))
+        current_node = current_node._right_subnode
+      end
+    end
+    -- Record the range and the value.
+    if current_node._range_list == nil then
+      assert(current_node._value_number_list == nil)
+      current_node._range_list = {}
+      current_node._value_number_list = {}
+    end
+    table.insert(current_node._range_list, range)
+    table.insert(current_node._value_number_list, value_number)
+  end
+
+  -- Defer the creation of the tree until a linear scan exceeds the worst-case query time from a tree.
+  if #self.range_list > self.max_tree_depth then
+    if self.tree_root == nil then
+      self.tree_root = {_range = self.root_bounding_range}
+      for current_value_number, current_range in ipairs(self.range_list) do
+        add_to_tree(current_range, current_value_number)
+      end
+    else
+      add_to_tree(range, value_number)
+    end
+  end
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
