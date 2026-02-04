@@ -253,7 +253,8 @@ function RangeTree.new(cls, min_range_start, max_range_end)
   cls.__index = cls
   -- Initialize the class.
   self.root_bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
-  self.max_tree_depth = #self.root_bounding_range > 0 and math.log(#self.root_bounding_range) / math.log(2) or 0
+  assert(#self.root_bounding_range > 0)
+  self.max_tree_depth = math.log(#self.root_bounding_range) / math.log(2)
   self:clear()
   return self
 end
@@ -306,7 +307,8 @@ function RangeTree:add(range, value)
     table.insert(current_node._value_number_list, value_number)
   end
 
-  -- Defer the creation of the tree until a linear scan exceeds the worst-case query time from a tree.
+  -- Defer the creation of the tree at least until the asymptotic worst-case time complexities of a linear scan and a tree query
+  -- become the same.
   if #self.range_list > self.max_tree_depth then
     if self.tree_root == nil then
       self.tree_root = {_range = self.root_bounding_range}
