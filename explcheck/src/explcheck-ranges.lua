@@ -175,10 +175,10 @@ end
 -- Split a range in half, producing two new subranges.
 function Range:bisect()
   assert(#self > 1)
-  local midpoint = self:start() + math.floor((self:stop() - self:start()) / 2)
-  local left_subrange_size, right_subrange_size = midpoint - self:start() + 1, self:stop() - midpoint
-  local left_subrange = Range:new(self:start(), midpoint, INCLUSIVE, self:stop())
-  local right_subrange = Range:new(midpoint + 1, self:stop(), INCLUSIVE, self:stop())
+  local midpoint = self:start() + math.ceil((self:stop() - self:start()) / 2)
+  local left_subrange_size, right_subrange_size = midpoint - self:start(), self:stop() - midpoint + 1
+  local left_subrange = Range:new(self:start(), midpoint, EXCLUSIVE, self:stop())
+  local right_subrange = Range:new(midpoint, self:stop(), INCLUSIVE, self:stop())
   assert(#left_subrange == left_subrange_size)
   assert(#right_subrange == right_subrange_size)
   return left_subrange, right_subrange
