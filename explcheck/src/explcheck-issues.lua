@@ -11,6 +11,17 @@ local function normalize_identifier(identifier)
   return identifier:lower()
 end
 
+-- TODO: Aim at least for the measurements with Dell G5 15 on the file `expl3-code.tex` from before `PrefixTree`
+-- and `RangeTree` were added after commit 6ab6b9d5:
+--
+--     $ time explcheck expl3-code.tex | grep XXX
+--     XXXX    preprocessing   1       2.825616        0.15764000000001        0.016291        41514
+--     XXXX    lexical-analysis        1       2.403953        0.016523000000024       0.0     2848
+--     XXXX    lexical-analysis        2       0.618749        0.32456599999998        0.024647000000011       2197
+--     XXXX    syntactic-analysis      1       0.153292        0.00032400000000177     0.0     46
+--     XXXX    semantic-analysis       1       0.690973        0.06382399999999        0.0097439999999995      829
+--     XXXX    semantic-analysis       2       1.179811        0.77534300000002        0.0     270
+--
 function Issues.new(cls, pathname, content_length, options)
   -- Instantiate the class.
   local self = {}
@@ -19,6 +30,10 @@ function Issues.new(cls, pathname, content_length, options)
   -- Initialize the class.
   self.closed = false
   --- Issue tables
+  ---
+  --- TODO: Only use `_range_index` for identifier-less ranged ignored issues. For the common case, where the
+  --- ignored issue contains an identifier (prefix), keep a separate hash table `_identifier_range_indexes`
+  --- that maps (normalized) identifiers to smaller per-identifier range indexes.
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
       _identifier_index = new_prefix_tree(),
@@ -37,7 +52,10 @@ function Issues.new(cls, pathname, content_length, options)
   end
   --- Ignored issues
   self.ignored_issues = {
-    _identifier_index = new_prefix_tree(),
+    --- TODO: Only use `_range_index` for identifier-less ranged ignored issues. For the common case, where the
+    --- ignored issue contains an identifier (prefix), keep a separate hash table `_identifier_prefix_range_indexes`
+    --- that maps (normalized) identifiers (or their prefixes) to smaller per-identifier range indexes.
+    _identifier_index = new_prefix_tree(),  -- TODO: Rename to `_identifier_prefix_index`.
     _range_index = new_range_tree(1, content_length),
   }
   self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
