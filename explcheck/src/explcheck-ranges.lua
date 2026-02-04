@@ -278,33 +278,40 @@ function RangeTree:add(range, value)
   ---@diagnostic disable-next-line:redefined-local
   local function add_to_tree(range, value_number)  -- luacheck: ignore range value_number
     assert(self.tree_root ~= nil)
-    -- Find the node corresponding to the range in the tree, creating it if it doesn't exist.
-    local current_node = self.tree_root
-    while not range:contains(current_node._range) do
-      if current_node._left_subnode == nil then
-        assert(current_node._right_subnode == nil)
-        assert(#current_node._range > 1)
-        local left_subrange, right_subrange = current_node._range:bisect()
-        assert(#left_subrange > 0)
-        assert(#right_subrange > 0)
-        current_node._left_subnode = {_range = left_subrange}
-        current_node._right_subnode = {_range = right_subrange}
-      end
-      if range:intersects(current_node._left_subnode._range) then
-        current_node = current_node._left_subnode
+    -- Include the range in all tree nodes whose corresponding ranges it contains, creating those nodes if they don't exist.
+    local current_node_stack = {self.tree_root}
+    while #current_node_stack > 0 do
+      local current_node = table.remove(current_node_stack)
+      -- If the added range contains the range that corresponds to the current node, record the range and the value.
+      if range:contains(current_node._range) then
+        if current_node._range_list == nil then
+          assert(current_node._value_number_list == nil)
+          current_node._range_list = {}
+          current_node._value_number_list = {}
+        end
+        table.insert(current_node._range_list, range)
+        table.insert(current_node._value_number_list, value_number)
       else
-        assert(range:intersects(current_node._right_subnode._range))
-        current_node = current_node._right_subnode
+        if current_node._left_subnode == nil then
+          -- Otherwise, bisect the range of the current node, creating two subnodes.
+          assert(current_node._right_subnode == nil)
+          assert(#current_node._range > 1)
+          local left_subrange, right_subrange = current_node._range:bisect()
+          assert(#left_subrange > 0)
+          assert(#right_subrange > 0)
+          current_node._left_subnode = {_range = left_subrange}
+          current_node._right_subnode = {_range = right_subrange}
+        end
+        -- Otherwise, if the added range intersects with the range corresponding to either subnode, descend into these subnodes
+        -- in later iterations.
+        if range:intersects(current_node._left_subnode._range) then
+          table.insert(current_node_stack, current_node._left_subnode)
+        end
+        if range:intersects(current_node._right_subnode._range) then
+          table.insert(current_node_stack, current_node._right_subnode)
+        end
       end
     end
-    -- Record the range and the value.
-    if current_node._range_list == nil then
-      assert(current_node._value_number_list == nil)
-      current_node._range_list = {}
-      current_node._value_number_list = {}
-    end
-    table.insert(current_node._range_list, range)
-    table.insert(current_node._value_number_list, value_number)
   end
 
   -- Defer the creation of the tree at least until the asymptotic worst-case time complexities of a linear scan and a tree query
