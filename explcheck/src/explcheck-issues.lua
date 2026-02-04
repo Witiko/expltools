@@ -155,10 +155,9 @@ function Issues:add(identifier, message, range, context)
     -- Look for ignored issues by their ranges and their identifiers or identifier prefixes.
     for identifier_prefix, _ in self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier) do
       local identifier_prefix_range_index = self.ignored_issues._identifier_prefix_range_indexes[identifier_prefix]
-      if identifier == "e209" then
-      end
       if identifier_prefix_range_index ~= nil then
-        for _, ignored_issue in identifier_prefix_range_index:get_intersecting_ranges(range) do
+        local _, ignored_issue = identifier_prefix_range_index:get_intersecting_ranges(range)
+        if ignored_issue ~= nil then
           assert(ignored_issue.identifier_prefix == identifier_prefix)
           ignored_issue.seen = true
           goto record_time
@@ -166,14 +165,16 @@ function Issues:add(identifier, message, range, context)
       end
     end
     -- Look for ignored issues by their ranges.
-    for _, ignored_issue in self.ignored_issues._range_index:get_intersecting_ranges(range) do
+    local _, ignored_issue = self.ignored_issues._range_index:get_intersecting_ranges(range)
+    if ignored_issue ~= nil then
       assert(ignored_issue.identifier_prefix == nil)
       ignored_issue.seen = true
       goto record_time
     end
   end
   -- Look for ignored issues by their identifiers or identifier prefixes.
-  for _, ignored_issue in self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier) do
+  local _, ignored_issue = self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier)
+  if ignored_issue ~= nil then
     ignored_issue.seen = true
     goto record_time
   end

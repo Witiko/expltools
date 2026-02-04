@@ -250,7 +250,8 @@ local function process_files(pathnames, options)
         local previous_total_ignore_time = issues.total_ignore_time()
         process_with_substep(states, file_number, options)
         local stop_time = os.clock()
-        print("XXXX", step_filename, substep_number, stop_time - start_time, issues.total_issue_time() - previous_total_issue_time, issues.total_ignore_time() - previous_total_ignore_time, issues.total_issues() - previous_total_issues)
+        print("XXXX", step_filename, substep_number, stop_time - start_time, issues.total_issue_time() - previous_total_issue_time,
+              issues.total_ignore_time() - previous_total_ignore_time, issues.total_issues() - previous_total_issues)
         if substep_number == #step.substeps then
           -- If the step ended with errors for this file, skip all following steps for this file.
           state.issues:commit_ignores()
