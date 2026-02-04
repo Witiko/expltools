@@ -22,6 +22,32 @@ end
 --     XXXX    semantic-analysis       1       0.690973        0.06382399999999        0.0097439999999995       829
 --     XXXX    semantic-analysis       2       1.179811        0.77534300000002        0.0                      270
 --
+-- TODO: After commit 259ae1d, the measurements with `max_range_tree_depth` set to 1 are the fastest when tested on
+-- a range from 1 to 7, which gives a strong indication that `RangeTree` can go, since it's not adding anything to
+-- the table compared to a linear scan. The contribution of `PrefixTree` seems unclear.
+--
+--     $ time explcheck expl3-code.tex | grep XXX
+--     XXXX    preprocessing           1       3.331975        0.8277059999999         0.033757               41514
+--     XXXX    lexical-analysis        1       2.230335        0.067801999999989       0.0                     2848
+--     XXXX    lexical-analysis        2       0.167146        0.10382600000001        0.07158099999999        2197
+--     XXXX    syntactic-analysis      1       0.173643        0.00065300000000157     0.0                       46
+--     XXXX    semantic-analysis       1       0.480903        0.0091530000000111      0.012088999999999        829
+--     XXXX    semantic-analysis       2       0.34739         0.0043879999999925      0.0                      270
+--     XXX
+--     XXX     add_duration (trie)     0.10088700000009
+--     XXX     get_prefixed_by_duration (trie) 0.040856000000013
+--     XXX     get_prefixes_of_duration (trie) 0.14401700000006
+--     XXX     add_duration (ranges)   0.26725799999979
+--     XXX     add_loops (ranges)      95686   ~358029 loops/s
+--     XXX     get_intersecting_ranges_duration (ranges)       0.088016000000041
+--     XXX
+--     XXX     total (trie)    0.28576000000017
+--     XXX     total (ranges)  0.35527399999983
+--
+--     real    0m8.430s
+--     user    0m7.289s
+--     sys     0m0.414s
+--
 function Issues.new(cls, pathname, content_length, options)
   -- Instantiate the class.
   local self = {}
