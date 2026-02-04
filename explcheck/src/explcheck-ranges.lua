@@ -366,7 +366,11 @@ function RangeTree:get_intersecting_ranges(range)
           local value_number = current_node._value_number_list[current_value_number]
           local current_range, value = self.range_list[value_number], self.value_list[value_number]
           current_value_number = current_value_number + 1
-          return current_range, value
+          -- Check intersection at the maximum tree depth, since these ranges may not contain the range that corresponds to
+          -- the current node.
+          if current_node._depth < self.max_tree_depth or range:intersects(current_range) then
+            return current_range, value
+          end
         elseif not finished_all_children then
           -- Otherwise, if there are other child nodes whose corresponding ranges the query range intersects, descend into them.
           local next_node
