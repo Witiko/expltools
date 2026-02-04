@@ -320,6 +320,8 @@ function RangeTree:add(range, value)
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
+--
+-- TODO: Add a separate code path if `self.tree_root ~= nil`.
 function RangeTree:get_intersecting_ranges(range)
   local i = 0
   return function()
