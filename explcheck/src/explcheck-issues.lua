@@ -173,10 +173,12 @@ function Issues:add(identifier, message, range, context)
     end
   end
   -- Look for ignored issues by their identifiers or identifier prefixes.
-  local _, ignored_issue = self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier)
-  if ignored_issue ~= nil then
-    ignored_issue.seen = true
-    goto record_time
+  do
+    local _, ignored_issue = self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier)
+    if ignored_issue ~= nil then
+      ignored_issue.seen = true
+      goto record_time
+    end
   end
 
   do
