@@ -17,11 +17,16 @@ function PrefixTree.new(cls)
   return self
 end
 
--- Remove all values from the index.
+-- Remove all texts and values from the index.
 function PrefixTree:clear()
   self.tree_root = {}
   self.text_list = {}
   self.value_list = {}
+end
+
+-- Get the number of texts and values stored in the index.
+function PrefixTree:__len()
+  return #self.text_list
 end
 
 -- Add a new text into the tree together with an associated value.
@@ -68,36 +73,34 @@ function PrefixTree:get_prefixed_by(prefix)
   end
   assert(current_prefix_node ~= self.tree_root)
   -- Find all suffixes and return the full texts and their associated values.
-  local current_suffix_node, current_value_number, current_child_index = current_prefix_node, 1, 1
+  local current_suffix_node, current_value_number, current_child_number = current_prefix_node, 1, 1
   local suffix_parent_nodes, suffix_text_buffer = {}, {}
   return function()
     while true do
       local finished_all_values
         = current_suffix_node._value_number_list == nil or current_value_number > #current_suffix_node._value_number_list
       local finished_all_children
-        = current_suffix_node._character_list == nil or current_child_index > #current_suffix_node._character_list
+        = current_suffix_node._character_list == nil or current_child_number > #current_suffix_node._character_list
       if not finished_all_values then
         -- If there are other values associated with the current node, return them.
         assert(#current_suffix_node._value_number_list ~= nil)
         local value_number = current_suffix_node._value_number_list[current_value_number]
-        local current_text, value = self.text_list[value_number], self.value_list[value_number]
+        local text, value = self.text_list[value_number], self.value_list[value_number]
         current_value_number = current_value_number + 1
-        return current_text, value
+        return text, value
       elseif not finished_all_children then
         -- Otherwise, if there are other child nodes for longer suffixes, descend into them.
         assert(#current_suffix_node._character_list ~= nil)
-        local character = current_suffix_node._character_list[current_child_index]
-        table.insert(suffix_parent_nodes, {current_suffix_node, current_value_number, current_child_index + 1})
+        local character = current_suffix_node._character_list[current_child_number]
+        table.insert(suffix_parent_nodes, {current_suffix_node, current_value_number, current_child_number + 1})
         table.insert(suffix_text_buffer, character)
         assert(#suffix_parent_nodes == #suffix_text_buffer)
-        current_suffix_node, current_value_number, current_child_index = current_suffix_node[character], 1, 1
+        current_suffix_node, current_value_number, current_child_number = current_suffix_node[character], 1, 1
         assert(current_suffix_node ~= nil)
       elseif current_suffix_node ~= current_prefix_node then
         -- Otherwise, if we have previously descended, ascend to the parent node.
         assert(#suffix_parent_nodes > 0)
-        current_suffix_node, current_value_number, current_child_index
-          = table.unpack(suffix_parent_nodes[#suffix_parent_nodes])
-        table.remove(suffix_parent_nodes)
+        current_suffix_node, current_value_number, current_child_number = table.unpack(table.remove(suffix_parent_nodes))
         table.remove(suffix_text_buffer)
         assert(#suffix_parent_nodes == #suffix_text_buffer)
       else

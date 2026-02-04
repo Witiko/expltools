@@ -245,7 +245,8 @@ end
 
 local RangeTree = {}
 
--- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range.
+-- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range. Ranges are stored
+-- together with associated values.
 function RangeTree.new(cls, min_range_start, max_range_end)
   -- Instantiate the class.
   local self = {}
@@ -254,16 +255,21 @@ function RangeTree.new(cls, min_range_start, max_range_end)
   -- Initialize the class.
   self.root_bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
   assert(#self.root_bounding_range > 0)
-  self.max_tree_depth = math.log(#self.root_bounding_range) / math.log(2)
+  self.max_tree_depth = math.ceil(math.log(#self.root_bounding_range) / math.log(2))
   self:clear()
   return self
 end
 
--- Clear all values from the index.
+-- Clear all ranges and values from the index.
 function RangeTree:clear()
   self.tree_root = nil
   self.range_list = {}
   self.value_list = {}
+end
+
+-- Get the number of ranges and values stored in the index.
+function RangeTree:__len()
+  return #self.range_list
 end
 
 -- Add a new range into the index together with an associated value.
@@ -329,21 +335,65 @@ function RangeTree:add(range, value)
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
---
--- TODO: Add a separate code path if `self.tree_root ~= nil`.
 function RangeTree:get_intersecting_ranges(range)
-  local i = 0
-  return function()
-    while true do
-      i = i + 1
-      if i <= #self.range_list then
-        local other_range = self.range_list[i]
-        if range:intersects(other_range) then
-          local value = self.value_list[i]
-          return other_range, value
+  assert(self.root_bounding_range:contains(range))
+  if self.tree_root ~= nil then
+    -- If we have already created the tree, find all intersecting ranges in it.
+    local current_node, current_value_number, current_child_number = self.tree_root, 1, 1
+    local parent_nodes = {}
+    return function()
+      while true do
+        local finished_all_values = current_node._value_number_list == nil or current_value_number > #current_node._value_number_list
+        local finished_all_children = current_child_number > 2
+        if not finished_all_values then
+          -- If there are other values associated with the current node, return them.
+          assert(#current_node._value_number_list ~= nil)
+          local value_number = current_node._value_number_list[current_value_number]
+          local current_range, value = self.range_list[value_number], self.value_list[value_number]
+          current_value_number = current_value_number + 1
+          return current_range, value
+        elseif not finished_all_children then
+          -- Otherwise, if there are other child nodes whose corresponding ranges the query range intersects, descend into them.
+          local next_node
+          if current_child_number == 1 then
+            next_node = current_node._left_subnode
+          else
+            assert(current_child_number == 2)
+            next_node = current_node._right_subnode
+          end
+          if next_node ~= nil and range:intersects(next_node._range) then
+            table.insert(parent_nodes, {current_node, current_value_number, current_child_number + 1})
+            current_node, current_value_number, current_child_number = next_node, 1, 1
+          else
+            current_child_number = current_child_number + 1
+          end
+        elseif current_node ~= self.tree_root then
+          -- Otherwise, if we have previously descended, ascend to the parent node.
+          assert(#parent_nodes > 0)
+          current_node, current_value_number, current_child_number = table.unpack(table.remove(parent_nodes))
+        else
+          -- Otherwise, we should be done.
+          assert(current_node == self.tree_root)
+          assert(#parent_nodes == 0)
+          return nil
         end
-      else
-        return nil
+      end
+    end
+  else
+    -- Otherwise, if we haven't created the tree yet, just do a linear scan of all stored ranges.
+    local i = 0
+    return function()
+      while true do
+        i = i + 1
+        if i <= #self.range_list then
+          local other_range = self.range_list[i]
+          if range:intersects(other_range) then
+            local value = self.value_list[i]
+            return other_range, value
+          end
+        else
+          return nil
+        end
       end
     end
   end
