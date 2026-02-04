@@ -254,8 +254,7 @@ function RangeTree.new(cls, min_range_start, max_range_end)
   cls.__index = cls
   -- Initialize the class.
   self.root_bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
-  assert(#self.root_bounding_range > 0)
-  self.max_tree_depth = math.ceil(math.log(#self.root_bounding_range) / math.log(2))
+  self.max_tree_depth = #self.root_bounding_range > 0 and math.ceil(math.log(#self.root_bounding_range) / math.log(2)) or 0
   self:clear()
   return self
 end
