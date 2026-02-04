@@ -34,10 +34,11 @@ function Issues.new(cls, pathname, content_length, options)
   --- TODO: Only use `_range_index` for identifier-less ranged ignored issues. For the common case, where the
   --- ignored issue contains an identifier (prefix), keep a separate hash table `_identifier_range_indexes`
   --- that maps (normalized) identifiers to smaller per-identifier range indexes.
+  local max_range_tree_depth = get_option("max_range_tree_depth", options, pathname)
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
       _identifier_index = new_prefix_tree(),
-      _range_index = new_range_tree(1, content_length),
+      _range_index = new_range_tree(1, content_length, max_range_tree_depth),
       _ignored_index = {},
       _num_ignored = 0,
     }
@@ -56,7 +57,7 @@ function Issues.new(cls, pathname, content_length, options)
     --- ignored issue contains an identifier (prefix), keep a separate hash table `_identifier_prefix_range_indexes`
     --- that maps (normalized) identifiers (or their prefixes) to smaller per-identifier range indexes.
     _identifier_index = new_prefix_tree(),  -- TODO: Rename to `_identifier_prefix_index`.
-    _range_index = new_range_tree(1, content_length),
+    _range_index = new_range_tree(1, content_length, max_range_tree_depth),
   }
   self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
   for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do

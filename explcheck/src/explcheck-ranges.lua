@@ -247,14 +247,14 @@ local RangeTree = {}
 
 -- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range. Ranges are stored
 -- together with associated values.
-function RangeTree.new(cls, min_range_start, max_range_end)
+function RangeTree.new(cls, min_range_start, max_range_end, max_tree_depth)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
   cls.__index = cls
   -- Initialize the class.
   self.root_bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
-  self.max_tree_depth = #self.root_bounding_range > 0 and math.ceil(math.log(#self.root_bounding_range) / math.log(2)) or 0
+  self.max_tree_depth = max_tree_depth
   self:clear()
   return self
 end
@@ -287,8 +287,9 @@ function RangeTree:add(range, value)
     local current_node_stack = {self.tree_root}
     while #current_node_stack > 0 do
       local current_node = table.remove(current_node_stack)
-      -- If the added range contains the range that corresponds to the current node, record the range and the value.
-      if range:contains(current_node._range) then
+      -- If the added range contains the range that corresponds to the current node or if we are at maximum tree depth,
+      -- record the range and the value.
+      if current_node._depth >= self.max_tree_depth or range:contains(current_node._range) then
         if current_node._value_number_list == nil then
           current_node._value_number_list = {}
         end
@@ -306,13 +307,19 @@ function RangeTree:add(range, value)
         -- they don't exist, in later iterations.
         if range:intersects(current_node._left_subrange) then
           if current_node._left_subnode == nil then
-            current_node._left_subnode = {_range = current_node._left_subrange}
+            current_node._left_subnode = {
+              _depth = current_node._depth + 1,
+              _range = current_node._left_subrange,
+            }
           end
           table.insert(current_node_stack, current_node._left_subnode)
         end
         if range:intersects(current_node._right_subrange) then
           if current_node._right_subnode == nil then
-            current_node._right_subnode = {_range = current_node._right_subrange}
+            current_node._right_subnode = {
+              _depth = current_node._depth + 1,
+              _range = current_node._right_subrange,
+            }
           end
           table.insert(current_node_stack, current_node._right_subnode)
         end
@@ -324,7 +331,10 @@ function RangeTree:add(range, value)
   -- become the same.
   if #self.range_list > self.max_tree_depth then
     if self.tree_root == nil then
-      self.tree_root = {_range = self.root_bounding_range}
+      self.tree_root = {
+        _depth = 1,
+        _range = self.root_bounding_range,
+      }
       for current_value_number, current_range in ipairs(self.range_list) do
         add_to_tree(current_range, current_value_number)
       end
