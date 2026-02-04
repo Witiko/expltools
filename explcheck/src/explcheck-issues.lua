@@ -1,6 +1,7 @@
 -- A registry of warnings and errors identified by different processing steps.
 
 local get_option = require("explcheck-config").get_option
+local get_prefixes = require("explcheck-utils").get_prefixes
 local new_prefix_tree = require("explcheck-trie").new_prefix_tree
 local new_range_tree = require("explcheck-ranges").new_range_tree
 
@@ -153,7 +154,7 @@ function Issues:add(identifier, message, range, context)
   -- Determine if the issue should ignored.
   if range ~= nil then
     -- Look for ignored issues by their ranges and their identifiers or identifier prefixes.
-    for identifier_prefix, _ in self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier) do
+    for identifier_prefix in get_prefixes(identifier) do
       local identifier_prefix_range_index = self.ignored_issues._identifier_prefix_range_indexes[identifier_prefix]
       if identifier_prefix_range_index ~= nil then
         local _, ignored_issue = identifier_prefix_range_index:get_intersecting_ranges(range)()
@@ -242,9 +243,9 @@ function Issues:ignore(ignored_issue)
       -- Record ignored issues by their ranges.
       self.ignored_issues._range_index:add(ignored_issue.range, ignored_issue)
     end
-  end
-  if ignored_issue.identifier_prefix ~= nil then
+  else
     -- Record ignored issues by their identifiers or identifier prefixes.
+    assert(ignored_issue.identifier_prefix ~= nil)
     self.ignored_issues._identifier_prefix_index:add(ignored_issue.identifier_prefix, ignored_issue)
   end
 

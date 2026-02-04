@@ -403,16 +403,18 @@ function RangeTree:get_intersecting_ranges(range)
     -- Otherwise, if we haven't created the tree yet, just do a linear scan of all stored ranges.
     local i = 0
     return function()
-      i = i + 1
-      if i <= #self.range_list then
-        local other_range = self.range_list[i]
-        if range:intersects(other_range) then
-          local value = self.value_list[i]
-          return other_range, value
+      while true do
+        i = i + 1
+        if i <= #self.range_list then
+          local other_range = self.range_list[i]
+          if range:intersects(other_range) then
+            local value = self.value_list[i]
+            return other_range, value
+          end
+        else
+          get_intersecting_ranges_duration = get_intersecting_ranges_duration + os.clock() - start_time
+          return nil
         end
-      else
-        get_intersecting_ranges_duration = get_intersecting_ranges_duration + os.clock() - start_time
-        return nil
       end
     end
   end

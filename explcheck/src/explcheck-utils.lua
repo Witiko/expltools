@@ -16,6 +16,19 @@ local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_
   return line_number, column_number
 end
 
+-- Get all non-empty prefixes of a text.
+local function get_prefixes(text)
+  local i = 0
+  return function()
+    i = i + 1
+    if i <= #text then
+      return text:sub(1, i)
+    else
+      return nil
+    end
+  end
+end
+
 -- Convert a pathname of a file to the suffix of the file.
 local function get_suffix(pathname)
   return pathname:gsub(".*%.", "."):lower()
@@ -300,6 +313,7 @@ return {
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
   get_basename = get_basename,
   get_parent = get_parent,
+  get_prefixes = get_prefixes,
   get_stem = get_stem,
   get_suffix = get_suffix,
   group_pathnames = group_pathnames,
