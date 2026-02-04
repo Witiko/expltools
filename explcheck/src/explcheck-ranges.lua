@@ -289,30 +289,31 @@ function RangeTree:add(range, value)
       local current_node = table.remove(current_node_stack)
       -- If the added range contains the range that corresponds to the current node, record the range and the value.
       if range:contains(current_node._range) then
-        if current_node._range_list == nil then
-          assert(current_node._value_number_list == nil)
-          current_node._range_list = {}
+        if current_node._value_number_list == nil then
           current_node._value_number_list = {}
         end
-        table.insert(current_node._range_list, range)
         table.insert(current_node._value_number_list, value_number)
       else
-        if current_node._left_subnode == nil then
-          -- Otherwise, bisect the range of the current node, creating two subnodes.
-          assert(current_node._right_subnode == nil)
+        if current_node._left_subrange == nil then
+          -- Otherwise, bisect the range of the current node into two subranges.
+          assert(current_node._right_subrange == nil)
           assert(#current_node._range > 1)
-          local left_subrange, right_subrange = current_node._range:bisect()
-          assert(#left_subrange > 0)
-          assert(#right_subrange > 0)
-          current_node._left_subnode = {_range = left_subrange}
-          current_node._right_subnode = {_range = right_subrange}
+          current_node._left_subrange, current_node._right_subrange = current_node._range:bisect()
+          assert(#current_node._left_subrange > 0)
+          assert(#current_node._right_subrange > 0)
         end
-        -- Otherwise, if the added range intersects with the range corresponding to either subnode, descend into these subnodes
-        -- in later iterations.
-        if range:intersects(current_node._left_subnode._range) then
+        -- Then, if the added range intersects with either subrange, descend into the corresponding subnodes, creating them if
+        -- they don't exist, in later iterations.
+        if range:intersects(current_node._left_subrange) then
+          if current_node._left_subnode == nil then
+            current_node._left_subnode = {_range = current_node._left_subrange}
+          end
           table.insert(current_node_stack, current_node._left_subnode)
         end
-        if range:intersects(current_node._right_subnode._range) then
+        if range:intersects(current_node._right_subrange) then
+          if current_node._right_subnode == nil then
+            current_node._right_subnode = {_range = current_node._right_subrange}
+          end
           table.insert(current_node_stack, current_node._right_subnode)
         end
       end
