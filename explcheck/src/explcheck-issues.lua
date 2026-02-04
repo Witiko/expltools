@@ -15,12 +15,12 @@ end
 -- and `RangeTree` were added after commit 6ab6b9d5:
 --
 --     $ time explcheck expl3-code.tex | grep XXX
---     XXXX    preprocessing   1       2.825616        0.15764000000001        0.016291        41514
---     XXXX    lexical-analysis        1       2.403953        0.016523000000024       0.0     2848
+--     XXXX    preprocessing           1       2.825616        0.15764000000001        0.016291               41514
+--     XXXX    lexical-analysis        1       2.403953        0.016523000000024       0.0                     2848
 --     XXXX    lexical-analysis        2       0.618749        0.32456599999998        0.024647000000011       2197
---     XXXX    syntactic-analysis      1       0.153292        0.00032400000000177     0.0     46
---     XXXX    semantic-analysis       1       0.690973        0.06382399999999        0.0097439999999995      829
---     XXXX    semantic-analysis       2       1.179811        0.77534300000002        0.0     270
+--     XXXX    syntactic-analysis      1       0.153292        0.00032400000000177     0.0                       46
+--     XXXX    semantic-analysis       1       0.690973        0.06382399999999        0.0097439999999995       829
+--     XXXX    semantic-analysis       2       1.179811        0.77534300000002        0.0                      270
 --
 function Issues.new(cls, pathname, content_length, options)
   -- Instantiate the class.
@@ -30,15 +30,13 @@ function Issues.new(cls, pathname, content_length, options)
   -- Initialize the class.
   self.closed = false
   --- Issue tables
-  ---
-  --- TODO: Only use `_range_index` for identifier-less ranged ignored issues. For the common case, where the
-  --- ignored issue contains an identifier (prefix), keep a separate hash table `_identifier_range_indexes`
-  --- that maps (normalized) identifiers to smaller per-identifier range indexes.
-  local max_range_tree_depth = get_option("max_range_tree_depth", options, pathname)
+  self.content_length = content_length
+  self.max_range_tree_depth = get_option("max_range_tree_depth", options, pathname)
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
       _identifier_index = new_prefix_tree(),
-      _range_index = new_range_tree(1, content_length, max_range_tree_depth),
+      _range_index = self:_new_range_tree(),
+      _identifier_range_indexes = {},
       _ignored_index = {},
       _num_ignored = 0,
     }
@@ -53,17 +51,20 @@ function Issues.new(cls, pathname, content_length, options)
   end
   --- Ignored issues
   self.ignored_issues = {
-    --- TODO: Only use `_range_index` for identifier-less ranged ignored issues. For the common case, where the
-    --- ignored issue contains an identifier (prefix), keep a separate hash table `_identifier_prefix_range_indexes`
-    --- that maps (normalized) identifiers (or their prefixes) to smaller per-identifier range indexes.
-    _identifier_index = new_prefix_tree(),  -- TODO: Rename to `_identifier_prefix_index`.
-    _range_index = new_range_tree(1, content_length, max_range_tree_depth),
+    _identifier_prefix_index = new_prefix_tree(),
+    _range_index = self:_new_range_tree(),
+    _identifier_prefix_range_indexes = {},
   }
   self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
   for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
     self:ignore({identifier_prefix = issue_identifier})
   end
   return self
+end
+
+-- Produce a new range tree for storing ranged issues.
+function Issues:_new_range_tree()
+  return new_range_tree(1, self.content_length, self.max_range_tree_depth)
 end
 
 -- Convert an issue identifier to either a table of warnings or a table of errors.
@@ -79,8 +80,14 @@ function Issues:_get_issue_table(identifier)
   end
 end
 
+local total_issues = 0
+local total_issue_time = 0
+
 -- Add an issue to the table of issues.
 function Issues:add(identifier, message, range, context)
+  local start_time = os.clock()
+  total_issues = total_issues + 1
+
   if self.closed then
     error('Cannot add issues to a closed issue registry')
   end
@@ -118,49 +125,61 @@ function Issues:add(identifier, message, range, context)
   end
 
   -- Determine if the issue should ignored.
-  local ignored_issues_index_by_range
   if range ~= nil then
-    -- Look for ignored issues within the given range.
-    ignored_issues_index_by_range = {}
+    -- Look for ignored issues by their ranges and their identifiers or identifier prefixes.
+    for identifier_prefix, _ in self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier) do
+      local identifier_prefix_range_index = self.ignored_issues._identifier_prefix_range_indexes[identifier_prefix]
+      if identifier == "e209" then
+      end
+      if identifier_prefix_range_index ~= nil then
+        for _, ignored_issue in identifier_prefix_range_index:get_intersecting_ranges(range) do
+          assert(ignored_issue.identifier_prefix == identifier_prefix)
+          ignored_issue.seen = true
+          goto record_time
+        end
+      end
+    end
+    -- Look for ignored issues by their ranges.
     for _, ignored_issue in self.ignored_issues._range_index:get_intersecting_ranges(range) do
-      if ignored_issue.identifier_prefix == nil then
-        -- If an identifier (prefix) is not given, check just the range.
-        ignored_issue.seen = true
-        return
-      end
-      ignored_issues_index_by_range[ignored_issue] = ignored_issue
+      assert(ignored_issue.identifier_prefix == nil)
+      ignored_issue.seen = true
+      goto record_time
     end
   end
-  -- Look for ignored issues with the given identifier or its prefix.
-  for _, ignored_issue in self.ignored_issues._identifier_index:get_prefixes_of(identifier) do
-    if range == nil or ignored_issue.range == nil then
-      -- If a range was not given, check just the identifier.
-      return
-    else
-      -- If a range was also given, check both the identifier and the range.
-      assert(ignored_issues_index_by_range ~= nil)
-      if ignored_issues_index_by_range[ignored_issue] ~= nil then
-        ignored_issue.seen = true
-        return
+  -- Look for ignored issues by their identifiers or identifier prefixes.
+  for _, ignored_issue in self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier) do
+    ignored_issue.seen = true
+    goto record_time
+  end
+
+  do
+    -- Construct the issue.
+    local issue = {identifier, message, range, context}
+
+    -- Add the issue to the table of issues.
+    local issue_table = self:_get_issue_table(identifier)
+    table.insert(issue_table, issue)
+    local issue_number = #issue_table
+    issue_table._identifier_index:add(identifier, issue_number)
+    if range ~= nil then
+      if issue_table._identifier_range_indexes[identifier] == nil then
+         issue_table._identifier_range_indexes[identifier] = self:_new_range_tree()
       end
+      issue_table._identifier_range_indexes[identifier]:add(range, issue_number)
+      issue_table._range_index:add(range, issue_number)
     end
   end
-
-  -- Construct the issue.
-  local issue = {identifier, message, range, context}
-
-  -- Add the issue to the table of issues.
-  local issue_table = self:_get_issue_table(identifier)
-  table.insert(issue_table, issue)
-  local issue_number = #issue_table
-  issue_table._identifier_index:add(identifier, issue_number)
-  if range ~= nil then
-    issue_table._range_index:add(range, issue_number)
-  end
+  ::record_time::
+  local end_time = os.clock()
+  total_issue_time = total_issue_time + end_time - start_time
 end
+
+local total_ignore_time = 0
 
 -- Prevent issues from being present in the table of issues.
 function Issues:ignore(ignored_issue)
+  local start_time = os.clock()
+
   if self.closed then
     error('Cannot ignore issues in a closed issue registry')
   end
@@ -184,10 +203,20 @@ function Issues:ignore(ignored_issue)
   -- Ignore future issues.
   table.insert(self.ignored_issues, ignored_issue)
   if ignored_issue.range ~= nil then
-    self.ignored_issues._range_index:add(ignored_issue.range, ignored_issue)
+    if ignored_issue.identifier_prefix ~= nil then
+      -- Record ignored issues by their ranges and their identifiers or identifier prefixes.
+      if self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] == nil then
+        self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] = self:_new_range_tree()
+      end
+      self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix]:add(ignored_issue.range, ignored_issue)
+    else
+      -- Record ignored issues by their ranges.
+      self.ignored_issues._range_index:add(ignored_issue.range, ignored_issue)
+    end
   end
   if ignored_issue.identifier_prefix ~= nil then
-    self.ignored_issues._identifier_index:add(ignored_issue.identifier_prefix, ignored_issue)
+    -- Record ignored issues by their identifiers or identifier prefixes.
+    self.ignored_issues._identifier_prefix_index:add(ignored_issue.identifier_prefix, ignored_issue)
   end
 
   -- Determine which current issues should be ignored.
@@ -207,18 +236,35 @@ function Issues:ignore(ignored_issue)
     assert(ignored_issue.identifier_prefix ~= nil)
     -- Prevent any issues with the given identifier.
     local issue_table = self:_get_issue_table(ignored_issue.identifier_prefix)
+    local issue_number_list = {}
     local issue_number_list_from_identifiers, issue_number_index_from_identifiers = {}, {}
+    local identifier_list, identifier_index = {}, {}
     for _, issue_number in issue_table._identifier_index:get_prefixed_by(ignored_issue.identifier_prefix) do
+      local issue = issue_table[issue_number]
+      local identifier, range = issue[1], issue[3]
+      assert(identifier ~= nil)
+      if identifier_index[identifier] == nil then
+        identifier_index[identifier] = true
+        table.insert(identifier_list, identifier)
+      end
+      if range == nil then
+        -- Prevent rangeless issues immediately, since these should be ignored regardless of a range match.
+        table.insert(issue_number_list, issue_number)
+      else
+        issue_number_index_from_identifiers[issue_number] = true
+      end
       table.insert(issue_number_list_from_identifiers, issue_number)
-      issue_number_index_from_identifiers[issue_number] = true
     end
-    local issue_number_list
     if ignored_issue.range ~= nil then
       -- If a range was also given, intersect the results of the identifier query with the results of the range query.
-      issue_number_list = {}
-      for _, issue_number in issue_table._range_index:get_intersecting_ranges(ignored_issue.range) do
-        if issue_number_index_from_identifiers[issue_number] ~= nil then
-          table.insert(issue_number_list, issue_number)
+      for _, identifier in ipairs(identifier_list) do
+        local identifier_range_index = issue_table._identifier_range_indexes[identifier]
+        if identifier_range_index ~= nil then
+          for _, issue_number in identifier_range_index:get_intersecting_ranges(ignored_issue.range) do
+            if issue_number_index_from_identifiers[issue_number] ~= nil then
+              table.insert(issue_number_list, issue_number)
+            end
+          end
         end
       end
     else
@@ -248,6 +294,9 @@ function Issues:ignore(ignored_issue)
       self:commit_ignores({issue_tables = {issue_table}})
     end
   end
+
+  local end_time = os.clock()
+  total_ignore_time = total_ignore_time + end_time - start_time
 end
 
 -- Check whether two registries only contain issues with the same codes.
@@ -313,10 +362,15 @@ function Issues:commit_ignores(how)
       -- Rebuild all issue indexes.
       issue_table._identifier_index:clear()
       issue_table._range_index:clear()
+      issue_table._identifier_range_indexes = {}
       for issue_number, issue in ipairs(issue_table) do
         local identifier, range = issue[1], issue[3]
         issue_table._identifier_index:add(identifier, issue_number)
         if range ~= nil then
+          if issue_table._identifier_range_indexes[identifier] == nil then
+             issue_table._identifier_range_indexes[identifier] = self:_new_range_tree()
+          end
+          issue_table._identifier_range_indexes[identifier]:add(range, issue_number)
           issue_table._range_index:add(range, issue_number)
         end
       end
@@ -350,6 +404,7 @@ function Issues:close()
   for _, issue_table in ipairs({self.warnings, self.errors}) do
     issue_table._identifier_index = nil
     issue_table._range_index = nil
+    issue_table._identifier_range_indexes = nil
     issue_table._ignored_index = nil
     issue_table._num_ignored = nil
   end
@@ -384,4 +439,13 @@ return {
     return Issues:new(...)
   end,
   sort_issues = sort_issues,
+  total_issues = function()
+    return total_issues
+  end,
+  total_issue_time = function()
+    return total_issue_time
+  end,
+  total_ignore_time = function()
+    return total_ignore_time
+  end,
 }

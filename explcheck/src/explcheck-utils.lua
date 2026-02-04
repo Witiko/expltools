@@ -194,7 +194,10 @@ end
 local function process_files(pathnames, options)
   -- Require packages.
   local get_option = require("explcheck-config").get_option
-  local new_issues = require("explcheck-issues").new_issues
+  local issues = require("explcheck-issues")
+  local new_issues = issues.new_issues
+  local ranges = require("explcheck-ranges")
+  local trie = require("explcheck-trie")
 
   -- Prepare empty processing states for all files in the group.
   local states = {}
@@ -242,7 +245,12 @@ local function process_files(pathnames, options)
           end
         end
         -- Run the substep for this file.
+        local start_time = os.clock()
+        local previous_total_issue_time, previous_total_issues = issues.total_issue_time(), issues.total_issues()
+        local previous_total_ignore_time = issues.total_ignore_time()
         process_with_substep(states, file_number, options)
+        local stop_time = os.clock()
+        print("XXXX", step_filename, substep_number, stop_time - start_time, issues.total_issue_time() - previous_total_issue_time, issues.total_ignore_time() - previous_total_ignore_time, issues.total_issues() - previous_total_issues)
         if substep_number == #step.substeps then
           -- If the step ended with errors for this file, skip all following steps for this file.
           state.issues:commit_ignores()
@@ -271,6 +279,17 @@ local function process_files(pathnames, options)
   for _, state in ipairs(states) do
     state.issues:close()
   end
+
+  print("XXX")
+  print("XXX", "add_duration (trie)", trie.add_duration())
+  print("XXX", "get_prefixed_by_duration (trie)", trie.get_prefixed_by_duration())
+  print("XXX", "get_prefixes_of_duration (trie)", trie.get_prefixes_of_duration())
+  print("XXX", "add_duration (ranges)", ranges.add_duration())
+  print("XXX", "add_loops (ranges)", ranges.add_loops(), string.format("~%.0f loops/s", 1 / (ranges.add_duration() / ranges.add_loops())))
+  print("XXX", "get_intersecting_ranges_duration (ranges)", ranges.get_intersecting_ranges_duration())
+  print("XXX")
+  print("XXX", "total (trie)", trie.add_duration() + trie.get_prefixed_by_duration() + trie.get_prefixes_of_duration())
+  print("XXX", "total (ranges)", ranges.add_duration() + ranges.get_intersecting_ranges_duration())
 
   return states
 end

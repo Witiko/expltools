@@ -271,8 +271,11 @@ function RangeTree:__len()
   return #self.range_list
 end
 
+local add_duration, add_loops, get_intersecting_ranges_duration = 0, 0, 0
+
 -- Add a new range into the index together with an associated value.
 function RangeTree:add(range, value)
+  local start_time = os.clock()
   assert(self.root_bounding_range:contains(range))
   table.insert(self.range_list, range)
   table.insert(self.value_list, value)
@@ -282,6 +285,7 @@ function RangeTree:add(range, value)
   -- Add a new range into the segment tree with an associated value.
   ---@diagnostic disable-next-line:redefined-local
   local function add_to_tree(range, value_number)  -- luacheck: ignore range value_number
+    add_loops = add_loops + 1
     assert(self.tree_root ~= nil)
     -- Include the range in all tree nodes whose corresponding ranges it contains, creating those nodes if they don't exist.
     local current_node_stack = {self.tree_root}
@@ -342,10 +346,12 @@ function RangeTree:add(range, value)
       add_to_tree(range, value_number)
     end
   end
+  add_duration = add_duration + os.clock() - start_time
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
 function RangeTree:get_intersecting_ranges(range)
+  local start_time = os.clock()
   assert(self.root_bounding_range:contains(range))
   if self.tree_root ~= nil then
     -- If we have already created the tree, find all intersecting ranges in it.
@@ -385,6 +391,7 @@ function RangeTree:get_intersecting_ranges(range)
           -- Otherwise, we should be done.
           assert(current_node == self.tree_root)
           assert(#parent_nodes == 0)
+          get_intersecting_ranges_duration = get_intersecting_ranges_duration + os.clock() - start_time
           return nil
         end
       end
@@ -393,17 +400,16 @@ function RangeTree:get_intersecting_ranges(range)
     -- Otherwise, if we haven't created the tree yet, just do a linear scan of all stored ranges.
     local i = 0
     return function()
-      while true do
-        i = i + 1
-        if i <= #self.range_list then
-          local other_range = self.range_list[i]
-          if range:intersects(other_range) then
-            local value = self.value_list[i]
-            return other_range, value
-          end
-        else
-          return nil
+      i = i + 1
+      if i <= #self.range_list then
+        local other_range = self.range_list[i]
+        if range:intersects(other_range) then
+          local value = self.value_list[i]
+          return other_range, value
         end
+      else
+        get_intersecting_ranges_duration = get_intersecting_ranges_duration + os.clock() - start_time
+        return nil
       end
     end
   end
@@ -417,4 +423,13 @@ return {
     return RangeTree:new(...)
   end,
   range_flags = range_flags,
+  add_duration = function()
+    return add_duration
+  end,
+  add_loops = function()
+    return add_loops
+  end,
+  get_intersecting_ranges_duration = function()
+    return get_intersecting_ranges_duration
+  end,
 }
