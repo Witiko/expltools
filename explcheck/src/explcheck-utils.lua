@@ -231,6 +231,7 @@ local function process_files(pathnames, options)
     local step = require(string.format('explcheck-%s', step_filename))
     -- Process all files in the group with this step.
     for substep_number, process_with_substep in ipairs(step.substeps) do
+      local is_last_substep = step_number == #step_filenames and substep_number == #step.substeps
       -- Process all files in the group with this substep.
       for file_number, state in ipairs(states) do
         -- Get options.
@@ -258,7 +259,7 @@ local function process_files(pathnames, options)
         process_with_substep(states, file_number, options)
         if substep_number == #step.substeps then
           -- If the step ended with errors for this file, skip all following steps for this file.
-          state.issues:commit_ignores()
+          state.issues:commit_ignores({skip_index_rebuild = is_last_substep})
           if step_number < #step_filenames and fail_fast and #state.issues.errors > 0 then
             state.results.stopped_early = {
               when = string.format("after %s", step.name),
