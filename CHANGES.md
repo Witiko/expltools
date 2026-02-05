@@ -33,7 +33,7 @@ integration:
  [Luacheck]: https://github.com/mpeterv/luacheck
 
 - Add a 3-minute time limit when running explcheck over the entire TeX Live
-  to prevent excessively long analyses on infinite loops. (#161)
+  to prevent excessively long analyses or infinite loops. (#161)
 
 ## expltools 2026-01-27
 
