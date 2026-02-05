@@ -243,11 +243,13 @@ function Range:__tostring()
   end
 end
 
-local RangeTree = {}
+local RangeIndex = {}
 
--- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range. Ranges are stored
--- together with associated values.
-function RangeTree.new(cls)
+-- Create a new index that stores ranges.
+--
+-- Currently, querying the index performs a linear scan over it. Previously, we used segment trees to improve performance but
+-- removed the support in commit 6e90574 due to no measurable performance benefit on files from current TeX Live.
+function RangeIndex.new(cls)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
@@ -258,25 +260,25 @@ function RangeTree.new(cls)
 end
 
 -- Clear all ranges and values from the index.
-function RangeTree:clear()
+function RangeIndex:clear()
   self.range_list = {}
   self.value_list = {}
 end
 
 -- Get the number of ranges and values stored in the index.
-function RangeTree:__len()
+function RangeIndex:__len()
   return #self.range_list
 end
 
 -- Add a new range into the index together with an associated value.
-function RangeTree:add(range, value)
+function RangeIndex:add(range, value)
   table.insert(self.range_list, range)
   table.insert(self.value_list, value)
   assert(#self.range_list == #self.value_list)
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
-function RangeTree:get_intersecting_ranges(range)
+function RangeIndex:get_intersecting_ranges(range)
   local i = 0
   return function()
     while true do
@@ -298,8 +300,8 @@ return {
   new_range = function(...)
     return Range:new(...)
   end,
-  new_range_tree = function()
-    return RangeTree:new()
+  new_range_index = function()
+    return RangeIndex:new()
   end,
   range_flags = range_flags,
 }

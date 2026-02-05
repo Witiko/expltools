@@ -3,7 +3,7 @@
 local get_option = require("explcheck-config").get_option
 local get_prefixes = require("explcheck-utils").get_prefixes
 local new_prefix_tree = require("explcheck-trie").new_prefix_tree
-local new_range_tree = require("explcheck-ranges").new_range_tree
+local new_range_index = require("explcheck-ranges").new_range_index
 
 local Issues = {}
 
@@ -23,7 +23,7 @@ function Issues.new(cls, pathname, options)
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
       _identifier_index = new_prefix_tree(),
-      _range_index = new_range_tree(),
+      _range_index = new_range_index(),
       _identifier_range_indexes = {},
       _ignored_index = {},
       _num_ignored = 0,
@@ -40,7 +40,7 @@ function Issues.new(cls, pathname, options)
   --- Ignored issues
   self.ignored_issues = {
     _identifier_prefix_index = new_prefix_tree(),
-    _range_index = new_range_tree(),
+    _range_index = new_range_index(),
     _identifier_prefix_range_indexes = {},
   }
   self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
@@ -140,7 +140,7 @@ function Issues:add(identifier, message, range, context)
   issue_table._identifier_index:add(identifier, issue_number)
   if range ~= nil then
     if issue_table._identifier_range_indexes[identifier] == nil then
-       issue_table._identifier_range_indexes[identifier] = new_range_tree()
+       issue_table._identifier_range_indexes[identifier] = new_range_index()
     end
     issue_table._identifier_range_indexes[identifier]:add(range, issue_number)
     issue_table._range_index:add(range, issue_number)
@@ -175,7 +175,7 @@ function Issues:ignore(ignored_issue)
     if ignored_issue.identifier_prefix ~= nil then
       -- Record ignored issues by their ranges and their identifiers or identifier prefixes.
       if self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] == nil then
-        self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] = new_range_tree()
+        self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] = new_range_index()
       end
       self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix]:add(ignored_issue.range, ignored_issue)
     else
@@ -334,7 +334,7 @@ function Issues:commit_ignores(how)
         issue_table._identifier_index:add(identifier, issue_number)
         if range ~= nil then
           if issue_table._identifier_range_indexes[identifier] == nil then
-             issue_table._identifier_range_indexes[identifier] = new_range_tree()
+             issue_table._identifier_range_indexes[identifier] = new_range_index()
           end
           issue_table._identifier_range_indexes[identifier]:add(range, issue_number)
           issue_table._range_index:add(range, issue_number)

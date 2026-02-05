@@ -10,13 +10,12 @@ This version of explcheck has implemented the following new features and other
 improvements:
 
 - Speed up processing steps before flow analysis, add Lua options
-  `max_ignored_issue_ratio` and `max_range_tree_depth` for tuning the performance
-  and a new file `explcheck-trie.lua` with an implementation of prefix trees.
-  (#158..#161)
+  `max_ignored_issue_ratio` for tuning the performance and a new file
+  `explcheck-trie.lua` with an implementation of prefix trees. (#158..#161)
 
   These changes improve processing time by about 15% for an average package
   file in the current TeX Live, and by up to 300% for large files like
-  `expl3-code.tex`.  -- TODO: Update the figures after finishing #161.
+  `expl3-code.tex`.
 
 #### Documentation
 
