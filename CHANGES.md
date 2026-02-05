@@ -35,6 +35,9 @@ integration:
  [LuaLS]: https://github.com/LuaLS/lua-language-server
  [Luacheck]: https://github.com/mpeterv/luacheck
 
+- Add a 3-minute time limit when running explcheck over the entire TeX Live
+  to prevent excessively long analyses on infinite loops. (#161)
+
 ## expltools 2026-01-27
 
 ### explcheck v0.17.0

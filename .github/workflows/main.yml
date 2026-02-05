@@ -89,6 +89,7 @@ jobs:
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Run explcheck
+        timeout-minutes: 1
         env:
           LUAINPUTS: explcheck/src
         run: |
@@ -119,6 +120,7 @@ jobs:
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
         run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Run unit tests
+        timeout-minutes: 1
         run: l3build check
   regression-tests:
     name: Run regression tests
@@ -174,6 +176,7 @@ jobs:
           # from the same directory that can be grouped by explcheck are kept together.
           texlua explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $(nproc)
       - name: Run explcheck
+        timeout-minutes: 3
         env:
           LUAINPUTS: explcheck/src
         run: |
@@ -200,6 +203,7 @@ jobs:
         if: matrix.release != 'latest'
         run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
       - name: Check if the configuration is minimal
+        timeout-minutes: 3
         if: matrix.release == 'latest'
         env:
           LUAINPUTS: explcheck/src
