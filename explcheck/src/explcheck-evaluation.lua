@@ -372,7 +372,7 @@ return {
   new_file_results = function(...)
     return FileEvaluationResults:new(...)
   end,
-  new_aggregate_results = function(...)
-    return AggregateEvaluationResults:new(...)
+  new_aggregate_results = function()
+    return AggregateEvaluationResults:new()
   end,
 }

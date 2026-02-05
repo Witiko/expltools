@@ -1,4 +1,4 @@
--- A class for working with index ranges in arrays.
+-- Classes for working with index ranges in arrays.
 
 local Range = {}
 
@@ -130,15 +130,18 @@ end
 
 -- Get the length of the range.
 function Range:__len()
-  if self:start() == 0 then
-    assert(self:stop() == 0)
-    return 0  -- empty range
-  elseif self:stop() < self:start() then
-    assert(self:stop() == self:start() - 1)
-    return 0  -- empty range
-  else
-    return self:stop() - self:start() + 1  -- non-empty range
+  if self.range_length == nil then
+    if self:start() == 0 then
+      assert(self:stop() == 0)
+      self.range_length = 0  -- empty range
+    elseif self:stop() < self:start() then
+      assert(self:stop() == self:start() - 1)
+      self.range_length = 0  -- empty range
+    else
+      self.range_length = self:stop() - self:start() + 1  -- non-empty range
+    end
   end
+  return self.range_length
 end
 
 -- Get an iterator over pairs of indices and items from the original array within the range.
@@ -186,6 +189,20 @@ function Range:new_range_from_subranges(get_subrange, subarray_size)
   end
 end
 
+-- Check whether two ranges overlap.
+function Range:intersects(other_range)
+  if #self == 0 or #other_range == 0 then
+    return false
+  end
+  if self:start() > other_range:stop() then
+    return false
+  end
+  if self:stop() < other_range:start() then
+    return false
+  end
+  return true
+end
+
 -- Get a string representation of the range.
 function Range:__tostring()
   if #self == 0 then
@@ -200,9 +217,60 @@ function Range:__tostring()
   end
 end
 
+local RangeIndex = {}
+
+-- Create a new index that stores ranges.
+--
+-- Currently, querying the index performs a linear scan over it. Previously, we used segment trees to improve performance but
+-- removed the support in commit 6e90574 due to no measurable performance benefit on files from current TeX Live.
+function RangeIndex.new(cls)
+  -- Instantiate the class.
+  local self = {}
+  setmetatable(self, cls)
+  cls.__index = cls
+  -- Initialize the class.
+  self:clear()
+  return self
+end
+
+-- Clear all ranges and values from the index.
+function RangeIndex:clear()
+  self.range_list = {}
+  self.value_list = {}
+end
+
+-- Add a new range into the index together with an associated value.
+function RangeIndex:add(range, value)
+  table.insert(self.range_list, range)
+  table.insert(self.value_list, value)
+  assert(#self.range_list == #self.value_list)
+end
+
+-- Get all indexed ranges that intersect a given range and their associated values.
+function RangeIndex:intersect(range)
+  local i = 0
+  return function()
+    while true do
+      i = i + 1
+      if i <= #self.range_list then
+        local other_range = self.range_list[i]
+        if range:intersects(other_range) then
+          local value = self.value_list[i]
+          return other_range, value
+        end
+      else
+        return nil
+      end
+    end
+  end
+end
+
 return {
   new_range = function(...)
     return Range:new(...)
+  end,
+  new_range_index = function()
+    return RangeIndex:new()
   end,
   range_flags = range_flags,
 }

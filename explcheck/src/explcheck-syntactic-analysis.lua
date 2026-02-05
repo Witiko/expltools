@@ -254,6 +254,7 @@ local function get_calls(results, part_number, segment, issues, content)
   local function count_parameters_in_parameter_text(parameter_text_token_range)
     local num_parameters = 0
     local parameter_token_range_end = map_forward(parameter_text_token_range:stop())
+    ---@diagnostic disable-next-line:redefined-local
     for token_number, token in parameter_text_token_range:enumerate(transformed_tokens, map_forward) do  -- luacheck: ignore token_number
       if token.type == CHARACTER and token.catcode == 6 then  -- parameter
         local next_token_number = token_number + 1
@@ -699,6 +700,7 @@ local function get_calls(results, part_number, segment, issues, content)
 end
 
 -- Convert the tokens to top-level and nested segments of function calls and report any issues.
+---@diagnostic disable-next-line:unused-local
 local function analyze_and_report_issues(states, file_number, options)  -- luacheck: ignore options
 
   local state = states[file_number]

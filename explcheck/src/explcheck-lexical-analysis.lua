@@ -117,6 +117,7 @@ local function analyze(states, file_number, options)
     for _, line in ipairs(lpeg.match(parsers.tex_lines, range_content)) do
       local line_start, line_text, line_end = table.unpack(line)
       local line_range = new_range(line_start, line_end, EXCLUSIVE, #content)
+      ---@diagnostic disable-next-line: redefined-local
       local map_back = (function(line_text, line_range)  -- luacheck: ignore line_text line_range
         return function (index)
           assert(index > 0)
@@ -157,6 +158,7 @@ local function analyze(states, file_number, options)
 
     local num_invalid_characters = 0
 
+    ---@diagnostic disable-next-line:redefined-local
     local state  -- luacheck: ignore state
 
     -- Determine the category code of the at sign ("@").

@@ -9,11 +9,13 @@
 This version of explcheck has implemented the following new features and other
 improvements:
 
-- Speed up processing steps before flow analysis, add Lua option
-  `max_ignored_issue_ratio`. (#158..#160)
+- Speed up processing steps before flow analysis, add Lua options
+  `max_ignored_issue_ratio` for tuning the performance and a new file
+  `explcheck-trie.lua` with an implementation of prefix trees. (#158..#161)
 
-  This improves processing time by about 15% for an average package file in the
-  current TeX Live, and by up to 300% for large files like `expl3-code.tex`.
+  These changes improve processing time by about 15% for an average package
+  file in the current TeX Live, and by up to 300% for large files like
+  `expl3-code.tex`.
 
 #### Documentation
 
@@ -21,6 +23,20 @@ This version of explcheck has made the following improvements to the documentati
 
 - Specify syntax highlighting for configuration files. (contributed by
   @muzimuzhi in #157)
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Check Lua code using [the Lua Language Server (LuaLS)][LuaLS] in addition to
+  [Luacheck][]. (#161)
+
+ [LuaLS]: https://github.com/LuaLS/lua-language-server
+ [Luacheck]: https://github.com/mpeterv/luacheck
+
+- Add a 3-minute time limit when running explcheck over the entire TeX Live
+  to prevent excessively long analyses on infinite loops. (#161)
 
 ## expltools 2026-01-27
 
