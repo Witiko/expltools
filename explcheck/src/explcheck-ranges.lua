@@ -247,21 +247,18 @@ local RangeTree = {}
 
 -- Create a new segment tree that stores ranges, where all the stored ranges fall within a bounding range. Ranges are stored
 -- together with associated values.
-function RangeTree.new(cls, min_range_start, max_range_end, max_tree_depth)
+function RangeTree.new(cls)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
   cls.__index = cls
   -- Initialize the class.
-  self.root_bounding_range = Range:new(min_range_start, max_range_end, INCLUSIVE + MAYBE_EMPTY, max_range_end)
-  self.max_tree_depth = max_tree_depth
   self:clear()
   return self
 end
 
 -- Clear all ranges and values from the index.
 function RangeTree:clear()
-  self.tree_root = nil
   self.range_list = {}
   self.value_list = {}
 end
@@ -271,150 +268,27 @@ function RangeTree:__len()
   return #self.range_list
 end
 
-local add_duration, add_loops, get_intersecting_ranges_duration = 0, 0, 0
-
--- Add a new range into the segment tree with an associated value.
-function RangeTree:_add_to_tree(range, value_number)
-  local start_time = os.clock()
-  add_loops = add_loops + 1
-  assert(self.tree_root ~= nil)
-  -- Include the range in all tree nodes whose corresponding ranges it contains, creating those nodes if they don't exist.
-  local current_node_stack = {self.tree_root}
-  while #current_node_stack > 0 do
-    local current_node = table.remove(current_node_stack)
-    -- If the added range contains the range that corresponds to the current node or if we are at maximum tree depth,
-    -- record the range and the value.
-    if current_node._depth >= self.max_tree_depth or range:contains(current_node._range) then
-      if current_node._value_number_list == nil then
-        current_node._value_number_list = {}
-      end
-      table.insert(current_node._value_number_list, value_number)
-    else
-      if current_node._left_subrange == nil then
-        -- Otherwise, bisect the range of the current node into two subranges.
-        assert(current_node._right_subrange == nil)
-        assert(#current_node._range > 1)
-        current_node._left_subrange, current_node._right_subrange = current_node._range:bisect()
-        assert(#current_node._left_subrange > 0)
-        assert(#current_node._right_subrange > 0)
-      end
-      -- Then, if the added range intersects with either subrange, descend into the corresponding subnodes, creating them if
-      -- they don't exist, in later iterations.
-      if range:intersects(current_node._left_subrange) then
-        if current_node._left_subnode == nil then
-          current_node._left_subnode = {
-            _depth = current_node._depth + 1,
-            _range = current_node._left_subrange,
-          }
-        end
-        table.insert(current_node_stack, current_node._left_subnode)
-      end
-      if range:intersects(current_node._right_subrange) then
-        if current_node._right_subnode == nil then
-          current_node._right_subnode = {
-            _depth = current_node._depth + 1,
-            _range = current_node._right_subrange,
-          }
-        end
-        table.insert(current_node_stack, current_node._right_subnode)
-      end
-    end
-  end
-  add_duration = add_duration + os.clock() - start_time
-end
-
 -- Add a new range into the index together with an associated value.
 function RangeTree:add(range, value)
-  assert(self.root_bounding_range:contains(range))
   table.insert(self.range_list, range)
   table.insert(self.value_list, value)
   assert(#self.range_list == #self.value_list)
-  local value_number = #self.value_list
-  if self.tree_root ~= nil then
-    self:_add_to_tree(range, value_number)
-  end
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
 function RangeTree:get_intersecting_ranges(range)
-  -- Defer the creation of the tree at least until the asymptotic worst-case time complexities of a linear scan and a tree query
-  -- become the same.
-  if self.tree_root == nil and #self.range_list > self.max_tree_depth then
-    self.tree_root = {
-      _depth = 1,
-      _range = self.root_bounding_range,
-    }
-    for current_value_number, current_range in ipairs(self.range_list) do
-      self:_add_to_tree(current_range, current_value_number)
-    end
-  end
-
-  -- Then, get all intersecting indexed ranges.
-  local start_time = os.clock()
-  assert(self.root_bounding_range:contains(range))
-  if self.tree_root ~= nil then
-    -- If we have already created the tree, find all intersecting ranges in it.
-    local current_node, current_value_number, current_child_number = self.tree_root, 1, 1
-    local parent_nodes = {}
-    return function()
-      while true do
-        local finished_all_values = current_node._value_number_list == nil or current_value_number > #current_node._value_number_list
-        local finished_all_children = current_child_number > 2
-        if not finished_all_values then
-          -- If there are other values associated with the current node, return them.
-          assert(#current_node._value_number_list ~= nil)
-          local value_number = current_node._value_number_list[current_value_number]
-          local current_range, value = self.range_list[value_number], self.value_list[value_number]
-          current_value_number = current_value_number + 1
-          -- Check intersection at the maximum tree depth, since these ranges may not contain the range that corresponds to
-          -- the current node.
-          if current_node._depth < self.max_tree_depth or range:intersects(current_range) then
-            return current_range, value
-          end
-        elseif not finished_all_children then
-          -- Otherwise, if there are other child nodes whose corresponding ranges the query range intersects, descend into them.
-          local next_node
-          if current_child_number == 1 then
-            next_node = current_node._left_subnode
-          else
-            assert(current_child_number == 2)
-            next_node = current_node._right_subnode
-          end
-          if next_node ~= nil and range:intersects(next_node._range) then
-            table.insert(parent_nodes, {current_node, current_value_number, current_child_number + 1})
-            current_node, current_value_number, current_child_number = next_node, 1, 1
-          else
-            current_child_number = current_child_number + 1
-          end
-        elseif current_node ~= self.tree_root then
-          -- Otherwise, if we have previously descended, ascend to the parent node.
-          assert(#parent_nodes > 0)
-          current_node, current_value_number, current_child_number = table.unpack(table.remove(parent_nodes))
-        else
-          -- Otherwise, we should be done.
-          assert(current_node == self.tree_root)
-          assert(#parent_nodes == 0)
-          get_intersecting_ranges_duration = get_intersecting_ranges_duration + os.clock() - start_time
-          return nil
+  local i = 0
+  return function()
+    while true do
+      i = i + 1
+      if i <= #self.range_list then
+        local other_range = self.range_list[i]
+        if range:intersects(other_range) then
+          local value = self.value_list[i]
+          return other_range, value
         end
-      end
-    end
-  else
-    -- Otherwise, if we haven't created the tree yet, just do a linear scan of all stored ranges.
-    local i = 0
-    return function()
-      while true do
-        i = i + 1
-        if i <= #self.range_list then
-          local other_range = self.range_list[i]
-          if range:intersects(other_range) then
-            local value = self.value_list[i]
-            return other_range, value
-          end
-        else
-          get_intersecting_ranges_duration = get_intersecting_ranges_duration + os.clock() - start_time
-          return nil
-        end
+      else
+        return nil
       end
     end
   end
@@ -424,17 +298,8 @@ return {
   new_range = function(...)
     return Range:new(...)
   end,
-  new_range_tree = function(...)
-    return RangeTree:new(...)
+  new_range_tree = function()
+    return RangeTree:new()
   end,
   range_flags = range_flags,
-  add_duration = function()
-    return add_duration
-  end,
-  add_loops = function()
-    return add_loops
-  end,
-  get_intersecting_ranges_duration = function()
-    return get_intersecting_ranges_duration
-  end,
 }

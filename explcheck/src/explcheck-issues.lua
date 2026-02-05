@@ -12,44 +12,7 @@ local function normalize_identifier(identifier)
   return identifier:lower()
 end
 
--- TODO: Aim at least for the measurements with Dell G5 15 on the file `expl3-code.tex` from before `PrefixTree`
--- and `RangeTree` were added after commit 6ab6b9d5:
---
---     $ time explcheck expl3-code.tex | grep XXX
---     XXXX    preprocessing           1       2.825616        0.15764000000001        0.016291               41514
---     XXXX    lexical-analysis        1       2.403953        0.016523000000024       0.0                     2848
---     XXXX    lexical-analysis        2       0.618749        0.32456599999998        0.024647000000011       2197
---     XXXX    syntactic-analysis      1       0.153292        0.00032400000000177     0.0                       46
---     XXXX    semantic-analysis       1       0.690973        0.06382399999999        0.0097439999999995       829
---     XXXX    semantic-analysis       2       1.179811        0.77534300000002        0.0                      270
---
--- TODO: After commit 259ae1d, the measurements with `max_range_tree_depth` set to 1 are the fastest when tested on
--- a range from 1 to 7, which gives a strong indication that `RangeTree` can go, since it's not adding anything to
--- the table compared to a linear scan. The contribution of `PrefixTree` seems unclear.
---
---     $ time explcheck expl3-code.tex | grep XXX
---     XXXX    preprocessing           1       3.331975        0.8277059999999         0.033757               41514
---     XXXX    lexical-analysis        1       2.230335        0.067801999999989       0.0                     2848
---     XXXX    lexical-analysis        2       0.167146        0.10382600000001        0.07158099999999        2197
---     XXXX    syntactic-analysis      1       0.173643        0.00065300000000157     0.0                       46
---     XXXX    semantic-analysis       1       0.480903        0.0091530000000111      0.012088999999999        829
---     XXXX    semantic-analysis       2       0.34739         0.0043879999999925      0.0                      270
---     XXX
---     XXX     add_duration (trie)     0.10088700000009
---     XXX     get_prefixed_by_duration (trie) 0.040856000000013
---     XXX     get_prefixes_of_duration (trie) 0.14401700000006
---     XXX     add_duration (ranges)   0.26725799999979
---     XXX     add_loops (ranges)      95686   ~358029 loops/s
---     XXX     get_intersecting_ranges_duration (ranges)       0.088016000000041
---     XXX
---     XXX     total (trie)    0.28576000000017
---     XXX     total (ranges)  0.35527399999983
---
---     real    0m8.430s
---     user    0m7.289s
---     sys     0m0.414s
---
-function Issues.new(cls, pathname, content_length, options)
+function Issues.new(cls, pathname, options)
   -- Instantiate the class.
   local self = {}
   setmetatable(self, cls)
@@ -57,12 +20,10 @@ function Issues.new(cls, pathname, content_length, options)
   -- Initialize the class.
   self.closed = false
   --- Issue tables
-  self.content_length = content_length
-  self.max_range_tree_depth = get_option("max_range_tree_depth", options, pathname)
   for _, issue_table_name in ipairs({"errors", "warnings"}) do
     self[issue_table_name] = {
       _identifier_index = new_prefix_tree(),
-      _range_index = self:_new_range_tree(),
+      _range_index = new_range_tree(),
       _identifier_range_indexes = {},
       _ignored_index = {},
       _num_ignored = 0,
@@ -79,7 +40,7 @@ function Issues.new(cls, pathname, content_length, options)
   --- Ignored issues
   self.ignored_issues = {
     _identifier_prefix_index = new_prefix_tree(),
-    _range_index = self:_new_range_tree(),
+    _range_index = new_range_tree(),
     _identifier_prefix_range_indexes = {},
   }
   self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
@@ -87,11 +48,6 @@ function Issues.new(cls, pathname, content_length, options)
     self:ignore({identifier_prefix = issue_identifier})
   end
   return self
-end
-
--- Produce a new range tree for storing ranged issues.
-function Issues:_new_range_tree()
-  return new_range_tree(1, self.content_length, self.max_range_tree_depth)
 end
 
 -- Convert an issue identifier to either a table of warnings or a table of errors.
@@ -107,14 +63,8 @@ function Issues:_get_issue_table(identifier)
   end
 end
 
-local total_issues = 0
-local total_issue_time = 0
-
 -- Add an issue to the table of issues.
 function Issues:add(identifier, message, range, context)
-  local start_time = os.clock()
-  total_issues = total_issues + 1
-
   if self.closed then
     error('Cannot add issues to a closed issue registry')
   end
@@ -161,7 +111,7 @@ function Issues:add(identifier, message, range, context)
         if ignored_issue ~= nil then
           assert(ignored_issue.identifier_prefix == identifier_prefix)
           ignored_issue.seen = true
-          goto record_time
+          return
         end
       end
     end
@@ -170,46 +120,35 @@ function Issues:add(identifier, message, range, context)
     if ignored_issue ~= nil then
       assert(ignored_issue.identifier_prefix == nil)
       ignored_issue.seen = true
-      goto record_time
+      return
     end
   end
   -- Look for ignored issues by their identifiers or identifier prefixes.
-  do
-    local _, ignored_issue = self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier)()
-    if ignored_issue ~= nil then
-      ignored_issue.seen = true
-      goto record_time
-    end
+  local _, ignored_issue = self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier)()
+  if ignored_issue ~= nil then
+    ignored_issue.seen = true
+    return
   end
 
-  do
-    -- Construct the issue.
-    local issue = {identifier, message, range, context}
+  -- Construct the issue.
+  local issue = {identifier, message, range, context}
 
-    -- Add the issue to the table of issues.
-    local issue_table = self:_get_issue_table(identifier)
-    table.insert(issue_table, issue)
-    local issue_number = #issue_table
-    issue_table._identifier_index:add(identifier, issue_number)
-    if range ~= nil then
-      if issue_table._identifier_range_indexes[identifier] == nil then
-         issue_table._identifier_range_indexes[identifier] = self:_new_range_tree()
-      end
-      issue_table._identifier_range_indexes[identifier]:add(range, issue_number)
-      issue_table._range_index:add(range, issue_number)
+  -- Add the issue to the table of issues.
+  local issue_table = self:_get_issue_table(identifier)
+  table.insert(issue_table, issue)
+  local issue_number = #issue_table
+  issue_table._identifier_index:add(identifier, issue_number)
+  if range ~= nil then
+    if issue_table._identifier_range_indexes[identifier] == nil then
+       issue_table._identifier_range_indexes[identifier] = new_range_tree()
     end
+    issue_table._identifier_range_indexes[identifier]:add(range, issue_number)
+    issue_table._range_index:add(range, issue_number)
   end
-  ::record_time::
-  local end_time = os.clock()
-  total_issue_time = total_issue_time + end_time - start_time
 end
-
-local total_ignore_time = 0
 
 -- Prevent issues from being present in the table of issues.
 function Issues:ignore(ignored_issue)
-  local start_time = os.clock()
-
   if self.closed then
     error('Cannot ignore issues in a closed issue registry')
   end
@@ -236,7 +175,7 @@ function Issues:ignore(ignored_issue)
     if ignored_issue.identifier_prefix ~= nil then
       -- Record ignored issues by their ranges and their identifiers or identifier prefixes.
       if self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] == nil then
-        self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] = self:_new_range_tree()
+        self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix] = new_range_tree()
       end
       self.ignored_issues._identifier_prefix_range_indexes[ignored_issue.identifier_prefix]:add(ignored_issue.range, ignored_issue)
     else
@@ -324,9 +263,6 @@ function Issues:ignore(ignored_issue)
       self:commit_ignores({issue_tables = {issue_table}})
     end
   end
-
-  local end_time = os.clock()
-  total_ignore_time = total_ignore_time + end_time - start_time
 end
 
 -- Check whether two registries only contain issues with the same codes.
@@ -398,7 +334,7 @@ function Issues:commit_ignores(how)
         issue_table._identifier_index:add(identifier, issue_number)
         if range ~= nil then
           if issue_table._identifier_range_indexes[identifier] == nil then
-             issue_table._identifier_range_indexes[identifier] = self:_new_range_tree()
+             issue_table._identifier_range_indexes[identifier] = new_range_tree()
           end
           issue_table._identifier_range_indexes[identifier]:add(range, issue_number)
           issue_table._range_index:add(range, issue_number)
@@ -469,13 +405,4 @@ return {
     return Issues:new(...)
   end,
   sort_issues = sort_issues,
-  total_issues = function()
-    return total_issues
-  end,
-  total_issue_time = function()
-    return total_issue_time
-  end,
-  total_ignore_time = function()
-    return total_ignore_time
-  end,
 }

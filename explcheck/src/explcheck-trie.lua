@@ -29,11 +29,8 @@ function PrefixTree:__len()
   return #self.text_list
 end
 
-local add_duration, get_prefixed_by_duration, get_prefixes_of_duration = 0, 0, 0
-
 -- Add a new text into the tree together with an associated value.
 function PrefixTree:add(text, value)
-  local start_time = os.clock()
   assert(#text > 0)
   -- Find the node corresponding to the text in the tree, creating it if it doesn't exist.
   local current_node = self.tree_root
@@ -58,12 +55,10 @@ function PrefixTree:add(text, value)
   assert(#self.text_list == #self.value_list)
   local value_number = #self.value_list
   table.insert(current_node._value_number_list, value_number)
-  add_duration = add_duration + os.clock() - start_time
 end
 
 -- Get all indexed texts that share a given prefix and their associated values.
 function PrefixTree:get_prefixed_by(prefix)
-  local start_time = os.clock()
   assert(#prefix > 0)
   -- Find the node corresponding to the prefix in the tree.
   local current_prefix_node = self.tree_root
@@ -71,7 +66,6 @@ function PrefixTree:get_prefixed_by(prefix)
     local character = prefix:sub(character_number, character_number)
     if current_prefix_node[character] == nil then
       return function()
-        get_prefixed_by_duration = get_prefixed_by_duration + os.clock() - start_time
         return nil
       end
     end
@@ -112,7 +106,6 @@ function PrefixTree:get_prefixed_by(prefix)
       else
         -- Otherwise, we should be done.
         assert(#suffix_parent_nodes == 0)
-        get_prefixed_by_duration = get_prefixed_by_duration + os.clock() - start_time
         return nil
       end
     end
@@ -121,7 +114,6 @@ end
 
 -- Get all indexed prefixes for a given text and their associated values.
 function PrefixTree:get_prefixes_of(text)
-  local start_time = os.clock()
   -- Find the node corresponding to the text in the tree, collecting prefixes and their associated values along the way.
   local current_prefix_node, current_value_number, character_number, character = self.tree_root, 1, 1, nil
   return function()
@@ -139,7 +131,6 @@ function PrefixTree:get_prefixes_of(text)
         -- Otherwise, if there is a child node for a longer prefix, descend into it.
         if character_number > #text then
           -- If we have reached the end of the text, then we should be done.
-          get_prefixes_of_duration = get_prefixes_of_duration + os.clock() - start_time
           return nil
         end
         character = text:sub(character_number, character_number)
@@ -148,7 +139,6 @@ function PrefixTree:get_prefixes_of(text)
             = current_prefix_node[character], 1, character_number + 1, nil
         else
           -- If there is no longer prefix, then we should be done.
-          get_prefixes_of_duration = get_prefixes_of_duration + os.clock() - start_time
           return nil
         end
       end
@@ -159,14 +149,5 @@ end
 return {
   new_prefix_tree = function()
     return PrefixTree:new()
-  end,
-  add_duration = function()
-    return add_duration
-  end,
-  get_prefixed_by_duration = function()
-    return get_prefixed_by_duration
-  end,
-  get_prefixes_of_duration = function()
-    return get_prefixes_of_duration
   end,
 }
