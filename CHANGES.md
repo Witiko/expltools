@@ -4,10 +4,9 @@
 
 ### explcheck v0.17.1
 
-#### Development
+#### Fixes
 
-This version of explcheck has implemented the following new features and other
-improvements:
+This version of explcheck has fixed the following bugs:
 
 - Speed up processing steps before flow analysis. (#158..#161, aadd378)
 
