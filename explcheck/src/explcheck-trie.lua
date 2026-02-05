@@ -24,11 +24,6 @@ function PrefixTree:clear()
   self.value_list = {}
 end
 
--- Get the number of texts and values stored in the index.
-function PrefixTree:__len()
-  return #self.text_list
-end
-
 -- Add a new text into the tree together with an associated value.
 function PrefixTree:add(text, value)
   assert(#text > 0)

@@ -172,18 +172,6 @@ function Range:enumerate(original_array, map_back)
   end
 end
 
--- Split a range in half, producing two new subranges.
-function Range:bisect()
-  assert(#self > 1)
-  local midpoint = self:start() + math.ceil((self:stop() - self:start()) / 2)
-  local left_subrange_size, right_subrange_size = midpoint - self:start(), self:stop() - midpoint + 1
-  local left_subrange = Range:new(self:start(), midpoint, EXCLUSIVE, self:stop())
-  local right_subrange = Range:new(midpoint, self:stop(), INCLUSIVE, self:stop())
-  assert(#left_subrange == left_subrange_size)
-  assert(#right_subrange == right_subrange_size)
-  return left_subrange, right_subrange
-end
-
 -- Given a range where each index maps into a list of non-decreasing sub-ranges, produce a new range that start with the start
 -- of the first sub-range and ends with the end of the last sub-range.
 function Range:new_range_from_subranges(get_subrange, subarray_size)
@@ -210,20 +198,6 @@ function Range:intersects(other_range)
     return false
   end
   if self:stop() < other_range:start() then
-    return false
-  end
-  return true
-end
-
--- Check whether one range fully contains another.
-function Range:contains(other_range)
-  if not self:intersects(other_range) then
-    return false
-  end
-  if self:start() > other_range:start() then
-    return false
-  end
-  if self:stop() < other_range:stop() then
     return false
   end
   return true
@@ -263,11 +237,6 @@ end
 function RangeIndex:clear()
   self.range_list = {}
   self.value_list = {}
-end
-
--- Get the number of ranges and values stored in the index.
-function RangeIndex:__len()
-  return #self.range_list
 end
 
 -- Add a new range into the index together with an associated value.

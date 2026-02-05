@@ -64,7 +64,7 @@ do
       if seen_pathnames[pathname] == nil then
         seen_pathnames[pathname] = true
         table.insert(results.pathnames, pathname)
-        results.issues[pathname] = new_issues(pathname)
+        results.issues[pathname] = new_issues()
       end
       results.issues[pathname]:add(issue)
     end
@@ -146,7 +146,7 @@ for _, pathname in ipairs(task_pathnames) do
   -- Compare the expected results of the static analysis with the actual results.
   local expected_issues = results.issues[pathname]
   if expected_issues == nil then
-    expected_issues = new_issues(pathname)
+    expected_issues = new_issues()
     expected_issues:close()
   end
   local result = actual_issues:has_same_codes_as(expected_issues)

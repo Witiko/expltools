@@ -107,8 +107,7 @@ function Issues:add(identifier, message, range, context)
     for identifier_prefix in get_prefixes(identifier) do
       local identifier_prefix_range_index = self.ignored_issues._identifier_prefix_range_indexes[identifier_prefix]
       if identifier_prefix_range_index ~= nil then
-        local _, ignored_issue = identifier_prefix_range_index:get_intersecting_ranges(range)()
-        if ignored_issue ~= nil then
+        for _, ignored_issue in identifier_prefix_range_index:get_intersecting_ranges(range) do
           assert(ignored_issue.identifier_prefix == identifier_prefix)
           ignored_issue.seen = true
           return
@@ -116,16 +115,14 @@ function Issues:add(identifier, message, range, context)
       end
     end
     -- Look for ignored issues by their ranges.
-    local _, ignored_issue = self.ignored_issues._range_index:get_intersecting_ranges(range)()
-    if ignored_issue ~= nil then
+    for _, ignored_issue in self.ignored_issues._range_index:get_intersecting_ranges(range) do
       assert(ignored_issue.identifier_prefix == nil)
       ignored_issue.seen = true
       return
     end
   end
   -- Look for ignored issues by their identifiers or identifier prefixes.
-  local _, ignored_issue = self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier)()
-  if ignored_issue ~= nil then
+  for _, ignored_issue in self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier) do
     ignored_issue.seen = true
     return
   end
