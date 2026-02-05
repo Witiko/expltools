@@ -108,7 +108,7 @@ function PrefixTree:get_prefixed_by(prefix)
 end
 
 -- Get all indexed prefixes for a given text and their associated values.
-function PrefixTree:get_prefixes_of(text)
+function PrefixTree:get_prefixes(text)
   -- Find the node corresponding to the text in the tree, collecting prefixes and their associated values along the way.
   local current_prefix_node, current_value_number, character_number, character = self.tree_root, 1, 1, nil
   return function()

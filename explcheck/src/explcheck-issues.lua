@@ -107,7 +107,7 @@ function Issues:add(identifier, message, range, context)
     for identifier_prefix in get_prefixes(identifier) do
       local identifier_prefix_range_index = self.ignored_issues._identifier_prefix_range_indexes[identifier_prefix]
       if identifier_prefix_range_index ~= nil then
-        for _, ignored_issue in identifier_prefix_range_index:get_intersecting_ranges(range) do
+        for _, ignored_issue in identifier_prefix_range_index:intersect(range) do
           assert(ignored_issue.identifier_prefix == identifier_prefix)
           ignored_issue.seen = true
           return
@@ -115,14 +115,14 @@ function Issues:add(identifier, message, range, context)
       end
     end
     -- Look for ignored issues by their ranges.
-    for _, ignored_issue in self.ignored_issues._range_index:get_intersecting_ranges(range) do
+    for _, ignored_issue in self.ignored_issues._range_index:intersect(range) do
       assert(ignored_issue.identifier_prefix == nil)
       ignored_issue.seen = true
       return
     end
   end
   -- Look for ignored issues by their identifiers or identifier prefixes.
-  for _, ignored_issue in self.ignored_issues._identifier_prefix_index:get_prefixes_of(identifier) do
+  for _, ignored_issue in self.ignored_issues._identifier_prefix_index:get_prefixes(identifier) do
     ignored_issue.seen = true
     return
   end
@@ -194,7 +194,7 @@ function Issues:ignore(ignored_issue)
     issue_number_lists = {{}, {}}
     for issue_table_number, issue_table in ipairs(issue_tables) do
       local issue_number_list = issue_number_lists[issue_table_number]
-      for _, issue_number in issue_table._range_index:get_intersecting_ranges(ignored_issue.range) do
+      for _, issue_number in issue_table._range_index:intersect(ignored_issue.range) do
         table.insert(issue_number_list, issue_number)
       end
     end
@@ -226,7 +226,7 @@ function Issues:ignore(ignored_issue)
       for _, identifier in ipairs(identifier_list) do
         local identifier_range_index = issue_table._identifier_range_indexes[identifier]
         if identifier_range_index ~= nil then
-          for _, issue_number in identifier_range_index:get_intersecting_ranges(ignored_issue.range) do
+          for _, issue_number in identifier_range_index:intersect(ignored_issue.range) do
             if issue_number_index_from_identifiers[issue_number] ~= nil then
               table.insert(issue_number_list, issue_number)
             end

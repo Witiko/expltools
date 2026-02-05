@@ -247,7 +247,7 @@ function RangeIndex:add(range, value)
 end
 
 -- Get all indexed ranges that intersect a given range and their associated values.
-function RangeIndex:get_intersecting_ranges(range)
+function RangeIndex:intersect(range)
   local i = 0
   return function()
     while true do
