@@ -1,17 +1,15 @@
 # Changes
 
-## expltools 2026-02-XX
+## expltools 2026-02-05
 
-### explcheck v0.18.0
+### explcheck v0.17.1
 
 #### Development
 
 This version of explcheck has implemented the following new features and other
 improvements:
 
-- Speed up processing steps before flow analysis, add Lua options
-  `max_ignored_issue_ratio` for tuning the performance and a new file
-  `explcheck-trie.lua` with an implementation of prefix trees. (#158..#161)
+- Speed up processing steps before flow analysis. (#158..#161)
 
   These changes improve processing time by about 15% for an average package
   file in the current TeX Live, and by up to 300% for large files like

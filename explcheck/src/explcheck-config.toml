@@ -10,7 +10,6 @@ l3obsolete_max_deprecated_date = false
 l3prefixes_max_first_registered_date = false
 make_at_letter = "auto"
 max_grouped_files_per_directory = 100
-max_ignored_issue_ratio = 0.2
 max_line_length = 80
 max_reaching_definition_inner_loops = 30000000
 max_reaching_definition_outer_loops = 20

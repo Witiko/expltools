@@ -43,7 +43,6 @@ function Issues.new(cls, pathname, options)
     _range_index = new_range_index(),
     _identifier_prefix_range_indexes = {},
   }
-  self.max_ignored_issue_ratio = get_option("max_ignored_issue_ratio", options, pathname)
   for _, issue_identifier in ipairs(get_option("ignored_issues", options, pathname)) do
     self:ignore({identifier_prefix = issue_identifier})
   end
@@ -253,11 +252,6 @@ function Issues:ignore(ignored_issue)
         issue_table._ignored_index[issue_number] = true
         issue_table._num_ignored = issue_table._num_ignored + 1
       end
-    end
-
-    -- If many issues were already scheduled for a later removal, remove them now.
-    if issue_table._num_ignored >= self.max_ignored_issue_ratio * #issue_table then
-      self:commit_ignores({issue_tables = {issue_table}})
     end
   end
 end
