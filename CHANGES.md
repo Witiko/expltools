@@ -9,7 +9,7 @@
 This version of explcheck has implemented the following new features and other
 improvements:
 
-- Speed up processing steps before flow analysis. (#158..#161)
+- Speed up processing steps before flow analysis. (#158..#161, aadd378)
 
   These changes improve processing time by about 15% for an average package
   file in the current TeX Live, and by up to 300% for large files like
