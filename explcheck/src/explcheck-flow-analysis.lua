@@ -916,7 +916,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
       inner_loop_number = inner_loop_number + 1
     end
-    print("XXX", inner_loop_number - 1)
 
     -- Make a copy of the current estimation of the function call edges.
     previous_function_call_edges = {}
@@ -1069,7 +1068,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       results.edges[DYNAMIC] = {}
     end
     table.insert(results.edges[DYNAMIC], edge)
-    print("XXX", format_edge(edge))
   end
 end
 
