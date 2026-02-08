@@ -1,5 +1,14 @@
 # Changes
 
+## expltools 2026-02-XX
+
+### explcheck v0.18.0
+
+#### Fixes
+
+- Fix an integer overflow in function `format_pathname()`. (reported by
+  @muzimuzhi in #163, fixed in 776eb72)
+
 ## expltools 2026-02-05
 
 ### explcheck v0.17.1
