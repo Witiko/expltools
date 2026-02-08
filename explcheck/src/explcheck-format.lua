@@ -165,11 +165,11 @@ local function format_pathname(pathname, max_length)
     end
     local prefix_start, _, _, suffix = pathname:find(pattern)
     if prefix_start == nil or prefix_start > 1 then
-      pathname = "..." .. pathname:sub(-(max_length - #("...")))
+      pathname = "..." .. pathname:sub(math.min(-1, -(max_length - #("..."))))
     else
       pathname = ".../" .. suffix
       if #pathname > max_length then
-        pathname = "..." .. suffix:sub(-(max_length - #("...")))
+        pathname = "..." .. suffix:sub(math.min(-1, -(max_length - #("..."))))
       end
     end
   end
