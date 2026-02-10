@@ -62,7 +62,7 @@ function Issues:_get_issue_table(identifier)
   end
 end
 
--- Add an issue to the table of issues.
+-- Add an issue to the tables of issues.
 function Issues:add(identifier, message, range, context)
   if self.closed then
     error('Cannot add issues to a closed issue registry')
@@ -143,7 +143,7 @@ function Issues:add(identifier, message, range, context)
   end
 end
 
--- Prevent issues from being present in the table of issues.
+-- Prevent issues from being present in the tables of issues.
 function Issues:ignore(ignored_issue)
   if self.closed then
     error('Cannot ignore issues in a closed issue registry')
@@ -288,8 +288,8 @@ function Issues:has_same_codes_as(other)
   return true
 end
 
--- Remove all issues that were previously scheduled to be ignored.
-function Issues:commit_ignores(how)
+-- Commit all planned changes to the issue tables.
+function Issues:commit(how)
   local issue_tables = how and how.issue_tables or {self.warnings, self.errors}
   for _, issue_table in ipairs(issue_tables) do
     if issue_table._num_ignored == 0 then
@@ -339,7 +339,7 @@ end
 -- Close the issue registry, preventing future modifications and report all needlessly ignored issues.
 function Issues:close()
   if self.closed then
-    error('Cannot close an already closed issue registry')
+    return
   end
 
   -- Report all needlessly ignored issues.
@@ -355,7 +355,7 @@ function Issues:close()
   end
 
   -- Remove all issues that were previously scheduled to be ignored.
-  self:commit_ignores({skip_index_rebuild = true})
+  self:commit({skip_index_rebuild = true})
 
   -- Clear indexes, since we wouldn't need them anymore.
   for _, issue_table in ipairs({self.warnings, self.errors}) do
