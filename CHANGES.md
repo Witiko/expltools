@@ -8,6 +8,9 @@
 
 - Fix an integer overflow in function `format_pathname()`. (reported by
   @muzimuzhi in #163, fixed in 776eb72)
+- Fix a failure to load TOML files whose last line is a comment without
+  a trailing newline. (reported by @Chipsterjulien in jonstoler/lua-toml#27
+  and by @muzimuzhi in #165, fixed in #166)
 
 #### Documentation
 
