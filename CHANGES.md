@@ -9,6 +9,11 @@
 - Fix an integer overflow in function `format_pathname()`. (reported by
   @muzimuzhi in #163, fixed in 776eb72)
 
+#### Documentation
+
+- Document that `% noqa` at the top of a file silences issues everywhere.
+  (f1528f1)
+
 ## expltools 2026-02-05
 
 ### explcheck v0.17.1
