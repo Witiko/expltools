@@ -141,7 +141,7 @@ print(
 Command-line options, configuration files, and Lua code allow you to ignore certain warnings and errors everywhere.
 To ignore them in just some of your expl3 code, you may use TeX comments.
 
-For example, a comment `% noqa` will ignore any issues on the current line.
+For example, the comment `% noqa` ignores all issues on the current line; when placed at the top of the file, it suppresses issues for the entire file.
 As another example, a comment `% noqa: w100, S` will ignore the file-wide warning W100 and also all style warnings on the current line.
 
 A list of all currently supported issues is available [here][10].
