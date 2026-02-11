@@ -11,13 +11,16 @@ local function read_config_file(pathname)
   end
   local content = assert(file:read("*a"))
   assert(file:close())
-  return toml.parse(content)
+  local data, err = toml.parse(content)
+  if err ~= nil then
+    error(string.format('Parse error in "%s": %s', pathname, err))
+  end
+  return data
 end
 
 -- Load the default configuration from the pre-installed config file `explcheck-config.toml`.
 local default_config_pathname = string.sub(debug.getinfo(1).source, 2, (#".lua" + 1) * -1) .. ".toml"
-local default_config = read_config_file(default_config_pathname)
-assert(default_config ~= nil)
+local default_config = assert(read_config_file(default_config_pathname))
 
 local user_configs = {}
 
