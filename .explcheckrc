@@ -348,6 +348,7 @@ ignored_issues = ["e405", "e408", "e411"]
 
 [package.clistmap]
 ignored_issues = ["e405"]
+imported_prefixes = ["erw"]
 
 [package.cprotectinside]
 ignored_issues = ["e405"]
@@ -360,6 +361,7 @@ ignored_issues = ["e405", "e408"]
 
 [package.lambdax]
 ignored_issues = ["e405"]
+imported_prefixes = ["keyparse"]
 
 [package.lt3rawobjects]
 ignored_issues = ["e405", "e408"]
@@ -379,9 +381,6 @@ ignored_issues = ["e408"]
 
 [package.cdcmd]
 ignored_issues = ["e408"]
-
-[package.clistmap]
-imported_prefixes = ["erw"]
 
 [package.colorist]
 ignored_issues = ["e408"]
@@ -407,9 +406,6 @@ imported_prefixes = ["fontawesome"]
 
 [package.jwjournal]
 imported_prefixes = ["projlib"]
-
-[package.lambdax]
-imported_prefixes = ["keyparse"]
 
 [package.pgf-interference]
 ignored_issues = ["e408"]
