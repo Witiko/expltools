@@ -5,7 +5,7 @@ local utils = require("explcheck-utils")
 
 -- Read a TOML file with a user-defined configuration.
 local function read_config_file(pathname)
-  local file = io.open(pathname, "r")
+  local file = io.open(utils.expand_path(pathname), "r")
   if file == nil then
     return nil
   end

@@ -16,6 +16,18 @@ local function convert_byte_to_line_and_column(line_starting_byte_numbers, byte_
   return line_number, column_number
 end
 
+-- Expand leading `~` in a pathname.
+local function expand_path(pathname)
+  -- Expand `~` to the home directory.
+  if pathname:sub(1, 1) == "~" then
+    local home = os.getenv(os.type == "windows" and "USERPROFILE" or "HOME")
+    if home ~= nil then
+      return home .. pathname:sub(2)
+    end
+  end
+  return pathname
+end
+
 -- Get all non-empty prefixes of a text.
 local function get_prefixes(text)
   local i = 0
@@ -296,6 +308,7 @@ end
 return {
   check_pathname = check_pathname,
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
+  expand_path = expand_path,
   get_basename = get_basename,
   get_parent = get_parent,
   get_prefixes = get_prefixes,
