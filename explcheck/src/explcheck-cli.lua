@@ -101,7 +101,7 @@ local function print_usage()
 end
 
 local function print_version()
-  print("explcheck (expltools ${DATE}) ${VERSION}")
+  print("explcheck (expltools 2026-02-12) v0.18.0")
   print("Copyright (c) 2024-2026 Vít Starý Novotný")
   print("Licenses: LPPL 1.3 or later, GNU GPL v2 or later")
 end

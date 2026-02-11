@@ -20,7 +20,7 @@ end
 local function expand_path(pathname)
   -- Expand `~` to the home directory.
   if pathname:sub(1, 1) == "~" then
-    local home = os.getenv(os.type == "windows" and "USERPROFILE" or "HOME")
+    local home = os.getenv(os.type == "windows" and "USERPROFILE" or "HOME")  -- luacheck: ignore
     if home ~= nil then
       return home .. pathname:sub(2)
     end
