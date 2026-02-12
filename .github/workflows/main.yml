@@ -60,10 +60,12 @@ jobs:
             }
           ' README.md
       - name: Run Luacheck
+        id: luacheck
         run: |
           find explcheck README-*.lua -type f -follow -name '*.lua' -not -name 'build.lua' -not -name 'explcheck-toml.lua' -exec \
             luacheck {} +
       - name: Run LuaLS
+        if: success() || steps.luacheck.outcome == 'failure'  # Run LuaLS even if Luacheck failed.
         run: |
           cd explcheck/src
           rm explcheck-toml.lua
