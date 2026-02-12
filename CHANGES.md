@@ -6,6 +6,8 @@
 
 #### Fixes
 
+This version of explcheck has fixed the following bugs:
+
 - Fix an integer overflow in function `format_pathname()`. (reported by
   @muzimuzhi in #163, fixed in 776eb72)
 - Fix a failure to load TOML files whose last line is a comment without
@@ -14,8 +16,17 @@
 
 #### Documentation
 
+This version of explcheck has made the following improvements to the documentation:
+
 - Document that `% noqa` at the top of a file silences issues everywhere.
   (f1528f1)
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Run LuaLS even if Luacheck failed. (95f71a1)
 
 ## expltools 2026-02-05
 
