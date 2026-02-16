@@ -38,7 +38,7 @@ integration:
 
 - Run LuaLS even if Luacheck failed. (95f71a1)
 - Run one additional process to reduce the problem of idle CPUs near the end
-  while one worker grinds a difficult task. (#174)
+  while one worker grinds a difficult task. (#174, 19ceb45)
 
 ## expltools 2026-02-05
 
