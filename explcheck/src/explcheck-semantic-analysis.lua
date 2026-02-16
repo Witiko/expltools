@@ -1408,8 +1408,15 @@ local function report_issues(states, main_file_number, options)
       return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, map_forward)
     end
 
+    local already_processed_argument_tokens = {}
+
     -- Process an argument and record control sequence name usage and definitions.
     local function process_argument_tokens(argument)
+      if already_processed_argument_tokens[argument] then
+        return
+      end
+      already_processed_argument_tokens[argument] = true
+
       -- Record control sequence name usage.
       --- Extract text from tokens within c- and v-type arguments.
       if argument.specifier == "c" or argument.specifier == "v" then
