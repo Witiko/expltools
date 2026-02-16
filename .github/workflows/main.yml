@@ -162,7 +162,8 @@ jobs:
 
           apt update
           apt install -qy parallel
-      - name: Collect package files
+      - name: Run explcheck
+        timeout-minutes: 3
         env:
           LUAINPUTS: explcheck/src
         run: |
@@ -174,24 +175,19 @@ jobs:
           # Sort files, so that files from the same directory that can be grouped by explcheck are listed together.
           cat unsorted-files.txt | perl -pe 'print tr{/}{}, "\t"' | LC_ALL=C sort -k1,1n -k2 | cut -f2- > files.txt
 
-          # Split the sorted files into N chunks, where N is the available number of CPUs, making sure that files
+          # Split the sorted files into N chunks, where N is ca the available number of CPUs, making sure that files
           # from the same directory that can be grouped by explcheck are kept together.
-          texlua explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $(nproc)
-      - name: Run explcheck
-        timeout-minutes: 3
-        env:
-          LUAINPUTS: explcheck/src
-        run: |
-          set -e
+          NPROC=$(($(nproc) + 1))  # Oversubscribe to make up for occasional difficult groups that create slow tails.
+          texlua explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $NPROC
 
           # Process the sorted chunks with explcheck in parallel, collecting issues and code coverage.
-          parallel --line-buffer --jobs $(nproc) --halt now,fail=1 -- \
+          parallel --line-buffer --jobs $NPROC --halt now,fail=1 -- \
             texlua explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
-            ::: $(seq 1 $(nproc))
+            ::: $(seq 1 $NPROC)
 
           # Merge the issues and code coverage collected from the sorted chunks.
           mkdir issues
-          texlua explcheck/ci/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues/ issues/COVERAGE $(nproc)
+          texlua explcheck/ci/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues/ issues/COVERAGE $NPROC
       - name: Print code coverage
         run: cat issues/COVERAGE
       - name: Upload issues and code coverage
@@ -212,11 +208,14 @@ jobs:
         run: |
           set -e
 
+          # Oversubscribe to make up for occasional difficult tasks that create slow tails.
+          NPROC=$(($(nproc) + 1))
+
           # Collect all options and prepare task files for them.
           texlua explcheck/ci/collect-options-to-check.lua files.txt task-%05d.txt
 
           # Check the different options in parallel.
-          parallel --line-buffer --jobs $(nproc) --halt never -- \
+          parallel --line-buffer --jobs $NPROC --halt never -- \
             texlua explcheck/ci/check-option.lua files.txt issues/ {} \
             ::: task-*.txt
 
