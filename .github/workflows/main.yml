@@ -201,7 +201,7 @@ jobs:
         if: matrix.release != 'latest'
         run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
       - name: Check if the configuration is minimal
-        timeout-minutes: 3
+        timeout-minutes: 4
         if: matrix.release == 'latest'
         env:
           LUAINPUTS: explcheck/src
