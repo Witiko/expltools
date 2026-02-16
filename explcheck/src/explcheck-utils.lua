@@ -269,6 +269,7 @@ local function process_files(pathnames, options)
               when = string.format("after %s", step.name),
               reason = "it ended with errors and the option `fail_fast` was enabled",
             }
+            state.results.failed_fast = true
             goto continue
           end
           -- If the step is supposed to be the last step, skip all following steps.

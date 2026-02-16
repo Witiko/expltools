@@ -208,14 +208,11 @@ jobs:
         run: |
           set -e
 
-          # Oversubscribe to make up for occasional difficult tasks that create slow tails.
-          NPROC=$(($(nproc) + 1))
-
           # Collect all options and prepare task files for them.
           texlua explcheck/ci/collect-options-to-check.lua files.txt task-%05d.txt
 
           # Check the different options in parallel.
-          parallel --line-buffer --jobs $NPROC --halt never -- \
+          parallel --line-buffer --jobs $(nproc) --halt never -- \
             texlua explcheck/ci/check-option.lua files.txt issues/ {} \
             ::: task-*.txt
 
