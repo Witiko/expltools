@@ -4,6 +4,14 @@
 
 ### explcheck v0.18.0
 
+#### Enhancements
+
+This version of explcheck has made the following new enhancements:
+
+- In human-readable output, mention that further issues may be reported after
+  fixing the current errors after we have failed fast. (reported by @dbitouze
+  and @muzimuzhi in #170 and #171, fixed in #175)
+
 #### Fixes
 
 This version of explcheck has fixed the following bugs:
