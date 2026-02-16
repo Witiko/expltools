@@ -23,6 +23,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-toc.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/leadsheets/leadsheets.library.songs.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/mathcommand/mathcommand.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/nwejm/nwejm.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/nwejm/nwejmart.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/pgfkeysearch/pgfkeysearch.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/sidenotes/sidenotes.sty
