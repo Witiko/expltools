@@ -280,6 +280,8 @@ function FileEvaluationResults.new(cls, state)
   -- Evaluate the results of the flow analysis.
   local num_chunks = count_chunks(analysis_results)
   local num_edges, num_edges_total = count_edges(analysis_results)
+  -- Evaluate the early stopping.
+  local failed_fast = analysis_results.failed_fast == true
   -- Initialize the class.
   self.num_total_bytes = num_total_bytes
   self.num_warnings = num_warnings
@@ -301,6 +303,7 @@ function FileEvaluationResults.new(cls, state)
   self.num_chunks = num_chunks
   self.num_edges = num_edges
   self.num_edges_total = num_edges_total
+  self.failed_fast = failed_fast
   return self
 end
 
@@ -332,6 +335,7 @@ function AggregateEvaluationResults.new(cls)
   self.num_chunks = 0
   self.num_edges = {}
   self.num_edges_total = 0
+  self.num_failed_fast = 0
   return self
 end
 
@@ -339,17 +343,20 @@ end
 function AggregateEvaluationResults:add(evaluation_results)
   local function aggregate_table(self_table, evaluation_result_table)
     for key, value in pairs(evaluation_result_table) do
-      if type(value) == "number" then  -- a simple count
+      if type(value) == "number" then  -- a sum of numeric values
         if self_table[key] == nil then
           self_table[key] = 0
         end
-        assert(key ~= "_how")
-        if self_table._how ~= nil then
-          self_table[key] = self_table._how(self_table[key], value)
-        else
-          self_table[key] = self_table[key] + value
+        self_table[key] = self_table[key] + value
+      elseif type(value) == "boolean" then  -- a count of files with a certain property
+        local count_key = string.format("num_%s", key)
+        if self_table[count_key] == nil then
+          self_table[count_key] = 0
         end
-      elseif type(value) == "table" then  -- a table of counts
+        if value then
+          self_table[count_key] = self_table[count_key] + 1
+        end
+      elseif type(value) == "table" then  -- a table of nested values
         if self_table[key] == nil then
           self_table[key] = {}
         end
