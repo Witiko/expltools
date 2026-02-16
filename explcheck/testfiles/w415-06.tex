@@ -1,0 +1,24 @@
+\documentclass{article}
+\ExplSyntaxOn
+\tl_new:N \g__foo_bar_tl
+\AddToHook{ cmd/section/before }
+{
+  \iow_open:Nn \g_tmpa_iow { \g__foo_bar_tl }
+  \iow_now:Nn \g_tmpa_iow {
+    Here~ is~ the~ content~ of~ the~ input~ file:
+  }
+  \iow_close:N \g_tmpa_iow
+}
+\cs_new_protected:Npn \__foo_bar:n #1
+{
+  \tl_gset:Nn \g__foo_bar_tl { #1.xyz }
+  \file_if_exist_input:n { #1.xyz }
+  \input{#1}
+}
+\NewDocumentCommand{\foobar} { m }
+{
+  \__foo_bar:n { #1 }
+}
+\ExplSyntaxOff
+\begin{document}
+\end{document}

@@ -1823,6 +1823,14 @@ local function report_issues(states, main_file_number, options)
       else
         error('Unexpected statement type "' .. statement.type .. '"')
       end
+      -- Record control sequence name usage and definitions in unanalyzed arguments.
+      for _, call in statement.call_range:enumerate(segment.calls) do
+        for _, argument in ipairs(call.arguments or {}) do
+          if not argument.analyzed then
+            process_argument_tokens(argument)
+          end
+        end
+      end
     end
   end
 
