@@ -26,7 +26,8 @@ local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 
-local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
+local OTHER_TOKENS = statement_types.OTHER_TOKENS
+local OTHER_TOKENS_COMPLEX = statement_subtypes.OTHER_TOKENS.COMPLEX
 
 local statement_confidences = semantic_analysis.statement_confidences
 
@@ -171,7 +172,7 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
 
     if segment.statements ~= nil then
       for statement_number, statement in ipairs(segment.statements or {}) do
-        if statement.type == OTHER_TOKENS_COMPLEX then
+        if statement.type == OTHER_TOKENS and statement.subtype == OTHER_TOKENS_COMPLEX then
           record_chunk(statement_number, EXCLUSIVE)
         elseif first_statement_number == nil then
           first_statement_number = statement_number
