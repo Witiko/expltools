@@ -38,7 +38,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/skdoc/skdoc.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/skmath/skmath.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/skrapport/skrapport-size-common.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/skrapport/skrapport.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/problem.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/suanpan-l3/suanpan-l3.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty

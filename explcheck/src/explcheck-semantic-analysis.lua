@@ -49,8 +49,7 @@ local statement_types = {
   MESSAGE_DEFINITION = "message definition",
   MESSAGE_USE = "message use",
   OTHER_STATEMENT = "other statement",
-  OTHER_TOKENS_SIMPLE = "block of other simple tokens",
-  OTHER_TOKENS_COMPLEX = "block of other complex tokens",
+  OTHER_TOKENS = OTHER_TOKENS,
 }
 
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
@@ -65,8 +64,7 @@ local MESSAGE_DEFINITION = statement_types.MESSAGE_DEFINITION
 local MESSAGE_USE = statement_types.MESSAGE_USE
 
 local OTHER_STATEMENT = statement_types.OTHER_STATEMENT
-local OTHER_TOKENS_SIMPLE = statement_types.OTHER_TOKENS_SIMPLE
-local OTHER_TOKENS_COMPLEX = statement_types.OTHER_TOKENS_COMPLEX
+assert(OTHER_TOKENS == statement_types.OTHER_TOKENS)
 
 local statement_subtypes = {
   FUNCTION_DEFINITION = {
@@ -77,6 +75,10 @@ local statement_subtypes = {
     DIRECT = "direct " .. VARIABLE_DEFINITION,
     INDIRECT = "indirect " .. VARIABLE_DEFINITION,
   },
+  OTHER_TOKENS = {
+    SIMPLE = "block of other simple tokens",
+    COMPLEX = "block of other complex tokens",
+  }
 }
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
@@ -84,6 +86,9 @@ local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDI
 
 local VARIABLE_DEFINITION_DIRECT = statement_subtypes.VARIABLE_DEFINITION.DIRECT
 local VARIABLE_DEFINITION_INDIRECT = statement_subtypes.VARIABLE_DEFINITION.INDIRECT
+
+local OTHER_TOKENS_SIMPLE = statement_subtypes.OTHER_TOKENS.SIMPLE
+local OTHER_TOKENS_COMPLEX = statement_subtypes.OTHER_TOKENS.COMPLEX
 
 local statement_confidences = {
   DEFINITELY = 1,
@@ -1271,9 +1276,10 @@ local function analyze(states, file_number, options)
         }
         table.insert(statements, statement)
       elseif call.type == OTHER_TOKENS then  -- other tokens
-        local statement_type, confidence = classify_tokens(tokens, call.token_range)
+        local statement_subtype, confidence = classify_tokens(tokens, call.token_range)
         local statement = {
-          type = statement_type,
+          type = OTHER_TOKENS,
+          subtype = statement_subtype,
           call_range = call_range,
           confidence = confidence,
         }
@@ -1402,8 +1408,15 @@ local function report_issues(states, main_file_number, options)
       return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, map_forward)
     end
 
+    local already_processed_argument_tokens = {}
+
     -- Process an argument and record control sequence name usage and definitions.
     local function process_argument_tokens(argument)
+      if already_processed_argument_tokens[argument] then
+        return
+      end
+      already_processed_argument_tokens[argument] = true
+
       -- Record control sequence name usage.
       --- Extract text from tokens within c- and v-type arguments.
       if argument.specifier == "c" or argument.specifier == "v" then
@@ -1807,7 +1820,7 @@ local function report_issues(states, main_file_number, options)
           end
         end
       -- Process a block of unrecognized tokens.
-      elseif statement.type == OTHER_TOKENS_SIMPLE or statement.type == OTHER_TOKENS_COMPLEX then
+      elseif statement.type == OTHER_TOKENS then
         -- Record control sequence name usage by scanning all control sequence tokens.
         for _, token in token_range:enumerate(transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
@@ -1816,6 +1829,14 @@ local function report_issues(states, main_file_number, options)
         end
       else
         error('Unexpected statement type "' .. statement.type .. '"')
+      end
+      -- Record control sequence name usage and definitions in unanalyzed arguments.
+      for _, call in statement.call_range:enumerate(segment.calls) do
+        for _, argument in ipairs(call.arguments or {}) do
+          if not argument.analyzed then
+            process_argument_tokens(argument)
+          end
+        end
       end
     end
   end

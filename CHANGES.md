@@ -13,6 +13,8 @@ This version of explcheck has fixed the following bugs:
 - Fix a failure to load TOML files whose last line is a comment without
   a trailing newline. (reported by @Chipsterjulien in jonstoler/lua-toml#27
   and by @muzimuzhi in #165, fixed in #166)
+- Record control sequence name usage and definitions in unanalyzed arguments.
+  (reported by @dbitouze in #170 and #173, fixed in #174)
 
 #### Documentation
 
@@ -27,6 +29,8 @@ This version of explcheck has made the following changes to our continuous
 integration:
 
 - Run LuaLS even if Luacheck failed. (95f71a1)
+- Run one additional process to reduce the problem of idle CPUs near the end
+  while one worker grinds a difficult task. (#174)
 
 ## expltools 2026-02-05
 
