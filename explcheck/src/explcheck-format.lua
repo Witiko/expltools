@@ -223,15 +223,15 @@ local function print_summary(options, evaluation_results)
     return
   end
 
-  local num_files = evaluation_results.num_files
-  local num_warnings = evaluation_results.num_warnings
-  local num_errors = evaluation_results.num_errors
-
   if evaluation_results.num_failed_fast > 0 then
     io.write("\n\nSome files were not fully processed due to errors.")
     io.write("\nFix the errors and rerun the analysis to see additional issues.")
     io.write("\nUse `--verbose` to see affected files and additional details.")
   end
+
+  local num_files = evaluation_results.num_files
+  local num_warnings = evaluation_results.num_warnings
+  local num_errors = evaluation_results.num_errors
 
   io.write(string.format("\n\n%s ", colorize("Total:", BOLD)))
 
