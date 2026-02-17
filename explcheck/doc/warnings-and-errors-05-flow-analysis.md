@@ -161,58 +161,27 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
 -->
 
-### Expanding an unexpandable function {.e}
+### Expanding an unexpandable function {.e label=e509}
 An unexpandable function or conditional function is called within an `x`-type, `e`-type, or `f`-type argument.
 
-``` tex
-\cs_new_protected:N
-  \example_unexpandable:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-  }
-\cs_new:N
-  \module_foo:n
-  { #1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { x, e, f }
-\module_foo:n
-  { \example_unexpandable: }
-\module_foo:x
-  { \example_unexpandable: }  % error on this line
-\module_foo:e
-  { \example_unexpandable: }  % error on this line
-\module_foo:f
-  { \example_unexpandable: }  % error on this line
-```
+ /e509.tex
 
-### Fully-expanding a restricted-expandable function {.e}
+<!--
+
+  The same considerations apply as for the previous issue (E508).
+
+-->
+
+### Fully-expanding a restricted-expandable function {.e label=e510}
 An restricted-expadable function or conditional function is called within an `f`-type argument.
 
-``` tex
-\cs_new:N
-  \example_restricted_expandable:
-  {
-    \int_to_roman:n
-      { 1 + 2 }
-  }
-\cs_new:N
-  \module_foo:n
-  { #1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { x, e, f }
-\module_foo:n
-  { \example_restricted_expandable: }
-\module_foo:x
-  { \example_restricted_expandable: }
-\module_foo:e
-  { \example_restricted_expandable: }
-\module_foo:f
-  { \example_restricted_expandable: }  % error on this line
-```
+ /e510.tex
+
+<!--
+
+  The same considerations apply as for the previous two issues (E508 and E509).
+
+-->
 
 ### Defined an expandable function as protected {.w}
 A fully expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]

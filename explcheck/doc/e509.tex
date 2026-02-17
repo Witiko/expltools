@@ -1,0 +1,21 @@
+\cs_new_protected:N
+  \example_unexpandable:
+  {
+    \tl_set:Nn
+      \l_tmpa_tl
+      { bar }
+  }
+\cs_new:N
+  \module_foo:n
+  { #1 }
+\cs_generate_variant:Nn
+  \module_foo:n
+  { x, e, f }
+\module_foo:n
+  { \example_unexpandable: }
+\module_foo:x
+  { \example_unexpandable: }  % error on this line
+\module_foo:e
+  { \example_unexpandable: }  % error on this line
+\module_foo:f
+  { \example_unexpandable: }  % error on this line
