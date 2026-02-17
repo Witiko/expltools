@@ -96,38 +96,19 @@ A function or conditional function variant is defined before the base function h
 
 This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
-### Calling an undefined function {.e}
+### Calling an undefined function {.e label=e505}
 A function or conditional function (variant) is called before it has been defined or after it has been undefined.
 
-``` tex
-\module_foo:  % error on this line
-\cs_new:Nn
-  \module_foo:
-  { bar }
-```
+ /e505-01.tex
+ /e505-02.tex
+ /e505-03.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_undefine:N
-  \module_foo:
-\module_foo:  % error on this line
-```
+<!--
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\tl_set:Nn
-  \l_tmpa_tl
-  { baz }
-\module_foo:V  % error on this line
-  \l_tmpa_tl
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-```
+  This is the first issue in this section that we can determine and report this
+  issue from the `FUNCTION_CALL` edges alone.
+
+-->
 
 This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
