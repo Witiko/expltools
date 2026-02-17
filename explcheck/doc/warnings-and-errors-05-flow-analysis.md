@@ -149,15 +149,30 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
   We can't really report this issue at this moment at all.
 
-  First, in the semantic analysis, we'll need to determine flow-unaware
-  expandability at the level of individual function definitions, likely by
-  parsing l3kernel .dtx files to see which built-in functions are
-  non-expandable and restricted-expandable.
+  Here's what we'll need to do before we can report this issue:
 
-  Then, in the flow analysis, we'll need to determine flow-aware expandability
-  of function definitions as the minimum expandability over all function calls
-  within those definitions, recursively, using a "backwards may" analysis,
-  similar to the live variable  analysis that we'll need for issue W502.
+  First, in the semantic analysis, we'll need to determine in a flow-unaware
+  fashion which user-defined functions are definitely not fully-expandable. We
+  should be able to achieve this by looking at whether any built-in functions
+  withing the replacement texts of these functions are not fully-expandable,
+  likely by parsing l3kernel .dtx files and distilling this information in
+  `explcheck-latex3.lua`.
+
+  Incidentally, this should allow us to report a weaker version of this issue
+  during the semantic analysis.
+
+  Then, in the semantic analysis, we'll need to determine in a flow-aware
+  fashion which user-defined functions are definitely not fully-expandable. We
+  should be able to achieve this as follows
+
+  1. Functions that were already determined to be definitely not
+     fully-expandable during the semantic analysis are considered as such.
+
+  2. Other functions are considered definitely not fully-expandable if any
+     user-defined functions they call are definitely not fully-expandable.
+
+  To determine the latter, we should be able to use a "backwards may" data-flow
+  analysis, similar to the live variable analysis that we'll need for issue W502.
 
 -->
 
@@ -183,46 +198,60 @@ An restricted-expadable function or conditional function is called within an `f`
 
 -->
 
-### Defined an expandable function as protected {.w}
-A fully expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]
+### Defined an expandable function as protected {.w label=w511}
+A fully-expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]
 
-``` tex
-\cs_new_protected:Nn  % warning on this line
-  \example_expandable:
-  { foo }
-```
+ /w511-01.tex
+ /w511-02.tex
 
-``` tex
-\prg_new_protected_conditional:Nnn  % warning on this line
-  \example_expandable:
-  { T, F, TF }
-  { \prg_return_true: }
-```
+<!--
 
-### Defined an unexpandable function as unprotected {.w}
+  We can't really report this issue at this moment at all, similar to the
+  previous issues E508 through E510.
+
+  Here's what we'll need to do before we can report this issue:
+
+  First, in the semantic analysis, we'll need to determine which user-defined
+  functions are definitely fully-expandable, ignoring nested user-defined
+  function calls:
+
+  1. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
+     might not be fully-expandable.
+  
+  2. All built-in functions within a fully-expandable function's replacement
+     text must be fully-expandable.
+  
+  To determine the latter, we may need to parse l3kernel .dtx files and
+  distill this information in `explcheck-latex3.lua`.
+
+  Then, in the semantic analysis, we'll need to determine which user-defined
+  functions are definitely fully-expandable: A function is definitely
+  fully-expandable if all of the following conditions apply:
+
+  1. It is definitely fully-expandable, ignoring nested user-defined function
+     calls.
+  
+  2. All functions they call are either built-in or user-defined.
+  
+  3. Any user-defined functions they call are definitely fully-expandable.
+
+  To determine the third condition, we should be able to use a "backwards may"
+  data-flow analysis, similar to the live variable analysis that we'll need for
+  issue W502.
+
+-->
+
+### Defined an unexpandable function as unprotected {.w label=w512}
 An unexpandable or restricted-expandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 
-``` tex
-\cs_new:Nn  % warning on this line
-  \example_unexpandable:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-  }
-```
+ /w512-01.tex
+ /w512-02.tex
 
-``` tex
-\prg_new_conditional:Nnn  % warning on this line
-  \example_unexpandable:
-  { p, T, F, TF }
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-    \prg_return_true:
-  }
-```
+<!--
+
+  The same considerations apply as for the previous issues E508 through E510.
+
+-->
 
 ### Conditional function with no return value {.e}
 A conditional functions has no return value.
