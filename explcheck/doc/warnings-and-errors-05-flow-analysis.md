@@ -122,34 +122,23 @@ A function or conditional function is indirectly defined from a function that ha
 
 <!--
 
-  The same considerations apply as for the previous issue (E504).
+  The same considerations apply as for the issue E504.
 
 -->
 
 This check is a stronger version of <#indirect-function-definition-from-undefined-function> and should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
 
-### Setting a function before definition {.w}
+### Setting a function before definition {.w label=w507}
 A function is set before it has been defined or after it has been undefined.
 
-``` tex
-\cs_gset:N  % warning on this line
-  \module_foo:
-  { foo }
-\cs_new:Nn
-  \module_foo:
-  { bar }
-```
+ /e507-01.tex
+ /e507-02.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_undefine:N
-  \module_foo:
-\cs_gset:N  % warning on this line
-  \module_foo:
-  { foo }
-```
+<!--
+
+  The same considerations apply as for the issues E504 and E506.
+
+-->
 
 ### Unexpandable or restricted-expandable boolean expression {.e}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
