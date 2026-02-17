@@ -154,9 +154,9 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
   First, in the semantic analysis, we'll need to determine in a flow-unaware
   fashion which user-defined functions are definitely not fully-expandable. We
   should be able to achieve this by looking at whether any built-in functions
-  withing the replacement texts of these functions are not fully-expandable,
-  likely by parsing l3kernel .dtx files and distilling this information in
-  `explcheck-latex3.lua`.
+  within the top segments of the replacement texts of these functions are not
+  fully-expandable, likely by parsing l3kernel .dtx files and distilling this
+  information in `explcheck-latex3.lua`.
 
   Incidentally, this should allow us to report a weaker version of this issue
   during the semantic analysis.
@@ -317,26 +317,33 @@ A comparison code [@latexteam2024interfaces, Section 6.1] has no return value.
 
 The above example has been taken from @latexteam2024interfaces [Chapter 6].
 
-### Paragraph token in the parameter of a "nopar" function {.e}
+### Paragraph token in the parameter of a "nopar" function {.e label=e516}
 An argument that contains `\par` tokens may reach a function with the "nopar" restriction.
 
-``` tex
-\cs_new_nopar:Nn
-  \example_foo:n
-  { #1 }
-\cs_new:nn
-  \example_bar:n
-  {
-    \example_foo:n
-      { #1 }
-  }
-\example_bar:n
-  {
-    foo
-    \par  % error on this line
-    bar
-  }
-```
+ /e516.tex
+
+<!--
+
+  We can't really report this issue at this moment at all.
+
+  Here's what we'll need to do before we can report this issue:
+
+  First, in the semantic analysis, we'll need to determine which variables
+  and constants, user-defined functions, and user-defined function calls
+  definitely contain `\par` tokens in their unexpanded values, replacement
+  texts, and arguments, respectively.
+
+  Then, in the flow analysis, we'll need to determine which variables
+  and constants, user-defined functions, and user-defined function calls
+  definitely contain `\par` tokens in their expanded values, replacement texts,
+  and unexpanded arguments, respectively, similar to the previous issue E508.
+
+  Finally, still in the flow analysis, we'll need to determine for every
+  user-defined function call argument whether it may reach a user-defined
+  "nopar" function. To determine this, we should be able to use a "forward may"
+  data-flow analysis, similar to the reaching definitions analysis.
+
+-->
 
 ## Variables and constants
 
