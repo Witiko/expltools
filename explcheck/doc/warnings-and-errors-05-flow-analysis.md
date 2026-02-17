@@ -112,74 +112,19 @@ A function or conditional function (variant) is called before it has been define
 
 This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
-### Indirect function definition from an undefined function {.e}
+### Indirect function definition from an undefined function {.e label=e506}
 A function or conditional function is indirectly defined from a function that has yet to be defined or after it has been undefined.
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_new_eq:NN  % error on this line
-  \module_baz:n
-  \module_bar:n
-\cs_new_eq:NN
-  \module_bar:n
-  \module_foo:n
-\module_baz:n
-  { foo }
-```
+ /e506-01.tex
+ /e506-02.tex
+ /e506-03.tex
+ /e506-04.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_new_eq:NN
-  \module_bar:n
-  \module_foo:n
-\cs_undefine:N
-  \module_bar:n
-\cs_new_eq:NN  % error on this line
-  \module_baz:n
-  \module_bar:n
-\module_baz:n
-  { foo }
-```
+<!--
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_new_eq:NN  % error on this line
-  \module_baz:nTF
-  \module_bar:nTF
-\cs_new_eq:NN
-  \module_bar:nTF
-  \module_foo:nTF
-\module_baz:nTF
-  { foo }
-  { bar }
-  { baz }
-```
+  The same considerations apply as for the previous issue (E504).
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_new_eq:NN
-  \module_bar:nTF
-  \module_foo:nTF
-\cs_undefine:N
-  \module_bar:nTF
-\cs_new_eq:NN  % error on this line
-  \module_baz:nTF
-  \module_bar:nTF
-\module_baz:nTF
-  { foo }
-  { bar }
-  { baz }
-```
+-->
 
 This check is a stronger version of <#indirect-function-definition-from-undefined-function> and should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
 
