@@ -140,39 +140,26 @@ A function is set before it has been defined or after it has been undefined.
 
 -->
 
-### Unexpandable or restricted-expandable boolean expression {.e}
+### Unexpandable or restricted-expandable boolean expression {.e label=e508}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
 
-``` tex
-\cs_new_protected:N
-  \example_unexpandable:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-    \c_true_bool
-  }
-\cs_new:N
-  \example_restricted_expandable:
-  {
-    \bool_do_while:Nn
-      \c_false_bool
-      { }
-    \c_true_bool
-  }
-\cs_new_protected:N
-  \example_expandable:
-  { \c_true_bool }
-\bool_set:Nn
-  \l_tmpa_bool
-  { \example_unexpandable: }  % error on this line
-\bool_set:Nn
-  \l_tmpa_bool
-  { \example_restricted_expandable: }  % error on this line
-\bool_set:Nn
-  \l_tmpa_bool
-  { \example_expandable: }
-```
+ /e508.tex
+
+<!--
+
+  We can't really report this issue at this moment at all.
+
+  First, in the semantic analysis, we'll need to determine flow-unaware
+  expandability at the level of individual function definitions, likely by
+  parsing l3kernel .dtx files to see which built-in functions are
+  non-expandable and restricted-expandable.
+
+  Then, in the flow analysis, we'll need to determine flow-aware expandability
+  of function definitions as the minimum expandability over all function calls
+  within those definitions, recursively, using a "backwards may" analysis,
+  similar to the live variable  analysis that we'll need for issue W502.
+
+-->
 
 ### Expanding an unexpandable function {.e}
 An unexpandable function or conditional function is called within an `x`-type, `e`-type, or `f`-type argument.
