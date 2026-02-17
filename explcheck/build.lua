@@ -121,8 +121,7 @@ function main(target, names)
 end
 
 function typeset(filename, dir)
-  local lfs = require("lfs")
-  if get_suffix(filename) == ".tex" and not file_exists(testfiledir .. "/" .. jobname(filename) .. ".tex") then
+  if get_suffix(filename) == ".tex" and not filename:match("^[estw]%d%d%d%-?%d?%d?%.tex") then
     -- Use Latexmk to typeset the documentation.
     return run(dir, "latexmk " .. jobname(filename))
   else
