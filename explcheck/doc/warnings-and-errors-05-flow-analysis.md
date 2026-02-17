@@ -131,8 +131,8 @@ This check is a stronger version of <#indirect-function-definition-from-undefine
 ### Setting a function before definition {.w label=w507}
 A function is set before it has been defined or after it has been undefined.
 
- /e507-01.tex
- /e507-02.tex
+ /w507-01.tex
+ /w507-02.tex
 
 <!--
 
