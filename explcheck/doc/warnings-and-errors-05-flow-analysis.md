@@ -25,66 +25,19 @@ A function or conditional function is defined multiple times.
 
 -->
 
-### Multiply defined function variant {.w}
+### Multiply defined function variant {.w label=w501}
 A function or conditional function variant is defined multiple times.
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-\cs_generate_variant:Nn  % warning on this line
-  \module_foo:n
-  { o, V }
-```
+ /w501-01.tex
+ /w501-02.tex
+ /w501-03.tex
+ /w501-04.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-\cs_undefine:N
-  \module_foo:V
-\cs_generate_variant:Nn
-  \module_foo:n
-  { o, V }
-```
+<!--
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { V }
-  { TF }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \module_foo:n
-  { o, V }
-  { TF }
-```
+  Same as issue E500.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { V }
-  { TF }
-\cs_undefine:N
-  \module_foo:VTF
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { o, V }
-  { TF }
-```
+-->
 
 ### Unused private function {.w}
 A private function or conditional function is defined but all its calls are unreachable.[^1]

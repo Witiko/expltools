@@ -1,0 +1,11 @@
+\cs_new:Nn
+  \module_foo:n
+  { bar~#1 }
+\cs_generate_variant:Nn
+  \module_foo:n
+  { V }
+\cs_undefine:N
+  \module_foo:V
+\cs_generate_variant:Nn
+  \module_foo:n
+  { o, V }
