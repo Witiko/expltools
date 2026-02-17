@@ -35,48 +35,36 @@ A function or conditional function variant is defined multiple times.
 
 <!--
 
-  Same as issue E500.
+  The same considerations apply as for issue E500.
 
 -->
 
-### Unused private function {.w}
-A private function or conditional function is defined but all its calls are unreachable.[^1]
+### Unused private function {.w label=w502}
+A private function or conditional function is defined but unused.
 
- [^1]: Code is unreachable if it is only reachable through private functions which that are either unused or also unreachable.
+ /w502.tex
 
-``` tex
-\cs_new:Nn  % warning on this line
-  \__module_foo:
-  { bar }
-\cs_new:Nn
-  \__module_baz:
-  { \__module_foo: }
-```
+<!--
+
+  This issue will require a live variable analysis, in addition to the
+  reaching definitions analysis. However, since liveness likely won't
+  affect our ability to determine reaching definitions, it might make
+  sense to make it into a separate substep.
+
+-->
 
 This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
-### Unused private function variant {.w}
-A private function or conditional function variant is defined but all its calls are unreachable.
+### Unused private function variant {.w label=w503}
+A private function or conditional function variant is defined but unused.
 
-``` tex
-\cs_new:Nn
-  \__module_foo:n
-  { bar~#1 }
-\cs_new:Nn
-  \__module_baz:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { baz }
-    \__module_foo:V
-      \l_tmpa_tl
-  }
-\cs_generate_variant:Nn  % warning on this line
-  \__module_foo:n
-  { V }
-\__module_foo:n
-  { baz }
-```
+ /w503.tex
+
+<!--
+
+  The same considerations apply as for issue W502.
+
+-->
 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
@@ -480,7 +468,7 @@ An argument that contains `\par` tokens may reach a function with the "nopar" re
 ## Variables and constants
 
 ### Unused variable or constant {.w}
-A variable or a constant is declared and perhaps defined but all its uses are unreachable.
+A variable or a constant is declared and perhaps defined but unused.
 
 ``` tex
 \tl_new:N  % warning on this line
@@ -553,7 +541,7 @@ A variable or constant is declared multiple times.
 ## Messages
 
 ### Unused message {.w}
-A message is defined but all its uses are unreachable.
+A message is defined but unused.
 
 ``` tex
 \msg_new:nnn  % warning on this line
