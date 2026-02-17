@@ -3,78 +3,27 @@ In the flow analysis step, the expl3 analysis tool determines compiler-theoretic
 
 ## Functions and conditional functions
 
-### Multiply defined function {.e}
+### Multiply defined function {.e label=e500}
 A function or conditional function is defined multiple times.
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_new:Nn  % error on this line
-  \module_foo:
-  { bar }
-```
+ /e500-01.tex
+ /e500-02.tex
+ /e500-03.tex
+ /e500-04.tex
+ /e500-05.tex
+ /e500-06.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_undefine:N
-  \module_foo:
-\cs_new:Nn
-  \module_foo:
-  { bar }
-```
+<!--
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_gset:Nn
-  \module_foo:
-  { bar }
-```
+  We can't really report this issue from the `FUNCTION_CALL` edges alone.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_new_conditional:Nnn  % error on this line
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
+  Instead, we may need to report this issue inside the inner loop of reaching
+  definitions whenever we are processing a function definition statement.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_undefine:N
-  \module_foo_p:
-\cs_undefine:N
-  \module_foo:T
-\cs_undefine:N
-  \module_foo:F
-\cs_undefine:N
-  \module_foo:TF
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
+  We need to take into account the `maybe_redefinition` attribute of
+  `FUNCTION_DEFINITION` statements to differentiate between `new` and `set`.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_gset_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
+-->
 
 ### Multiply defined function variant {.w}
 A function or conditional function variant is defined multiple times.
