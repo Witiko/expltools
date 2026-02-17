@@ -17,8 +17,10 @@ A function or conditional function is defined multiple times.
 
   We can't really report this issue from the `FUNCTION_CALL` edges alone.
 
-  Instead, we may need to report this issue inside the inner loop of reaching
-  definitions whenever we are processing a function definition statement.
+  Instead, we will need to report this issue either inside the inner loop
+  of reaching definitions whenever we are processing a function definition
+  statement or after the outer loop at the end of the function
+  `draw_group_wide_dynamic_edges()`.
 
   We need to take into account the `maybe_redefinition` attribute of
   `FUNCTION_DEFINITION` statements to differentiate between `new` and `set`.
@@ -35,7 +37,7 @@ A function or conditional function variant is defined multiple times.
 
 <!--
 
-  The same considerations apply as for issue E500.
+  The same considerations apply as for the previous issue (E500).
 
 -->
 
@@ -46,10 +48,12 @@ A private function or conditional function is defined but unused.
 
 <!--
 
-  This issue will require a live variable analysis, in addition to the
-  reaching definitions analysis. However, since liveness likely won't
-  affect our ability to determine reaching definitions, it might make
-  sense to make it into a separate substep.
+  We can't really report this issue from the `FUNCTION_CALL` edges alone
+  either, as is the case for the previous two issues. Furthermore, this
+  issue will require a live variable analysis, in addition to the reaching
+  definitions analysis. However, since liveness likely won't affect our ability
+  to determine reaching definitions, it might make sense to make it into a
+  separate substep.
 
 -->
 
@@ -62,78 +66,33 @@ A private function or conditional function variant is defined but unused.
 
 <!--
 
-  The same considerations apply as for issue W502.
+  The same considerations apply as for the previous issue (W502).
 
 -->
 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
-### Function variant for an undefined function {.e}
+### Function variant for an undefined function {.e label=e504}
 A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-```
+ /e504-01.tex
+ /e504-02.tex
+ /e504-03.tex
+ /e504-04.tex
+ /e504-05.tex
+ /e504-06.tex
 
-``` tex
-\cs_generate_variant:Nn  % error on this line
-  \module_foo:n
-  { V }
-\cs_new:Nn
-  \module_foo:n
-  { bar }
-```
+<!--
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar }
-\cs_undefine:N
-  \module_foo:n
-\cs_generate_variant:Nn  % error on this line
-  \module_foo:n
-  { V }
-```
+  As with all the previous issues, we can't report this issue from the
+  `FUNCTION_CALL` edges alone.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { V }
-  { TF }
-```
+  Instead, we will need to report this issue either inside the inner loop
+  of reaching definitions whenever we are processing a function variant
+  definition statement or after the outer loop at the end of the function
+  `draw_group_wide_dynamic_edges()`.
 
-``` tex
-\prg_generate_conditional_variant:Nnn  % error on this line
-  \module_foo:n
-  { V }
-  { TF }
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
-
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_undefine:N
-  \module_foo:nTF
-\prg_generate_conditional_variant:Nnn  % error on this line
-  \module_foo:n
-  { V }
-  { TF }
-```
+-->
 
 This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
