@@ -161,7 +161,7 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
   Incidentally, this should allow us to report a weaker version of this issue
   during the semantic analysis.
 
-  Then, in the semantic analysis, we'll need to determine in a flow-aware
+  Then, in the flow analysis, we'll need to determine in a flow-aware
   fashion which user-defined functions are definitely not fully-expandable. We
   should be able to achieve this as follows
 
@@ -172,7 +172,8 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
      user-defined functions they call are definitely not fully-expandable.
 
   To determine the latter, we should be able to use a "backwards may" data-flow
-  analysis, similar to the live variable analysis that we'll need for issue W502.
+  analysis, similar to the live variable analysis that we'll need for the previous
+  issue W502.
 
 -->
 
@@ -212,32 +213,29 @@ A fully-expandable function or conditional function is defined using a creator f
   Here's what we'll need to do before we can report this issue:
 
   First, in the semantic analysis, we'll need to determine which user-defined
-  functions are definitely fully-expandable, ignoring nested user-defined
-  function calls:
+  functions are definitely fully-expandable, ignoring nested function calls:
 
   1. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
      might not be fully-expandable.
   
-  2. All built-in functions within a fully-expandable function's replacement
-     text must be fully-expandable.
+  2. All calls to built-in functions within the top segment of a
+     fully-expandable function's replacement text must be fully-expandable.
   
   To determine the latter, we may need to parse l3kernel .dtx files and
   distill this information in `explcheck-latex3.lua`.
 
-  Then, in the semantic analysis, we'll need to determine which user-defined
+  Then, in the flow analysis, we'll need to determine which user-defined
   functions are definitely fully-expandable: A function is definitely
   fully-expandable if all of the following conditions apply:
 
-  1. It is definitely fully-expandable, ignoring nested user-defined function
-     calls.
-  
-  2. All functions they call are either built-in or user-defined.
-  
-  3. Any user-defined functions they call are definitely fully-expandable.
+  1. It is definitely fully-expandable, ignoring nested function calls.
+  2. All functions from nested calls are either built-in or user-defined.
+  3. All user-defined functions they call are definitely fully-expandable.
 
   To determine the third condition, we should be able to use a "backwards may"
   data-flow analysis, similar to the live variable analysis that we'll need for
-  issue W502.
+  the previous issue W502, as well as the expandability analysis that we'll
+  need for the previous issues E508 through E510.
 
 -->
 
@@ -253,53 +251,69 @@ An unexpandable or restricted-expandable function or conditional function is def
 
 -->
 
-### Conditional function with no return value {.e}
+### Conditional function with no return value {.e label=e513}
 A conditional functions has no return value.
 
-``` tex
-\prg_new_conditional:Nnn  % error on this line
-  \example_no_return_value:
-  { p, T, F, TF }
-  { foo }
-```
+ /e513-01.tex
+ /e513-02.tex
 
-``` tex
-\prg_new_conditional:Nnn
-  \example_has_return_value:
-  { p, T, F, TF }
-  { \example_foo: }
-\cs_new:Nn
-  \example_foo:
-  { \prg_return_true: }
-```
+<!--
 
-### Comparison code with no return value {.e}
+  We can't really report this issue at this moment at all.
+
+  Here's what we'll need to do before we can report this issue:
+
+  First, in the semantic analysis, we'll need to determine which user-defined
+  functions definitely have no return value, ignoring nested function calls:
+
+  1. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
+     might have a return value.
+  
+  2. A function that contains either `\prg_return_true:` or `\prg_return_false:`
+     within the top segment definitely has a return value.
+
+  Then, in the flow analysis, we'll need to determine which user-defined
+  functions definitely have no return value: A function definitely has no
+  return value if all of the following conditions apply:
+
+  1. It definitely has no return value, ignoring nested function calls.
+  2. All functions from nested calls are user-defined.
+  3. All user-defined functions they call definitely have no return value.
+
+  To determine the third condition, we should be able to use a "backwards may"
+  data-flow analysis, similar to the live variable analysis that we'll need for
+  issue W502, as well as the expandability analysis that we'll need for the
+  previous issues E508 through E510, and W511 and W512.
+
+-->
+
+### Conditional function with no return value {.e label=e514}
+A conditional functions has no return value.
+
+ /e514-01.tex
+ /e514-02.tex
+
+<!--
+
+  The same considerations apply as for the previous issue (E513).
+
+-->
+
+### Comparison code with no return value {.e label=e515}
 A comparison code [@latexteam2024interfaces, Section 6.1] has no return value.
 
-``` tex
-\clist_set:Nn
-  \l_foo_clist
-  { 3 , 01 , -2 , 5 , +1 }
-\clist_sort:Nn  % error on this line
-  \l_foo_clist
-  { foo }
-```
+ /e515-01.tex
+ /e515-02.tex
 
-``` tex
-\clist_set:Nn
-  \l_foo_clist
-  { 3 , 01 , -2 , 5 , +1 }
-\clist_sort:Nn
-  \l_foo_clist
-  { \example_foo: }
-\cs_new:Nn
-  \example_foo:
-  {
-    \int_compare:nNnTF { #1 } > { #2 }
-      { \sort_return_swapped: }
-      { \sort_return_same: }
-  }
-```
+<!--
+
+  The same considerations apply as for the previous two issues (E513 and E514).
+
+  Unlike these issues, comparison codes use `\sort_return_same:` and
+  `\sort_return_swapped:` rather than `prg_return_true:` and
+  `\prg_return_false:`.
+
+-->
 
 The above example has been taken from @latexteam2024interfaces [Chapter 6].
 
