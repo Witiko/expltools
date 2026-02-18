@@ -12,6 +12,16 @@ This version of explcheck has made the following new enhancements:
   fixing the current errors after we have failed fast. (reported by @dbitouze
   and @muzimuzhi in #170 and #171, fixed in #175)
 
+- Add more support for semantic analysis. (#176)
+
+  This adds support for the following issues from Section 5.1 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+   1. E505 (Calling an undefined function)
+
+  Flow analysis is now enabled by default for all package files with at least 95%
+  code understanding.
+
 #### Fixes
 
 This version of explcheck has fixed the following bugs:
