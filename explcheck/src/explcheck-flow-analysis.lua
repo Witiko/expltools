@@ -1124,6 +1124,11 @@ local function report_issues(states, file_number, _)
     return _index_edge(states, edge_index, index_key, edge)
   end
 
+  -- Check whether a file in the current group reached the flow analysis.
+  local function file_reached_flow_analysis(file_number)
+    return _file_reached_flow_analysis(states, file_number)
+  end
+
   -- Collect a list of well-behaved function call statements.
   local definite_function_call_list = {}
   for _, segment in ipairs(results.parts or {}) do
@@ -1138,7 +1143,19 @@ local function report_issues(states, file_number, _)
         if not is_well_behaved(statement) then
           goto next_statement
         end
-        table.insert(definite_function_call_list, {chunk, statement_number})
+        -- Do not check statements originating from files that did not reach the flow analysis.
+        assert(statement.definition_file_numbers ~= nil)
+        assert(#statement.definition_file_numbers > 0)
+        local all_definitions_reached_flow_analysis = true
+        for _, definition_file_number in ipairs(statement.definition_file_numbers) do
+          if not file_reached_flow_analysis(definition_file_number) then
+            all_definitions_reached_flow_analysis = false
+            break
+          end
+        end
+        if all_definitions_reached_flow_analysis then
+          table.insert(definite_function_call_list, {chunk, statement_number})
+        end
         ::next_statement::
       end
     end

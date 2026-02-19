@@ -1375,7 +1375,7 @@ local function report_issues(states, main_file_number, options)
   ---- Collect information about symbols that were definitely defined.
   local defined_private_function_texts = {}
   local called_functions_and_variants = {}
-  local defined_csname_texts, defined_csname_texts_anywhere = {}, {}
+  local defined_csname_texts, defined_csname_texts_anywhere, defined_csname_texts_anywhere_file_numbers = {}, {}, {}
   local defined_private_function_variant_texts = {}
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
@@ -1391,7 +1391,7 @@ local function report_issues(states, main_file_number, options)
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_private_function_variant_pattern = parsers.fail
-  local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
+  local maybe_defined_csname_texts, maybe_defined_csname_texts_anywhere, maybe_defined_csname_pattern = {}, {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
   local maybe_declared_variable_csname_texts = {}
@@ -1507,11 +1507,13 @@ local function report_issues(states, main_file_number, options)
                 -- Record potential function definitions.
                 if lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil then
                   maybe_defined_csname_texts[next_token.payload] = true
+                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
                 end
                 -- Record potential variable declarations and definitions.
                 if lpeg.match(parsers.expl3_variable_declaration_csname, token.payload) ~= nil then
                   maybe_declared_variable_csname_texts[next_token.payload] = true
                   maybe_defined_csname_texts[next_token.payload] = true
+                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
                 end
                 local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
                 if variable_definition ~= nil then
@@ -1520,6 +1522,7 @@ local function report_issues(states, main_file_number, options)
                     maybe_declared_variable_csname_texts[next_token.payload] = true
                   end
                   maybe_defined_csname_texts[next_token.payload] = true
+                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
                 end
               -- Record message name definitions and uses.
               elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the module name
@@ -1626,6 +1629,10 @@ local function report_issues(states, main_file_number, options)
           end
           if statement.confidence == DEFINITELY then
             defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+            if defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
+              defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+            end
+            defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number] = true
           end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
@@ -1671,6 +1678,10 @@ local function report_issues(states, main_file_number, options)
           end
           if statement.confidence == DEFINITELY then
             defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+            if defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
+              defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+            end
+            defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number] = true
           end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         end
@@ -1966,7 +1977,7 @@ local function report_issues(states, main_file_number, options)
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
-    elseif defined_csname_texts_anywhere[csname] or maybe_defined_csname_texts[csname] then
+    elseif defined_csname_texts_anywhere[csname] or maybe_defined_csname_texts_anywhere[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
       statement.used_csname = {
@@ -1974,10 +1985,19 @@ local function report_issues(states, main_file_number, options)
         transcript = csname,
         type = TEXT
       }
-      if defined_csname_texts_anywhere[csname] then
-        statement.confidence = DEFINITELY
-      elseif maybe_defined_csname_texts[csname] then
+      if maybe_defined_csname_texts_anywhere[csname] then
+        -- If there are low-confidence function definitions for this control sequence, make the statement low-confidence also.
         statement.confidence = MAYBE
+      elseif defined_csname_texts_anywhere[csname] then
+        statement.confidence = DEFINITELY
+        -- For definite function calls, record also the file numbers of the definite function definitions.
+        assert(defined_csname_texts_anywhere_file_numbers[csname] ~= nil)
+        statement.definition_file_numbers = {}
+        for definition_file_number, _ in pairs(defined_csname_texts_anywhere_file_numbers[csname]) do
+          table.insert(statement.definition_file_numbers, definition_file_number)
+        end
+        assert(#statement.definition_file_numbers > 0)
+        table.sort(statement.definition_file_numbers)
       else
         error("Failed to determine statement confidence")
       end
