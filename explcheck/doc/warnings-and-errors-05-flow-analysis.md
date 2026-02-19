@@ -103,13 +103,6 @@ A function or conditional function (variant) is called before it has been define
  /e505-02.tex
  /e505-03.tex
 
-<!--
-
-  This is the first issue in this section that we can determine and report this
-  issue from the `FUNCTION_CALL` edges alone.
-
--->
-
 This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
 ### Indirect function definition from an undefined function {.e label=e506}
