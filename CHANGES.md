@@ -12,12 +12,6 @@ This version of explcheck has made the following new enhancements:
   fixing the current errors after we have failed fast. (reported by @dbitouze
   and @muzimuzhi in #170 and #171, fixed in #175)
 
-- Support `\cs_undefine:N` and consider simple constant/variable definition and
-  message texts well-understood. (#176)
-
-  This has improved code coverage from ca 21% to 22% of all expl3 tokens on
-  TeX Live 2024.
-
 - Add more support for semantic analysis. (#176)
 
   This adds support for the following issues from Section 5.1 of the document
@@ -27,6 +21,24 @@ This version of explcheck has made the following new enhancements:
 
   Flow analysis is now enabled by default for all package files with at least 95%
   code understanding.
+
+#### Code understanding
+
+This version of explcheck introduces the following changes to code understanding
+and to how it evaluates its own level of confidence:
+
+- Add support for `\cs_undefine:N`. (#176)
+- Treat simple constant and variable definitions, as well as message texts, as
+  well-understood. (#176)
+- Consider `FUNCTION_CALL` statements high-confidence and well-understood only
+  if there are no potential low-confidence definitions of the called control
+  function. (#176)
+
+These changes have had a mixed effect on the [code coverage][]. Overall, it has
+remained mostly stable, but coverage on the current TeX Live 2025 snapshot
+(2026-02-19) now rounds to 19%, down from the previous 20%.
+
+ [code coverage]: https://witiko.github.io/Expl3-Linter-11/#code-coverage
 
 #### Fixes
 
