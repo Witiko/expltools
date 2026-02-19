@@ -12,6 +12,12 @@ This version of explcheck has made the following new enhancements:
   fixing the current errors after we have failed fast. (reported by @dbitouze
   and @muzimuzhi in #170 and #171, fixed in #175)
 
+- Support `\cs_undefine:N` and consider simple constant/variable definition and
+  message texts well-understood. (#176)
+
+  This has improved code coverage from ca 21% to 22% of all expl3 tokens on
+  TeX Live 2024.
+
 - Add more support for semantic analysis. (#176)
 
   This adds support for the following issues from Section 5.1 of the document
