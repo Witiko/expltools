@@ -1109,6 +1109,11 @@ local function analyze(states, file_number, options)
             if definition_text_argument == nil then  -- we couldn't extract the definition text, give up
               goto other_statement
             end
+            -- determine whether the definition text is well-understood
+            local statement_subtype, _ = classify_tokens(tokens, definition_text_argument.token_range)
+            if statement_subtype == OTHER_TOKENS_SIMPLE then
+              definition_text_argument.analyzed = true
+            end
             -- determine the token range of the definition excluding the definition text
             local definition_text_token_range = definition_text_argument.outer_token_range or definition_text_argument.token_range
             local definition_token_range = new_range(token_range:start(), definition_text_token_range:start(), EXCLUSIVE, #tokens)
@@ -1234,6 +1239,11 @@ local function analyze(states, file_number, options)
           end
           assert(message_argument ~= nil)
           message_argument.analyzed = true
+          -- determine whether the message text is well-understood
+          local statement_subtype, _ = classify_tokens(tokens, text_argument.token_range)
+          if statement_subtype == OTHER_TOKENS_SIMPLE then
+            text_argument.analyzed = true
+          end
           -- determine the token range of the definition excluding the message text
           local text_token_range = text_argument.outer_token_range or text_argument.token_range
           local definition_token_range = new_range(token_range:start(), text_token_range:start(), EXCLUSIVE, #tokens)
