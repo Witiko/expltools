@@ -390,6 +390,12 @@ A variable or constant is used before it has been declared.
   { foo }
 ```
 
+<!--
+
+  TODO: Also check V-type arguments, both here and in <#using-undeclared-variable-or-constant>.
+
+-->
+
 This check is a stronger version of <#using-undeclared-variable-or-constant> and should only be emitted if <#using-undeclared-variable-or-constant> has not previously been emitted for this variable or constant.
 
 ### Multiply declared variable or constant {.e}
