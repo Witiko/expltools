@@ -544,3 +544,12 @@ imported_prefixes = ["hooks"]
 
 [package.expltools]
 expl3_detection_strategy = "never"
+
+[package.antanilipsum]
+ignored_issues = ["e505"]
+
+[package.econlipsum]
+ignored_issues = ["e505"]
+
+[package.kantlipsum]
+ignored_issues = ["e505"]
