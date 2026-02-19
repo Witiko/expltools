@@ -1126,7 +1126,7 @@ local function report_issues(states, file_number, _)
 
   -- Collect a list of well-behaved function call statements.
   local function_call_list = {}
-  for _, segment in ipairs(results.segments or {}) do
+  for _, segment in ipairs(results.parts or {}) do
     for _, chunk in ipairs(segment.chunks or {}) do
       for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
         if statement.type ~= FUNCTION_CALL then
