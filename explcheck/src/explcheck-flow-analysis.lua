@@ -1125,21 +1125,20 @@ local function report_issues(states, file_number, _)
   end
 
   -- Collect a list of well-behaved function call statements.
-  local function_call_list = {}
+  local definite_function_call_list = {}
   for _, segment in ipairs(results.parts or {}) do
     for _, chunk in ipairs(segment.chunks or {}) do
       for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
         if statement.type ~= FUNCTION_CALL then
           goto next_statement
         end
+        if statement.confidence ~= DEFINITELY then
+          goto next_statement
+        end
         if not is_well_behaved(statement) then
           goto next_statement
         end
-        if statement.type == FUNCTION_CALL then
-          table.insert(function_call_list, {chunk, statement_number})
-        else
-          error('Unexpected statement type "' .. statement.type .. '"')
-        end
+        table.insert(definite_function_call_list, {chunk, statement_number})
         ::next_statement::
       end
     end
@@ -1174,7 +1173,7 @@ local function report_issues(states, file_number, _)
   end
 
   -- Report calling an undefined function.
-  for _, chunk_and_statement_number in ipairs(function_call_list) do
+  for _, chunk_and_statement_number in ipairs(definite_function_call_list) do
     local chunk, statement_number = table.unpack(chunk_and_statement_number)
     if function_call_edge_index[chunk] == nil or function_call_edge_index[chunk][statement_number] == nil then
       local statement = _get_statement(chunk, statement_number)

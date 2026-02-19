@@ -1624,7 +1624,9 @@ local function report_issues(states, main_file_number, options)
           if is_main_file then
             table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
           end
-          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          if statement.confidence == DEFINITELY then
+            defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1667,7 +1669,9 @@ local function report_issues(states, main_file_number, options)
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
           end
-          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          if statement.confidence == DEFINITELY then
+            defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         end
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
