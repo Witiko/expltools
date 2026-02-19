@@ -1110,8 +1110,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 end
 
 -- Report any issues.
-local function report_issues(states, file_number, _)
-  local state = states[file_number]
+local function report_issues(states, main_file_number, _)
+  local state = states[main_file_number]
 
   local content = state.content
   local results = state.results
@@ -1147,8 +1147,8 @@ local function report_issues(states, file_number, _)
         assert(statement.definition_file_numbers ~= nil)
         assert(#statement.definition_file_numbers > 0)
         local all_definitions_reached_flow_analysis = true
-        for _, definition_file_number in ipairs(statement.definition_file_numbers) do
-          if not file_reached_flow_analysis(definition_file_number) then
+        for _, file_number in ipairs(statement.definition_file_numbers) do
+          if not file_reached_flow_analysis(file_number) then
             all_definitions_reached_flow_analysis = false
             break
           end
@@ -1172,7 +1172,7 @@ local function report_issues(states, file_number, _)
   -- Get the byte range of a statement.
   local function statement_to_byte_range(chunk, statement_number)
     local segment = chunk.segment
-    assert(segment.location.file_number == file_number)
+    assert(segment.location.file_number == main_file_number)
 
     local part_number = segment.location.part_number
 
