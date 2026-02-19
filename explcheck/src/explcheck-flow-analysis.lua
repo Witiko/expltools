@@ -27,6 +27,7 @@ local TEXT = csname_types.TEXT
 
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
+local FUNCTION_UNDEFINITION = statement_types.FUNCTION_UNDEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
@@ -442,14 +443,16 @@ local function _index_edge(states, edge_index, index_key, edge)
   table.insert(edge_index[chunk][statement_number], edge)
 end
 
--- Check whether a function (variant) definition or a function call statement is "well-behaved". A statement is well-behaved
--- when we know its control sequence names precisely and not just as a probabilistic pattern.
+-- Check whether a function (variant) definition or a function call statement is "well-behaved".
+-- A statement is well-behaved when we know its control sequence names precisely and not just as a probabilistic pattern.
 local function is_well_behaved(statement)
   local result
   if statement.type == FUNCTION_CALL then
     result = statement.used_csname.type == TEXT
   elseif statement.type == FUNCTION_DEFINITION then
     result = statement.defined_csname.type == TEXT
+  elseif statement.type == FUNCTION_UNDEFINITION then
+    result = statement.undefined_csname.type == TEXT
   elseif statement.type == FUNCTION_VARIANT_DEFINITION then
     result = statement.base_csname.type == TEXT or statement.defined_csname.type == TEXT
   else
@@ -571,7 +574,12 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
       -- Well-behaved statements are interesting.
       local statement = get_statement(chunk, statement_number)
-      if (statement.type == FUNCTION_CALL or statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
+      if (
+            statement.type == FUNCTION_CALL or
+            statement.type == FUNCTION_DEFINITION or
+            statement.type == FUNCTION_UNDEFINITION or
+            statement.type == FUNCTION_VARIANT_DEFINITION
+          )
           and is_well_behaved(statement) then
         return true
       end
@@ -799,13 +807,24 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
       end
 
-      -- Determine the definitions from the current statement.
+      -- Determine the definitions and undefinitions from the current statement.
       local current_definition_list = {}
       local invalidated_statement_index, invalidated_statement_list = {}, {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local statement = get_statement(chunk, statement_number)
-        if (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and is_well_behaved(statement) then
+        if statement.type ~= FUNCTION_DEFINITION and
+            statement.type ~= FUNCTION_UNDEFINITION and
+            statement.type ~= FUNCTION_VARIANT_DEFINITION then
+          goto next_statement
+        end
+        if not is_well_behaved(statement) then
+          goto next_statement
+        end
+        local defined_or_undefined_csname
+        if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+          -- Record function and function variant definitions.
           assert(statement.defined_csname.type == TEXT)
+          defined_or_undefined_csname = statement.defined_csname.payload
           local definition = {
             csname = statement.defined_csname.payload,
             confidence = statement.confidence,
@@ -814,11 +833,16 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           }
           assert(definition.confidence >= MAYBE, "Function definitions shouldn't have confidences less than MAYBE")
           table.insert(current_definition_list, definition)
+        elseif statement.type == FUNCTION_UNDEFINITION then
+          defined_or_undefined_csname = statement.undefined_csname.payload
+        else
+          error('Unexpected statement type "' .. statement.type .. '"')
+        end
+        if statement.confidence == DEFINITELY then
           -- Invalidate definitions of the same control sequence names from before the current statement.
           for _, incoming_definition in ipairs(incoming_definition_list) do
             local incoming_statement = get_statement(incoming_definition.chunk, incoming_definition.statement_number)
-            if incoming_statement.confidence == DEFINITELY and
-                incoming_statement.defined_csname.payload == definition.csname and
+            if incoming_statement.defined_csname.payload == defined_or_undefined_csname and
                 incoming_statement ~= statement then
               if invalidated_statement_index[incoming_statement] == nil then
                 table.insert(invalidated_statement_list, incoming_statement)
@@ -827,6 +851,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             end
           end
         end
+        ::next_statement::
       end
 
       -- Determine the reaching definitions after the current statement.
