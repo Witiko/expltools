@@ -30,6 +30,7 @@ local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
+local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDIRECT
 
 local OTHER_TOKENS = statement_types.OTHER_TOKENS
 local OTHER_TOKENS_COMPLEX = statement_subtypes.OTHER_TOKENS.COMPLEX
@@ -448,7 +449,7 @@ local function is_well_behaved(statement)
   if statement.type == FUNCTION_CALL then
     result = statement.used_csname.type == TEXT
   elseif statement.type == FUNCTION_DEFINITION then
-    result = statement.defined_csname.type == TEXT and statement.subtype == FUNCTION_DEFINITION_DIRECT
+    result = statement.defined_csname.type == TEXT
   elseif statement.type == FUNCTION_VARIANT_DEFINITION then
     result = statement.base_csname.type == TEXT or statement.defined_csname.type == TEXT
   else
@@ -965,11 +966,12 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         if seen_reaching_statements[statement] ~= nil then
           goto next_reaching_statement
         end
-        if statement.type == FUNCTION_DEFINITION then
-          -- Simply record the function definitions.
+        if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT then
+          -- Simply record the direct function definitions.
           table.insert(reaching_function_definition_list, definition)
-        elseif statement.type == FUNCTION_VARIANT_DEFINITION then
-          -- Resolve the function variant definitions.
+        elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+            or statement.type == FUNCTION_VARIANT_DEFINITION then
+          -- Resolve the indirect function definitions and function variant definitions.
           if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][statement_number] ~= nil then
             local other_reaching_definition_index = reaching_definition_indexes[chunk][statement_number]
             local base_csname = statement.base_csname.payload
@@ -990,7 +992,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             end
           end
         else
-          error('Unexpected statement type "' .. statement.type .. '"')
+          error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
         end
         ::next_reaching_statement::
         seen_reaching_statements[statement] = true
@@ -1001,6 +1003,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       for _, function_definition in ipairs(reaching_function_definition_list) do
         local function_definition_statement = get_statement(function_definition.chunk, function_definition.statement_number)
         assert(is_well_behaved(function_definition_statement))
+        assert(function_definition_statement.subtype == FUNCTION_DEFINITION_DIRECT)
+        assert(function_definition_statement.type == FUNCTION_DEFINITION)
 
         -- Determine the segment of the function definition replacement text.
         local results = states[function_definition.chunk.segment.location.file_number].results
