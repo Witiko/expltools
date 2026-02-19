@@ -4,13 +4,13 @@ In the semantic analysis step, the expl3 analysis tool determines the meaning of
 ## Functions and conditional functions
 
 ### Unused private function {.w label=w401 #unused-private-function}
-A private function or conditional function is defined but unused.
+A private function or conditional function name is defined but unused.
 
  /w401-01.tex
  /w401-02.tex
 
 ### Unused private function variant {.w label=w402 #unused-private-function-variant}
-A private function or conditional function variant is defined but unused.
+A private function or conditional function variant name is defined but unused.
 
  /w402-01.tex
  /w402-02.tex
@@ -91,7 +91,7 @@ Some expl3 quarks and scan marks have names that do not start with `\q_` and `\s
  /s414-04.tex
 
 ### Unused variable or constant {.w label=w415 #unused-variable-or-constant}
-A variable or a constant is declared and perhaps defined but unused.
+A variable or a constant name is declared and perhaps defined but unused.
 
  /w415-01.tex
  /w415-02.tex
@@ -158,7 +158,7 @@ A variable of one type is used where a variable of a different type should be us
 ## Messages
 
 ### Unused message {.w label=w423 #unused-message}
-A message is defined but unused.
+A message name is defined but unused.
 
  /w423-01.tex
  /w423-02.tex

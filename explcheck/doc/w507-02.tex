@@ -1,0 +1,8 @@
+\cs_new:Nn
+  \module_foo:
+  { bar }
+\cs_undefine:N
+  \module_foo:
+\cs_gset:N  % warning on this line
+  \module_foo:
+  { foo }

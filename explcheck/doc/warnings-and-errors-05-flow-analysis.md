@@ -3,582 +3,345 @@ In the flow analysis step, the expl3 analysis tool determines compiler-theoretic
 
 ## Functions and conditional functions
 
-### Multiply defined function {.e}
+### Multiply defined function {.e label=e500}
 A function or conditional function is defined multiple times.
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_new:Nn  % error on this line
-  \module_foo:
-  { bar }
-```
+ /e500-01.tex
+ /e500-02.tex
+ /e500-03.tex
+ /e500-04.tex
+ /e500-05.tex
+ /e500-06.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_undefine:N
-  \module_foo:
-\cs_new:Nn
-  \module_foo:
-  { bar }
-```
+<!--
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_gset:Nn
-  \module_foo:
-  { bar }
-```
+  We can't really report this issue from the `FUNCTION_CALL` edges alone.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_new_conditional:Nnn  % error on this line
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
+  Instead, we will need to report this issue either inside the inner loop
+  of reaching definitions whenever we are processing a function definition
+  statement or after the outer loop at the end of the function
+  `draw_group_wide_dynamic_edges()`.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_undefine:N
-  \module_foo_p:
-\cs_undefine:N
-  \module_foo:T
-\cs_undefine:N
-  \module_foo:F
-\cs_undefine:N
-  \module_foo:TF
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
+  We need to take into account the `maybe_redefinition` attribute of
+  `FUNCTION_DEFINITION` statements to differentiate between `new` and `set`.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_gset_conditional:Nnn
-  \module_foo:
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
+-->
 
-### Multiply defined function variant {.w}
+### Multiply defined function variant {.w label=w501}
 A function or conditional function variant is defined multiple times.
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-\cs_generate_variant:Nn  % warning on this line
-  \module_foo:n
-  { o, V }
-```
+ /w501-01.tex
+ /w501-02.tex
+ /w501-03.tex
+ /w501-04.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-\cs_undefine:N
-  \module_foo:V
-\cs_generate_variant:Nn
-  \module_foo:n
-  { o, V }
-```
+<!--
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { V }
-  { TF }
-\prg_generate_conditional_variant:Nnn  % warning on this line
-  \module_foo:n
-  { o, V }
-  { TF }
-```
+  The same considerations apply as for the previous issue (E500).
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { V }
-  { TF }
-\cs_undefine:N
-  \module_foo:VTF
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { o, V }
-  { TF }
-```
+-->
 
-### Unused private function {.w}
-A private function or conditional function is defined but all its calls are unreachable.[^1]
+### Unused private function {.w label=w502}
+A private function or conditional function is defined but unused.
 
- [^1]: Code is unreachable if it is only reachable through private functions which that are either unused or also unreachable.
+ /w502.tex
 
-``` tex
-\cs_new:Nn  % warning on this line
-  \__module_foo:
-  { bar }
-\cs_new:Nn
-  \__module_baz:
-  { \__module_foo: }
-```
+<!--
+
+  We can't really report this issue from the `FUNCTION_CALL` edges alone
+  either, as is the case for the previous two issues. Furthermore, this
+  issue will require a live variable analysis, in addition to the reaching
+  definitions analysis. However, since liveness likely won't affect our ability
+  to determine reaching definitions, it might make sense to make it into a
+  separate substep.
+
+-->
 
 This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
-### Unused private function variant {.w}
-A private function or conditional function variant is defined but all its calls are unreachable.
+### Unused private function variant {.w label=w503}
+A private function or conditional function variant is defined but unused.
 
-``` tex
-\cs_new:Nn
-  \__module_foo:n
-  { bar~#1 }
-\cs_new:Nn
-  \__module_baz:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { baz }
-    \__module_foo:V
-      \l_tmpa_tl
-  }
-\cs_generate_variant:Nn  % warning on this line
-  \__module_foo:n
-  { V }
-\__module_foo:n
-  { baz }
-```
+ /w503.tex
+
+<!--
+
+  The same considerations apply as for the previous issue (W502).
+
+-->
 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
-### Function variant for an undefined function {.e}
+### Function variant for an undefined function {.e label=e504}
 A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-```
+ /e504-01.tex
+ /e504-02.tex
+ /e504-03.tex
+ /e504-04.tex
+ /e504-05.tex
+ /e504-06.tex
 
-``` tex
-\cs_generate_variant:Nn  % error on this line
-  \module_foo:n
-  { V }
-\cs_new:Nn
-  \module_foo:n
-  { bar }
-```
+<!--
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar }
-\cs_undefine:N
-  \module_foo:n
-\cs_generate_variant:Nn  % error on this line
-  \module_foo:n
-  { V }
-```
+  As with all the previous issues, we can't report this issue from the
+  `FUNCTION_CALL` edges alone.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\prg_generate_conditional_variant:Nnn
-  \module_foo:n
-  { V }
-  { TF }
-```
+  Instead, we will need to report this issue either inside the inner loop
+  of reaching definitions whenever we are processing a function variant
+  definition statement or after the outer loop at the end of the function
+  `draw_group_wide_dynamic_edges()`.
 
-``` tex
-\prg_generate_conditional_variant:Nnn  % error on this line
-  \module_foo:n
-  { V }
-  { TF }
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-```
-
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_undefine:N
-  \module_foo:nTF
-\prg_generate_conditional_variant:Nnn  % error on this line
-  \module_foo:n
-  { V }
-  { TF }
-```
+-->
 
 This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
-### Calling an undefined function {.e}
+### Calling an undefined function {.e label=e505}
 A function or conditional function (variant) is called before it has been defined or after it has been undefined.
 
-``` tex
-\module_foo:  % error on this line
-\cs_new:Nn
-  \module_foo:
-  { bar }
-```
-
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_undefine:N
-  \module_foo:
-\module_foo:  % error on this line
-```
-
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\tl_set:Nn
-  \l_tmpa_tl
-  { baz }
-\module_foo:V  % error on this line
-  \l_tmpa_tl
-\cs_generate_variant:Nn
-  \module_foo:n
-  { V }
-```
+ /e505-01.tex
+ /e505-02.tex
+ /e505-03.tex
 
 This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
-### Indirect function definition from an undefined function {.e}
+### Indirect function definition from an undefined function {.e label=e506}
 A function or conditional function is indirectly defined from a function that has yet to be defined or after it has been undefined.
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_new_eq:NN  % error on this line
-  \module_baz:n
-  \module_bar:n
-\cs_new_eq:NN
-  \module_bar:n
-  \module_foo:n
-\module_baz:n
-  { foo }
-```
+ /e506-01.tex
+ /e506-02.tex
+ /e506-03.tex
+ /e506-04.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:n
-  { bar~#1 }
-\cs_new_eq:NN
-  \module_bar:n
-  \module_foo:n
-\cs_undefine:N
-  \module_bar:n
-\cs_new_eq:NN  % error on this line
-  \module_baz:n
-  \module_bar:n
-\module_baz:n
-  { foo }
-```
+<!--
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_new_eq:NN  % error on this line
-  \module_baz:nTF
-  \module_bar:nTF
-\cs_new_eq:NN
-  \module_bar:nTF
-  \module_foo:nTF
-\module_baz:nTF
-  { foo }
-  { bar }
-  { baz }
-```
+  The same considerations apply as for the issue E504.
 
-``` tex
-\prg_new_conditional:Nnn
-  \module_foo:n
-  { p, T, F, TF }
-  { \prg_return_true: }
-\cs_new_eq:NN
-  \module_bar:nTF
-  \module_foo:nTF
-\cs_undefine:N
-  \module_bar:nTF
-\cs_new_eq:NN  % error on this line
-  \module_baz:nTF
-  \module_bar:nTF
-\module_baz:nTF
-  { foo }
-  { bar }
-  { baz }
-```
+-->
 
 This check is a stronger version of <#indirect-function-definition-from-undefined-function> and should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
 
-### Setting a function before definition {.w}
+### Setting a function before definition {.w label=w507}
 A function is set before it has been defined or after it has been undefined.
 
-``` tex
-\cs_gset:N  % warning on this line
-  \module_foo:
-  { foo }
-\cs_new:Nn
-  \module_foo:
-  { bar }
-```
+ /w507-01.tex
+ /w507-02.tex
 
-``` tex
-\cs_new:Nn
-  \module_foo:
-  { bar }
-\cs_undefine:N
-  \module_foo:
-\cs_gset:N  % warning on this line
-  \module_foo:
-  { foo }
-```
+<!--
 
-### Unexpandable or restricted-expandable boolean expression {.e}
+  The same considerations apply as for the issues E504 and E506.
+
+-->
+
+### Unexpandable or restricted-expandable boolean expression {.e label=e508}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
 
-``` tex
-\cs_new_protected:N
-  \example_unexpandable:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-    \c_true_bool
-  }
-\cs_new:N
-  \example_restricted_expandable:
-  {
-    \bool_do_while:Nn
-      \c_false_bool
-      { }
-    \c_true_bool
-  }
-\cs_new_protected:N
-  \example_expandable:
-  { \c_true_bool }
-\bool_set:Nn
-  \l_tmpa_bool
-  { \example_unexpandable: }  % error on this line
-\bool_set:Nn
-  \l_tmpa_bool
-  { \example_restricted_expandable: }  % error on this line
-\bool_set:Nn
-  \l_tmpa_bool
-  { \example_expandable: }
-```
+ /e508.tex
 
-### Expanding an unexpandable function {.e}
+<!--
+
+  We can't really report this issue at this moment at all.
+
+  Here's what we'll need to do before we can report this issue:
+
+  First, in the semantic analysis, we'll need to determine in a flow-unaware
+  fashion which user-defined functions are definitely not fully-expandable. We
+  should be able to achieve this by looking at whether any built-in functions
+  within the top segments of the replacement texts of these functions are not
+  fully-expandable, likely by parsing l3kernel .dtx files and distilling this
+  information in `explcheck-latex3.lua`.
+
+  Incidentally, this should allow us to report a weaker version of this issue
+  during the semantic analysis.
+
+  Then, in the flow analysis, we'll need to determine in a flow-aware
+  fashion which user-defined functions are definitely not fully-expandable. We
+  should be able to achieve this as follows
+
+  1. Functions that were already determined to be definitely not
+     fully-expandable during the semantic analysis are considered as such.
+
+  2. Other functions are considered definitely not fully-expandable if any
+     user-defined functions they call are definitely not fully-expandable.
+
+  To determine the latter, we should be able to use a "backwards may" data-flow
+  analysis, similar to the live variable analysis that we'll need for the previous
+  issue W502.
+
+-->
+
+### Expanding an unexpandable function {.e label=e509}
 An unexpandable function or conditional function is called within an `x`-type, `e`-type, or `f`-type argument.
 
-``` tex
-\cs_new_protected:N
-  \example_unexpandable:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-  }
-\cs_new:N
-  \module_foo:n
-  { #1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { x, e, f }
-\module_foo:n
-  { \example_unexpandable: }
-\module_foo:x
-  { \example_unexpandable: }  % error on this line
-\module_foo:e
-  { \example_unexpandable: }  % error on this line
-\module_foo:f
-  { \example_unexpandable: }  % error on this line
-```
+ /e509.tex
 
-### Fully-expanding a restricted-expandable function {.e}
+<!--
+
+  The same considerations apply as for the previous issue (E508).
+
+-->
+
+### Fully-expanding a restricted-expandable function {.e label=e510}
 An restricted-expadable function or conditional function is called within an `f`-type argument.
 
-``` tex
-\cs_new:N
-  \example_restricted_expandable:
-  {
-    \int_to_roman:n
-      { 1 + 2 }
-  }
-\cs_new:N
-  \module_foo:n
-  { #1 }
-\cs_generate_variant:Nn
-  \module_foo:n
-  { x, e, f }
-\module_foo:n
-  { \example_restricted_expandable: }
-\module_foo:x
-  { \example_restricted_expandable: }
-\module_foo:e
-  { \example_restricted_expandable: }
-\module_foo:f
-  { \example_restricted_expandable: }  % error on this line
-```
+ /e510.tex
 
-### Defined an expandable function as protected {.w}
-A fully expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]
+<!--
 
-``` tex
-\cs_new_protected:Nn  % warning on this line
-  \example_expandable:
-  { foo }
-```
+  The same considerations apply as for the previous two issues (E508 and E509).
 
-``` tex
-\prg_new_protected_conditional:Nnn  % warning on this line
-  \example_expandable:
-  { T, F, TF }
-  { \prg_return_true: }
-```
+-->
 
-### Defined an unexpandable function as unprotected {.w}
+### Defined an expandable function as protected {.w label=w511}
+A fully-expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]
+
+ /w511-01.tex
+ /w511-02.tex
+
+<!--
+
+  We can't really report this issue at this moment at all, similar to the
+  previous issues E508 through E510.
+
+  Here's what we'll need to do before we can report this issue:
+
+  First, in the semantic analysis, we'll need to determine which user-defined
+  functions are definitely fully-expandable, ignoring nested function calls:
+
+  1. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
+     might not be fully-expandable.
+  
+  2. All calls to built-in functions within the top segment of a
+     fully-expandable function's replacement text must be fully-expandable.
+  
+  To determine the latter, we may need to parse l3kernel .dtx files and
+  distill this information in `explcheck-latex3.lua`.
+
+  Then, in the flow analysis, we'll need to determine which user-defined
+  functions are definitely fully-expandable: A function is definitely
+  fully-expandable if all of the following conditions apply:
+
+  1. It is definitely fully-expandable, ignoring nested function calls.
+  2. All functions from nested calls are either built-in or user-defined.
+  3. All user-defined functions they call are definitely fully-expandable.
+
+  To determine the third condition, we should be able to use a "backwards may"
+  data-flow analysis, similar to the live variable analysis that we'll need for
+  the previous issue W502, as well as the expandability analysis that we'll
+  need for the previous issues E508 through E510.
+
+-->
+
+### Defined an unexpandable function as unprotected {.w label=w512}
 An unexpandable or restricted-expandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 
-``` tex
-\cs_new:Nn  % warning on this line
-  \example_unexpandable:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-  }
-```
+ /w512-01.tex
+ /w512-02.tex
 
-``` tex
-\prg_new_conditional:Nnn  % warning on this line
-  \example_unexpandable:
-  { p, T, F, TF }
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-    \prg_return_true:
-  }
-```
+<!--
 
-### Conditional function with no return value {.e}
+  The same considerations apply as for the previous issues E508 through E510.
+
+-->
+
+### Conditional function with no return value {.e label=e513}
 A conditional functions has no return value.
 
-``` tex
-\prg_new_conditional:Nnn  % error on this line
-  \example_no_return_value:
-  { p, T, F, TF }
-  { foo }
-```
+ /e513-01.tex
+ /e513-02.tex
 
-``` tex
-\prg_new_conditional:Nnn
-  \example_has_return_value:
-  { p, T, F, TF }
-  { \example_foo: }
-\cs_new:Nn
-  \example_foo:
-  { \prg_return_true: }
-```
+<!--
 
-### Comparison code with no return value {.e}
+  We can't really report this issue at this moment at all.
+
+  Here's what we'll need to do before we can report this issue:
+
+  First, in the semantic analysis, we'll need to determine which user-defined
+  functions definitely have no return value, ignoring nested function calls:
+
+  1. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
+     might have a return value.
+  
+  2. A function that contains either `\prg_return_true:` or `\prg_return_false:`
+     within the top segment definitely has a return value.
+
+  Then, in the flow analysis, we'll need to determine which user-defined
+  functions definitely have no return value: A function definitely has no
+  return value if all of the following conditions apply:
+
+  1. It definitely has no return value, ignoring nested function calls.
+  2. All functions from nested calls are user-defined.
+  3. All user-defined functions they call definitely have no return value.
+
+  To determine the third condition, we should be able to use a "backwards may"
+  data-flow analysis, similar to the live variable analysis that we'll need for
+  issue W502, as well as the expandability analysis that we'll need for the
+  previous issues E508 through E510, and W511 and W512.
+
+-->
+
+### Conditional function with no return value {.e label=e514}
+A conditional functions has no return value.
+
+ /e514-01.tex
+ /e514-02.tex
+
+<!--
+
+  The same considerations apply as for the previous issue (E513).
+
+-->
+
+### Comparison code with no return value {.e label=e515}
 A comparison code [@latexteam2024interfaces, Section 6.1] has no return value.
 
-``` tex
-\clist_set:Nn
-  \l_foo_clist
-  { 3 , 01 , -2 , 5 , +1 }
-\clist_sort:Nn  % error on this line
-  \l_foo_clist
-  { foo }
-```
+ /e515-01.tex
+ /e515-02.tex
 
-``` tex
-\clist_set:Nn
-  \l_foo_clist
-  { 3 , 01 , -2 , 5 , +1 }
-\clist_sort:Nn
-  \l_foo_clist
-  { \example_foo: }
-\cs_new:Nn
-  \example_foo:
-  {
-    \int_compare:nNnTF { #1 } > { #2 }
-      { \sort_return_swapped: }
-      { \sort_return_same: }
-  }
-```
+<!--
+
+  The same considerations apply as for the previous two issues (E513 and E514).
+
+  Unlike these issues, comparison codes use `\sort_return_same:` and
+  `\sort_return_swapped:` rather than `prg_return_true:` and
+  `\prg_return_false:`.
+
+-->
 
 The above example has been taken from @latexteam2024interfaces [Chapter 6].
 
-### Paragraph token in the parameter of a "nopar" function {.e}
+### Paragraph token in the parameter of a "nopar" function {.e label=e516}
 An argument that contains `\par` tokens may reach a function with the "nopar" restriction.
 
-``` tex
-\cs_new_nopar:Nn
-  \example_foo:n
-  { #1 }
-\cs_new:nn
-  \example_bar:n
-  {
-    \example_foo:n
-      { #1 }
-  }
-\example_bar:n
-  {
-    foo
-    \par  % error on this line
-    bar
-  }
-```
+ /e516.tex
+
+<!--
+
+  We can't really report this issue at this moment at all.
+
+  Here's what we'll need to do before we can report this issue:
+
+  First, in the semantic analysis, we'll need to determine which variables
+  and constants, user-defined functions, and user-defined function calls
+  definitely contain `\par` tokens in their unexpanded values, replacement
+  texts, and arguments, respectively.
+
+  Then, in the flow analysis, we'll need to determine which variables
+  and constants, user-defined functions, and user-defined function calls
+  definitely contain `\par` tokens in their expanded values, replacement texts,
+  and unexpanded arguments, respectively, similar to the previous issue E508.
+
+  Finally, still in the flow analysis, we'll need to determine for every
+  user-defined function call argument whether it may reach a user-defined
+  "nopar" function. To determine this, we should be able to use a "forward may"
+  data-flow analysis, similar to the reaching definitions analysis.
+
+-->
 
 ## Variables and constants
 
 ### Unused variable or constant {.w}
-A variable or a constant is declared and perhaps defined but all its uses are unreachable.
+A variable or a constant is declared and perhaps defined but unused.
 
 ``` tex
 \tl_new:N  % warning on this line
@@ -627,6 +390,12 @@ A variable or constant is used before it has been declared.
   { foo }
 ```
 
+<!--
+
+  TODO: Also check V-type arguments, both here and in <#using-undeclared-variable-or-constant>.
+
+-->
+
 This check is a stronger version of <#using-undeclared-variable-or-constant> and should only be emitted if <#using-undeclared-variable-or-constant> has not previously been emitted for this variable or constant.
 
 ### Multiply declared variable or constant {.e}
@@ -651,7 +420,7 @@ A variable or constant is declared multiple times.
 ## Messages
 
 ### Unused message {.w}
-A message is defined but all its uses are unreachable.
+A message is defined but unused.
 
 ``` tex
 \msg_new:nnn  % warning on this line

@@ -1,0 +1,12 @@
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\prg_generate_conditional_variant:Nnn
+  \module_foo:n
+  { V }
+  { TF }
+\prg_generate_conditional_variant:Nnn  % warning on this line
+  \module_foo:n
+  { o, V }
+  { TF }

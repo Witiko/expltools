@@ -1,0 +1,15 @@
+\cs_new_nopar:Nn
+  \example_foo:n
+  { #1 }
+\cs_new:nn
+  \example_bar:n
+  {
+    \example_foo:n
+      { #1 }
+  }
+\example_bar:n
+  {
+    foo
+    \par  % error on this line
+    bar
+  }

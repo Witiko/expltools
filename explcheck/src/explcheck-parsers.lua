@@ -721,6 +721,13 @@ local expl3_function_definition_csname = Ct(
   + Cc(false) * expl3_indirect_function_definition_csname
 )
 
+------ Function undefinitions
+local expl3_function_undefinition_csname = (
+  P("cs_undefine")
+  * colon
+  * argument_specifier
+)
+
 ------ Generating function variants
 local expl3_function_variant_definition_csname = Ct(
   (
@@ -939,6 +946,7 @@ return {
   expl3_message_use = expl3_message_use,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
+  expl3_function_undefinition_csname = expl3_function_undefinition_csname,
   expl3_variable_declaration_csname = expl3_variable_declaration_csname,
   expl3_variable_definition_csname = expl3_variable_definition_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,

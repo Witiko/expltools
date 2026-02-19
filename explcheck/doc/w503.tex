@@ -1,0 +1,17 @@
+\cs_new:Nn
+  \__module_foo:n
+  { bar~#1 }
+\cs_new:Nn
+  \__module_baz:
+  {
+    \tl_set:Nn
+      \l_tmpa_tl
+      { baz }
+    \__module_foo:V
+      \l_tmpa_tl
+  }
+\cs_generate_variant:Nn  % warning on this line
+  \__module_foo:n
+  { V }
+\__module_foo:n
+  { baz }

@@ -42,6 +42,7 @@ local lpeg = require("lpeg")
 local statement_types = {
   FUNCTION_CALL = "function call",
   FUNCTION_DEFINITION = "function definition",
+  FUNCTION_UNDEFINITION = "function undefinition",
   FUNCTION_VARIANT_DEFINITION = "function variant definition",
   VARIABLE_DECLARATION = "variable declaration",
   VARIABLE_DEFINITION = "variable or constant definition",
@@ -54,6 +55,7 @@ local statement_types = {
 
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
+local FUNCTION_UNDEFINITION = statement_types.FUNCTION_UNDEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
 
 local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
@@ -667,6 +669,7 @@ local function analyze(states, file_number, options)
         if call.csname == 'tl_sort:nN' and #call.arguments == 2 then
           -- determine the name of the comparison conditional
           local csname_argument = call.arguments[2]
+          assert(csname_argument ~= nil)
           local csname = extract_csname_from_argument(csname_argument)
           if csname ~= nil then
             local _, argument_specifiers = parse_expl3_csname(csname)
@@ -677,26 +680,28 @@ local function analyze(states, file_number, options)
           end
         end
 
-        local function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, call.csname)
-        local function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
+        local function_variant_definition
+        local function_definition
+        local function_undefinition
 
-        local variable_declaration = lpeg.match(parsers.expl3_variable_declaration_csname, call.csname)
-        local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, call.csname)
-        local variable_use = lpeg.match(parsers.expl3_variable_use_csname, call.csname)
+        local variable_declaration
+        local variable_definition
+        local variable_use
 
-        local message_definition = lpeg.match(parsers.expl3_message_definition, call.csname)
-        local message_use = lpeg.match(parsers.expl3_message_use, call.csname)
+        local message_definition
+        local message_use
 
         -- Process a function variant definition.
+        function_variant_definition = lpeg.match(parsers.expl3_function_variant_definition_csname, call.csname)
         if function_variant_definition ~= nil then
           local is_conditional = table.unpack(function_variant_definition)
           -- determine the name of the defined function
           local base_csname_argument = call.arguments[1]
+          assert(base_csname_argument ~= nil)
           local base_csname = extract_csname_from_argument(base_csname_argument)
           if base_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
-          assert(base_csname_argument ~= nil)
           base_csname_argument.analyzed = true
           local base_csname_stem, base_argument_specifiers = parse_expl3_csname(base_csname)
           if base_csname_stem == nil then  -- we couldn't parse the csname, give up
@@ -760,6 +765,7 @@ local function analyze(states, file_number, options)
         end
 
         -- Process a function definition.
+        function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
         if function_definition ~= nil then
           local is_direct = table.unpack(function_definition)
           -- Process a direct function definition.
@@ -781,6 +787,7 @@ local function analyze(states, file_number, options)
                 end
               end
               local creator_function_argument = call.arguments[2]
+              assert(creator_function_argument ~= nil)
               local creator_function_csname = extract_csname_from_argument(creator_function_argument)
               if (  -- couldn't determine the name of the creator function, give up
                     creator_function_csname == nil
@@ -788,7 +795,6 @@ local function analyze(states, file_number, options)
                   ) then
                 goto other_statement
               end
-              assert(creator_function_argument ~= nil)
               creator_function_argument.analyzed = true
               local actual_function_definition = lpeg.match(parsers.expl3_function_definition_csname, creator_function_csname.payload)
               if actual_function_definition == nil then  -- couldn't understand the creator function, give up
@@ -797,11 +803,11 @@ local function analyze(states, file_number, options)
               _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(actual_function_definition)
             end
             -- determine the name of the defined function
+            assert(defined_csname_argument ~= nil)
             local defined_csname = extract_csname_from_argument(defined_csname_argument)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(defined_csname_argument ~= nil)
             defined_csname_argument.analyzed = true
             local defined_csname_stem, argument_specifiers = parse_expl3_csname(defined_csname)
             -- determine the replacement text
@@ -925,19 +931,19 @@ local function analyze(states, file_number, options)
             local _, is_conditional, maybe_redefinition, is_global = table.unpack(function_definition)
             -- determine the name of the defined function
             local defined_csname_argument = call.arguments[1]
+            assert(defined_csname_argument ~= nil)
             local defined_csname = extract_csname_from_argument(defined_csname_argument)
             if defined_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(defined_csname_argument ~= nil)
             defined_csname_argument.analyzed = true
             -- determine the name of the base function
             local base_csname_argument = call.arguments[2]
+            assert(base_csname_argument ~= nil)
             local base_csname = extract_csname_from_argument(base_csname_argument)
             if base_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(base_csname_argument ~= nil)
             base_csname_argument.analyzed = true
             -- determine all effectively defined csnames and effective base csnames
             local effective_defined_and_base_csnames = {}
@@ -997,22 +1003,52 @@ local function analyze(states, file_number, options)
           goto continue
         end
 
+        -- Process a function undefinition.
+        function_undefinition = lpeg.match(parsers.expl3_function_undefinition_csname, call.csname)
+        if function_undefinition ~= nil then
+          local undefined_csname_argument = call.arguments[1]
+          assert(undefined_csname_argument ~= nil)
+          local undefined_csname = extract_csname_from_argument(undefined_csname_argument)
+          if undefined_csname == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
+          if (
+                undefined_csname.type == TEXT
+                and lpeg.match(parsers.expl3_expansion_csname, undefined_csname.payload) ~= nil  -- there appears to be expansion, give up
+              ) then
+            goto other_statement
+          end
+          undefined_csname_argument.analyzed = true
+          local confidence = undefined_csname.type == TEXT and DEFINITELY or MAYBE
+          local statement = {
+            type = FUNCTION_UNDEFINITION,
+            call_range = call_range,
+            confidence = confidence,
+            -- The following attributes are specific to the type.
+            undefined_csname = undefined_csname,
+            undefined_csname_argument = undefined_csname_argument,
+          }
+          table.insert(statements, statement)
+          goto continue
+        end
+
         -- Process a variable declaration.
+        variable_declaration = lpeg.match(parsers.expl3_variable_declaration_csname, call.csname)
         if variable_declaration ~= nil then
           local variable_type = table.unpack(variable_declaration)
           -- determine the name of the declared variable
           local declared_csname_argument = call.arguments[1]
+          assert(declared_csname_argument ~= nil)
           local declared_csname = extract_csname_from_argument(declared_csname_argument)
           if declared_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
           if (
                 declared_csname.type == TEXT
-                and lpeg.match(parsers.expl3_expansion_csname, declared_csname.payload) ~= nil  -- there appear to be expansion, give up
+                and lpeg.match(parsers.expl3_expansion_csname, declared_csname.payload) ~= nil  -- there appears to be expansion, give up
               ) then
             goto other_statement
           end
-          assert(declared_csname_argument ~= nil)
           declared_csname_argument.analyzed = true
           local confidence = declared_csname.type == TEXT and DEFINITELY or MAYBE
           local statement = {
@@ -1029,21 +1065,22 @@ local function analyze(states, file_number, options)
         end
 
         -- Process a variable or constant definition.
+        variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, call.csname)
         if variable_definition ~= nil then
           local variable_type, is_constant, is_global, is_direct = table.unpack(variable_definition)
           -- determine the name of the declared variable
           local defined_csname_argument = call.arguments[1]
+          assert(defined_csname_argument ~= nil)
           local defined_csname = extract_csname_from_argument(defined_csname_argument)
           if defined_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
           if (
                 defined_csname.type == TEXT
-                and lpeg.match(parsers.expl3_expansion_csname, defined_csname.payload) ~= nil  -- there appear to be expansion, give up
+                and lpeg.match(parsers.expl3_expansion_csname, defined_csname.payload) ~= nil  -- there appears to be expansion, give up
               ) then
             goto other_statement
           end
-          assert(defined_csname_argument ~= nil)
           defined_csname_argument.analyzed = true
           -- detect mutability mismatches
           local defined_csname_scope = lpeg.match(parsers.expl3_variable_or_constant_csname_scope, defined_csname.transcript)
@@ -1072,6 +1109,11 @@ local function analyze(states, file_number, options)
             if definition_text_argument == nil then  -- we couldn't extract the definition text, give up
               goto other_statement
             end
+            -- determine whether the definition text is well-understood
+            local statement_subtype, _ = classify_tokens(tokens, definition_text_argument.token_range)
+            if statement_subtype == OTHER_TOKENS_SIMPLE then
+              definition_text_argument.analyzed = true
+            end
             -- determine the token range of the definition excluding the definition text
             local definition_text_token_range = definition_text_argument.outer_token_range or definition_text_argument.token_range
             local definition_token_range = new_range(token_range:start(), definition_text_token_range:start(), EXCLUSIVE, #tokens)
@@ -1094,11 +1136,11 @@ local function analyze(states, file_number, options)
             local base_variable_type = variable_definition[5] or variable_type
             -- determine the name of the base variable or constant
             local base_csname_argument = call.arguments[2]
+            assert(base_csname_argument ~= nil)
             local base_csname = extract_csname_from_argument(base_csname_argument)
             if base_csname == nil then  -- we couldn't extract the csname, give up
               goto other_statement
             end
-            assert(base_csname_argument ~= nil)
             base_csname_argument.analyzed = true
             statement = {
               type = VARIABLE_DEFINITION,
@@ -1123,21 +1165,22 @@ local function analyze(states, file_number, options)
         end
 
         -- Process a variable declaration.
+        variable_use = lpeg.match(parsers.expl3_variable_use_csname, call.csname)
         if variable_use ~= nil then
           local variable_type = table.unpack(variable_use)
           -- determine the name of the used variable
           local used_csname_argument = call.arguments[1]
+          assert(used_csname_argument ~= nil)
           local used_csname = extract_csname_from_argument(used_csname_argument)
           if used_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
           end
           if (
                 used_csname.type == TEXT
-                and lpeg.match(parsers.expl3_expansion_csname, used_csname.payload) ~= nil  -- there appear to be expansion, give up
+                and lpeg.match(parsers.expl3_expansion_csname, used_csname.payload) ~= nil  -- there appears to be expansion, give up
               ) then
             goto other_statement
           end
-          assert(used_csname_argument ~= nil)
           used_csname_argument.analyzed = true
           -- determine the token range of the use excluding any arguments following the used variable name
           local used_csname_token_range = used_csname_argument.outer_token_range or used_csname_argument.token_range
@@ -1159,6 +1202,7 @@ local function analyze(states, file_number, options)
         end
 
         -- Process a message definition.
+        message_definition = lpeg.match(parsers.expl3_message_definition, call.csname)
         if message_definition ~= nil then
           if #call.arguments < 3 or #call.arguments > 4 then  -- we couldn't find the expected number of arguments, give up
             goto other_statement
@@ -1195,6 +1239,11 @@ local function analyze(states, file_number, options)
           end
           assert(message_argument ~= nil)
           message_argument.analyzed = true
+          -- determine whether the message text is well-understood
+          local statement_subtype, _ = classify_tokens(tokens, text_argument.token_range)
+          if statement_subtype == OTHER_TOKENS_SIMPLE then
+            text_argument.analyzed = true
+          end
           -- determine the token range of the definition excluding the message text
           local text_token_range = text_argument.outer_token_range or text_argument.token_range
           local definition_token_range = new_range(token_range:start(), text_token_range:start(), EXCLUSIVE, #tokens)
@@ -1218,6 +1267,8 @@ local function analyze(states, file_number, options)
           goto continue
         end
 
+        -- Process a message use.
+        message_use = lpeg.match(parsers.expl3_message_use, call.csname)
         if message_use ~= nil then
           if #call.arguments < 2 or #call.arguments > 6 then  -- we couldn't find the expected number of arguments, give up
             goto other_statement
@@ -1324,7 +1375,7 @@ local function report_issues(states, main_file_number, options)
   ---- Collect information about symbols that were definitely defined.
   local defined_private_function_texts = {}
   local called_functions_and_variants = {}
-  local defined_csname_texts, defined_csname_texts_anywhere = {}, {}
+  local defined_csname_texts, defined_csname_texts_anywhere, defined_csname_texts_anywhere_file_numbers = {}, {}, {}
   local defined_private_function_variant_texts = {}
   local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
   local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
@@ -1340,7 +1391,7 @@ local function report_issues(states, main_file_number, options)
 
   ---- Collect information about symbols that may have been defined.
   local maybe_defined_private_function_variant_pattern = parsers.fail
-  local maybe_defined_csname_texts, maybe_defined_csname_pattern = {}, parsers.fail
+  local maybe_defined_csname_texts, maybe_defined_csname_texts_anywhere, maybe_defined_csname_pattern = {}, {}, parsers.fail
   local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
 
   local maybe_declared_variable_csname_texts = {}
@@ -1456,11 +1507,13 @@ local function report_issues(states, main_file_number, options)
                 -- Record potential function definitions.
                 if lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil then
                   maybe_defined_csname_texts[next_token.payload] = true
+                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
                 end
                 -- Record potential variable declarations and definitions.
                 if lpeg.match(parsers.expl3_variable_declaration_csname, token.payload) ~= nil then
                   maybe_declared_variable_csname_texts[next_token.payload] = true
                   maybe_defined_csname_texts[next_token.payload] = true
+                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
                 end
                 local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
                 if variable_definition ~= nil then
@@ -1469,6 +1522,7 @@ local function report_issues(states, main_file_number, options)
                     maybe_declared_variable_csname_texts[next_token.payload] = true
                   end
                   maybe_defined_csname_texts[next_token.payload] = true
+                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
                 end
               -- Record message name definitions and uses.
               elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the module name
@@ -1573,7 +1627,13 @@ local function report_issues(states, main_file_number, options)
           if is_main_file then
             table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
           end
-          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          if statement.confidence == DEFINITELY then
+            defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+            if defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
+              defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+            end
+            defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number] = true
+          end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         elseif statement.defined_csname.type == PATTERN then
           maybe_defined_csname_pattern = (
@@ -1616,7 +1676,13 @@ local function report_issues(states, main_file_number, options)
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
           end
-          defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+          if statement.confidence == DEFINITELY then
+            defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+            if defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
+              defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+            end
+            defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number] = true
+          end
           maybe_defined_csname_texts[statement.defined_csname.payload] = true
         end
         if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
@@ -1629,6 +1695,8 @@ local function report_issues(states, main_file_number, options)
             table.insert(defined_private_function_texts, {statement.defined_csname.payload, definition_byte_range})
           end
         end
+      -- Process a function undefinition.
+      elseif statement.type == FUNCTION_UNDEFINITION then
       -- Process a variable declaration.
       elseif statement.type == VARIABLE_DECLARATION then
         -- Record variable names.
@@ -1909,7 +1977,7 @@ local function report_issues(states, main_file_number, options)
         and not maybe_defined_csname_texts[csname]
         and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
-    elseif defined_csname_texts_anywhere[csname] or maybe_defined_csname_texts[csname] then
+    elseif defined_csname_texts_anywhere[csname] or maybe_defined_csname_texts_anywhere[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
       statement.used_csname = {
@@ -1917,10 +1985,19 @@ local function report_issues(states, main_file_number, options)
         transcript = csname,
         type = TEXT
       }
-      if defined_csname_texts_anywhere[csname] then
-        statement.confidence = DEFINITELY
-      elseif maybe_defined_csname_texts[csname] then
+      if maybe_defined_csname_texts_anywhere[csname] then
+        -- If there are low-confidence function definitions for this control sequence, make the statement low-confidence also.
         statement.confidence = MAYBE
+      elseif defined_csname_texts_anywhere[csname] then
+        statement.confidence = DEFINITELY
+        -- For definite function calls, record also the file numbers of the definite function definitions.
+        assert(defined_csname_texts_anywhere_file_numbers[csname] ~= nil)
+        statement.definition_file_numbers = {}
+        for definition_file_number, _ in pairs(defined_csname_texts_anywhere_file_numbers[csname]) do
+          table.insert(statement.definition_file_numbers, definition_file_number)
+        end
+        assert(#statement.definition_file_numbers > 0)
+        table.sort(statement.definition_file_numbers)
       else
         error("Failed to determine statement confidence")
       end
