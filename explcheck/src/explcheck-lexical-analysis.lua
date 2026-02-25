@@ -328,7 +328,9 @@ local function analyze(states, file_number, options)
                     previous_catcode ~= 9 and previous_catcode ~= 10  -- a potential missing stylistic whitespace
                     -- do not require whitespace after non-expl3 control sequences or control sequences with empty or one-character names
                     and (previous_catcode ~= 0 or #previous_csname > 1 and lpeg.match(parsers.expl3like_csname, previous_csname) ~= nil)
-                    and (previous_catcode ~= 1 or catcode ~= 2)  -- allow an end grouping immediately after begin grouping
+                    and (previous_catcode ~= 1 or catcode ~= 1)  -- allow begin grouping immediately after begin grouping
+                    and (previous_catcode ~= 1 or catcode ~= 2)  -- allow end grouping immediately after begin grouping
+                    and (previous_catcode ~= 2 or catcode ~= 2)  -- allow end grouping immediately after end grouping
                     and (previous_catcode ~= 6 or catcode ~= 1 and catcode ~= 2)  -- allow a parameter immediately before grouping
                 ) then
               issues:add('s204', 'missing stylistic whitespaces', range)
