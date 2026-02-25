@@ -23,6 +23,9 @@ This version of explcheck has fixed the following bugs:
   and by @muzimuzhi in #165, fixed in #166)
 - Record control sequence name usage and definitions in unanalyzed arguments.
   (reported by @dbitouze in #170 and #173, fixed in #174)
+- Do not produce warning S204 (Missing stylistic whitespaces) for repeated
+  begin group (`{{`) or end group (`}}`). (discovered in witiko/markdown#623,
+  fixed in #177)
 
 #### Documentation
 
