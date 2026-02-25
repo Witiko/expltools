@@ -1,0 +1,10 @@
+\ExplSyntaxOn
+\cs_new:Nn
+  \__markdown_example_register_acronym:n
+    {
+      \__markdown_setup:n
+        {
+          acronyms += {{ #1 }},
+        }
+    }
+\ExplSyntaxOff
