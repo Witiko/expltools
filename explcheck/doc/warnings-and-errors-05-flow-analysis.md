@@ -3,7 +3,7 @@ In the flow analysis step, the expl3 analysis tool determines compiler-theoretic
 
 ## Functions and conditional functions
 
-### Multiply defined function {.e label=e500}
+### Multiply defined function {.e}
 A function or conditional function is defined multiple times.
 
  /e500-01.tex
@@ -27,7 +27,7 @@ A function or conditional function is defined multiple times.
 
 -->
 
-### Multiply defined function variant {.w label=w501}
+### Multiply defined function variant {.w}
 A function or conditional function variant is defined multiple times.
 
  /w501-01.tex
@@ -41,7 +41,7 @@ A function or conditional function variant is defined multiple times.
 
 -->
 
-### Unused private function {.w label=w502}
+### Unused private function {.w}
 A private function or conditional function is defined but unused.
 
  /w502.tex
@@ -59,7 +59,7 @@ A private function or conditional function is defined but unused.
 
 This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
-### Unused private function variant {.w label=w503}
+### Unused private function variant {.w}
 A private function or conditional function variant is defined but unused.
 
  /w503.tex
@@ -72,7 +72,7 @@ A private function or conditional function variant is defined but unused.
 
 This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
-### Function variant for an undefined function {.e label=e504}
+### Function variant for an undefined function {.e label=e505}
 A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
 
  /e504-01.tex
@@ -96,7 +96,7 @@ A function or conditional function variant is defined before the base function h
 
 This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
-### Calling an undefined function {.e label=e505}
+### Calling an undefined function {.e}
 A function or conditional function (variant) is called before it has been defined or after it has been undefined.
 
  /e505-01.tex
@@ -105,7 +105,7 @@ A function or conditional function (variant) is called before it has been define
 
 This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
-### Indirect function definition from an undefined function {.e label=e506}
+### Indirect function definition from an undefined function {.e}
 A function or conditional function is indirectly defined from a function that has yet to be defined or after it has been undefined.
 
  /e506-01.tex
@@ -121,7 +121,7 @@ A function or conditional function is indirectly defined from a function that ha
 
 This check is a stronger version of <#indirect-function-definition-from-undefined-function> and should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
 
-### Setting a function before definition {.w label=w507}
+### Setting a function before definition {.w}
 A function is set before it has been defined or after it has been undefined.
 
  /w507-01.tex
@@ -133,7 +133,7 @@ A function is set before it has been defined or after it has been undefined.
 
 -->
 
-### Unexpandable or restricted-expandable boolean expression {.e label=e508}
+### Unexpandable or restricted-expandable boolean expression {.e}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
 
  /e508.tex
@@ -170,7 +170,7 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
 -->
 
-### Expanding an unexpandable function {.e label=e509}
+### Expanding an unexpandable function {.e}
 An unexpandable function or conditional function is called within an `x`-type, `e`-type, or `f`-type argument.
 
  /e509.tex
@@ -181,7 +181,7 @@ An unexpandable function or conditional function is called within an `x`-type, `
 
 -->
 
-### Fully-expanding a restricted-expandable function {.e label=e510}
+### Fully-expanding a restricted-expandable function {.e}
 An restricted-expadable function or conditional function is called within an `f`-type argument.
 
  /e510.tex
@@ -192,7 +192,7 @@ An restricted-expadable function or conditional function is called within an `f`
 
 -->
 
-### Defined an expandable function as protected {.w label=w511}
+### Defined an expandable function as protected {.w}
 A fully-expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]
 
  /w511-01.tex
@@ -232,7 +232,7 @@ A fully-expandable function or conditional function is defined using a creator f
 
 -->
 
-### Defined an unexpandable function as unprotected {.w label=w512}
+### Defined an unexpandable function as unprotected {.w}
 An unexpandable or restricted-expandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 
  /w512-01.tex
@@ -244,7 +244,7 @@ An unexpandable or restricted-expandable function or conditional function is def
 
 -->
 
-### Conditional function with no return value {.e label=e513}
+### Conditional function with no return value {.e}
 A conditional functions has no return value.
 
  /e513-01.tex
@@ -280,7 +280,7 @@ A conditional functions has no return value.
 
 -->
 
-### Conditional function with no return value {.e label=e514}
+### Conditional function with no return value {.e}
 A conditional functions has no return value.
 
  /e514-01.tex
@@ -292,7 +292,7 @@ A conditional functions has no return value.
 
 -->
 
-### Comparison code with no return value {.e label=e515}
+### Comparison code with no return value {.e}
 A comparison code [@latexteam2024interfaces, Section 6.1] has no return value.
 
  /e515-01.tex
@@ -310,7 +310,7 @@ A comparison code [@latexteam2024interfaces, Section 6.1] has no return value.
 
 The above example has been taken from @latexteam2024interfaces [Chapter 6].
 
-### Paragraph token in the parameter of a "nopar" function {.e label=e516}
+### Paragraph token in the parameter of a "nopar" function {.e}
 An argument that contains `\par` tokens may reach a function with the "nopar" restriction.
 
  /e516.tex
