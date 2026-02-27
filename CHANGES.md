@@ -22,6 +22,9 @@ This version of explcheck has made the following new enhancements:
   Flow analysis is now enabled by default for all package files with at least 95%
   code understanding.
 
+- In issue W419 (Using an undeclared variable or constant), also report
+  undeclared usages through `V`- and `v`-type arguments. (#176)
+
 #### Code understanding
 
 This version of explcheck introduces the following changes to code understanding

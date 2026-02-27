@@ -3,11 +3,11 @@
   { foo }
 \cs_generate_variant:Nn
   \example_foo:n
-  { V }
+  { V, v }
 \example_foo:V
   \g_undeclared_tl  % warning on this line
-\example_foo:V
-  \c_undefined_tl   % warning on this line
+\example_foo:v
+  { c_undefined_tl }  % warning on this line
 \tl_new:N
   \g_defined_tl
 \tl_gset:Nn
@@ -18,5 +18,5 @@
   { baz }
 \example_foo:V
   \g_defined_tl
-\example_foo:V
-  \c_defined_tl
+\example_foo:v
+  { c_defined_tl }

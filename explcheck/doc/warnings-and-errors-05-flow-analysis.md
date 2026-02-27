@@ -390,11 +390,25 @@ A variable or constant is used before it has been declared.
   { foo }
 ```
 
-<!--
+This also includes usage in `V`- and `v`-type arguments:
 
-  TODO: Also check V-type arguments like in <#using-undeclared-variable-or-constant>.
-
--->
+``` tex
+\cs_new:Nn
+  \example_foo:n
+  { foo }
+\cs_generate_variant:Nn
+  \example_foo:n
+  { V, v }
+\example_foo:V
+  \g_example_tl  % warning on this line
+\example_foo:v
+  { c_example_tl }  % warning on this line
+\tl_new:N
+  \g_example_tl
+\tl_const:N
+  \c_example_tl
+  { foo }
+```
 
 This check is a stronger version of <#using-undeclared-variable-or-constant> and should only be emitted if <#using-undeclared-variable-or-constant> has not previously been emitted for this variable or constant.
 

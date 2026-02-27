@@ -1420,6 +1420,9 @@ local function report_issues(states, main_file_number, options)
     local map_forward = segment.transformed_tokens.map_forward
     local map_back = segment.transformed_tokens.map_back
 
+    local call_range_to_token_range = get_call_range_to_token_range(segment.calls, #tokens)
+    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+
     -- Merge a module name and a message name into a combined fully qualified name.
     local function combine_module_and_message_names(module_name, message_name)
       local transcript = string.format("%s/%s", module_name.transcript, message_name.transcript)
@@ -1475,6 +1478,11 @@ local function report_issues(states, main_file_number, options)
         if csname ~= nil then
           if csname.type == TEXT then
             maybe_used_csname_texts[csname.payload] = true
+            if argument.specifier == "v" then
+              -- Record control sequence name usage in v-type arguments.
+              local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
+              table.insert(used_variable_csname_texts, {csname.payload, used_csname_byte_range})
+            end
           elseif csname.type == PATTERN then
             maybe_used_csname_pattern = (
               maybe_used_csname_pattern
@@ -1491,6 +1499,10 @@ local function report_issues(states, main_file_number, options)
         for _, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
             maybe_used_csname_texts[token.payload] = true
+            if argument.specifier == "V" then
+              -- Record control sequence name usage in V-type arguments.
+              table.insert(used_variable_csname_texts, {token.payload, token.byte_range})
+            end
           end
         end
       end
@@ -1599,8 +1611,6 @@ local function report_issues(states, main_file_number, options)
       end
     end
 
-    local call_range_to_token_range = get_call_range_to_token_range(segment.calls, #tokens)
-    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
     for _, statement in ipairs(segment.statements or {}) do
       local token_range = call_range_to_token_range(statement.call_range)
       local byte_range = token_range_to_byte_range(token_range)

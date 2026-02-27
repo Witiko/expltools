@@ -123,6 +123,10 @@ A variable or constant is used but undeclared or undefined.
  /w419-04.tex
  /w419-05.tex
 
+This also includes usage in `V`- and `v`-type arguments:
+
+ /w419-06.tex
+
 ### Locally setting a global variable {.e label=e420}
 A global variable is locally set.
 
