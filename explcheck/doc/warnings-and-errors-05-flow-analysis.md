@@ -376,15 +376,15 @@ This check is a stronger version of <#setting-undeclared-variable> and should pr
 A variable or constant is used before it has been declared.
 
 ``` tex
-\tl_use:N  % error on this line
-  \g_example_tl
+\tl_use:N
+  \g_example_tl  % warning on this line
 \tl_new:N
   \g_example_tl
 ```
 
 ``` tex
-\tl_use:N  % error on this line
-  \c_example_tl
+\tl_use:N
+  \c_example_tl  % warning on this line
 \tl_const:N
   \c_example_tl
   { foo }
@@ -392,7 +392,7 @@ A variable or constant is used before it has been declared.
 
 <!--
 
-  TODO: Also check V-type arguments, both here and in <#using-undeclared-variable-or-constant>.
+  TODO: Also check V-type arguments like in <#using-undeclared-variable-or-constant>.
 
 -->
 

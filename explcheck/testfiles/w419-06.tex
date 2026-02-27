@@ -1,0 +1,22 @@
+\cs_new:Nn
+  \example_foo:n
+  { foo }
+\cs_generate_variant:Nn
+  \example_foo:n
+  { V }
+\example_foo:V
+  \g_undeclared_tl  % warning on this line
+\example_foo:V
+  \c_undefined_tl   % warning on this line
+\tl_new:N
+  \g_defined_tl
+\tl_gset:Nn
+  \g_defined_tl
+  { bar }
+\tl_const:Nn
+  \c_defined_tl
+  { baz }
+\example_foo:V
+  \g_defined_tl
+\example_foo:V
+  \c_defined_tl
