@@ -173,7 +173,7 @@ local long_options = {
       end,
   },
   -- BREAKING CHANGE: `--group-files` now requires a mandatory value
-  ["group-files="] = {
+  ["group-files"] = {
     value_required = true,
     action =
       function(value)
