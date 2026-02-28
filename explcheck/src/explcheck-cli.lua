@@ -106,121 +106,197 @@ local function print_version()
   print("Licenses: LPPL 1.3 or later, GNU GPL v2 or later")
 end
 
-local function parse_arguments()
-  if #arg == 0 then
-    print_usage()
-    os.exit(1)
-  end
+-- Collect arguments.
+if #arg == 0 then
+  print_usage()
+  os.exit(1)
+end
 
-  local pathnames, allow_pathname_separators = {}, {}
-  local only_pathnames_from_now_on = false
-  local options = {}
-  local i = 1
+local pathnames, allow_pathname_separators = {}, {}
+local only_pathnames_from_now_on = false
+local options = {}
+local i = 1
 
-  local function store_option_value(option_name, field_name)
-    if i == #arg then
-      error("No value for option \"" .. option_name .. "\" provided.\n" .. "Use --help for usage information.", 0)
+local option_list = {
+  ["help"] = {
+    action =
+      function(value)
+        print_usage()
+        os.exit(0)
+      end,
+  },
+  ["version"] = {
+    action =
+      function(value)
+        print_version()
+        os.exit(0)
+      end,
+  },
+  ["config-file"] = {
+    need_value = true,
+    action =
+      function(value)
+        options.config_file = value
+      end,
+  },
+  ["error-format"] = {
+    need_value = true,
+    action =
+      function(value)
+        options.error_format = value
+      end,
+  },
+  ["expl3-detection-strategy"] = {
+    need_value = true,
+    field_name = "expl3_detection_strategy",
+    action =
+      function(value)
+        options.expl3_detection_strategy = value
+      end,
+  },
+  -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
+  ["expect-expl3-everywhere"] = {
+    action =
+      function(value)
+        options.expl3_detection_strategy = "always"
+      end,
+  },
+  ["files-from"] = {
+    need_value = true,
+    action =
+      function(value)
+        local file = assert(io.open(value, "r"))
+        for pathname in file:lines() do
+          table.insert(pathnames, pathname)
+          table.insert(allow_pathname_separators, false)
+        end
+        assert(file:close())
+      end,
+  },
+  -- BREAKING CHANGE: `--group-files` now requires a value
+  ["group-files="] = {
+    need_value = true,
+    action =
+      function(value)
+        if value == "true" then
+          options.group_files = true
+        elseif value == "false" then
+          options.group_files = false
+        else
+          options.group_files = value
+        end
+      end,
+  },
+  ["ignored-issues"] = {
+    need_value = true,
+    action =
+      function(value)
+        options.ignored_issues = {}
+        for issue_identifier in value:gmatch('[^,]+') do
+          table.insert(options.ignored_issues, issue_identifier)
+        end
+      end,
+  },
+  ["make-at-letter"] = {
+    need_value = true,
+    action =
+      function(value)
+        if value == "true" then
+          options.make_at_letter = true
+        elseif value == "false" then
+          options.make_at_letter = false
+        else
+          options.make_at_letter = value
+        end
+      end,
+  },
+  ["max-line-length"] = {
+    need_value = true,
+    action =
+      function(value)
+        options.max_line_length = tonumber(value)
+      end,
+  },
+  ["no-config-file"] = {
+    action =
+      function(value)
+        options.config_file = ""
+      end,
+  },
+  ["porcelain"] = {
+    action =
+      function(value)
+        options.porcelain = true
+      end
+  },
+  ["verbose"] = {
+    action =
+      function(value)
+        options.verbose = true
+      end
+  },
+  ["warnings-are-errors"] = {
+    action =
+      function(value)
+        options.warnings_are_errors = true
+      end
+  },
+}
+
+while i <= #arg do
+  local argument = arg[i]
+  if only_pathnames_from_now_on then
+    table.insert(pathnames, argument)
+    table.insert(allow_pathname_separators, true)
+  elseif argument == "--" then
+    only_pathnames_from_now_on = true
+  -- Parse long options.
+  elseif argument:sub(1, 2) == "--" then
+    local option_name, option_value
+    local pos = argument:find("=", 1, true)
+    if pos then
+      option_name = argument:sub(3, pos - 1)
+    else
+      option_name = argument:sub(3)
     end
-    i = i + 1
-    options[field_name] = arg[i]
-  end
-
-  while i <= #arg do
-    local argument = arg[i]
-    if only_pathnames_from_now_on then
-      table.insert(pathnames, argument)
-      table.insert(allow_pathname_separators, true)
-    elseif argument == "--" then
-      only_pathnames_from_now_on = true
-    elseif argument == "--help" or argument == "-h" then
-      print_usage()
-      os.exit(0)
-    elseif argument == "--version" or argument == "-v" then
-      print_version()
-      os.exit(0)
-    elseif argument:sub(1, 14) == "--config-file=" then
-      options.config_file = argument:sub(15)
-    elseif argument == "--config-file" then
-      store_option_value("--config-file", "config_file")
-    elseif argument:sub(1, 15) == "--error-format=" then
-      options.error_format = argument:sub(16)
-    elseif argument == "--error-format" then
-      store_option_value("--error-format", "error_format")
-    elseif argument:sub(1, 27) == "--expl3-detection-strategy=" then
-      options.expl3_detection_strategy = argument:sub(28)
-    elseif argument == "--expl3-detection-strategy" then
-      store_option_value("--expl3-detection-strategy", "expl3_detection_strategy")
-    elseif argument == "--expect-expl3-everywhere" then
-      -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
-      options.expl3_detection_strategy = "always"
-    elseif argument:sub(1, 13) == "--files-from=" then
-      local files_from = argument:sub(14)
-      local file = assert(io.open(files_from, "r"))
-      for pathname in file:lines() do
-        table.insert(pathnames, pathname)
-        table.insert(allow_pathname_separators, false)
+    if option_list[option_name] then
+      if option_list[option_name].need_value then
+        if pos then
+          option_value = argument:sub(pos + 1)
+        else
+          i = i + 1
+          if i > #arg then
+            error("No value for option \"" .. option_name .. "\" provided.\n" .. "Use --help for usage information.", 0)
+          end
+          option_value = arg[i]
+        end
       end
-      assert(file:close())
-    elseif argument == "--group-files" then
-      options.group_files = true
-    elseif argument:sub(1, 14) == "--group-files=" then
-      local group_files = argument:sub(15)
-      if group_files == "true" then
-        options.group_files = true
-      elseif group_files == "false" then
-        options.group_files = false
-      else
-        options.group_files = group_files
-      end
-    elseif argument:sub(1, 17) == "--ignored-issues=" then
-      options.ignored_issues = {}
-      for issue_identifier in argument:sub(18):gmatch('[^,]+') do
-        table.insert(options.ignored_issues, issue_identifier)
-      end
-    elseif argument == "--make-at-letter" then
-      options.make_at_letter = true
-    elseif argument:sub(1, 17) == "--make-at-letter=" then
-      local make_at_letter = argument:sub(18)
-      if make_at_letter == "true" then
-        options.make_at_letter = true
-      elseif make_at_letter == "false" then
-        options.make_at_letter = false
-      else
-        options.make_at_letter = make_at_letter
-      end
-    elseif argument:sub(1, 18) == "--max-line-length=" then
-      options.max_line_length = tonumber(argument:sub(19))
-    elseif argument == "--no-config-file" then
-      options.config_file = ""
-    elseif argument == "--porcelain" or argument == "-p" then
-      options.porcelain = true
-    elseif argument == "--verbose" then
-      options.verbose = true
-    elseif argument == "--warnings-are-errors" then
-      options.warnings_are_errors = true
-    elseif argument:sub(1, 1) == "-" then
+      option_list[option_name].action(option_value)
+    else
       print(string.format('Unrecognized argument: %s\n', argument))
       print_usage()
       os.exit(1)
-    else
-      table.insert(pathnames, argument)
-      table.insert(allow_pathname_separators, true)
     end
-    i = i + 1
-  end
-
-  assert(#pathnames == #allow_pathname_separators)
-
-  if #pathnames == 0 then
+  -- Parse short options.
+  elseif argument == "-p" then
+    options.porcelain = true
+  elseif argument:sub(1, 1) == "-" then
+    print(string.format('Unrecognized argument: %s\n', argument))
     print_usage()
     os.exit(1)
+  else
+    table.insert(pathnames, argument)
+    table.insert(allow_pathname_separators, true)
   end
-
-  return pathnames, options, allow_pathname_separators
+  i = i + 1
 end
 
--- Collect arguments.
-local pathnames, options, allow_pathname_separators = parse_arguments()
+assert(#pathnames == #allow_pathname_separators)
+
+if #pathnames == 0 then
+  print_usage()
+  os.exit(1)
+end
 
 -- Group pathnames.
 local pathname_groups = utils.group_pathnames(pathnames, options, allow_pathname_separators)
