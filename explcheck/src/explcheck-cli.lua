@@ -115,7 +115,9 @@ local function argparse()
   local pathnames, allow_pathname_separators = {}, {}
   local only_pathnames_from_now_on = false
   local options = {}
-  for _, argument in ipairs(arg) do
+  local i = 1
+  while i <= #arg do
+    local argument = arg[i]
     if only_pathnames_from_now_on then
       table.insert(pathnames, argument)
       table.insert(allow_pathname_separators, true)
@@ -189,7 +191,9 @@ local function argparse()
       table.insert(pathnames, argument)
       table.insert(allow_pathname_separators, true)
     end
+    i = i + 1
   end
+
   assert(#pathnames == #allow_pathname_separators)
 
   if #pathnames == 0 then
