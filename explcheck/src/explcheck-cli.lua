@@ -249,6 +249,12 @@ local short_options = {
   p = long_options["porcelain"],
 }
 
+local function unknown_argument(argument)
+  print(string.format('Unrecognized argument: %s\n', argument))
+  print_usage()
+  os.exit(1)
+end
+
 local i = 1
 while i <= #arg do
   local argument = arg[i]
@@ -257,8 +263,8 @@ while i <= #arg do
     table.insert(allow_pathname_separators, true)
   elseif argument == "--" then
     only_pathnames_from_now_on = true
+  -- Parse long options.
   elseif argument:sub(1, 2) == "--" then
-    -- Parse long options.
     local option_name, option_value
     local pos = argument:find("=", 1, true)
     if pos then
@@ -280,26 +286,21 @@ while i <= #arg do
       end
       long_options[option_name].action(option_value)
     else
-      print(string.format('Unrecognized argument: %s\n', argument))
-      print_usage()
-      os.exit(1)
+      unknown_argument(argument)
     end
+  -- Parse short options.
   elseif argument:sub(1, 1) == "-" and argument:len() == 2 then
-    -- Parse short options.
+    -- TODO: Support merged short options, e.g. -abc as a shorthand for -a -b -c.
     local option_name = argument:sub(2, 2)
     if short_options[option_name] then
       -- TODO: Support short options with values, e.g. -pVALUE or -p VALUE.
       -- Currently, short options are only supported as flags without values.
       short_options[option_name].action(nil)
     else
-      print(string.format('Unrecognized argument: %s\n', argument))
-      print_usage()
-      os.exit(1)
+      unknown_argument(argument)
     end
   elseif argument:sub(1, 1) == "-" then
-    print(string.format('Unrecognized argument: %s\n', argument))
-    print_usage()
-    os.exit(1)
+    unknown_argument(argument)
   else
     table.insert(pathnames, argument)
     table.insert(allow_pathname_separators, true)
