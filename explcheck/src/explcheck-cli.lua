@@ -106,16 +106,15 @@ local function print_version()
   print("Licenses: LPPL 1.3 or later, GNU GPL v2 or later")
 end
 
--- Collect arguments.
 if #arg == 0 then
   print_usage()
   os.exit(1)
 end
 
+-- Collect arguments.
 local pathnames, allow_pathname_separators = {}, {}
 local only_pathnames_from_now_on = false
 local options = {}
-local i = 1
 
 local long_options = {
   ["help"] = {
@@ -250,6 +249,7 @@ local short_options = {
   p = long_options["porcelain"],
 }
 
+local i = 1
 while i <= #arg do
   local argument = arg[i]
   if only_pathnames_from_now_on then
