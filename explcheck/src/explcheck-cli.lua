@@ -61,10 +61,10 @@ local function print_usage()
   local max_grouped_files_per_directory = get_option("max_grouped_files_per_directory")
   print(
     "Options:\n\n"
-    .. "\t--config-file=FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
-    .. "\t--error-format=FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
+    .. "\t--config-file FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
+    .. "\t--error-format FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
     .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
-    .. "\t--expl3-detection-strategy={never|always|precision|recall|auto}\n\n"
+    .. "\t--expl3-detection-strategy {never|always|precision|recall|auto}\n\n"
     .. "\t                           The strategy for detecting expl3 parts of the input files:\n\n"
     .. '\t                           - "never": Assume that no part of the input files is in expl3.\n'
     .. '\t                           - "always": Assume that the whole input files are in expl3.\n'
@@ -75,22 +75,22 @@ local function print_usage()
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
     .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
-    .. "\t--files-from=FILE          Read the list of FILENAMES from FILE.\n\n"
-    .. "\t--group-files[={true|false|auto}]\n\n"
+    .. "\t--files-from FILE          Read the list of FILENAMES from FILE.\n\n"
+    .. "\t--group-files {true|false|auto}\n\n"
     .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
     .. '\t                           - empty or "true": Always group files unless "," is written between a pair of FILENAMES.\n'
     .. '\t                           - "false": Never group files unless "+" is written between a pair of FILENAMES.\n'
     .. '\t                           - "auto": Group consecutive files from the same directory, unless separated with ","\n'
     .. "\t                             and unless there are more than " .. max_grouped_files_per_directory .. " files in the directory.\n\n"
     .. "\t                           The default setting is --group-files=" .. get_option("group_files") .. ".\n\n"
-    .. "\t--ignored-issues=ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
-    .. "\t--make-at-letter[={true|false|auto}]\n\n"
+    .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
+    .. "\t--make-at-letter {true|false|auto}\n\n"
     .. '\t                           How the at sign ("@") should be tokenized:\n\n'
     .. '\t                           - empty or "true": Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n'
     .. '\t                           - "false": Tokenize "@" as an other character (catcode 12), like in plain TeX.\n'
     .. '\t                           - "auto": Use context cues to determine the catcode of "@".\n\n'
     .. "\t                           The default setting is --make-at-letter=" .. make_at_letter .. ".\n\n"
-    .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
+    .. "\t--max-line-length N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--no-config-file           Do not load a user config file. See also --config-file.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output. See also --error-format.\n\n"
