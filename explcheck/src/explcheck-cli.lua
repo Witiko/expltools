@@ -106,7 +106,7 @@ local function print_version()
   print("Licenses: LPPL 1.3 or later, GNU GPL v2 or later")
 end
 
-local function argparse()
+local function parse_arguments()
   if #arg == 0 then
     print_usage()
     os.exit(1)
@@ -116,6 +116,15 @@ local function argparse()
   local only_pathnames_from_now_on = false
   local options = {}
   local i = 1
+
+  local function store_option_value(option_name, field_name)
+    if i == #arg then
+      error("No value for option \"" .. option_name .. "\" provided.\n" .. "Use --help for usage information.", 0)
+    end
+    i = i + 1
+    options[field_name] = arg[i]
+  end
+
   while i <= #arg do
     local argument = arg[i]
     if only_pathnames_from_now_on then
@@ -131,10 +140,16 @@ local function argparse()
       os.exit(0)
     elseif argument:sub(1, 14) == "--config-file=" then
       options.config_file = argument:sub(15)
+    elseif argument == "--config-file" then
+      store_option_value("--config-file", "config_file")
     elseif argument:sub(1, 15) == "--error-format=" then
       options.error_format = argument:sub(16)
+    elseif argument == "--error-format" then
+      store_option_value("--error-format", "error_format")
     elseif argument:sub(1, 27) == "--expl3-detection-strategy=" then
       options.expl3_detection_strategy = argument:sub(28)
+    elseif argument == "--expl3-detection-strategy" then
+      store_option_value("--expl3-detection-strategy", "expl3_detection_strategy")
     elseif argument == "--expect-expl3-everywhere" then
       -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
       options.expl3_detection_strategy = "always"
@@ -205,7 +220,7 @@ local function argparse()
 end
 
 -- Collect arguments.
-local pathnames, options, allow_pathname_separators = argparse()
+local pathnames, options, allow_pathname_separators = parse_arguments()
 
 -- Group pathnames.
 local pathname_groups = utils.group_pathnames(pathnames, options, allow_pathname_separators)
