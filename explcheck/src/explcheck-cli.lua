@@ -133,21 +133,21 @@ local option_list = {
       end,
   },
   ["config-file"] = {
-    need_value = true,
+    value_required = true,
     action =
       function(value)
         options.config_file = value
       end,
   },
   ["error-format"] = {
-    need_value = true,
+    value_required = true,
     action =
       function(value)
         options.error_format = value
       end,
   },
   ["expl3-detection-strategy"] = {
-    need_value = true,
+    value_required = true,
     field_name = "expl3_detection_strategy",
     action =
       function(value)
@@ -162,7 +162,7 @@ local option_list = {
       end,
   },
   ["files-from"] = {
-    need_value = true,
+    value_required = true,
     action =
       function(value)
         local file = assert(io.open(value, "r"))
@@ -173,9 +173,9 @@ local option_list = {
         assert(file:close())
       end,
   },
-  -- BREAKING CHANGE: `--group-files` now requires a value
+  -- BREAKING CHANGE: `--group-files` now requires a mandatory value
   ["group-files="] = {
-    need_value = true,
+    value_required = true,
     action =
       function(value)
         if value == "true" then
@@ -188,7 +188,7 @@ local option_list = {
       end,
   },
   ["ignored-issues"] = {
-    need_value = true,
+    value_required = true,
     action =
       function(value)
         options.ignored_issues = {}
@@ -197,8 +197,9 @@ local option_list = {
         end
       end,
   },
+  -- BREAKING CHANGE: `--group-files` now requires a mandatory value
   ["make-at-letter"] = {
-    need_value = true,
+    value_required = true,
     action =
       function(value)
         if value == "true" then
@@ -211,7 +212,7 @@ local option_list = {
       end,
   },
   ["max-line-length"] = {
-    need_value = true,
+    value_required = true,
     action =
       function(value)
         options.max_line_length = tonumber(value)
@@ -260,7 +261,7 @@ while i <= #arg do
       option_name = argument:sub(3)
     end
     if option_list[option_name] then
-      if option_list[option_name].need_value then
+      if option_list[option_name].value_required then
         if pos then
           option_value = argument:sub(pos + 1)
         else
