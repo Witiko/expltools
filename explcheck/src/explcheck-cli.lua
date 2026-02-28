@@ -117,7 +117,7 @@ local only_pathnames_from_now_on = false
 local options = {}
 local i = 1
 
-local option_list = {
+local long_options = {
   ["help"] = {
     action =
       function(value)
@@ -244,6 +244,12 @@ local option_list = {
   },
 }
 
+local short_options = {
+  h = long_options["help"],
+  v = long_options["version"],
+  p = long_options["porcelain"],
+}
+
 while i <= #arg do
   local argument = arg[i]
   if only_pathnames_from_now_on then
@@ -251,8 +257,8 @@ while i <= #arg do
     table.insert(allow_pathname_separators, true)
   elseif argument == "--" then
     only_pathnames_from_now_on = true
-  -- Parse long options.
   elseif argument:sub(1, 2) == "--" then
+    -- Parse long options.
     local option_name, option_value
     local pos = argument:find("=", 1, true)
     if pos then
@@ -260,8 +266,8 @@ while i <= #arg do
     else
       option_name = argument:sub(3)
     end
-    if option_list[option_name] then
-      if option_list[option_name].value_required then
+    if long_options[option_name] then
+      if long_options[option_name].value_required then
         if pos then
           option_value = argument:sub(pos + 1)
         else
@@ -272,15 +278,25 @@ while i <= #arg do
           option_value = arg[i]
         end
       end
-      option_list[option_name].action(option_value)
+      long_options[option_name].action(option_value)
     else
       print(string.format('Unrecognized argument: %s\n', argument))
       print_usage()
       os.exit(1)
     end
-  -- Parse short options.
-  elseif argument == "-p" then
-    options.porcelain = true
+  elseif argument:sub(1, 1) == "-" and argument:len() == 2 then
+    -- Parse short options.
+    local option_name = argument:sub(2, 2)
+    local option_value
+    if short_options[option_name] then
+      -- TODO: Support short options with values, e.g. -pVALUE or -p VALUE.
+      -- Currently, short options are only supported as flags without values.
+      short_options[option_name].action(option_value)
+    else
+      print(string.format('Unrecognized argument: %s\n', argument))
+      print_usage()
+      os.exit(1)
+    end
   elseif argument:sub(1, 1) == "-" then
     print(string.format('Unrecognized argument: %s\n', argument))
     print_usage()
