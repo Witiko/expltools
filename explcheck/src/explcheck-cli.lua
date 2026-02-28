@@ -120,14 +120,14 @@ local i = 1
 local long_options = {
   ["help"] = {
     action =
-      function(value)
+      function(_)
         print_usage()
         os.exit(0)
       end,
   },
   ["version"] = {
     action =
-      function(value)
+      function(_)
         print_version()
         os.exit(0)
       end,
@@ -157,7 +157,7 @@ local long_options = {
   -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
   ["expect-expl3-everywhere"] = {
     action =
-      function(value)
+      function(_)
         options.expl3_detection_strategy = "always"
       end,
   },
@@ -220,25 +220,25 @@ local long_options = {
   },
   ["no-config-file"] = {
     action =
-      function(value)
+      function(_)
         options.config_file = ""
       end,
   },
   ["porcelain"] = {
     action =
-      function(value)
+      function(_)
         options.porcelain = true
       end
   },
   ["verbose"] = {
     action =
-      function(value)
+      function(_)
         options.verbose = true
       end
   },
   ["warnings-are-errors"] = {
     action =
-      function(value)
+      function(_)
         options.warnings_are_errors = true
       end
   },
@@ -287,11 +287,10 @@ while i <= #arg do
   elseif argument:sub(1, 1) == "-" and argument:len() == 2 then
     -- Parse short options.
     local option_name = argument:sub(2, 2)
-    local option_value
     if short_options[option_name] then
       -- TODO: Support short options with values, e.g. -pVALUE or -p VALUE.
       -- Currently, short options are only supported as flags without values.
-      short_options[option_name].action(option_value)
+      short_options[option_name].action(nil)
     else
       print(string.format('Unrecognized argument: %s\n', argument))
       print_usage()
