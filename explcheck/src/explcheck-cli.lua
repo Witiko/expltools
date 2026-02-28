@@ -279,7 +279,9 @@ while i <= #arg do
         else
           i = i + 1
           if i > #arg then
-            error("No value for option \"" .. option_name .. "\" provided.\n" .. "Use --help for usage information.", 0)
+            print(string.format("No value provided for option: %s\n", option_name))
+            print_usage()
+            os.exit(1)
           end
           option_value = arg[i]
         end
