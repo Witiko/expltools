@@ -74,7 +74,7 @@ local function print_usage()
     .. '\t                               - "recall": The entire input file is in expl3.\n'
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
-    .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
+    .. "\t                           The default setting is --expl3-detection-strategy " .. expl3_detection_strategy .. ".\n\n"
     .. "\t--files-from FILE          Read the list of FILENAMES from FILE.\n\n"
     .. "\t--group-files {true|false|auto}\n\n"
     .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
@@ -82,14 +82,14 @@ local function print_usage()
     .. '\t                           - "false": Never group files unless "+" is written between a pair of FILENAMES.\n'
     .. '\t                           - "auto": Group consecutive files from the same directory, unless separated with ","\n'
     .. "\t                             and unless there are more than " .. max_grouped_files_per_directory .. " files in the directory.\n\n"
-    .. "\t                           The default setting is --group-files=" .. get_option("group_files") .. ".\n\n"
+    .. "\t                           The default setting is --group-files " .. get_option("group_files") .. ".\n\n"
     .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
     .. "\t--make-at-letter {true|false|auto}\n\n"
     .. '\t                           How the at sign ("@") should be tokenized:\n\n'
     .. '\t                           - empty or "true": Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n'
     .. '\t                           - "false": Tokenize "@" as an other character (catcode 12), like in plain TeX.\n'
     .. '\t                           - "auto": Use context cues to determine the catcode of "@".\n\n'
-    .. "\t                           The default setting is --make-at-letter=" .. make_at_letter .. ".\n\n"
+    .. "\t                           The default setting is --make-at-letter " .. make_at_letter .. ".\n\n"
     .. "\t--max-line-length N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--no-config-file           Do not load a user config file. See also --config-file.\n\n"
@@ -196,7 +196,7 @@ local long_options = {
         end
       end,
   },
-  -- BREAKING CHANGE: `--group-files` now requires a mandatory value
+  -- BREAKING CHANGE: `--make-at-letter` now requires a mandatory value
   ["make-at-letter"] = {
     value_required = true,
     action =
