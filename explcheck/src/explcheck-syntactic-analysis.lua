@@ -292,6 +292,8 @@ local function get_calls(results, part_number, segment, issues, content)
 
     if csname == "directlua" then  -- \directlua
       normalized_csname = "lua_now:e"
+    elseif csname == "newtoks" then
+      normalized_csname = "toks_new:N"
     elseif csname == "let" then  -- \let
       if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1].type == CONTROL_SEQUENCE then  -- followed by a control sequence

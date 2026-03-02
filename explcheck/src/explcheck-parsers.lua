@@ -276,6 +276,7 @@ local expl3_expandable_variable_or_constant_type = (
   + P("skip")
   + P("str")
   + P("tl")
+  + P("toks")
 )
 local expl3_unexpandable_variable_or_constant_type = (
   P("bool")

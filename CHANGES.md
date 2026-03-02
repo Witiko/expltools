@@ -25,6 +25,9 @@ This version of explcheck has made the following new enhancements:
 - In issue W419 (Using an undeclared variable or constant), also report
   undeclared usages through `V`- and `v`-type arguments. (#176)
 
+- Support the plain TeX `\newtoks` command and the corresponding deprecated
+  expl3 function `\toks_new:N`. (#176)
+
 #### Code understanding
 
 This version of explcheck introduces the following changes to code understanding
