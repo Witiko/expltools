@@ -1478,7 +1478,7 @@ local function report_issues(states, main_file_number, options)
         if csname ~= nil then
           if csname.type == TEXT then
             maybe_used_csname_texts[csname.payload] = true
-            if argument.specifier == "v" then
+            if argument.specifier == "v" and is_main_file then
               -- Record control sequence name usage in v-type arguments.
               local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
               table.insert(used_variable_csname_texts, {csname.payload, used_csname_byte_range})
@@ -1499,7 +1499,7 @@ local function report_issues(states, main_file_number, options)
         for _, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
             maybe_used_csname_texts[token.payload] = true
-            if argument.specifier == "V" then
+            if argument.specifier == "V" and is_main_file then
               -- Record control sequence name usage in V-type arguments.
               table.insert(used_variable_csname_texts, {token.payload, token.byte_range})
             end
