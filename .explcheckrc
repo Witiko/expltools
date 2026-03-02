@@ -222,6 +222,9 @@ ignored_issues = ["e304"]
 ignored_issues = ["e300"]
 imported_prefixes = ["xdu"]
 
+[package.letgut]
+imported_prefixes = ["letgut"]
+
 [package.semtex]
 ignored_issues = ["e300"]
 
@@ -235,7 +238,7 @@ ignored_issues = ["w302"]
 ignored_issues = ["e300"]
 
 [package.expex-acro]
-ignored_issues = ["e304"]
+ignored_issues = ["e304", "w419"]
 
 [package.texapi]
 ignored_issues = ["e304"]
@@ -245,6 +248,9 @@ ignored_issues = ["e304"]
 
 [package.animate]
 ignored_issues = ["e304"]
+
+[package.numerica-tables]
+imported_prefixes = ["nmcA", "nmcB", "nmcC"]
 
 [package.asmejour]
 ignored_issues = ["e304"]

@@ -8,7 +8,6 @@
 /usr/local/texlive/2024/texmf-dist/doc/latex/pstool/pstool.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/saveenv/saveenv.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/tex-overview/tex-overview-aux.tex
-/usr/local/texlive/2024/texmf-dist/doc/lualatex/letgut/letgut.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/asmeconf/asmeconf.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/asmejour/asmejour.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/atableau/atableau.sty
