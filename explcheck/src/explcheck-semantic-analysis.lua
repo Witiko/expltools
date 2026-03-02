@@ -1362,6 +1362,10 @@ local function report_issues(states, main_file_number, options)
 
   -- Report issues that are apparent after the semantic analysis.
   --- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
+  ---
+  --- TODO: Let's collect the group-wide information first in one substep and then collect the file-specific information
+  --- in another substep before reporting the issues. This should allow us to process all segments only twice, not N times
+  --- like we do currently, where N is the size of the file group.
   local all_segments = {}
   for _, state in ipairs(states) do
     local results = state.results
