@@ -56,9 +56,7 @@ local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
   local expl3_detection_strategy = get_option("expl3_detection_strategy")
-  local make_at_letter = tostring(get_option("make_at_letter"))
   local max_line_length = tostring(get_option("max_line_length"))
-  local max_grouped_files_per_directory = get_option("max_grouped_files_per_directory")
   print(
     "Options:\n\n"
     .. "\t--config-file FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
@@ -76,20 +74,11 @@ local function print_usage()
     .. "\t                                 is in expl3.\n\n"
     .. "\t                           The default setting is --expl3-detection-strategy " .. expl3_detection_strategy .. ".\n\n"
     .. "\t--files-from FILE          Read the list of FILENAMES from FILE.\n\n"
-    .. "\t--group-files {true|false|auto}\n\n"
-    .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
-    .. '\t                           - empty or "true": Always group files unless "," is written between a pair of FILENAMES.\n'
-    .. '\t                           - "false": Never group files unless "+" is written between a pair of FILENAMES.\n'
-    .. '\t                           - "auto": Group consecutive files from the same directory, unless separated with ","\n'
-    .. "\t                             and unless there are more than " .. max_grouped_files_per_directory .. " files in the directory.\n\n"
+    .. '\t--group-files              Always group files into sets that are assumed to be used together unless "," is written\n'
+    .. "\t                           between a pair of FILENAMES.\n\n"
     .. "\t                           The default setting is --group-files " .. get_option("group_files") .. ".\n\n"
     .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
-    .. "\t--make-at-letter {true|false|auto}\n\n"
-    .. '\t                           How the at sign ("@") should be tokenized:\n\n'
-    .. '\t                           - empty or "true": Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n'
-    .. '\t                           - "false": Tokenize "@" as an other character (catcode 12), like in plain TeX.\n'
-    .. '\t                           - "auto": Use context cues to determine the catcode of "@".\n\n'
-    .. "\t                           The default setting is --make-at-letter " .. make_at_letter .. ".\n\n"
+    .. '\t--make-at-letter           Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n\n'
     .. "\t--max-line-length N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--no-config-file           Do not load a user config file. See also --config-file.\n\n"
@@ -165,16 +154,19 @@ local long_options = {
       assert(file:close())
     end,
   },
-  -- BREAKING CHANGE: `--group-files` now requires a mandatory value
   ["group-files"] = {
-    value_required = true,
     action = function(value)
-      if value == "true" then
+      if value == nil then
         options.group_files = true
-      elseif value == "false" then
-        options.group_files = false
       else
-        options.group_files = value
+        -- TODO: Remove `--group-files[={true|false|auto}]` in v1.0.0.
+        if value == "true" then
+          options.group_files = true
+        elseif value == "false" then
+          options.group_files = false
+        else
+          options.group_files = value
+        end
       end
     end,
   },
@@ -187,16 +179,19 @@ local long_options = {
       end
     end,
   },
-  -- BREAKING CHANGE: `--make-at-letter` now requires a mandatory value
   ["make-at-letter"] = {
-    value_required = true,
     action = function(value)
-      if value == "true" then
+      if value == nil then
         options.make_at_letter = true
-      elseif value == "false" then
-        options.make_at_letter = false
       else
-        options.make_at_letter = value
+        -- TODO: Remove `--make-at-letter[={true|false|auto}]` in v1.0.0.
+        if value == "true" then
+          options.make_at_letter = true
+        elseif value == "false" then
+          options.make_at_letter = false
+        else
+          options.make_at_letter = value
+        end
       end
     end,
   },
@@ -258,10 +253,11 @@ while i <= #arg do
       option_name = argument:sub(3)
     end
     if long_options[option_name] then
+      if pos then
+        option_value = argument:sub(pos + 1)
+      end
       if long_options[option_name].value_required then
-        if pos then
-          option_value = argument:sub(pos + 1)
-        else
+        if not option_value then
           i = i + 1
           if i > #arg then
             print(string.format("No value provided for option: %s\n", option_name))
