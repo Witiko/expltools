@@ -118,128 +118,113 @@ local options = {}
 
 local long_options = {
   ["help"] = {
-    action =
-      function(_)
-        print_usage()
-        os.exit(0)
-      end,
+    action = function(_)
+      print_usage()
+      os.exit(0)
+    end,
   },
   ["version"] = {
-    action =
-      function(_)
-        print_version()
-        os.exit(0)
-      end,
+    action = function(_)
+      print_version()
+      os.exit(0)
+    end,
   },
   ["config-file"] = {
     value_required = true,
-    action =
-      function(value)
-        options.config_file = value
-      end,
+    action = function(value)
+      options.config_file = value
+    end,
   },
   ["error-format"] = {
     value_required = true,
-    action =
-      function(value)
-        options.error_format = value
-      end,
+    action = function(value)
+      options.error_format = value
+    end,
   },
   ["expl3-detection-strategy"] = {
     value_required = true,
     field_name = "expl3_detection_strategy",
-    action =
-      function(value)
-        options.expl3_detection_strategy = value
-      end,
+    action = function(value)
+      options.expl3_detection_strategy = value
+    end,
   },
   -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
   ["expect-expl3-everywhere"] = {
-    action =
-      function(_)
-        options.expl3_detection_strategy = "always"
-      end,
+    action = function(_)
+      options.expl3_detection_strategy = "always"
+    end,
   },
   ["files-from"] = {
     value_required = true,
-    action =
-      function(value)
-        local file = assert(io.open(value, "r"))
-        for pathname in file:lines() do
-          table.insert(pathnames, pathname)
-          table.insert(allow_pathname_separators, false)
-        end
-        assert(file:close())
-      end,
+    action = function(value)
+      local file = assert(io.open(value, "r"))
+      for pathname in file:lines() do
+        table.insert(pathnames, pathname)
+        table.insert(allow_pathname_separators, false)
+      end
+      assert(file:close())
+    end,
   },
   -- BREAKING CHANGE: `--group-files` now requires a mandatory value
   ["group-files"] = {
     value_required = true,
-    action =
-      function(value)
-        if value == "true" then
-          options.group_files = true
-        elseif value == "false" then
-          options.group_files = false
-        else
-          options.group_files = value
-        end
-      end,
+    action = function(value)
+      if value == "true" then
+        options.group_files = true
+      elseif value == "false" then
+        options.group_files = false
+      else
+        options.group_files = value
+      end
+    end,
   },
   ["ignored-issues"] = {
     value_required = true,
-    action =
-      function(value)
-        options.ignored_issues = {}
-        for issue_identifier in value:gmatch('[^,]+') do
-          table.insert(options.ignored_issues, issue_identifier)
-        end
-      end,
+    action = function(value)
+      options.ignored_issues = {}
+      for issue_identifier in value:gmatch('[^,]+') do
+        table.insert(options.ignored_issues, issue_identifier)
+      end
+    end,
   },
   -- BREAKING CHANGE: `--make-at-letter` now requires a mandatory value
   ["make-at-letter"] = {
     value_required = true,
-    action =
-      function(value)
-        if value == "true" then
-          options.make_at_letter = true
-        elseif value == "false" then
-          options.make_at_letter = false
-        else
-          options.make_at_letter = value
-        end
-      end,
+    action = function(value)
+      if value == "true" then
+        options.make_at_letter = true
+      elseif value == "false" then
+        options.make_at_letter = false
+      else
+        options.make_at_letter = value
+      end
+    end,
   },
   ["max-line-length"] = {
     value_required = true,
-    action =
-      function(value)
-        options.max_line_length = tonumber(value)
-      end,
+    action = function(value)
+      options.max_line_length = tonumber(value)
+    end,
   },
   ["no-config-file"] = {
-    action =
-      function(_)
-        options.config_file = ""
-      end,
+    action = function(_)
+      options.config_file = ""
+    end,
   },
   ["porcelain"] = {
-    action =
-      function(_)
-        options.porcelain = true
-      end
+    action = function(_)
+      options.porcelain = true
+    end,
   },
   ["verbose"] = {
-    action =
-      function(_)
-        options.verbose = true
-      end
+    action = function(_)
+      options.verbose = true
+    end,
   },
   ["warnings-are-errors"] = {
-    action =
-      function(_)
-        options.warnings_are_errors = true
-      end
+    action = function(_)
+      options.warnings_are_errors = true
+    end,
   },
 }
 
