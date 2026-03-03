@@ -118,13 +118,13 @@ local options = {}
 
 local long_options = {
   ["help"] = {
-    action = function(_)
+    action = function()
       print_usage()
       os.exit(0)
     end,
   },
   ["version"] = {
-    action = function(_)
+    action = function()
       print_version()
       os.exit(0)
     end,
@@ -150,7 +150,7 @@ local long_options = {
   },
   -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
   ["expect-expl3-everywhere"] = {
-    action = function(_)
+    action = function()
       options.expl3_detection_strategy = "always"
     end,
   },
@@ -207,22 +207,22 @@ local long_options = {
     end,
   },
   ["no-config-file"] = {
-    action = function(_)
+    action = function()
       options.config_file = ""
     end,
   },
   ["porcelain"] = {
-    action = function(_)
+    action = function()
       options.porcelain = true
     end,
   },
   ["verbose"] = {
-    action = function(_)
+    action = function()
       options.verbose = true
     end,
   },
   ["warnings-are-errors"] = {
-    action = function(_)
+    action = function()
       options.warnings_are_errors = true
     end,
   },
