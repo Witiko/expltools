@@ -79,9 +79,12 @@ local function print_usage()
     .. "\t                           The default setting is --group-files " .. get_option("group_files") .. ".\n\n"
     .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
     .. '\t--make-at-letter           Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n\n'
+    .. '\t--make-at-other            Tokenize "@" as an other character (catcode 12), like in plain TeX.\n\n'
     .. "\t--max-line-length N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--no-config-file           Do not load a user config file. See also --config-file.\n\n"
+    .. '\t--no-group-files           Never group files into sets that are assumed to be used together unless "+" is written\n'
+    .. "\t                           between a pair of FILENAMES.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output. See also --error-format.\n\n"
     .. "\t--verbose                  Print additional information in non-machine-readable output. See also --porcelain.\n\n"
     .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
@@ -195,6 +198,11 @@ local long_options = {
       end
     end,
   },
+  ["make-at-other"] = {
+    action = function()
+      options.make_at_letter = false
+    end,
+  },
   ["max-line-length"] = {
     value_required = true,
     action = function(value)
@@ -204,6 +212,11 @@ local long_options = {
   ["no-config-file"] = {
     action = function()
       options.config_file = ""
+    end,
+  },
+  ["no-group-files"] = {
+    action = function()
+      options.group_files = false
     end,
   },
   ["porcelain"] = {
