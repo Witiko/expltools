@@ -281,7 +281,7 @@ while i <= #arg do
     local option_name = argument:sub(2, 2)
     if short_options[option_name] then
       -- TODO: Support short options with values, e.g. `-p VALUE`.
-      short_options[option_name].action(nil)
+      short_options[option_name].action()
     else
       unknown_argument(argument)
     end
