@@ -280,7 +280,7 @@ while i <= #arg do
     -- TODO: Support merged short options, e.g. -abc as a shorthand for -a -b -c.
     local option_name = argument:sub(2, 2)
     if short_options[option_name] then
-      -- TODO: Support short options with values, e.g. -pVALUE or -p VALUE.
+      -- TODO: Support short options with values, e.g. -p VALUE.
       -- Currently, short options are only supported as flags without values.
       short_options[option_name].action(nil)
     else
