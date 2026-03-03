@@ -277,11 +277,10 @@ while i <= #arg do
     end
   -- Parse short options.
   elseif argument:sub(1, 1) == "-" and argument:len() == 2 then
-    -- TODO: Support merged short options, e.g. -abc as a shorthand for -a -b -c.
+    -- TODO: Support merged short options, e.g. `-abc` as a shorthand for `-a -b -c`.
     local option_name = argument:sub(2, 2)
     if short_options[option_name] then
-      -- TODO: Support short options with values, e.g. -p VALUE.
-      -- Currently, short options are only supported as flags without values.
+      -- TODO: Support short options with values, e.g. `-p VALUE`.
       short_options[option_name].action(nil)
     else
       unknown_argument(argument)
