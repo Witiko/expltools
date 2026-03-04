@@ -30,9 +30,9 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install lua-language-server
       - name: Install TeX Live
-        uses: TeX-Live/setup-texlive-action@v3
+        uses: zauguin/install-texlive@v4
         with:
-          cache: false
+          cache_version: ${{ github.run_id }}
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
@@ -80,9 +80,9 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: TeX-Live/setup-texlive-action@v3
+        uses: zauguin/install-texlive@v4
         with:
-          cache: false
+          cache_version: ${{ github.run_id }}
           packages: |
             l3build
             luatex
@@ -114,9 +114,9 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: TeX-Live/setup-texlive-action@v3
+        uses: zauguin/install-texlive@v4
         with:
-          cache: false
+          cache_version: ${{ github.run_id }}
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
@@ -232,13 +232,13 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends parallel
       - name: Install TeX Live
-        uses: TeX-Live/setup-texlive-action@v3
+        uses: zauguin/install-texlive@v4
         with:
-          cache: false
+          cache_version: ${{ github.run_id }}
           packages: |
             scheme-basic
             l3build
-          package-file: |
+          package_file: |
             **/DEPENDS.txt
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
         run: tlmgr install --reinstall --with-doc l3kernel-dev
@@ -273,9 +273,9 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: TeX-Live/setup-texlive-action@v3
+        uses: zauguin/install-texlive@v4
         with:
-          cache: false
+          cache_version: ${{ github.run_id }}
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
