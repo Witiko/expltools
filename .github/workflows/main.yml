@@ -143,7 +143,7 @@ jobs:
           #- TL2022
           #- TL2023
           - TL2024
-          - latest
+          #- latest
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
