@@ -42,6 +42,9 @@ integration:
 - Run LuaLS even if Luacheck failed. (95f71a1)
 - Run one additional process to reduce the problem of idle CPUs near the end
   while one worker grinds a difficult task. (#174, 19ceb45)
+- Migrate from `TeX-Live/setup-texlive-action@v3` to `zauguin/install-texlive@v4`.
+  (drafted by @koppor in koppor/expltools#1 and independently suggested by
+  @muzimuzhi and @gucci-on-fleek in #178, added in #181)
 
 ## expltools 2026-02-05
 
