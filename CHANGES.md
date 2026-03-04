@@ -8,9 +8,9 @@
 
 ### explcheck v0.18.0
 
-#### Enhancements
+#### New features
 
-This version of explcheck has made the following new enhancements:
+This version of explcheck has implemented the following new features:
 
 - In human-readable output, mention that further issues may be reported after
   fixing the current errors after we have failed fast. (reported by @dbitouze
