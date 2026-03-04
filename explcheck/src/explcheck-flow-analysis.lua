@@ -47,6 +47,12 @@ local range_flags = ranges.range_flags
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
+local macro_statement_types = {
+  FUNCTION_DEFINITIONS = "block of function (variant) definitions",
+}
+
+local FUNCTION_DEFINITIONS = macro_statement_types.FUNCTION_DEFINITIONS
+
 local edge_categories = {
   STATIC = "static",
   DYNAMIC = "dynamic",
@@ -85,6 +91,38 @@ local edge_subtypes = {
 local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
+-- Merge selected statements into macro-statements, a more useful form for this analysis.
+local function merge_statements(states, file_number, _)
+  local state = states[file_number]
+
+  local results = state.results
+
+  for _, segment in ipairs(results.segments or {}) do
+    local macro_statements, previous_macro_statement = {}, nil
+    for _, statement in ipairs(segment.statements) do
+      if statement.type == FUNCTION_DEFINITION
+          or statement.type == FUNCTION_VARIANT_DEFINITION then
+        if previous_macro_statement == nil
+            or previous_macro_statement.type ~= FUNCTION_DEFINITIONS then
+          local macro_statement = {
+            type = FUNCTION_DEFINITIONS,
+            -- The following attributes are specific to the type.
+            statements = {},
+          }
+          table.insert(macro_statements, macro_statement)
+          previous_macro_statement = macro_statement
+        end
+        table.insert(previous_macro_statement.statements, statement)
+      else
+        table.insert(macro_statements, statement)
+        previous_macro_statement = statement
+      end
+    end
+    assert(#macro_statements <= #segment.statements)
+    segment.macro_statements = macro_statements
+  end
+end
+
 -- Resolve a chunk and a statement number to a statement.
 local function _get_statement(chunk, statement_number)
   local segment = chunk.segment
@@ -96,7 +134,8 @@ local function _get_statement(chunk, statement_number)
 end
 
 -- Get a text representation of a statement or a pseudo-statement "after" a chunk.
-local function format_statement(chunk, statement_number)  ---@diagnostic disable-line:unused-function
+---@diagnostic disable-next-line:unused-function
+local function format_statement(chunk, statement_number)
   local statement_text
   if statement_number == chunk.statement_range:stop() + 1 then
     statement_text = string.format("pseudo-statement #%d after a chunk", statement_number)
@@ -150,8 +189,7 @@ local function is_confused(pathname, results, options)
 end
 
 -- Collect chunks of known statements.
----@diagnostic disable-next-line:unused-local
-local function collect_chunks(states, file_number, options)  -- luacheck: ignore options
+local function collect_chunks(states, file_number, _)
   local state = states[file_number]
 
   local results = state.results
@@ -172,22 +210,19 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
       end
     end
 
-    if segment.statements ~= nil then
-      for statement_number, statement in ipairs(segment.statements or {}) do
-        if statement.type == OTHER_TOKENS and statement.subtype == OTHER_TOKENS_COMPLEX then
-          record_chunk(statement_number, EXCLUSIVE)
-        elseif first_statement_number == nil then
-          first_statement_number = statement_number
-        end
+    for statement_number, statement in ipairs(segment.statements) do
+      if statement.type == OTHER_TOKENS and statement.subtype == OTHER_TOKENS_COMPLEX then
+        record_chunk(statement_number, EXCLUSIVE)
+      elseif first_statement_number == nil then
+        first_statement_number = statement_number
       end
-      record_chunk(#segment.statements, INCLUSIVE)
     end
+    record_chunk(#segment.statements, INCLUSIVE)
   end
 end
 
 -- Draw "static" edges between chunks withing a single file. A static edge is known without extra analysis.
----@diagnostic disable-next-line:unused-local
-local function draw_file_local_static_edges(states, file_number, options)  -- luacheck: ignore options
+local function draw_file_local_static_edges(states, file_number, _)
   local state = states[file_number]
 
   local results = state.results
@@ -322,8 +357,7 @@ local function draw_file_local_static_edges(states, file_number, options)  -- lu
 end
 
 -- Draw "static" edges between chunks between all files in a file group. A static edge is known without extra analysis.
----@diagnostic disable-next-line:unused-local
-local function draw_group_wide_static_edges(states, _, options)  -- luacheck: ignore options
+local function draw_group_wide_static_edges(states, _, _)
   -- Draw static edges once between all files in the file group, not just individual files.
   if states.results.drew_static_edges ~= nil then
     return
@@ -1185,6 +1219,7 @@ local function report_issues(states, main_file_number, _)
 end
 
 local substeps = {
+  merge_statements,
   collect_chunks,
   draw_file_local_static_edges,
   draw_group_wide_static_edges,
