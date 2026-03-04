@@ -827,7 +827,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
 
       -- Determine the reaching definitions from before the current statement.
-      local incoming_definition_list = {}
+      local incoming_definition_list, incoming_definition_index = {}, {}
       do
         local original_incoming_definition_list, original_incoming_definition_index = {}, {}
         local original_incoming_definition_edge_confidence_lists = {}
@@ -878,11 +878,15 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             updated_definition = definition
           end
           table.insert(incoming_definition_list, updated_definition)
+          if incoming_definition_index[updated_definition.csname] == nil then
+            incoming_definition_index[updated_definition.csname] = {}
+          end
+          table.insert(incoming_definition_index[updated_definition.csname], #incoming_definition_list)
         end
       end
 
       -- Determine the definitions and undefinitions from the current statement.
-      local current_definition_list = {}
+      local current_definition_list, current_definition_index = {}, {}
       local invalidated_statement_index, invalidated_statement_list = {}, {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local macro_statement_number = statement_number
@@ -915,6 +919,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             }
             assert(definition.confidence >= MAYBE, "Function definitions shouldn't have confidences less than MAYBE")
             table.insert(current_definition_list, definition)
+            if current_definition_index[definition.csname] == nil then
+              current_definition_index[definition.csname] = {}
+            end
+            table.insert(current_definition_index[definition.csname], #current_definition_list)
           elseif statement.type == FUNCTION_UNDEFINITION then
             defined_or_undefined_csname = statement.undefined_csname.payload
           else
@@ -922,18 +930,26 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           end
           if statement.confidence == DEFINITELY then
             -- Invalidate definitions of the same control sequence names from before the current statement.
-            for _, incoming_definition in ipairs(incoming_definition_list) do
-              local incoming_statement = get_statement(
-                incoming_definition.chunk,
-                incoming_definition.macro_statement_number,
-                incoming_definition.statement_number
-              )
-              if incoming_statement.defined_csname.payload == defined_or_undefined_csname and
-                  incoming_statement ~= statement then
-                if invalidated_statement_index[incoming_statement] == nil then
-                  table.insert(invalidated_statement_list, incoming_statement)
+            for _, definition_list_and_index in ipairs({
+                  {incoming_definition_list, incoming_definition_index},
+                  {current_definition_list, current_definition_index},
+                }) do
+              local definition_list, definition_index = table.unpack(definition_list_and_index)
+              for _, incoming_definition_number in ipairs(definition_index[defined_or_undefined_csname] or {}) do
+                local incoming_definition = definition_list[incoming_definition_number]
+                assert(incoming_definition.csname == defined_or_undefined_csname)
+                local incoming_statement = get_statement(
+                  incoming_definition.chunk,
+                  incoming_definition.macro_statement_number,
+                  incoming_definition.statement_number
+                )
+                assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
+                if incoming_statement ~= statement then
+                  if invalidated_statement_index[incoming_statement] == nil then
+                    table.insert(invalidated_statement_list, incoming_statement)
+                  end
+                  invalidated_statement_index[incoming_statement] = true
                 end
-                invalidated_statement_index[incoming_statement] = true
               end
             end
           end
