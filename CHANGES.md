@@ -101,6 +101,8 @@ integration:
 - Migrate from `TeX-Live/setup-texlive-action@v3` to `zauguin/install-texlive@v4`.
   (drafted by @koppor in koppor#1 and independently suggested by @muzimuzhi and
   @gucci-on-fleek in #178, added in #181)
+- Bump `actions/upload-artifact` from 6 to 7. (contributed by @dependabot in #179)
+- Bump `actions/download-artifact` from 7 to 8. (contributed by @dependabot in #180)
 
 ## expltools 2026-02-05
 
