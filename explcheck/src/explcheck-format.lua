@@ -805,7 +805,8 @@ local function print_results(state, options, evaluation_results, is_last_file)
           pluralize("macro-statement", num_macro_statements_total)
         )
       )
-      for macro_statement_type, num_macro_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_macro_statement_tokens) do
+      for macro_statement_type, num_macro_statement_tokens
+          in pairs_sorted_by_descending_values(evaluation_results.num_macro_statement_tokens) do
         local num_macro_statements = evaluation_results.num_macro_statements[macro_statement_type]
         local num_macro_statement_calls = evaluation_results.num_macro_statement_calls[macro_statement_type]
         assert(num_macro_statements ~= nil)
