@@ -59,8 +59,8 @@ and to how it evaluates its own level of confidence:
 - Treat simple constant and variable definitions, as well as message texts, as
   well-understood. (#176)
 - Consider `FUNCTION_CALL` statements high-confidence and well-understood only
-  if there are no potential low-confidence definitions of the called control
-  function. (#176)
+  if there are no potential low-confidence definitions of the called function.
+  (#176)
 
 These changes have had a mixed effect on the [code coverage][]. Overall, it has
 remained mostly stable, but coverage on the current TeX Live 2025 snapshot
