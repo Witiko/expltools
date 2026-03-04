@@ -12,6 +12,22 @@ This version of explcheck has made the following new enhancements:
   fixing the current errors after we have failed fast. (reported by @dbitouze
   and @muzimuzhi in #170 and #171, fixed in #175)
 
+- Add more support for flow analysis. (#176)
+
+  This adds support for the following issues from Section 5.1 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+   1. E505 (Calling an undefined function)
+
+  Flow analysis is now enabled by default for all package files with at least 95%
+  code understanding.
+
+- In issue W419 (Using an undeclared variable or constant), also report
+  undeclared usages through `V`- and `v`-type arguments. (#176)
+
+- Support the plain TeX `\newtoks` command and the corresponding deprecated
+  expl3 function `\toks_new:N`. (#176)
+
 - Support separate command-line options `--long-option value` in addition to
   `--long-option=value`. (contributed by @muzimuzhi in #178)
 
@@ -31,6 +47,24 @@ This version of explcheck has made the following new enhancements:
   - no option instead of `--group-files=auto` (default)
 
   The deprecated options are scheduled for removal in version 1.0.0.
+
+#### Code understanding
+
+This version of explcheck introduces the following changes to code understanding
+and to how it evaluates its own level of confidence:
+
+- Add support for `\cs_undefine:N`. (#176)
+- Treat simple constant and variable definitions, as well as message texts, as
+  well-understood. (#176)
+- Consider `FUNCTION_CALL` statements high-confidence and well-understood only
+  if there are no potential low-confidence definitions of the called control
+  function. (#176)
+
+These changes have had a mixed effect on the [code coverage][]. Overall, it has
+remained mostly stable, but coverage on the current TeX Live 2025 snapshot
+(2026-02-19) now rounds to 19%, down from the previous 20%.
+
+ [code coverage]: https://witiko.github.io/Expl3-Linter-11/#code-coverage
 
 #### Fixes
 
@@ -62,9 +96,11 @@ integration:
 - Run LuaLS even if Luacheck failed. (95f71a1)
 - Run one additional process to reduce the problem of idle CPUs near the end
   while one worker grinds a difficult task. (#174, 19ceb45)
+- Increase the time limit for running explcheck over the entire TeX Live
+  from 3 to 5 minutes. (#176)
 - Migrate from `TeX-Live/setup-texlive-action@v3` to `zauguin/install-texlive@v4`.
-  (drafted by @koppor in koppor/expltools#1 and independently suggested by
-  @muzimuzhi and @gucci-on-fleek in #178, added in #181)
+  (drafted by @koppor in koppor#1 and independently suggested by @muzimuzhi and
+  @gucci-on-fleek in #178, added in #181)
 
 ## expltools 2026-02-05
 

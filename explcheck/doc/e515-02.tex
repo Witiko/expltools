@@ -1,0 +1,13 @@
+\clist_set:Nn
+  \l_foo_clist
+  { 3 , 01 , -2 , 5 , +1 }
+\clist_sort:Nn
+  \l_foo_clist
+  { \example_foo: }
+\cs_new:Nn
+  \example_foo:
+  {
+    \int_compare:nNnTF { #1 } > { #2 }
+      { \sort_return_swapped: }
+      { \sort_return_same: }
+  }

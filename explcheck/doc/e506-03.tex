@@ -1,0 +1,14 @@
+\prg_new_conditional:Nnn
+  \module_foo:n
+  { p, T, F, TF }
+  { \prg_return_true: }
+\cs_new_eq:NN  % error on this line
+  \module_baz:nTF
+  \module_bar:nTF
+\cs_new_eq:NN
+  \module_bar:nTF
+  \module_foo:nTF
+\module_baz:nTF
+  { foo }
+  { bar }
+  { baz }

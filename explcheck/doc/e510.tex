@@ -1,0 +1,20 @@
+\cs_new:N
+  \example_restricted_expandable:
+  {
+    \int_to_roman:n
+      { 1 + 2 }
+  }
+\cs_new:N
+  \module_foo:n
+  { #1 }
+\cs_generate_variant:Nn
+  \module_foo:n
+  { x, e, f }
+\module_foo:n
+  { \example_restricted_expandable: }
+\module_foo:x
+  { \example_restricted_expandable: }
+\module_foo:e
+  { \example_restricted_expandable: }
+\module_foo:f
+  { \example_restricted_expandable: }  % error on this line

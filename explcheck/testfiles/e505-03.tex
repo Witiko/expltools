@@ -1,0 +1,11 @@
+\cs_new:Nn
+  \module_foo:n
+  { bar }
+\tl_set:Nn
+  \l_tmpa_tl
+  { baz }
+\module_foo:V  % error on this line
+  \l_tmpa_tl
+\cs_generate_variant:Nn
+  \module_foo:n
+  { V }

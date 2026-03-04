@@ -1,0 +1,28 @@
+\cs_new_protected:N
+  \example_unexpandable:
+  {
+    \tl_set:Nn
+      \l_tmpa_tl
+      { bar }
+    \c_true_bool
+  }
+\cs_new:N
+  \example_restricted_expandable:
+  {
+    \bool_do_while:Nn
+      \c_false_bool
+      { }
+    \c_true_bool
+  }
+\cs_new_protected:N
+  \example_expandable:
+  { \c_true_bool }
+\bool_set:Nn
+  \l_tmpa_bool
+  { \example_unexpandable: }  % error on this line
+\bool_set:Nn
+  \l_tmpa_bool
+  { \example_restricted_expandable: }  % error on this line
+\bool_set:Nn
+  \l_tmpa_bool
+  { \example_expandable: }

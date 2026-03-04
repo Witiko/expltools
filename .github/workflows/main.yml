@@ -163,7 +163,7 @@ jobs:
           apt update
           apt install -qy parallel
       - name: Run explcheck
-        timeout-minutes: 3
+        timeout-minutes: 5
         env:
           LUAINPUTS: explcheck/src
         run: |
@@ -201,7 +201,7 @@ jobs:
         if: matrix.release != 'latest'
         run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
       - name: Check if the configuration is minimal
-        timeout-minutes: 4
+        timeout-minutes: 5
         if: matrix.release == 'latest'
         env:
           LUAINPUTS: explcheck/src
