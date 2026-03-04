@@ -192,7 +192,7 @@ jobs:
         run: cat issues/COVERAGE
       - name: Upload issues and code coverage
         if: matrix.release != 'latest'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.release }}-issues
           path: |
@@ -254,13 +254,13 @@ jobs:
           set -e
           l3build ctan
       - name: Upload CTAN archive
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: CTAN archive
           path: |
             build/distrib/ctan/expltools-ctan.zip
       - name: Upload documentation
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: Documentation
           path: |
