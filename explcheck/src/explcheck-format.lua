@@ -321,17 +321,20 @@ local function print_summary(options, evaluation_results)
       io.write(string.format(", %s %s", humanize(num_statements_total), pluralize("statement", num_statements_total)))
     end
     -- Evaluate the evalution results of the flow analysis.
+    local num_macro_statements_total = evaluation_results.num_macro_statements_total
     local num_chunks = evaluation_results.num_chunks
     local num_edges_total = evaluation_results.num_edges_total
-    if num_chunks == 0 then
+    if num_macro_statements_total == 0 or num_chunks == 0 then
       goto skip_to_code_coverage
     end
     io.write(
       string.format(
-        "\n- %s %s %s",
+        "\n- %s %s %s over %s %s",
         colorize("Flow analysis:", BOLD),
         titlecase(humanize(num_chunks)),
-        pluralize("chunk", num_chunks)
+        pluralize("chunk", num_chunks),
+        humanize(num_macro_statements_total),
+        pluralize("macro-statement", num_macro_statements_total)
       )
     )
     if num_edges_total == 0 then
@@ -339,9 +342,10 @@ local function print_summary(options, evaluation_results)
     end
     io.write(
       string.format(
-        " and %s %s between them",
+        ", %s %s between the %s",
         humanize(num_edges_total),
-        pluralize("edge", num_edges_total)
+        pluralize("edge", num_edges_total),
+        pluralize("chunk", num_chunks)
       )
     )
     -- Evaluate code coverage.
