@@ -1000,7 +1000,11 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Check that the definitions and their confidences are the same.
         for _, previous_definition in ipairs(previous_definition_list) do
-          local statement = get_statement(previous_definition.chunk, previous_definition.statement_number)
+          local statement = get_statement(
+            previous_definition.chunk,
+            previous_definition.macro_statement_number,
+            previous_definition.statement_number
+          )
           if current_reaching_statement_index[statement] == nil then
             return true
           end
