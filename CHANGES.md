@@ -12,7 +12,7 @@ This version of explcheck has made the following new enhancements:
   fixing the current errors after we have failed fast. (reported by @dbitouze
   and @muzimuzhi in #170 and #171, fixed in #175)
 
-- Add more support for semantic analysis. (#176)
+- Add more support for flow analysis. (#176)
 
   This adds support for the following issues from Section 5.1 of the document
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
@@ -27,6 +27,26 @@ This version of explcheck has made the following new enhancements:
 
 - Support the plain TeX `\newtoks` command and the corresponding deprecated
   expl3 function `\toks_new:N`. (#176)
+
+- Support separate command-line options `--long-option value` in addition to
+  `--long-option=value`. (contributed by @muzimuzhi in #178)
+
+- Deprecate the command-line options `--group-files={true|false|auto}` and
+  `--make-at-letter={true|false|auto}`. Add the valueless options
+  `--make-at-letter`, `--make-at-other`, `--group-files`, and
+  `--no-group-files`. (#178)
+
+  The expected usage is now as follows:
+
+  - `--make-at-letter` instead of `--make-at-letter=true`
+  - `--make-at-other` instead of `--make-at-letter=false`
+  - no option instead of `--make-at-letter=auto` (default)
+
+  - `--group-files` instead of `--group-files=true`
+  - `--no-group-files` instead of `--group-files=false`
+  - no option instead of `--group-files=auto` (default)
+
+  The deprecated options are scheduled for removal in version 1.0.0.
 
 #### Code understanding
 
@@ -79,8 +99,8 @@ integration:
 - Increase the time limit for running explcheck over the entire TeX Live
   from 3 to 5 minutes. (#176)
 - Migrate from `TeX-Live/setup-texlive-action@v3` to `zauguin/install-texlive@v4`.
-  (drafted by @koppor in koppor/expltools#1 and independently suggested by
-  @muzimuzhi and @gucci-on-fleek in #178, added in #181)
+  (drafted by @koppor in koppor#1 and independently suggested by @muzimuzhi and
+  @gucci-on-fleek in #178, added in #181)
 
 ## expltools 2026-02-05
 
