@@ -26,12 +26,6 @@ This version of explcheck has made the following new enhancements:
   Flow analysis is now enabled by default for all package files with at least 95%
   code understanding.
 
-- In issue W419 (Using an undeclared variable or constant), also report
-  undeclared usages through `V`- and `v`-type arguments. (#176)
-
-- Support the plain TeX `\newtoks` command and the corresponding deprecated
-  expl3 function `\toks_new:N`. (#176)
-
 - Support separate command-line options `--long-option value` in addition to
   `--long-option=value`. (contributed by @muzimuzhi in #178)
 
@@ -61,6 +55,8 @@ and to how it evaluates its own level of confidence:
 - Consider `FUNCTION_CALL` statements high-confidence and well-understood only
   if there are no potential low-confidence definitions of the called function.
   (#176)
+- Support the plain TeX `\newtoks` command and the corresponding deprecated
+  expl3 function `\toks_new:N`. (#176)
 
 These changes have had a mixed effect on the [code coverage][]. Overall, it has
 remained mostly stable, but coverage on the current TeX Live 2025 snapshot
@@ -82,6 +78,8 @@ This version of explcheck has fixed the following bugs:
 - Do not produce warning S204 (Missing stylistic whitespaces) for repeated
   begin group (`{{`) or end group (`}}`). (discovered in witiko/markdown#623,
   fixed in #177)
+- In issue W419 (Using an undeclared variable or constant), also report
+  undeclared usages through `V`- and `v`-type arguments. (#176)
 
 #### Documentation
 
