@@ -12,6 +12,26 @@ This version of explcheck has made the following new enhancements:
   fixing the current errors after we have failed fast. (reported by @dbitouze
   and @muzimuzhi in #170 and #171, fixed in #175)
 
+- Support separate command-line options `--long-option value` in addition to
+  `--long-option=value`. (contributed by @muzimuzhi in #178)
+
+- Deprecate the command-line options `--group-files={true|false|auto}` and
+  `--make-at-letter={true|false|auto}`. Add the valueless options
+  `--make-at-letter`, `--make-at-other`, `--group-files`, and
+  `--no-group-files`. (#178)
+
+  The expected usage is now as follows:
+
+  - `--make-at-letter` instead of `--make-at-letter=true`
+  - `--make-at-other` instead of `--make-at-letter=false`
+  - no option instead of `--make-at-letter=auto` (default)
+
+  - `--group-files` instead of `--group-files=true`
+  - `--no-group-files` instead of `--group-files=false`
+  - no option instead of `--group-files=auto` (default)
+
+  The deprecated options are scheduled for removal in version 1.0.0.
+
 #### Fixes
 
 This version of explcheck has fixed the following bugs:

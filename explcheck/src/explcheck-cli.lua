@@ -56,15 +56,13 @@ local function print_usage()
   print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
   print("Run static analysis on expl3 files.\n")
   local expl3_detection_strategy = get_option("expl3_detection_strategy")
-  local make_at_letter = tostring(get_option("make_at_letter"))
   local max_line_length = tostring(get_option("max_line_length"))
-  local max_grouped_files_per_directory = get_option("max_grouped_files_per_directory")
   print(
     "Options:\n\n"
-    .. "\t--config-file=FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
-    .. "\t--error-format=FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
+    .. "\t--config-file FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
+    .. "\t--error-format FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
     .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
-    .. "\t--expl3-detection-strategy={never|always|precision|recall|auto}\n\n"
+    .. "\t--expl3-detection-strategy {never|always|precision|recall|auto}\n\n"
     .. "\t                           The strategy for detecting expl3 parts of the input files:\n\n"
     .. '\t                           - "never": Assume that no part of the input files is in expl3.\n'
     .. '\t                           - "always": Assume that the whole input files are in expl3.\n'
@@ -74,25 +72,19 @@ local function print_usage()
     .. '\t                               - "recall": The entire input file is in expl3.\n'
     .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
     .. "\t                                 is in expl3.\n\n"
-    .. "\t                           The default setting is --expl3-detection-strategy=" .. expl3_detection_strategy .. ".\n\n"
-    .. "\t--files-from=FILE          Read the list of FILENAMES from FILE.\n\n"
-    .. "\t--group-files[={true|false|auto}]\n\n"
-    .. "\t                           The strategy for grouping input files into sets that are assumed to be used together:\n\n"
-    .. '\t                           - empty or "true": Always group files unless "," is written between a pair of FILENAMES.\n'
-    .. '\t                           - "false": Never group files unless "+" is written between a pair of FILENAMES.\n'
-    .. '\t                           - "auto": Group consecutive files from the same directory, unless separated with ","\n'
-    .. "\t                             and unless there are more than " .. max_grouped_files_per_directory .. " files in the directory.\n\n"
-    .. "\t                           The default setting is --group-files=" .. get_option("group_files") .. ".\n\n"
-    .. "\t--ignored-issues=ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
-    .. "\t--make-at-letter[={true|false|auto}]\n\n"
-    .. '\t                           How the at sign ("@") should be tokenized:\n\n'
-    .. '\t                           - empty or "true": Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n'
-    .. '\t                           - "false": Tokenize "@" as an other character (catcode 12), like in plain TeX.\n'
-    .. '\t                           - "auto": Use context cues to determine the catcode of "@".\n\n'
-    .. "\t                           The default setting is --make-at-letter=" .. make_at_letter .. ".\n\n"
-    .. "\t--max-line-length=N        The maximum line length before the warning S103 (Line too long) is produced.\n"
+    .. "\t                           The default setting is --expl3-detection-strategy " .. expl3_detection_strategy .. ".\n\n"
+    .. "\t--files-from FILE          Read the list of FILENAMES from FILE.\n\n"
+    .. '\t--group-files              Always group files into sets that are assumed to be used together unless "," is written\n'
+    .. "\t                           between a pair of FILENAMES.\n\n"
+    .. "\t                           The default setting is --group-files " .. get_option("group_files") .. ".\n\n"
+    .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
+    .. '\t--make-at-letter           Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n\n'
+    .. '\t--make-at-other            Tokenize "@" as an other character (catcode 12), like in plain TeX.\n\n'
+    .. "\t--max-line-length N        The maximum line length before the warning S103 (Line too long) is produced.\n"
     .. "\t                           The default maximum line length is N=" .. max_line_length .. " characters.\n\n"
     .. "\t--no-config-file           Do not load a user config file. See also --config-file.\n\n"
+    .. '\t--no-group-files           Never group files into sets that are assumed to be used together unless "+" is written\n'
+    .. "\t                           between a pair of FILENAMES.\n\n"
     .. "\t--porcelain, -p            Produce machine-readable output. See also --error-format.\n\n"
     .. "\t--verbose                  Print additional information in non-machine-readable output. See also --porcelain.\n\n"
     .. "\t--warnings-are-errors      Produce a non-zero exit code if any warnings are produced by the analysis.\n"
@@ -109,108 +101,229 @@ end
 if #arg == 0 then
   print_usage()
   os.exit(1)
-else
-  -- Collect arguments.
-  local pathnames, allow_pathname_separators = {}, {}
-  local only_pathnames_from_now_on = false
-  local options = {}
-  for _, argument in ipairs(arg) do
-    if only_pathnames_from_now_on then
-      table.insert(pathnames, argument)
-      table.insert(allow_pathname_separators, true)
-    elseif argument == "--" then
-      only_pathnames_from_now_on = true
-    elseif argument == "--help" or argument == "-h" then
+end
+
+-- Collect arguments.
+local pathnames, allow_pathname_separators = {}, {}
+local only_pathnames_from_now_on = false
+local options = {}
+
+local long_options = {
+  ["help"] = {
+    action = function()
       print_usage()
       os.exit(0)
-    elseif argument == "--version" or argument == "-v" then
+    end,
+  },
+  ["version"] = {
+    action = function()
       print_version()
       os.exit(0)
-    elseif argument:sub(1, 14) == "--config-file=" then
-      options.config_file = argument:sub(15)
-    elseif argument:sub(1, 15) == "--error-format=" then
-      options.error_format = argument:sub(16)
-    elseif argument:sub(1, 27) == "--expl3-detection-strategy=" then
-      options.expl3_detection_strategy = argument:sub(28)
-    elseif argument == "--expect-expl3-everywhere" then
-      -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
+    end,
+  },
+  ["config-file"] = {
+    value_required = true,
+    action = function(value)
+      options.config_file = value
+    end,
+  },
+  ["error-format"] = {
+    value_required = true,
+    action = function(value)
+      options.error_format = value
+    end,
+  },
+  ["expl3-detection-strategy"] = {
+    value_required = true,
+    field_name = "expl3_detection_strategy",
+    action = function(value)
+      options.expl3_detection_strategy = value
+    end,
+  },
+  -- TODO: Remove `--expect-expl3-everywhere` in v1.0.0.
+  ["expect-expl3-everywhere"] = {
+    action = function()
       options.expl3_detection_strategy = "always"
-    elseif argument:sub(1, 13) == "--files-from=" then
-      local files_from = argument:sub(14)
-      local file = assert(io.open(files_from, "r"))
+    end,
+  },
+  ["files-from"] = {
+    value_required = true,
+    action = function(value)
+      local file = assert(io.open(value, "r"))
       for pathname in file:lines() do
         table.insert(pathnames, pathname)
         table.insert(allow_pathname_separators, false)
       end
       assert(file:close())
-    elseif argument == "--group-files" then
-      options.group_files = true
-    elseif argument:sub(1, 14) == "--group-files=" then
-      local group_files = argument:sub(15)
-      if group_files == "true" then
+    end,
+  },
+  ["group-files"] = {
+    action = function(value)
+      if value == nil then
         options.group_files = true
-      elseif group_files == "false" then
-        options.group_files = false
       else
-        options.group_files = group_files
+        -- TODO: Remove `--group-files[={true|false|auto}]` in v1.0.0.
+        if value == "true" then
+          options.group_files = true
+        elseif value == "false" then
+          options.group_files = false
+        else
+          options.group_files = value
+        end
       end
-    elseif argument:sub(1, 17) == "--ignored-issues=" then
+    end,
+  },
+  ["ignored-issues"] = {
+    value_required = true,
+    action = function(value)
       options.ignored_issues = {}
-      for issue_identifier in argument:sub(18):gmatch('[^,]+') do
+      for issue_identifier in value:gmatch('[^,]+') do
         table.insert(options.ignored_issues, issue_identifier)
       end
-    elseif argument == "--make-at-letter" then
-      options.make_at_letter = true
-    elseif argument:sub(1, 17) == "--make-at-letter=" then
-      local make_at_letter = argument:sub(18)
-      if make_at_letter == "true" then
+    end,
+  },
+  ["make-at-letter"] = {
+    action = function(value)
+      if value == nil then
         options.make_at_letter = true
-      elseif make_at_letter == "false" then
-        options.make_at_letter = false
       else
-        options.make_at_letter = make_at_letter
+        -- TODO: Remove `--make-at-letter[={true|false|auto}]` in v1.0.0.
+        if value == "true" then
+          options.make_at_letter = true
+        elseif value == "false" then
+          options.make_at_letter = false
+        else
+          options.make_at_letter = value
+        end
       end
-    elseif argument:sub(1, 18) == "--max-line-length=" then
-      options.max_line_length = tonumber(argument:sub(19))
-    elseif argument == "--no-config-file" then
+    end,
+  },
+  ["make-at-other"] = {
+    action = function()
+      options.make_at_letter = false
+    end,
+  },
+  ["max-line-length"] = {
+    value_required = true,
+    action = function(value)
+      options.max_line_length = tonumber(value)
+    end,
+  },
+  ["no-config-file"] = {
+    action = function()
       options.config_file = ""
-    elseif argument == "--porcelain" or argument == "-p" then
+    end,
+  },
+  ["no-group-files"] = {
+    action = function()
+      options.group_files = false
+    end,
+  },
+  ["porcelain"] = {
+    action = function()
       options.porcelain = true
-    elseif argument == "--verbose" then
+    end,
+  },
+  ["verbose"] = {
+    action = function()
       options.verbose = true
-    elseif argument == "--warnings-are-errors" then
+    end,
+  },
+  ["warnings-are-errors"] = {
+    action = function()
       options.warnings_are_errors = true
-    elseif argument:sub(1, 1) == "-" then
-      print(string.format('Unrecognized argument: %s\n', argument))
-      print_usage()
-      os.exit(1)
-    else
-      table.insert(pathnames, argument)
-      table.insert(allow_pathname_separators, true)
-    end
-  end
-  assert(#pathnames == #allow_pathname_separators)
+    end,
+  },
+}
 
-  if #pathnames == 0 then
-    print_usage()
-    os.exit(1)
-  end
+local short_options = {
+  h = long_options["help"],
+  v = long_options["version"],
+  p = long_options["porcelain"],
+}
 
-  -- Group pathnames.
-  local pathname_groups = utils.group_pathnames(pathnames, options, allow_pathname_separators)
-
-  -- Check pathnames.
-  for _, pathname_group in ipairs(pathname_groups) do
-    for _, pathname in ipairs(pathname_group) do
-      local is_ok, error_message = utils.check_pathname(pathname)
-      if not is_ok then
-        print('Failed to process "' .. pathname .. '": ' .. error_message .. "\n")
-        os.exit(1)
-      end
-    end
-  end
-
-  -- Run the analysis.
-  local exit_code = main(pathname_groups, options)
-  os.exit(exit_code)
+local function unknown_argument(argument)
+  print(string.format('Unrecognized argument: %s\n', argument))
+  print_usage()
+  os.exit(1)
 end
+
+local i = 1
+while i <= #arg do
+  local argument = arg[i]
+  if only_pathnames_from_now_on then
+    table.insert(pathnames, argument)
+    table.insert(allow_pathname_separators, true)
+  elseif argument == "--" then
+    only_pathnames_from_now_on = true
+  -- Parse long options.
+  elseif argument:sub(1, 2) == "--" then
+    local option_name, option_value
+    local pos = argument:find("=", 1, true)
+    if pos then
+      option_name = argument:sub(3, pos - 1)
+    else
+      option_name = argument:sub(3)
+    end
+    if long_options[option_name] then
+      if pos then
+        option_value = argument:sub(pos + 1)
+      end
+      if long_options[option_name].value_required then
+        if not option_value then
+          i = i + 1
+          if i > #arg then
+            print(string.format("No value provided for option: %s\n", option_name))
+            print_usage()
+            os.exit(1)
+          end
+          option_value = arg[i]
+        end
+      end
+      long_options[option_name].action(option_value)
+    else
+      unknown_argument(argument)
+    end
+  -- Parse short options.
+  elseif argument:sub(1, 1) == "-" and argument:len() == 2 then
+    -- TODO: Support merged short options, e.g. `-abc` as a shorthand for `-a -b -c`.
+    local option_name = argument:sub(2, 2)
+    if short_options[option_name] then
+      -- TODO: Support short options with values, e.g. `-p VALUE`.
+      short_options[option_name].action()
+    else
+      unknown_argument(argument)
+    end
+  elseif argument:sub(1, 1) == "-" then
+    unknown_argument(argument)
+  else
+    table.insert(pathnames, argument)
+    table.insert(allow_pathname_separators, true)
+  end
+  i = i + 1
+end
+
+assert(#pathnames == #allow_pathname_separators)
+
+if #pathnames == 0 then
+  print_usage()
+  os.exit(1)
+end
+
+-- Group pathnames.
+local pathname_groups = utils.group_pathnames(pathnames, options, allow_pathname_separators)
+
+-- Check pathnames.
+for _, pathname_group in ipairs(pathname_groups) do
+  for _, pathname in ipairs(pathname_group) do
+    local is_ok, error_message = utils.check_pathname(pathname)
+    if not is_ok then
+      print('Failed to process "' .. pathname .. '": ' .. error_message .. "\n")
+      os.exit(1)
+    end
+  end
+end
+
+-- Run the analysis.
+local exit_code = main(pathname_groups, options)
+os.exit(exit_code)
