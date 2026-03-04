@@ -1,5 +1,9 @@
 # Changes
 
+## expltools 2026-03-XX
+
+### explcheck v0.19.0
+
 ## expltools 2026-03-04
 
 ### explcheck v0.18.0
@@ -40,11 +44,9 @@ This version of explcheck has made the following new enhancements:
 
   - `--make-at-letter` instead of `--make-at-letter=true`
   - `--make-at-other` instead of `--make-at-letter=false`
-  - no option instead of `--make-at-letter=auto` (default)
-
   - `--group-files` instead of `--group-files=true`
   - `--no-group-files` instead of `--group-files=false`
-  - no option instead of `--group-files=auto` (default)
+  - no option instead of `--make-at-letter=auto` and `--group-files=auto` (default)
 
   The deprecated options are scheduled for removal in version 1.0.0.
 
