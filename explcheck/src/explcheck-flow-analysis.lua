@@ -48,7 +48,7 @@ local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
 local macro_statement_types = {
-  FUNCTION_DEFINITIONS = "block of function (variant) definitions",
+  FUNCTION_DEFINITIONS = "block of function (variant) (un)definitions",
 }
 
 local FUNCTION_DEFINITIONS = macro_statement_types.FUNCTION_DEFINITIONS
@@ -101,8 +101,11 @@ local function merge_statements(states, file_number, _)
   for _, segment in ipairs(results.segments or {}) do
     local macro_statements, previous_macro_statement = {}, nil
     for _, statement in ipairs(segment.statements) do
-      if statement.type == FUNCTION_DEFINITION
-          or statement.type == FUNCTION_VARIANT_DEFINITION then
+      if (
+            statement.type == FUNCTION_DEFINITION or
+            statement.type == FUNCTION_UNDEFINITION or
+            statement.type == FUNCTION_VARIANT_DEFINITION
+          ) then
         if previous_macro_statement == nil
             or previous_macro_statement.type ~= FUNCTION_DEFINITIONS then
           local macro_statement = {
@@ -633,11 +636,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
       -- Well-behaved statements are interesting.
       local macro_statement = get_statement(chunk, statement_number)
-      if (
-            macro_statement.type == FUNCTION_CALL or
-            macro_statement.type == FUNCTION_UNDEFINITION
-          )
-          and is_well_behaved(macro_statement) then
+      if macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
         return true
       end
       -- Macro-statements containing at least one interesting statement are interesting.
@@ -646,6 +645,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         assert(not is_macro_statement(statement))
         if (
               statement.type == FUNCTION_DEFINITION or
+              statement.type == FUNCTION_UNDEFINITION or
               statement.type == FUNCTION_VARIANT_DEFINITION
             )
             and is_well_behaved(statement) then
@@ -887,8 +887,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local macro_statement_number = statement_number
         local macro_statement = get_statement(chunk, macro_statement_number)
-        if macro_statement.type ~= FUNCTION_DEFINITIONS and
-            macro_statement.type ~= FUNCTION_UNDEFINITION then
+        if macro_statement.type ~= FUNCTION_DEFINITIONS then
           goto next_macro_statement
         end
         ---@diagnostic disable-next-line:redefined-local
@@ -908,7 +907,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             assert(statement.defined_csname.type == TEXT)
             defined_or_undefined_csname = statement.defined_csname.payload
             local definition = {
-              csname = statement.defined_csname.payload,
+              csname = defined_or_undefined_csname,
               confidence = statement.confidence,
               chunk = chunk,
               macro_statement_number = macro_statement_number,
