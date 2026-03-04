@@ -85,11 +85,6 @@ local edge_subtypes = {
 local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
--- Check whether a file reached the flow analysis.
-local function _file_reached_flow_analysis(states, file_number)
-  return states[file_number].results.edges ~= nil
-end
-
 -- Resolve a chunk and a statement number to a statement.
 local function _get_statement(chunk, statement_number)
   local segment = chunk.segment
@@ -330,19 +325,14 @@ end
 ---@diagnostic disable-next-line:unused-local
 local function draw_group_wide_static_edges(states, _, options)  -- luacheck: ignore options
   -- Draw static edges once between all files in the file group, not just individual files.
-  if states.drew_static_edges ~= nil then
+  if states.results.drew_static_edges ~= nil then
     return
   end
-  states.drew_static_edges = true
-
-  -- Check whether a file in the current group reached the flow analysis.
-  local function file_reached_flow_analysis(file_number)
-    return _file_reached_flow_analysis(states, file_number)
-  end
+  states.results.drew_static_edges = true
 
   -- Record edges from potentially inputting a file from the file group after every other file from the file group.
   for file_number, state in ipairs(states) do
-    if not file_reached_flow_analysis(file_number) then
+    if states[file_number].results.stopped_early then
       goto next_file
     end
     if state.results.last_part_with_chunks == nil then
@@ -353,7 +343,7 @@ local function draw_group_wide_static_edges(states, _, options)  -- luacheck: ig
     assert(from_chunk ~= nil)
     local from_statement_number = from_chunk.statement_range:stop() + 1
     for other_file_number, other_state in ipairs(states) do
-      if not file_reached_flow_analysis(other_file_number) then
+      if states[other_file_number].results.stopped_early then
         goto next_other_file
       end
       if file_number == other_file_number then
@@ -431,8 +421,8 @@ end
 
 -- Index an edge in an edge index.
 local function _index_edge(states, edge_index, index_key, edge)
-  assert(_file_reached_flow_analysis(states, edge.from.chunk.segment.location.file_number))
-  assert(_file_reached_flow_analysis(states, edge.to.chunk.segment.location.file_number))
+  assert(not states[edge.from.chunk.segment.location.file_number].results.stopped_early)
+  assert(not states[edge.to.chunk.segment.location.file_number].results.stopped_early)
   local chunk, statement_number = edge[index_key].chunk, edge[index_key].statement_number
   if edge_index[chunk] == nil then
     edge_index[chunk] = {}
@@ -464,15 +454,10 @@ end
 -- Draw "dynamic" edges between chunks between all files in a file group. A dynamic edge requires estimation.
 local function draw_group_wide_dynamic_edges(states, _, options)
   -- Draw dynamic edges once between all files in the file group, not just individual files.
-  if states.drew_dynamic_edges ~= nil then
+  if states.results.drew_dynamic_edges ~= nil then
     return
   end
-  states.drew_dynamic_edges = true
-
-  -- Check whether a file in the current group reached the flow analysis.
-  local function file_reached_flow_analysis(file_number)
-    return _file_reached_flow_analysis(states, file_number)
-  end
+  states.results.drew_dynamic_edges = true
 
   -- Index an edge in an edge index.
   local function index_edge(edge_index, index_key, edge)
@@ -481,7 +466,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
   -- Resolve a chunk and a statement number to a statement.
   local function get_statement(chunk, statement_number)
-    assert(file_reached_flow_analysis(chunk.segment.location.file_number))
+    assert(not states[chunk.segment.location.file_number].results.stopped_early)
     return _get_statement(chunk, statement_number)
   end
 
@@ -489,7 +474,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   local function_call_list, function_definition_list = {}, {}
   for file_number, state in ipairs(states) do
     -- Skip statements from files in the current file group that haven't reached the flow analysis.
-    if not file_reached_flow_analysis(file_number) then
+    if states[file_number].results.stopped_early then
       goto next_file
     end
     for _, segment in ipairs(state.results.segments or {}) do
@@ -590,7 +575,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     local implicit_in_edge_index, implicit_out_edge_index = {}, {}
     for file_number, state in ipairs(states) do
       -- Skip statements from files in the current file group that haven't reached the flow analysis.
-      if not file_reached_flow_analysis(file_number) then
+      if states[file_number].results.stopped_early then
         goto next_file
       end
       for _, segment in ipairs(state.results.segments or {}) do
@@ -1124,11 +1109,6 @@ local function report_issues(states, main_file_number, _)
     return _index_edge(states, edge_index, index_key, edge)
   end
 
-  -- Check whether a file in the current group reached the flow analysis.
-  local function file_reached_flow_analysis(file_number)
-    return _file_reached_flow_analysis(states, file_number)
-  end
-
   -- Collect a list of well-behaved function call statements.
   local definite_function_call_list = {}
   for _, segment in ipairs(results.parts or {}) do
@@ -1148,7 +1128,7 @@ local function report_issues(states, main_file_number, _)
         assert(#statement.definition_file_numbers > 0)
         local all_definitions_reached_flow_analysis = true
         for _, file_number in ipairs(statement.definition_file_numbers) do
-          if not file_reached_flow_analysis(file_number) then
+          if states[file_number].results.stopped_early then
             all_definitions_reached_flow_analysis = false
             break
           end

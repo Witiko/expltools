@@ -210,7 +210,9 @@ local function process_files(pathnames, options)
   local new_issues = require("explcheck-issues").new_issues
 
   -- Prepare empty processing states for all files in the group.
-  local states = {}
+  local states = {
+    results = {},  -- Allow the processing steps to also record group-wide results.
+  }
   for _, pathname in ipairs(pathnames) do
     local file = assert(io.open(pathname, "r"))
     local content = assert(file:read("*a"))
