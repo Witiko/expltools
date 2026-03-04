@@ -78,6 +78,9 @@ integration:
   while one worker grinds a difficult task. (#174, 19ceb45)
 - Increase the time limit for running explcheck over the entire TeX Live
   from 3 to 5 minutes. (#176)
+- Migrate from `TeX-Live/setup-texlive-action@v3` to `zauguin/install-texlive@v4`.
+  (drafted by @koppor in koppor/expltools#1 and independently suggested by
+  @muzimuzhi and @gucci-on-fleek in #178, added in #181)
 
 ## expltools 2026-02-05
 
