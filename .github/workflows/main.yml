@@ -231,15 +231,19 @@ jobs:
           set -e
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends parallel
-      - name: Install TeX Live
+      - name: "Install TeX Live: Basic packages"
         uses: zauguin/install-texlive@v4
         with:
           cache_version: ${{ github.run_id }}
           packages: |
             scheme-basic
             l3build
+      - name: "Install TeX Live: Dependencies"
+        uses: zauguin/install-texlive@v4
+        with:
+          cache_version: ${{ github.run_id }}
           package_file: |
-            **/DEPENDS.txt
+            explcheck/support/DEPENDS.txt
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
         run: tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
