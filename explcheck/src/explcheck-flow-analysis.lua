@@ -325,10 +325,10 @@ end
 ---@diagnostic disable-next-line:unused-local
 local function draw_group_wide_static_edges(states, _, options)  -- luacheck: ignore options
   -- Draw static edges once between all files in the file group, not just individual files.
-  if states.drew_static_edges ~= nil then
+  if states.results.drew_static_edges ~= nil then
     return
   end
-  states.drew_static_edges = true
+  states.results.drew_static_edges = true
 
   -- Record edges from potentially inputting a file from the file group after every other file from the file group.
   for file_number, state in ipairs(states) do
@@ -454,10 +454,10 @@ end
 -- Draw "dynamic" edges between chunks between all files in a file group. A dynamic edge requires estimation.
 local function draw_group_wide_dynamic_edges(states, _, options)
   -- Draw dynamic edges once between all files in the file group, not just individual files.
-  if states.drew_dynamic_edges ~= nil then
+  if states.results.drew_dynamic_edges ~= nil then
     return
   end
-  states.drew_dynamic_edges = true
+  states.results.drew_dynamic_edges = true
 
   -- Index an edge in an edge index.
   local function index_edge(edge_index, index_key, edge)

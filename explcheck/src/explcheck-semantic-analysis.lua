@@ -260,8 +260,8 @@ local function _extract_name_from_tokens(options, pathname, token_range, transfo
   return csname
 end
 
--- Determine the meaning of function calls.
-local function analyze(states, file_number, options)
+-- Determine the meaning of function calls, producing statements.
+local function collect_statements(states, file_number, options)
 
   local state = states[file_number]
 
@@ -1352,254 +1352,271 @@ local function analyze(states, file_number, options)
   end
 end
 
--- Report any issues.
-local function report_issues(states, main_file_number, options)
-
-  local main_state = states[main_file_number]
-
-  local main_pathname = main_state.pathname
-  local issues = main_state.issues
-
-  -- Report issues that are apparent after the semantic analysis.
-  --- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
-  ---
-  --- TODO: Let's collect the group-wide information first in one substep and then collect the file-specific information
-  --- in another substep before reporting the issues. This should allow us to process all segments only twice, not N times
-  --- like we do currently, where N is the size of the file group.
-  local all_segments = {}
-  for _, state in ipairs(states) do
-    local results = state.results
-    for _, segment in ipairs(results.segments or {}) do
-      table.insert(all_segments, segment)
-    end
+-- Determine the declared, defined, and used constants, variables, functions, and other objects by analyzing the statements
+-- from all files in the file group.
+local function analyze_group_wide_statements(states, _, options)
+  -- Analyze statements once between all files in the file group, not just individual files.
+  if states.results.statement_analysis ~= nil then
+    return
   end
+  states.results.statement_analysis = {
+    -- Collect group-wide information about symbols that were definitely defined.
+    defined_csname_texts_anywhere = {},
+    defined_csname_texts_anywhere_file_numbers = {},
 
-  --- Make a pass over the segments, building up information.
+    defined_message_nums_text_parameters = {},
 
-  ---- Collect information about symbols that were definitely defined.
-  local defined_private_function_texts = {}
-  local called_functions_and_variants = {}
-  local defined_csname_texts, defined_csname_texts_anywhere, defined_csname_texts_anywhere_file_numbers = {}, {}, {}
-  local defined_private_function_variant_texts = {}
-  local defined_private_function_variant_byte_ranges, defined_private_function_variant_csnames = {}, {}
-  local variant_base_csname_texts, indirect_definition_base_csname_texts = {}, {}
+    -- Collect group-wide information about symbols that may have been defined.
+    maybe_defined_private_function_variant_pattern = parsers.fail,
 
-  local declared_defined_and_used_variable_csname_texts = {}
-  local declared_variable_csname_texts, declared_variable_csname_transcripts = {}, {}
-  local defined_variable_csname_texts = {}
-  local defined_variable_csname_transcripts, defined_variable_base_csname_transcripts = {}, {}
-  local used_variable_csname_texts, used_variable_csname_transcripts = {}, {}
+    maybe_defined_csname_texts = {},
+    maybe_defined_csname_texts_anywhere = {},
+    maybe_defined_csname_pattern = parsers.fail,
 
-  local defined_message_name_texts, defined_message_nums_text_parameters = {}, {}
-  local used_message_name_texts, used_message_nums_text_arguments = {}, {}
+    maybe_used_csname_texts = {},
+    maybe_used_csname_pattern = parsers.fail,
 
-  ---- Collect information about symbols that may have been defined.
-  local maybe_defined_private_function_variant_pattern = parsers.fail
-  local maybe_defined_csname_texts, maybe_defined_csname_texts_anywhere, maybe_defined_csname_pattern = {}, {}, parsers.fail
-  local maybe_used_csname_texts, maybe_used_csname_pattern = {}, parsers.fail
+    maybe_declared_variable_csname_texts = {},
+    maybe_declared_variable_csname_pattern = parsers.fail,
+    maybe_used_variable_csname_texts = {},
+    maybe_used_variable_csname_pattern = parsers.fail,
 
-  local maybe_declared_variable_csname_texts = {}
-  local maybe_declared_variable_csname_pattern = parsers.fail
-  local maybe_used_variable_csname_texts = {}
-  local maybe_used_variable_csname_pattern = parsers.fail
+    maybe_defined_message_name_texts = {},
+    maybe_defined_message_name_pattern = parsers.fail,
 
-  local maybe_defined_message_name_texts, maybe_defined_message_name_pattern = {}, parsers.fail
-  local maybe_used_message_name_texts, maybe_used_message_name_pattern = {}, parsers.fail
+    maybe_used_message_name_texts = {},
+    maybe_used_message_name_pattern = parsers.fail,
+  }
 
-  for _, segment in ipairs(all_segments) do
-    local file_number = segment.location.file_number
-    local is_main_file = file_number == main_file_number
-
-    local state = states[file_number]
-    local pathname = state.pathname
-    local content = state.content
+  -- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
+  for file_number, state in ipairs(states) do
     local results = state.results
+    results.statement_analysis = {
+      -- Collect file-local information about symbols that were definitely defined.
+      defined_csname_texts = {},
 
-    local part_number = segment.location.part_number
+      defined_private_function_texts = {},
 
-    local groupings = results.groupings[part_number]
-    local tokens = results.tokens[part_number]
+      defined_private_function_variant_texts = {},
+      defined_private_function_variant_byte_ranges = {},
+      defined_private_function_variant_csnames = {},
 
-    local transformed_tokens = segment.transformed_tokens.tokens
-    local map_forward = segment.transformed_tokens.map_forward
-    local map_back = segment.transformed_tokens.map_back
+      called_functions_and_variants = {},
 
-    local call_range_to_token_range = get_call_range_to_token_range(segment.calls, #tokens)
-    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+      declared_defined_and_used_variable_csname_texts = {},
 
-    -- Merge a module name and a message name into a combined fully qualified name.
-    local function combine_module_and_message_names(module_name, message_name)
-      local transcript = string.format("%s/%s", module_name.transcript, message_name.transcript)
-      if module_name.type == TEXT and message_name.type == TEXT then
-        return {
-          payload = string.format("%s/%s", module_name.payload, message_name.payload),
-          transcript = transcript,
-          type = TEXT,
-        }
-      else
-        local message_name_pattern
-        if module_name.type == TEXT then
-          message_name_pattern = lpeg.P(module_name.payload)
-        elseif module_name.type == PATTERN then
-          message_name_pattern = module_name.payload
+      declared_variable_csname_texts = {},
+      declared_variable_csname_transcripts = {},
+
+      defined_variable_csname_texts = {},
+      defined_variable_csname_transcripts = {},
+      defined_variable_base_csname_transcripts = {},
+
+      indirect_definition_base_csname_texts = {},
+
+      variant_base_csname_texts = {},
+
+      used_variable_csname_texts = {},
+      used_variable_csname_transcripts = {},
+
+      defined_message_name_texts = {},
+
+      used_message_name_texts = {},
+      used_message_nums_text_arguments = {},
+    }
+    for _, segment in ipairs(results.segments or {}) do
+      assert(file_number == segment.location.file_number)
+
+      local pathname = state.pathname
+      local content = state.content
+
+      local part_number = segment.location.part_number
+
+      local groupings = results.groupings[part_number]
+      local tokens = results.tokens[part_number]
+
+      local transformed_tokens = segment.transformed_tokens.tokens
+      local map_forward = segment.transformed_tokens.map_forward
+      local map_back = segment.transformed_tokens.map_back
+
+      local call_range_to_token_range = get_call_range_to_token_range(segment.calls, #tokens)
+      local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+
+      -- Merge a module name and a message name into a combined fully qualified name.
+      local function combine_module_and_message_names(module_name, message_name)
+        local transcript = string.format("%s/%s", module_name.transcript, message_name.transcript)
+        if module_name.type == TEXT and message_name.type == TEXT then
+          return {
+            payload = string.format("%s/%s", module_name.payload, message_name.payload),
+            transcript = transcript,
+            type = TEXT,
+          }
         else
-          error('Unexpected message name type "' .. module_name.type .. '"')
-        end
-        message_name_pattern = message_name_pattern * lpeg.P("/")
-        if message_name.type == TEXT then
-          message_name_pattern = message_name_pattern * lpeg.P(message_name.payload)
-        elseif message_name.type == PATTERN then
-          message_name_pattern = message_name_pattern * message_name.payload
-        else
-          error('Unexpected message name type "' .. message_name.type .. '"')
-        end
-        return {
-          payload = message_name_pattern,
-          transcript = transcript,
-          type = PATTERN,
-        }
-      end
-    end
-
-    -- Try and convert tokens from a range into a csname.
-    local function extract_name_from_tokens(token_range)
-      return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, map_forward)
-    end
-
-    local already_processed_argument_tokens = {}
-
-    -- Process an argument and record control sequence name usage and definitions.
-    local function process_argument_tokens(argument)
-      if already_processed_argument_tokens[argument] then
-        return
-      end
-      already_processed_argument_tokens[argument] = true
-
-      -- Record control sequence name usage.
-      --- Extract text from tokens within c- and v-type arguments.
-      if argument.specifier == "c" or argument.specifier == "v" then
-        local csname = extract_name_from_tokens(argument.token_range)
-        if csname ~= nil then
-          if csname.type == TEXT then
-            maybe_used_csname_texts[csname.payload] = true
-            if argument.specifier == "v" and is_main_file then
-              -- Record control sequence name usage in v-type arguments.
-              local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
-              table.insert(used_variable_csname_texts, {csname.payload, used_csname_byte_range})
-            end
-          elseif csname.type == PATTERN then
-            maybe_used_csname_pattern = (
-              maybe_used_csname_pattern
-              + #(csname.payload * parsers.eof)
-              * lpeg.Cc(true)
-            )
+          local message_name_pattern
+          if module_name.type == TEXT then
+            message_name_pattern = lpeg.P(module_name.payload)
+          elseif module_name.type == PATTERN then
+            message_name_pattern = module_name.payload
           else
-            error('Unexpected csname type "' .. csname.type .. '"')
+            error('Unexpected message name type "' .. module_name.type .. '"')
           end
+          message_name_pattern = message_name_pattern * lpeg.P("/")
+          if message_name.type == TEXT then
+            message_name_pattern = message_name_pattern * lpeg.P(message_name.payload)
+          elseif message_name.type == PATTERN then
+            message_name_pattern = message_name_pattern * message_name.payload
+          else
+            error('Unexpected message name type "' .. message_name.type .. '"')
+          end
+          return {
+            payload = message_name_pattern,
+            transcript = transcript,
+            type = PATTERN,
+          }
         end
       end
-      --- Scan control sequence tokens within N- and n-type arguments.
-      if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-        for _, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
-          if token.type == CONTROL_SEQUENCE then
-            maybe_used_csname_texts[token.payload] = true
-            if argument.specifier == "V" and is_main_file then
-              -- Record control sequence name usage in V-type arguments.
-              table.insert(used_variable_csname_texts, {token.payload, token.byte_range})
+
+      -- Try and convert tokens from a range into a csname.
+      local function extract_name_from_tokens(token_range)
+        return _extract_name_from_tokens(options, pathname, token_range, transformed_tokens, map_forward)
+      end
+
+      local already_processed_argument_tokens = {}
+
+      -- Process an argument and record control sequence name usage and definitions.
+      ---@diagnostic disable-next-line:unused-function, unused-local
+      local function process_argument_tokens(argument)
+        if already_processed_argument_tokens[argument] then
+          return
+        end
+        already_processed_argument_tokens[argument] = true
+
+        -- Record control sequence name usage.
+        --- Extract text from tokens within c- and v-type arguments.
+        if argument.specifier == "c" or argument.specifier == "v" then
+          local csname = extract_name_from_tokens(argument.token_range)
+          if csname ~= nil then
+            if csname.type == TEXT then
+              states.results.statement_analysis.maybe_used_csname_texts[csname.payload] = true
+              if argument.specifier == "v" then
+                -- Record control sequence name usage in v-type arguments.
+                local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
+                table.insert(results.statement_analysis.used_variable_csname_texts, {csname.payload, used_csname_byte_range})
+              end
+            elseif csname.type == PATTERN then
+              states.results.statement_analysis.maybe_used_csname_pattern = (
+                states.results.statement_analysis.maybe_used_csname_pattern
+                + #(csname.payload * parsers.eof)
+                * lpeg.Cc(true)
+              )
+            else
+              error('Unexpected csname type "' .. csname.type .. '"')
             end
           end
         end
-      end
-      -- Record control sequence name definitions and message name definitions and uses.
-      --- Scan control sequence tokens within N- and n-type arguments.
-      if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
-        for token_number, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
-          if token.type == CONTROL_SEQUENCE then  -- control sequence, process it directly
-            local next_token_number = token_number + 1
-            if next_token_number <= #transformed_tokens then
-              local next_token = transformed_tokens[next_token_number]
-              -- Record control sequence name definitions.
-              if next_token.type == CONTROL_SEQUENCE then
-                -- Record potential function definitions.
-                if lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil then
-                  maybe_defined_csname_texts[next_token.payload] = true
-                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
-                end
-                -- Record potential variable declarations and definitions.
-                if lpeg.match(parsers.expl3_variable_declaration_csname, token.payload) ~= nil then
-                  maybe_declared_variable_csname_texts[next_token.payload] = true
-                  maybe_defined_csname_texts[next_token.payload] = true
-                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
-                end
-                local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
-                if variable_definition ~= nil then
-                  local _, is_constant = table.unpack(variable_definition)
-                  if is_constant then
-                    maybe_declared_variable_csname_texts[next_token.payload] = true
+        --- Scan control sequence tokens within N- and n-type arguments.
+        if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+          for _, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
+            if token.type == CONTROL_SEQUENCE then
+              states.results.statement_analysis.maybe_used_csname_texts[token.payload] = true
+              if argument.specifier == "V" then
+                -- Record control sequence name usage in V-type arguments.
+                table.insert(results.statement_analysis.used_variable_csname_texts, {token.payload, token.byte_range})
+              end
+            end
+          end
+        end
+        -- Record control sequence name definitions and message name definitions and uses.
+        --- Scan control sequence tokens within N- and n-type arguments.
+        if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
+          for token_number, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
+            if token.type == CONTROL_SEQUENCE then  -- control sequence, process it directly
+              local next_token_number = token_number + 1
+              if next_token_number <= #transformed_tokens then
+                local next_token = transformed_tokens[next_token_number]
+                -- Record control sequence name definitions.
+                if next_token.type == CONTROL_SEQUENCE then
+                  -- Record potential function definitions.
+                  if lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil then
+                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
+                    states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
                   end
-                  maybe_defined_csname_texts[next_token.payload] = true
-                  maybe_defined_csname_texts_anywhere[next_token.payload] = true
-                end
-              -- Record message name definitions and uses.
-              elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the module name
-                local message_definition = lpeg.match(parsers.expl3_message_definition, token.payload)
-                local message_use = lpeg.match(parsers.expl3_message_use, token.payload)
-                if message_definition ~= nil or message_use ~= nil then
-                  local next_grouping = groupings[map_back(next_token_number)]
-                  assert(next_grouping ~= nil)
-                  assert(map_forward(next_grouping.start) == next_token_number)
-                  if next_grouping.stop ~= nil then  -- balanced text
-                    local module_name_token_range = new_range(
-                      next_grouping.start + 1,
-                      next_grouping.stop - 1,
-                      INCLUSIVE + MAYBE_EMPTY,
-                      #tokens
-                    )
-                    local next_next_token_number = map_forward(next_grouping.stop) + 1
-                    if next_next_token_number <= #transformed_tokens then
-                      local next_next_token = transformed_tokens[next_next_token_number]
-                      if next_next_token.type == CHARACTER  -- begin grouping, try to collect the message name
-                          and next_next_token.catcode == 1 then
-                        local next_next_grouping = groupings[map_back(next_next_token_number)]
-                        assert(next_next_grouping ~= nil)
-                        assert(map_forward(next_next_grouping.start) == next_next_token_number)
-                        if next_next_grouping.stop ~= nil then  -- balanced text
-                          local message_name_token_range = new_range(
-                            next_next_grouping.start + 1,
-                            next_next_grouping.stop - 1,
-                            INCLUSIVE + MAYBE_EMPTY,
-                            #tokens
-                          )
-                          local module_name = extract_name_from_tokens(module_name_token_range)
-                          local message_name = extract_name_from_tokens(message_name_token_range)
-                          if module_name ~= nil and message_name ~= nil then
-                            local combined_name = combine_module_and_message_names(module_name, message_name)
-                            -- Record potential message definitions.
-                            if message_definition ~= nil then
-                              if combined_name.type == TEXT then
-                                maybe_defined_message_name_texts[combined_name.payload] = true
-                              elseif combined_name.type == PATTERN then
-                                maybe_defined_message_name_pattern = (
-                                  maybe_defined_message_name_pattern
-                                  + #(combined_name.payload * parsers.eof)
-                                  * lpeg.Cc(true)
-                                )
-                              else
-                                error('Unexpected message name type "' .. combined_name.type .. '"')
+                  -- Record potential variable declarations and definitions.
+                  if lpeg.match(parsers.expl3_variable_declaration_csname, token.payload) ~= nil then
+                    states.results.statement_analysis.maybe_declared_variable_csname_texts[next_token.payload] = true
+                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
+                    states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
+                  end
+                  local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
+                  if variable_definition ~= nil then
+                    local _, is_constant = table.unpack(variable_definition)
+                    if is_constant then
+                      states.results.statement_analysis.maybe_declared_variable_csname_texts[next_token.payload] = true
+                    end
+                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
+                    states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
+                  end
+                -- Record message name definitions and uses.
+                elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the module name
+                  local message_definition = lpeg.match(parsers.expl3_message_definition, token.payload)
+                  local message_use = lpeg.match(parsers.expl3_message_use, token.payload)
+                  if message_definition ~= nil or message_use ~= nil then
+                    local next_grouping = groupings[map_back(next_token_number)]
+                    assert(next_grouping ~= nil)
+                    assert(map_forward(next_grouping.start) == next_token_number)
+                    if next_grouping.stop ~= nil then  -- balanced text
+                      local module_name_token_range = new_range(
+                        next_grouping.start + 1,
+                        next_grouping.stop - 1,
+                        INCLUSIVE + MAYBE_EMPTY,
+                        #tokens
+                      )
+                      local next_next_token_number = map_forward(next_grouping.stop) + 1
+                      if next_next_token_number <= #transformed_tokens then
+                        local next_next_token = transformed_tokens[next_next_token_number]
+                        if next_next_token.type == CHARACTER  -- begin grouping, try to collect the message name
+                            and next_next_token.catcode == 1 then
+                          local next_next_grouping = groupings[map_back(next_next_token_number)]
+                          assert(next_next_grouping ~= nil)
+                          assert(map_forward(next_next_grouping.start) == next_next_token_number)
+                          if next_next_grouping.stop ~= nil then  -- balanced text
+                            local message_name_token_range = new_range(
+                              next_next_grouping.start + 1,
+                              next_next_grouping.stop - 1,
+                              INCLUSIVE + MAYBE_EMPTY,
+                              #tokens
+                            )
+                            local module_name = extract_name_from_tokens(module_name_token_range)
+                            local message_name = extract_name_from_tokens(message_name_token_range)
+                            if module_name ~= nil and message_name ~= nil then
+                              local combined_name = combine_module_and_message_names(module_name, message_name)
+                              -- Record potential message definitions.
+                              if message_definition ~= nil then
+                                if combined_name.type == TEXT then
+                                  states.results.statement_analysis.maybe_defined_message_name_texts[combined_name.payload] = true
+                                elseif combined_name.type == PATTERN then
+                                  states.results.statement_analysis.maybe_defined_message_name_pattern = (
+                                    states.results.statement_analysis.maybe_defined_message_name_pattern
+                                    + #(combined_name.payload * parsers.eof)
+                                    * lpeg.Cc(true)
+                                  )
+                                else
+                                  error('Unexpected message name type "' .. combined_name.type .. '"')
+                                end
                               end
-                            end
-                            -- Record potential message uses.
-                            if message_use ~= nil then
-                              if combined_name.type == TEXT then
-                                maybe_used_message_name_texts[combined_name.payload] = true
-                              elseif combined_name.type == PATTERN then
-                                maybe_used_message_name_pattern = (
-                                  maybe_used_message_name_pattern
-                                  + #(combined_name.payload * parsers.eof)
-                                  * lpeg.Cc(true)
-                                )
-                              else
-                                error('Unexpected message name type "' .. combined_name.type .. '"')
+                              -- Record potential message uses.
+                              if message_use ~= nil then
+                                if combined_name.type == TEXT then
+                                  states.results.statement_analysis.maybe_used_message_name_texts[combined_name.payload] = true
+                                elseif combined_name.type == PATTERN then
+                                  states.results.statement_analysis.maybe_used_message_name_pattern = (
+                                    states.results.statement_analysis.maybe_used_message_name_pattern
+                                    + #(combined_name.payload * parsers.eof)
+                                    * lpeg.Cc(true)
+                                  )
+                                else
+                                  error('Unexpected message name type "' .. combined_name.type .. '"')
+                                end
                               end
                             end
                           end
@@ -1613,360 +1630,349 @@ local function report_issues(states, main_file_number, options)
           end
         end
       end
-    end
 
-    for _, statement in ipairs(segment.statements or {}) do
-      local token_range = call_range_to_token_range(statement.call_range)
-      local byte_range = token_range_to_byte_range(token_range)
-      -- Process a function variant definition.
-      if statement.type == FUNCTION_VARIANT_DEFINITION then
-        local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
-        -- Record base control sequence names of variants, both as control sequence name usage and separately.
-        if statement.base_csname.type == TEXT then
-          if is_main_file then
-            table.insert(variant_base_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
-          end
-          maybe_used_csname_texts[statement.base_csname.payload] = true
-        elseif statement.base_csname.type == PATTERN then
-          maybe_used_csname_pattern = (
-            maybe_used_csname_pattern
-            + #(statement.base_csname.payload * parsers.eof)
-            * lpeg.Cc(true)
-          )
-        else
-          error('Unexpected csname type "' .. statement.base_csname.type .. '"')
-        end
-        -- Record control sequence name definitions.
-        if statement.defined_csname.type == TEXT then
-          if is_main_file then
-            table.insert(defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
-          end
-          if statement.confidence == DEFINITELY then
-            defined_csname_texts_anywhere[statement.defined_csname.payload] = true
-            if defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
-              defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
-            end
-            defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number] = true
-          end
-          maybe_defined_csname_texts[statement.defined_csname.payload] = true
-        elseif statement.defined_csname.type == PATTERN then
-          maybe_defined_csname_pattern = (
-            maybe_defined_csname_pattern
-            + #(statement.defined_csname.payload * parsers.eof)
-            * lpeg.Cc(true)
-          )
-        else
-          error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
-        end
-        -- Record private function variant definitions.
-        if statement.defined_csname.type == TEXT and statement.is_private and is_main_file then
-          table.insert(defined_private_function_variant_byte_ranges, byte_range)
-          table.insert(defined_private_function_variant_csnames, statement.defined_csname)
-          local private_function_variant_number = #defined_private_function_variant_byte_ranges
-          table.insert(defined_private_function_variant_texts, private_function_variant_number)
-        end
-      -- Process a function definition.
-      elseif statement.type == FUNCTION_DEFINITION then
-        -- Record the base control sequences used in indirect function definitions.
-        if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
+      for _, statement in ipairs(segment.statements or {}) do
+        local token_range = call_range_to_token_range(statement.call_range)
+        local byte_range = token_range_to_byte_range(token_range)
+        -- Process a function variant definition.
+        if statement.type == FUNCTION_VARIANT_DEFINITION then
+          local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
+          -- Record base control sequence names of variants, both as control sequence name usage and separately.
           if statement.base_csname.type == TEXT then
-            maybe_used_csname_texts[statement.base_csname.payload] = true
-            if is_main_file then
-              table.insert(indirect_definition_base_csname_texts, {statement.base_csname.payload, byte_range})
-            end
+            table.insert(results.statement_analysis.variant_base_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
+            states.results.statement_analysis.maybe_used_csname_texts[statement.base_csname.payload] = true
           elseif statement.base_csname.type == PATTERN then
-            maybe_used_csname_pattern = (
-              maybe_used_csname_pattern
+            states.results.statement_analysis.maybe_used_csname_pattern = (
+              states.results.statement_analysis.maybe_used_csname_pattern
               + #(statement.base_csname.payload * parsers.eof)
               * lpeg.Cc(true)
             )
           else
             error('Unexpected csname type "' .. statement.base_csname.type .. '"')
           end
-        end
-        -- Record control sequence name usage and definitions.
-        if statement.defined_csname.type == TEXT then
-          if is_main_file then
-            local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
-            table.insert(defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
-          end
-          if statement.confidence == DEFINITELY then
-            defined_csname_texts_anywhere[statement.defined_csname.payload] = true
-            if defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
-              defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+          -- Record control sequence name definitions.
+          if statement.defined_csname.type == TEXT then
+            table.insert(results.statement_analysis.defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
+            if statement.confidence == DEFINITELY then
+              states.results.statement_analysis.defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
+                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+              end
+              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number]
+                = true
             end
-            defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number] = true
+            states.results.statement_analysis.maybe_defined_csname_texts[statement.defined_csname.payload] = true
+          elseif statement.defined_csname.type == PATTERN then
+            states.results.statement_analysis.maybe_defined_csname_pattern = (
+              states.results.statement_analysis.maybe_defined_csname_pattern
+              + #(statement.defined_csname.payload * parsers.eof)
+              * lpeg.Cc(true)
+            )
+          else
+            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
           end
-          maybe_defined_csname_texts[statement.defined_csname.payload] = true
-        end
-        if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
-          process_argument_tokens(statement.replacement_text_argument)
-        end
-        -- Record private function defition.
-        if statement.defined_csname.type == TEXT and statement.is_private then
-          if is_main_file then
+          -- Record private function variant definitions.
+          if statement.defined_csname.type == TEXT and statement.is_private then
+            table.insert(results.statement_analysis.defined_private_function_variant_byte_ranges, byte_range)
+            table.insert(results.statement_analysis.defined_private_function_variant_csnames, statement.defined_csname)
+            local private_function_variant_number = #results.statement_analysis.defined_private_function_variant_byte_ranges
+            table.insert(results.statement_analysis.defined_private_function_variant_texts, private_function_variant_number)
+          end
+        -- Process a function definition.
+        elseif statement.type == FUNCTION_DEFINITION then
+          -- Record the base control sequences used in indirect function definitions.
+          if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
+            if statement.base_csname.type == TEXT then
+              states.results.statement_analysis.maybe_used_csname_texts[statement.base_csname.payload] = true
+              table.insert(results.statement_analysis.indirect_definition_base_csname_texts, {statement.base_csname.payload, byte_range})
+            elseif statement.base_csname.type == PATTERN then
+              states.results.statement_analysis.maybe_used_csname_pattern = (
+                states.results.statement_analysis.maybe_used_csname_pattern
+                + #(statement.base_csname.payload * parsers.eof)
+                * lpeg.Cc(true)
+              )
+            else
+              error('Unexpected csname type "' .. statement.base_csname.type .. '"')
+            end
+          end
+          -- Record control sequence name usage and definitions.
+          if statement.defined_csname.type == TEXT then
+            local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
+            table.insert(results.statement_analysis.defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
+            if statement.confidence == DEFINITELY then
+              states.results.statement_analysis.defined_csname_texts_anywhere[statement.defined_csname.payload] = true
+              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
+                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+              end
+              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number]
+                = true
+            end
+            states.results.statement_analysis.maybe_defined_csname_texts[statement.defined_csname.payload] = true
+          end
+          if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
+            process_argument_tokens(statement.replacement_text_argument)
+          end
+          -- Record private function defition.
+          if statement.defined_csname.type == TEXT and statement.is_private then
             local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
-            table.insert(defined_private_function_texts, {statement.defined_csname.payload, definition_byte_range})
+            table.insert(
+              results.statement_analysis.defined_private_function_texts,
+              {statement.defined_csname.payload, definition_byte_range}
+            )
           end
-        end
-      -- Process a function undefinition.
-      elseif statement.type == FUNCTION_UNDEFINITION then
-      -- Process a variable declaration.
-      elseif statement.type == VARIABLE_DECLARATION then
-        -- Record variable names.
-        if is_main_file then
+        -- Process a function undefinition.
+        elseif statement.type == FUNCTION_UNDEFINITION then
+        -- Process a variable declaration.
+        elseif statement.type == VARIABLE_DECLARATION then
+          -- Record variable names.
           table.insert(
-            declared_variable_csname_transcripts,
+            results.statement_analysis.declared_variable_csname_transcripts,
             {statement.variable_type, statement.declared_csname.transcript, byte_range}
           )
-        end
-        if statement.declared_csname.type == TEXT then
-          if is_main_file then
+          if statement.declared_csname.type == TEXT then
             local declared_csname_byte_range = token_range_to_byte_range(statement.declared_csname_argument.token_range)
             table.insert(
-              declared_defined_and_used_variable_csname_texts,
+              results.statement_analysis.declared_defined_and_used_variable_csname_texts,
               {statement.variable_type, statement.declared_csname.payload, declared_csname_byte_range}
             )
-            table.insert(declared_variable_csname_texts, {statement.declared_csname.payload, declared_csname_byte_range})
+            table.insert(
+              results.statement_analysis.declared_variable_csname_texts,
+              {statement.declared_csname.payload, declared_csname_byte_range}
+            )
+            states.results.statement_analysis.maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
+          elseif statement.declared_csname.type == PATTERN then
+            states.results.statement_analysis.maybe_declared_variable_csname_pattern = (
+              states.results.statement_analysis.maybe_declared_variable_csname_pattern
+              + #(statement.declared_csname.payload * parsers.eof)
+              * lpeg.Cc(true)
+            )
+          else
+            error('Unexpected csname type "' .. statement.base_csname.type .. '"')
           end
-          maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
-        elseif statement.declared_csname.type == PATTERN then
-          maybe_declared_variable_csname_pattern = (
-            maybe_declared_variable_csname_pattern
-            + #(statement.declared_csname.payload * parsers.eof)
-            * lpeg.Cc(true)
-          )
-        else
-          error('Unexpected csname type "' .. statement.base_csname.type .. '"')
-        end
-      -- Process a variable or constant definition.
-      elseif statement.type == VARIABLE_DEFINITION then
-        -- Record variable names.
-        if is_main_file then
+        -- Process a variable or constant definition.
+        elseif statement.type == VARIABLE_DEFINITION then
+          -- Record variable names.
           local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
           if statement.is_constant then
             table.insert(
-              declared_variable_csname_transcripts,
+              results.statement_analysis.declared_variable_csname_transcripts,
               {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
             )
           else
             table.insert(
-              defined_variable_csname_transcripts,
+              results.statement_analysis.defined_variable_csname_transcripts,
               {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
             )
             if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
               table.insert(
-                defined_variable_base_csname_transcripts,
+                results.statement_analysis.defined_variable_base_csname_transcripts,
                 {statement.base_variable_type, statement.base_csname.transcript, definition_byte_range}
               )
             end
           end
-        end
-        if statement.defined_csname.type == TEXT then
-          if is_main_file then
+          if statement.defined_csname.type == TEXT then
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(
-              declared_defined_and_used_variable_csname_texts,
+              results.statement_analysis.declared_defined_and_used_variable_csname_texts,
               {statement.variable_type, statement.defined_csname.payload, defined_csname_byte_range})
             table.insert(
-              defined_variable_csname_texts,
+              results.statement_analysis.defined_variable_csname_texts,
               {statement.defined_csname.payload, defined_csname_byte_range}
             )
-          end
-          if statement.is_constant then
-            maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
-            if is_main_file then
-              local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
+            if statement.is_constant then
+              states.results.statement_analysis.maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
               table.insert(
-                declared_variable_csname_texts,
+                results.statement_analysis.declared_variable_csname_texts,
                 {statement.defined_csname.payload, defined_csname_byte_range}
               )
             end
           end
-        end
-        -- Record control sequence name usage and definitions.
-        if statement.subtype == VARIABLE_DEFINITION_DIRECT then
-          process_argument_tokens(statement.definition_text_argument)
-        end
-      -- Process a variable or constant use.
-      elseif statement.type == VARIABLE_USE then
-        -- Record variable names.
-        if is_main_file then
+          -- Record control sequence name usage and definitions.
+          if statement.subtype == VARIABLE_DEFINITION_DIRECT then
+            process_argument_tokens(statement.definition_text_argument)
+          end
+        -- Process a variable or constant use.
+        elseif statement.type == VARIABLE_USE then
+          -- Record variable names.
           local use_byte_range = token_range_to_byte_range(statement.use_token_range)
           table.insert(
-            used_variable_csname_transcripts,
+            results.statement_analysis.used_variable_csname_transcripts,
             {statement.variable_type, statement.used_csname.transcript, use_byte_range}
           )
-        end
-        if statement.used_csname.type == TEXT then
-          if is_main_file then
+          if statement.used_csname.type == TEXT then
             local used_csname_byte_range = token_range_to_byte_range(statement.used_csname_argument.token_range)
             table.insert(
-              declared_defined_and_used_variable_csname_texts,
+              results.statement_analysis.declared_defined_and_used_variable_csname_texts,
               {statement.variable_type, statement.used_csname.payload, used_csname_byte_range}
             )
-            table.insert(used_variable_csname_texts, {statement.used_csname.payload, used_csname_byte_range})
-          end
-          maybe_used_variable_csname_texts[statement.used_csname.payload] = true
-        elseif statement.used_csname.type == PATTERN then
-          maybe_used_variable_csname_pattern = (
-            maybe_used_variable_csname_pattern
-            + #(statement.used_csname.payload * parsers.eof)
-            * lpeg.Cc(true)
-          )
-        else
-          error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
-        end
-      -- Process a message definition.
-      elseif statement.type == MESSAGE_DEFINITION then
-        -- Record message names.
-        local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
-        if message_name.type == TEXT then
-          maybe_defined_message_name_texts[message_name.payload] = true
-          if is_main_file then
-            local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
-            table.insert(defined_message_name_texts, {message_name.payload, definition_byte_range})
-          end
-        elseif message_name.type == PATTERN then
-          maybe_defined_message_name_pattern = (
-            maybe_defined_message_name_pattern
-            + #(message_name.payload * parsers.eof)
-            * lpeg.Cc(true)
-          )
-        else
-          error('Unexpected message name type "' .. message_name.type .. '"')
-        end
-        -- Record numbers of text parameters.
-        if message_name.type == TEXT then
-          if defined_message_nums_text_parameters[message_name.payload] == nil then
-            defined_message_nums_text_parameters[message_name.payload] = {
-              min = statement.num_text_parameters,
-              max = statement.num_text_parameters,
-            }
+            table.insert(results.statement_analysis.used_variable_csname_texts, {statement.used_csname.payload, used_csname_byte_range})
+            states.results.statement_analysis.maybe_used_variable_csname_texts[statement.used_csname.payload] = true
+          elseif statement.used_csname.type == PATTERN then
+            states.results.statement_analysis.maybe_used_variable_csname_pattern = (
+              states.results.statement_analysis.maybe_used_variable_csname_pattern
+              + #(statement.used_csname.payload * parsers.eof)
+              * lpeg.Cc(true)
+            )
           else
-            defined_message_nums_text_parameters[message_name.payload].min = math.min(
-              defined_message_nums_text_parameters[message_name.payload].min,
-              statement.num_text_parameters
-            )
-            defined_message_nums_text_parameters[message_name.payload].max = math.max(
-              defined_message_nums_text_parameters[message_name.payload].max,
-              statement.num_text_parameters
-            )
+            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
           end
-        end
-        -- Record control sequence name usage and definitions.
-        process_argument_tokens(statement.text_argument)
-        if statement.more_text_argument ~= nil then
-          process_argument_tokens(statement.more_text_argument)
-        end
-      -- Process a message use.
-      elseif statement.type == MESSAGE_USE then
-        -- Record message names.
-        local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
-        if message_name.type == TEXT then
-          maybe_used_message_name_texts[message_name.payload] = true
-          if is_main_file then
+        -- Process a message definition.
+        elseif statement.type == MESSAGE_DEFINITION then
+          -- Record message names.
+          local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
+          if message_name.type == TEXT then
+            states.results.statement_analysis.maybe_defined_message_name_texts[message_name.payload] = true
+            local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
+            table.insert(results.statement_analysis.defined_message_name_texts, {message_name.payload, definition_byte_range})
+          elseif message_name.type == PATTERN then
+            states.results.statement_analysis.maybe_defined_message_name_pattern = (
+              states.results.statement_analysis.maybe_defined_message_name_pattern
+              + #(message_name.payload * parsers.eof)
+              * lpeg.Cc(true)
+            )
+          else
+            error('Unexpected message name type "' .. message_name.type .. '"')
+          end
+          -- Record numbers of text parameters.
+          if message_name.type == TEXT then
+            if states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload] == nil then
+              states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload] = {
+                min = statement.num_text_parameters,
+                max = statement.num_text_parameters,
+              }
+            else
+              states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].min = math.min(
+                states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].min,
+                statement.num_text_parameters
+              )
+              states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].max = math.max(
+                states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].max,
+                statement.num_text_parameters
+              )
+            end
+          end
+          -- Record control sequence name usage and definitions.
+          process_argument_tokens(statement.text_argument)
+          if statement.more_text_argument ~= nil then
+            process_argument_tokens(statement.more_text_argument)
+          end
+        -- Process a message use.
+        elseif statement.type == MESSAGE_USE then
+          -- Record message names.
+          local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
+          if message_name.type == TEXT then
+            states.results.statement_analysis.maybe_used_message_name_texts[message_name.payload] = true
             local use_byte_range = token_range_to_byte_range(statement.use_token_range)
-            table.insert(used_message_name_texts, {message_name.payload, use_byte_range})
+            table.insert(results.statement_analysis.used_message_name_texts, {message_name.payload, use_byte_range})
+          elseif message_name.type == PATTERN then
+            states.results.statement_analysis.maybe_used_message_name_pattern = (
+              states.results.statement_analysis.maybe_used_message_name_pattern
+              + #(message_name.payload * parsers.eof)
+              * lpeg.Cc(true)
+            )
+          else
+            error('Unexpected message name type "' .. message_name.type .. '"')
           end
-        elseif message_name.type == PATTERN then
-          maybe_used_message_name_pattern = (
-            maybe_used_message_name_pattern
-            + #(message_name.payload * parsers.eof)
-            * lpeg.Cc(true)
-          )
-        else
-          error('Unexpected message name type "' .. message_name.type .. '"')
-        end
-        -- Record numbers of text parameters.
-        if message_name.type == TEXT then
-          if is_main_file then
-            table.insert(used_message_nums_text_arguments, {message_name.payload, #statement.text_arguments, byte_range})
+          -- Record numbers of text parameters.
+          if message_name.type == TEXT then
+            table.insert(
+              results.statement_analysis.used_message_nums_text_arguments,
+              {message_name.payload, #statement.text_arguments, byte_range}
+            )
           end
-        end
-        -- Record control sequence name usage and definitions.
-        for _, argument in ipairs(statement.text_arguments) do
-          process_argument_tokens(argument)
-        end
-      -- Process an unrecognized statement.
-      elseif statement.type == OTHER_STATEMENT or statement.type == FUNCTION_CALL then
-        -- Record control sequence name usage and definitions.
-        for _, call in statement.call_range:enumerate(segment.calls) do
-          maybe_used_csname_texts[call.csname] = true
-          if is_main_file then
+          -- Record control sequence name usage and definitions.
+          for _, argument in ipairs(statement.text_arguments) do
+            process_argument_tokens(argument)
+          end
+        -- Process an unrecognized statement.
+        elseif statement.type == OTHER_STATEMENT or statement.type == FUNCTION_CALL then
+          -- Record control sequence name usage and definitions.
+          for _, call in statement.call_range:enumerate(segment.calls) do
+            states.results.statement_analysis.maybe_used_csname_texts[call.csname] = true
             local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
-            table.insert(called_functions_and_variants, {segment, statement, call.csname, csname_byte_range})
+            table.insert(results.statement_analysis.called_functions_and_variants, {segment, statement, call.csname, csname_byte_range})
+            for _, argument in ipairs(call.arguments) do
+              process_argument_tokens(argument)
+            end
           end
-          for _, argument in ipairs(call.arguments) do
-            process_argument_tokens(argument)
+        -- Process a block of unrecognized tokens.
+        elseif statement.type == OTHER_TOKENS then
+          -- Record control sequence name usage by scanning all control sequence tokens.
+          for _, token in token_range:enumerate(transformed_tokens, map_forward) do
+            if token.type == CONTROL_SEQUENCE then
+              states.results.statement_analysis.maybe_used_csname_texts[token.payload] = true
+            end
           end
+        else
+          error('Unexpected statement type "' .. statement.type .. '"')
         end
-      -- Process a block of unrecognized tokens.
-      elseif statement.type == OTHER_TOKENS then
-        -- Record control sequence name usage by scanning all control sequence tokens.
-        for _, token in token_range:enumerate(transformed_tokens, map_forward) do
-          if token.type == CONTROL_SEQUENCE then
-            maybe_used_csname_texts[token.payload] = true
-          end
-        end
-      else
-        error('Unexpected statement type "' .. statement.type .. '"')
-      end
-      -- Record control sequence name usage and definitions in unanalyzed arguments.
-      for _, call in statement.call_range:enumerate(segment.calls) do
-        for _, argument in ipairs(call.arguments or {}) do
-          if not argument.analyzed then
-            process_argument_tokens(argument)
+        -- Record control sequence name usage and definitions in unanalyzed arguments.
+        for _, call in statement.call_range:enumerate(segment.calls) do
+          for _, argument in ipairs(call.arguments or {}) do
+            if not argument.analyzed then
+              process_argument_tokens(argument)
+            end
           end
         end
       end
     end
   end
+end
+
+-- Report any issues.
+local function report_issues(states, file_number, options)
+  local state = states[file_number]
+
+  local pathname = state.pathname
+  local results = state.results
+  local issues = state.issues
 
   --- Report issues apparent from the collected information.
-  local imported_prefixes = get_option('imported_prefixes', options, main_pathname)
-  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, main_pathname)
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
   local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
   local expl3_well_known_message_name = parsers.expl3_well_known_message_name(l3prefixes_max_first_registered_date, imported_prefixes)
 
   ---- Report unused private functions.
-  for _, defined_private_function_text in ipairs(defined_private_function_texts) do
+  for _, defined_private_function_text in ipairs(results.statement_analysis.defined_private_function_texts) do
     local defined_csname, byte_range = table.unpack(defined_private_function_text)
     if lpeg.match(expl3_well_known_csname, defined_csname) == nil
-        and not maybe_used_csname_texts[defined_csname]
-        and lpeg.match(maybe_used_csname_pattern, defined_csname) == nil then
+        and not states.results.statement_analysis.maybe_used_csname_texts[defined_csname]
+        and lpeg.match(states.results.statement_analysis.maybe_used_csname_pattern, defined_csname) == nil then
       issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
     end
   end
 
   ---- Report unused private function variants.
   local used_private_function_variants = {}
-  for private_function_variant_number, _ in ipairs(defined_private_function_variant_byte_ranges) do
+  for private_function_variant_number, _ in ipairs(results.statement_analysis.defined_private_function_variant_byte_ranges) do
     used_private_function_variants[private_function_variant_number] = false
   end
-  for _, private_function_variant_number in ipairs(defined_private_function_variant_texts) do
-    local csname = defined_private_function_variant_csnames[private_function_variant_number]
+  for _, private_function_variant_number in ipairs(results.statement_analysis.defined_private_function_variant_texts) do
+    local csname = results.statement_analysis.defined_private_function_variant_csnames[private_function_variant_number]
     assert(csname.type == TEXT)
-    if maybe_used_csname_texts[csname.payload] or lpeg.match(maybe_used_csname_pattern, csname.payload) ~= nil then
+    if states.results.statement_analysis.maybe_used_csname_texts[csname.payload]
+        or lpeg.match(states.results.statement_analysis.maybe_used_csname_pattern, csname.payload) ~= nil then
       used_private_function_variants[private_function_variant_number] = true
     end
   end
-  for maybe_used_csname, _ in pairs(maybe_used_csname_texts) do
+  for maybe_used_csname, _ in pairs(states.results.statement_analysis.maybe_used_csname_texts) do
     -- NOTE: Although we might want to also test whether "maybe_defined_private_function_variant_pattern" and
     -- "maybe_used_csname_pattern" overlap, intersection is undecideable for parsing expression languages (PELs). In
     -- theory, we could use regular expressions instead of PEG patterns, since intersection is decideable for regular
     -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
     -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
     -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
-    local private_function_variant_number = lpeg.match(maybe_defined_private_function_variant_pattern, maybe_used_csname)
+    local private_function_variant_number
+      = lpeg.match(states.results.statement_analysis.maybe_defined_private_function_variant_pattern, maybe_used_csname)
     if private_function_variant_number ~= nil then
-      local csname = defined_private_function_variant_csnames[private_function_variant_number]
+      local csname = results.statement_analysis.defined_private_function_variant_csnames[private_function_variant_number]
       assert(csname.type == PATTERN)
       used_private_function_variants[private_function_variant_number] = true
     end
   end
-  for private_function_variant_number, byte_range in ipairs(defined_private_function_variant_byte_ranges) do
-    local csname = defined_private_function_variant_csnames[private_function_variant_number]
+  for private_function_variant_number, byte_range in ipairs(results.statement_analysis.defined_private_function_variant_byte_ranges) do
+    local csname = results.statement_analysis.defined_private_function_variant_csnames[private_function_variant_number]
     assert(csname.type == TEXT or csname.type == PATTERN)
     if not used_private_function_variants[private_function_variant_number] then
       issues:add('w402', 'unused private function variant', byte_range, format_csname(csname.transcript))
@@ -1974,24 +1980,25 @@ local function report_issues(states, main_file_number, options)
   end
 
   ---- Report function variants for undefined functions.
-  for _, variant_base_csname_text in ipairs(variant_base_csname_texts) do
+  for _, variant_base_csname_text in ipairs(results.statement_analysis.variant_base_csname_texts) do
     local base_csname, byte_range = table.unpack(variant_base_csname_text)
     if lpeg.match(expl3_well_known_csname, base_csname) == nil
-        and not maybe_defined_csname_texts[base_csname]
-        and lpeg.match(maybe_defined_csname_pattern, base_csname) == nil then
+        and not states.results.statement_analysis.maybe_defined_csname_texts[base_csname]
+        and lpeg.match(states.results.statement_analysis.maybe_defined_csname_pattern, base_csname) == nil then
       issues:add('e405', 'function variant for an undefined function', byte_range, format_csname(base_csname))
     end
   end
 
   ---- Report calls to undefined functions and function variants.
-  for _, called_function_or_variant in ipairs(called_functions_and_variants) do
+  for _, called_function_or_variant in ipairs(results.statement_analysis.called_functions_and_variants) do
     local segment, statement, csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_csname, csname) == nil
-        and not maybe_defined_csname_texts[csname]
-        and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
+        and not states.results.statement_analysis.maybe_defined_csname_texts[csname]
+        and lpeg.match(states.results.statement_analysis.maybe_defined_csname_pattern, csname) == nil then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
-    elseif defined_csname_texts_anywhere[csname] or maybe_defined_csname_texts_anywhere[csname] then
+    elseif states.results.statement_analysis.defined_csname_texts_anywhere[csname]
+        or states.results.statement_analysis.maybe_defined_csname_texts_anywhere[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
       statement.used_csname = {
@@ -1999,15 +2006,15 @@ local function report_issues(states, main_file_number, options)
         transcript = csname,
         type = TEXT
       }
-      if maybe_defined_csname_texts_anywhere[csname] then
+      if states.results.statement_analysis.maybe_defined_csname_texts_anywhere[csname] then
         -- If there are low-confidence function definitions for this control sequence, make the statement low-confidence also.
         statement.confidence = MAYBE
-      elseif defined_csname_texts_anywhere[csname] then
+      elseif states.results.statement_analysis.defined_csname_texts_anywhere[csname] then
         statement.confidence = DEFINITELY
         -- For definite function calls, record also the file numbers of the definite function definitions.
-        assert(defined_csname_texts_anywhere_file_numbers[csname] ~= nil)
+        assert(states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[csname] ~= nil)
         statement.definition_file_numbers = {}
-        for definition_file_number, _ in pairs(defined_csname_texts_anywhere_file_numbers[csname]) do
+        for definition_file_number, _ in pairs(states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[csname]) do
           table.insert(statement.definition_file_numbers, definition_file_number)
         end
         assert(#statement.definition_file_numbers > 0)
@@ -2028,18 +2035,18 @@ local function report_issues(states, main_file_number, options)
   end
 
   ---- Report indirect function definitions from undefined base functions.
-  for _, indirect_definition_base_csname_text in ipairs(indirect_definition_base_csname_texts) do
+  for _, indirect_definition_base_csname_text in ipairs(results.statement_analysis.indirect_definition_base_csname_texts) do
     local csname, byte_range = table.unpack(indirect_definition_base_csname_text)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_csname, csname) == nil
-        and not maybe_defined_csname_texts[csname]
-        and lpeg.match(maybe_defined_csname_pattern, csname) == nil then
+        and not states.results.statement_analysis.maybe_defined_csname_texts[csname]
+        and lpeg.match(states.results.statement_analysis.maybe_defined_csname_pattern, csname) == nil then
       issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
     end
   end
 
   ---- Report malformed function names.
-  for _, defined_csname_text in ipairs(defined_csname_texts) do
+  for _, defined_csname_text in ipairs(results.statement_analysis.defined_csname_texts) do
     local defined_csname, byte_range = table.unpack(defined_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, defined_csname) ~= nil
@@ -2051,7 +2058,8 @@ local function report_issues(states, main_file_number, options)
   end
 
   ---- Report malformed variable and constant names.
-  for _, declared_defined_and_used_variable_csname_text in ipairs(declared_defined_and_used_variable_csname_texts) do
+  for _, declared_defined_and_used_variable_csname_text
+      in ipairs(results.statement_analysis.declared_defined_and_used_variable_csname_texts) do
     local variable_type, variable_csname, byte_range = table.unpack(declared_defined_and_used_variable_csname_text)
     if variable_type == "quark" or variable_type == "scan" then
       if lpeg.match(parsers.expl3_quark_or_scan_mark_csname, variable_csname) == nil then
@@ -2069,49 +2077,49 @@ local function report_issues(states, main_file_number, options)
   end
 
   ---- Report unused variables and constants.
-  for _, declared_variable_csname_text in ipairs(declared_variable_csname_texts) do
+  for _, declared_variable_csname_text in ipairs(results.statement_analysis.declared_variable_csname_texts) do
     local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
-          and not maybe_used_variable_csname_texts[variable_csname]
-          and lpeg.match(maybe_used_variable_csname_pattern, variable_csname) == nil
-          and not maybe_used_csname_texts[variable_csname]
-          and lpeg.match(maybe_used_csname_pattern, variable_csname) == nil
+          and not states.results.statement_analysis.maybe_used_variable_csname_texts[variable_csname]
+          and lpeg.match(states.results.statement_analysis.maybe_used_variable_csname_pattern, variable_csname) == nil
+          and not states.results.statement_analysis.maybe_used_csname_texts[variable_csname]
+          and lpeg.match(states.results.statement_analysis.maybe_used_csname_pattern, variable_csname) == nil
         ) then
       issues:add('w415', 'unused variable or constant', byte_range, format_csname(variable_csname))
     end
   end
 
   ---- Report undeclared variables.
-  for _, defined_variable_csname_text in ipairs(defined_variable_csname_texts) do
+  for _, defined_variable_csname_text in ipairs(results.statement_analysis.defined_variable_csname_texts) do
     local variable_csname, byte_range = table.unpack(defined_variable_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
           and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
-          and not maybe_declared_variable_csname_texts[variable_csname]
-          and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
+          and not states.results.statement_analysis.maybe_declared_variable_csname_texts[variable_csname]
+          and lpeg.match(states.results.statement_analysis.maybe_declared_variable_csname_pattern, variable_csname) == nil
         ) then
       issues:add('w416', 'setting an undeclared variable', byte_range, format_csname(variable_csname))
     end
   end
 
   ---- Report using undefined variables or constants.
-  for _, used_variable_csname_text in ipairs(used_variable_csname_texts) do
+  for _, used_variable_csname_text in ipairs(results.statement_analysis.used_variable_csname_texts) do
     local variable_csname, byte_range = table.unpack(used_variable_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
           and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
-          and not maybe_declared_variable_csname_texts[variable_csname]
-          and lpeg.match(maybe_declared_variable_csname_pattern, variable_csname) == nil
+          and not states.results.statement_analysis.maybe_declared_variable_csname_texts[variable_csname]
+          and lpeg.match(states.results.statement_analysis.maybe_declared_variable_csname_pattern, variable_csname) == nil
         ) then
       issues:add('w419', 'using an undeclared variable or constant', byte_range, format_csname(variable_csname))
     end
   end
 
   ---- Report using variables and constants of incompatible types.
-  for _, declared_variable_csname_transcript in ipairs(declared_variable_csname_transcripts) do
+  for _, declared_variable_csname_transcript in ipairs(results.statement_analysis.declared_variable_csname_transcripts) do
     local declaration_type, csname_transcript, byte_range = table.unpack(declared_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
@@ -2124,7 +2132,7 @@ local function report_issues(states, main_file_number, options)
       end
     end
   end
-  for _, defined_variable_csname_transcript in ipairs(defined_variable_csname_transcripts) do
+  for _, defined_variable_csname_transcript in ipairs(results.statement_analysis.defined_variable_csname_transcripts) do
     local definition_type, csname_transcript, byte_range = table.unpack(defined_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
@@ -2137,7 +2145,7 @@ local function report_issues(states, main_file_number, options)
       end
     end
   end
-  for _, defined_variable_base_csname_transcript in ipairs(defined_variable_base_csname_transcripts) do
+  for _, defined_variable_base_csname_transcript in ipairs(results.statement_analysis.defined_variable_base_csname_transcripts) do
     local definition_type, csname_transcript, byte_range = table.unpack(defined_variable_base_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     if csname_type ~= nil then
@@ -2150,7 +2158,7 @@ local function report_issues(states, main_file_number, options)
       end
     end
   end
-  for _, used_variable_csname_transcript in ipairs(used_variable_csname_transcripts) do
+  for _, used_variable_csname_transcript in ipairs(results.statement_analysis.used_variable_csname_transcripts) do
     local use_type, csname_transcript, byte_range = table.unpack(used_variable_csname_transcript)
     local csname_type = lpeg.match(parsers.expl3_variable_or_constant_csname_type, csname_transcript)
     -- For uses, we require a potential compatibility between the use type and the variable type.
@@ -2162,32 +2170,32 @@ local function report_issues(states, main_file_number, options)
   end
 
   -- Report unused messages.
-  for _, defined_message_name_text in ipairs(defined_message_name_texts) do
+  for _, defined_message_name_text in ipairs(results.statement_analysis.defined_message_name_texts) do
     local message_name_text, byte_range = table.unpack(defined_message_name_text)
     if (
-          not maybe_used_message_name_texts[message_name_text]
-          and lpeg.match(maybe_used_message_name_pattern, message_name_text) == nil
+          not states.results.statement_analysis.maybe_used_message_name_texts[message_name_text]
+          and lpeg.match(states.results.statement_analysis.maybe_used_message_name_pattern, message_name_text) == nil
         ) then
       issues:add('w423', 'unused message', byte_range, message_name_text)
     end
   end
 
   -- Report using an undefined message.
-  for _, used_message_name_text in ipairs(used_message_name_texts) do
+  for _, used_message_name_text in ipairs(results.statement_analysis.used_message_name_texts) do
     local message_name_text, byte_range = table.unpack(used_message_name_text)
     if (
           lpeg.match(expl3_well_known_message_name, message_name_text) == nil
-          and not maybe_defined_message_name_texts[message_name_text]
-          and lpeg.match(maybe_defined_message_name_pattern, message_name_text) == nil
+          and not states.results.statement_analysis.maybe_defined_message_name_texts[message_name_text]
+          and lpeg.match(states.results.statement_analysis.maybe_defined_message_name_pattern, message_name_text) == nil
         ) then
       issues:add('e424', 'using an undefined message', byte_range, message_name_text)
     end
   end
 
   -- Report supplying incorrect numbers of arguments to a message.
-  for _, used_message_num_text_arguments in ipairs(used_message_nums_text_arguments) do
+  for _, used_message_num_text_arguments in ipairs(results.statement_analysis.used_message_nums_text_arguments) do
     local message_name_text, num_arguments, byte_range = table.unpack(used_message_num_text_arguments)
-    local num_parameters = defined_message_nums_text_parameters[message_name_text]
+    local num_parameters = states.results.statement_analysis.defined_message_nums_text_parameters[message_name_text]
     if num_parameters ~= nil and (num_arguments < num_parameters.min or num_arguments > num_parameters.max) then
       local context
       if num_arguments < num_parameters.min then
@@ -2200,9 +2208,26 @@ local function report_issues(states, main_file_number, options)
   end
 end
 
+-- Remove auxiliary intermediate results to free up memory for the following processing steps.
+local function cleanup(states, file_number, _)
+  -- Remove group-wide intermediate results.
+  if states.results.statement_analysis ~= nil then
+    states.results.statement_analysis = nil
+  end
+
+  -- Remove file-local intermediate results.
+  local state = states[file_number]
+
+  local results = state.results
+
+  results.statement_analysis = nil
+end
+
 local substeps = {
-  analyze,
+  collect_statements,
+  analyze_group_wide_statements,
   report_issues,
+  cleanup,
 }
 
 return {
