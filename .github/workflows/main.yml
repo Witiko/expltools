@@ -164,13 +164,13 @@ jobs:
         run: tlmgr update --self
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
-      - name: Install Lua interpreter
+      - name: Install the Lua interpreter
         if: matrix.interpreter != 'luatex'
         run: |
           set -e
 
           apt update
-          apt install -qy ${{ matrix.interpreter }}
+          apt install -qy ${{ matrix.interpreter }} lua-lpeg
       - name: Install GNU Parallel
         run: |
           set -e
