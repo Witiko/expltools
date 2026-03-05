@@ -906,7 +906,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
       -- Determine the definitions and undefinitions from the current statement.
       local current_definition_list, current_definition_index = {}, {}
-      local invalidated_statement_index, invalidated_statement_list = {}, {}
+      local invalidated_statement_index = {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local macro_statement_number = statement_number
         local macro_statement = get_statement(chunk, macro_statement_number)
@@ -964,9 +964,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 )
                 assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
                 if incoming_statement ~= statement then
-                  if invalidated_statement_index[incoming_statement] == nil then
-                    table.insert(invalidated_statement_list, incoming_statement)
-                  end
                   invalidated_statement_index[incoming_statement] = true
                 end
               end
