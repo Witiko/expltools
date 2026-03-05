@@ -969,6 +969,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               end
             end
           end
+          -- If we previously invalidated a definition that originates from the current statement but reached us from before the
+          -- current statement due to a cycle in the flow-graph, undo the invalidation.
+          invalidated_statement_index[statement] = false
           ::next_statement::
         end
         ::next_macro_statement::
@@ -982,7 +985,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           local statement = get_statement(definition.chunk, definition.macro_statement_number, definition.statement_number)
           assert(is_well_behaved(statement))
           -- Skip invalidated definitions.
-          if invalidated_statement_index[statement] ~= nil then
+          if invalidated_statement_index[statement] then
             goto next_definition
           end
           -- Record the first occurrence of a definition.
