@@ -147,7 +147,7 @@ jobs:
           #- latest  # TODO: Reenable after TeX Live 2026 has been released.
         interpreter:
           - luatex
-          #- lua5.2  # Disabled because support for Lua 5.2 was dropped from the Debian package `lua-lpeg` on December 2025.
+          - lua5.2
           - lua5.3
           - lua5.4
           #- lua5.5  # Disabled because support for Lua 5.5 has not yet been added to the Debian package `lua-lpeg` as of March 2025.
@@ -164,6 +164,30 @@ jobs:
         run: tlmgr update --self
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
+      - name: Switch to Debian trixie
+        if: matrix.interpreter == 'lua5.2'
+        # This is necessary because support for Lua 5.2 was dropped from the Debian package `lua-lpeg` on December 2025
+        # in Debian forky and sid.
+        run: |
+          set -e
+
+          cat > /etc/apt/sources.list.d/trixie.list <<'EOF'
+          deb http://deb.debian.org/debian trixie main
+          deb http://deb.debian.org/debian trixie-updates main
+          deb http://security.debian.org/debian-security trixie-security main
+          EOF
+
+          cat > /etc/apt/preferences.d/trixie-lua.pref <<'EOF'
+          # Default: prefer unstable (sid). Keep trixie low-priority.
+          Package: *
+          Pin: release n=trixie
+          Pin-Priority: 100
+
+          # Allow these packages (and only these) to come from trixie.
+          Package: ${{ matrix.interpreter }} lua-lpeg
+          Pin: release n=trixie
+          Pin-Priority: 990
+          EOF
       - name: Install the Lua interpreter
         if: matrix.interpreter != 'luatex'
         run: |
