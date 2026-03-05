@@ -143,7 +143,8 @@ jobs:
           #- TL2022
           #- TL2023
           - TL2024
-          #- latest
+          #- TL2025  # TODO: Reenable after the Docker image `texlive/texlive:TL2025-historic-doc` has been released.
+          #- latest  # TODO: Reenable after TeX Live 2026 has been released.
         interpreter:
           - luatex
           - lua5.1
