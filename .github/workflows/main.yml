@@ -147,7 +147,6 @@ jobs:
           #- latest  # TODO: Reenable after TeX Live 2026 has been released.
         interpreter:
           - luatex
-          - lua5.1
           #- lua5.2  # Disabled because support for Lua 5.2 was dropped from the Debian package `lua-lpeg` on December 2025.
           - lua5.3
           - lua5.4
