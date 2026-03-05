@@ -157,13 +157,17 @@ end
 
 -- Get a text representation of a statement or a pseudo-statement "after" a chunk.
 ---@diagnostic disable-next-line:unused-function
-local function format_statement(chunk, statement_number)
+local function format_statement(chunk, macro_statement_number, statement_number)
   local statement_text
-  if statement_number == chunk.statement_range:stop() + 1 then
-    statement_text = string.format("pseudo-statement #%d after a chunk", statement_number)
+  if macro_statement_number == chunk.statement_range:stop() + 1 then
+    statement_text = string.format("pseudo-statement #%d after a chunk", macro_statement_number)
   else
-    local statement = _get_statement(chunk, statement_number)
-    statement_text = string.format("statement #%d (%s) in a chunk", statement_number, statement.subtype or statement.type)
+    local statement = _get_statement(chunk, macro_statement_number, statement_number)
+    if statement_number == nil then
+      statement_text = string.format("statement #%d (%s) in a chunk", macro_statement_number, statement.subtype or statement.type)
+    else
+      statement_text = string.format("statement #%d/#%d (%s) in a chunk", macro_statement_number, statement_number, statement.subtype or statement.type)
+    end
   end
   local segment_text = string.format(
     'from segment "%s" at depth %d', chunk.segment.subtype or chunk.segment.type, chunk.segment.nesting_depth)
