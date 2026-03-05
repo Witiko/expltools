@@ -144,6 +144,14 @@ jobs:
           #- TL2023
           - TL2024
           #- latest
+        interpreter:
+          - luatex
+          - lua5.1
+          - lua5.2
+          - lua5.3
+          - lua5.4
+          - lua5.5
+          - luajit
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
@@ -156,6 +164,13 @@ jobs:
         run: tlmgr update --self
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
+      - name: Install Lua interpreter
+        if: matrix.interpreter != 'luatex'
+        run: |
+          set -e
+
+          apt update
+          apt install -qy ${{ matrix.interpreter }}
       - name: Install GNU Parallel
         run: |
           set -e
@@ -178,16 +193,16 @@ jobs:
           # Split the sorted files into N chunks, where N is ca the available number of CPUs, making sure that files
           # from the same directory that can be grouped by explcheck are kept together.
           NPROC=$(($(nproc) + 1))  # Oversubscribe to make up for occasional difficult groups that create slow tails.
-          texlua explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $NPROC
+          ${{ matrix.interpreter }} explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $NPROC
 
           # Process the sorted chunks with explcheck in parallel, collecting issues and code coverage.
           parallel --line-buffer --jobs $NPROC --halt now,fail=1 -- \
-            texlua explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
+            ${{ matrix.interpreter }} explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
             ::: $(seq 1 $NPROC)
 
           # Merge the issues and code coverage collected from the sorted chunks.
           mkdir issues
-          texlua explcheck/ci/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues/ issues/COVERAGE $NPROC
+          ${{ matrix.interpreter }} explcheck/ci/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues/ issues/COVERAGE $NPROC
       - name: Print code coverage
         run: cat issues/COVERAGE
       - name: Upload issues and code coverage
@@ -209,11 +224,11 @@ jobs:
           set -e
 
           # Collect all options and prepare task files for them.
-          texlua explcheck/ci/collect-options-to-check.lua files.txt task-%05d.txt
+          ${{ matrix.interpreter }} explcheck/ci/collect-options-to-check.lua files.txt task-%05d.txt
 
           # Check the different options in parallel.
           parallel --line-buffer --jobs $(nproc) --halt never -- \
-            texlua explcheck/ci/check-option.lua files.txt issues/ {} \
+            ${{ matrix.interpreter }} explcheck/ci/check-option.lua files.txt issues/ {} \
             ::: task-*.txt
 
           echo 'Could not remove any sections or options.'
