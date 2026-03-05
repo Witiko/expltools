@@ -4,6 +4,16 @@
 
 ### explcheck v0.19.0
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Merge consecutive blocks of function (variant) definitions and function
+  undefinitions into macro-statements that form flow-graph vertices instead
+  of individual statements. This greatly improves the speed and reduces the
+  memory footprint of the flow analysis. (discovered by @lostenderman in #156,
+  fixed in #183)
+
 ## expltools 2026-03-04
 
 ### explcheck v0.18.0
