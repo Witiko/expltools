@@ -207,7 +207,7 @@ jobs:
       - name: Print code coverage
         run: cat issues/COVERAGE
       - name: Upload issues and code coverage
-        if: matrix.release != 'latest'
+        if: matrix.release != 'latest' && matrix.interpreter == 'luatex'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.release }}-issues
