@@ -1,9 +1,6 @@
 #!/usr/bin/env texlua
 -- Process a list of pathnames with explcheck, collecting issues and code coverage.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "collect-explcheck-issues-and-code-coverage")
-
 local evaluation = require("explcheck-evaluation")
 local format = require("explcheck-format")
 local utils = require("explcheck-utils")

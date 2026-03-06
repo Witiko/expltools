@@ -1,9 +1,6 @@
 #!/usr/bin/env texlua
 -- Take a single option and check whether omitting the options in that section changes detections.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "check-option")
-
 local lfs = require("lfs")
 
 local config = require("explcheck-config")
