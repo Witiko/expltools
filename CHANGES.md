@@ -12,7 +12,7 @@ This version of explcheck has made the following changes to our Docker image
 - Replace Lua 5.3 with LuaJIT in `Dockerfile`. (#184)
 
   These changes improve processing time by about 33% for an average package
-  file in TeX Live 2024.
+  file in TeX Live 2024, and up to XX× for large files like `expl3-code.tex`.
 
 #### Continuous integration
 
