@@ -4,6 +4,21 @@
 
 ### explcheck v0.19.0
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Merge consecutive blocks of function (variant) definitions and function
+  undefinitions into macro-statements that form flow-graph vertices instead
+  of individual statements. (suggested by @lostenderman in #156, fixed in #183)
+
+  This greatly improves the speed of the flow analysis up to XX× on large files
+  such as `expl3-code.tex` and reduces its memory footprint up to 3×.
+
+  After this change, the default value of the Lua option
+  `max_reaching_definition_inner_loops` has been reduced from 30,000,000
+  to just 600,000 iterations.
+
 ## expltools 2026-03-04
 
 ### explcheck v0.18.0
