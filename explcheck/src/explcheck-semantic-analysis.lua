@@ -869,8 +869,9 @@ local function collect_statements(states, file_number, options)
                 },
               }
               table.insert(results.segments, nested_segment)
-              nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
               replacement_text_argument.segment_number = #results.segments
+              nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
+              assert(results.segments[replacement_text_argument.segment_number].type == REPLACEMENT_TEXT)
             end
             ::skip_replacement_text::
             -- determine the token range of the definition excluding the replacement text
