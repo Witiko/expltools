@@ -43,6 +43,9 @@ integration:
 - Run regression tests on different Lua interpreters: Lua 5.2, 5.3, 5.4,
   LuaTeX, and LuaJIT. (#184)
 
+Overall, the changes from this release improve processing time up to XX× for
+large files like `expl3-code.tex`.
+
 ## expltools 2026-03-04
 
 ### explcheck v0.18.0
