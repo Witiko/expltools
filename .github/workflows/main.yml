@@ -143,7 +143,15 @@ jobs:
           #- TL2022
           #- TL2023
           - TL2024
-          #- latest
+          #- TL2025  # TODO: Reenable after the Docker image `texlive/texlive:TL2025-historic-doc` has been released.
+          #- latest  # TODO: Reenable after TeX Live 2026 has been released.
+        interpreter:
+          - luatex
+          - lua5.2
+          - lua5.3
+          - lua5.4
+          #- lua5.5  # Disabled because support for Lua 5.5 has not yet been added to the Debian package `lua-lpeg` as of March 2025.
+          - luajit
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
@@ -156,6 +164,37 @@ jobs:
         run: tlmgr update --self
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
+      - name: Switch to Debian trixie
+        if: matrix.interpreter == 'lua5.2'
+        # This is necessary because support for Lua 5.2 was dropped from the Debian package `lua-lpeg` on December 2025
+        # in Debian forky and sid.
+        run: |
+          set -e
+
+          cat > /etc/apt/sources.list.d/trixie.list <<'EOF'
+          deb http://deb.debian.org/debian trixie main
+          deb http://deb.debian.org/debian trixie-updates main
+          deb http://security.debian.org/debian-security trixie-security main
+          EOF
+
+          cat > /etc/apt/preferences.d/trixie-lua.pref <<'EOF'
+          # Default: prefer unstable (sid). Keep trixie low-priority.
+          Package: *
+          Pin: release n=trixie
+          Pin-Priority: 100
+
+          # Allow these packages (and only these) to come from trixie.
+          Package: ${{ matrix.interpreter }} lua-lpeg
+          Pin: release n=trixie
+          Pin-Priority: 990
+          EOF
+      - name: Install the Lua interpreter
+        if: matrix.interpreter != 'luatex'
+        run: |
+          set -e
+
+          apt update
+          apt install -qy ${{ matrix.interpreter }} lua-lpeg
       - name: Install GNU Parallel
         run: |
           set -e
@@ -165,7 +204,7 @@ jobs:
       - name: Run explcheck
         timeout-minutes: 5
         env:
-          LUAINPUTS: explcheck/src
+          LUA_PATH: explcheck/src/?.lua
         run: |
           set -e
 
@@ -178,20 +217,20 @@ jobs:
           # Split the sorted files into N chunks, where N is ca the available number of CPUs, making sure that files
           # from the same directory that can be grouped by explcheck are kept together.
           NPROC=$(($(nproc) + 1))  # Oversubscribe to make up for occasional difficult groups that create slow tails.
-          texlua explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $NPROC
+          ${{ matrix.interpreter }} explcheck/ci/split-files-at-group-boundaries.lua files.txt files-%02d.txt $NPROC
 
           # Process the sorted chunks with explcheck in parallel, collecting issues and code coverage.
           parallel --line-buffer --jobs $NPROC --halt now,fail=1 -- \
-            texlua explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
+            ${{ matrix.interpreter }} explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
             ::: $(seq 1 $NPROC)
 
           # Merge the issues and code coverage collected from the sorted chunks.
           mkdir issues
-          texlua explcheck/ci/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues/ issues/COVERAGE $NPROC
+          ${{ matrix.interpreter }} explcheck/ci/merge-issues-and-code-coverage.lua issues-%02d.txt COVERAGE-%02d issues/ issues/COVERAGE $NPROC
       - name: Print code coverage
         run: cat issues/COVERAGE
       - name: Upload issues and code coverage
-        if: matrix.release != 'latest'
+        if: matrix.release != 'latest' && matrix.interpreter == 'luatex'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.release }}-issues
@@ -204,16 +243,16 @@ jobs:
         timeout-minutes: 5
         if: matrix.release == 'latest'
         env:
-          LUAINPUTS: explcheck/src
+          LUA_PATH: explcheck/src/?.lua
         run: |
           set -e
 
           # Collect all options and prepare task files for them.
-          texlua explcheck/ci/collect-options-to-check.lua files.txt task-%05d.txt
+          ${{ matrix.interpreter }} explcheck/ci/collect-options-to-check.lua files.txt task-%05d.txt
 
           # Check the different options in parallel.
           parallel --line-buffer --jobs $(nproc) --halt never -- \
-            texlua explcheck/ci/check-option.lua files.txt issues/ {} \
+            ${{ matrix.interpreter }} explcheck/ci/check-option.lua files.txt issues/ {} \
             ::: task-*.txt
 
           echo 'Could not remove any sections or options.'

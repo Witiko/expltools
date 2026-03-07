@@ -1,9 +1,6 @@
 #!/usr/bin/env texlua
 -- Collect all options to check for redundancy and prepare task files for them.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "collect-options-to-check")
-
 local config = require("explcheck-config")
 local format = require("explcheck-format")
 

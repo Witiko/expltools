@@ -12,12 +12,31 @@ This version of explcheck has fixed the following problems:
   undefinitions into macro-statements that form flow-graph vertices instead
   of individual statements. (suggested by @lostenderman in #156, fixed in #183)
 
-  This greatly improves the speed of the flow analysis up to XX× on large files
-  such as `expl3-code.tex` and reduces its memory footprint up to 3×.
+  This change improves processing time by about 10% for an average package file
+  in TeX Live 2024, and by up to XX% (or XX×) for large files like
+  `expl3-code.tex`, and reduces the memory footprint of flow analysis up to 3×.
 
   After this change, the default value of the Lua option
   `max_reaching_definition_inner_loops` has been reduced from 30,000,000
   to just 600,000 iterations.
+
+#### Docker image
+
+This version of explcheck has made the following changes to our Docker image
+`ghcr.io/witiko/expltools/explcheck`:
+
+- Replace Lua 5.3 with LuaJIT in `Dockerfile`. (#184)
+
+  This change improves processing time by about 33% for an average package
+  file in TeX Live 2024, and by up to 61% for large files like `expl3-code.tex`.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Run regression tests on different Lua interpreters: Lua 5.2, 5.3, 5.4,
+  LuaTeX, and LuaJIT. (#184)
 
 ## expltools 2026-03-04
 

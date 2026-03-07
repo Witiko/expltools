@@ -1,9 +1,6 @@
 #!/usr/bin/env texlua
 -- Merge collected issues and code coverage.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "merge-issues-and-code-coverage")
-
 local format = require("explcheck-format")
 
 local format_ratio = format.format_ratio
