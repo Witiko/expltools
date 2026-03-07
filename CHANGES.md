@@ -2,7 +2,7 @@
 
 ## expltools 2026-03-XX
 
-### explcheck v0.19.0
+### explcheck v0.18.1
 
 #### Fixes
 
@@ -19,6 +19,11 @@ This version of explcheck has fixed the following problems:
   After this change, the default value of the Lua option
   `max_reaching_definition_inner_loops` has been reduced from 30,000,000
   to just 600,000 iterations.
+
+- Fix the assignment of segment numbers to replacement texts. (#183)
+
+  This would cause function definition statements to point to segments other
+  than the replacement texts, confusing the flow analysis.
 
 #### Docker image
 
