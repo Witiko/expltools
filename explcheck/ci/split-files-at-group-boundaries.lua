@@ -1,9 +1,6 @@
 #!/usr/bin/env texlua
 -- Split a list of pathnames into many, making sure that files from the same directory that can be grouped by explcheck are kept together.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "split-files-at-group-boundaries")
-
 local format = require("explcheck-format")
 local utils = require("explcheck-utils")
 

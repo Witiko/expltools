@@ -4,6 +4,24 @@
 
 ### explcheck v0.19.0
 
+#### Docker image
+
+This version of explcheck has made the following changes to our Docker image
+`ghcr.io/witiko/expltools/explcheck`:
+
+- Replace Lua 5.3 with LuaJIT in `Dockerfile`. (#184)
+
+  These changes improve processing time by about 33% for an average package
+  file in TeX Live 2024, and by up to 61% for large files like `expl3-code.tex`.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Run regression tests on different Lua interpreters: Lua 5.2, 5.3, 5.4,
+  LuaTeX, and LuaJIT. (#184)
+
 ## expltools 2026-03-04
 
 ### explcheck v0.18.0
