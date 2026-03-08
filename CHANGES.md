@@ -18,7 +18,7 @@ This version of explcheck has fixed the following problems:
 
   After this change, the default value of the Lua option
   `max_reaching_definition_inner_loops` has been reduced from 30,000,000
-  to just 600,000 iterations.
+  to just 650,000 inner-loop iterations.
 
 - Fix the assignment of segment numbers to replacement texts. (#183)
 
