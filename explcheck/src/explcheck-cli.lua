@@ -92,6 +92,11 @@ local function print_usage()
   print("The options are provisional and may be changed or removed before version 1.0.0.")
 end
 
+local function print_usage_and_exit(exit_code)
+  print_usage()
+  os.exit(exit_code)
+end
+
 local function print_version()
   print("explcheck (expltools ${DATE}) ${VERSION}")
   print("Copyright (c) 2024-2026 Vít Starý Novotný")
@@ -99,8 +104,7 @@ local function print_version()
 end
 
 if #arg == 0 then
-  print_usage()
-  os.exit(1)
+  print_usage_and_exit(1)
 end
 
 -- Collect arguments.
@@ -111,8 +115,7 @@ local options = {}
 local long_options = {
   ["help"] = {
     action = function()
-      print_usage()
-      os.exit(0)
+      print_usage_and_exit(0)
     end,
   },
   ["version"] = {
@@ -244,8 +247,7 @@ local short_options = {
 
 local function unknown_argument(argument)
   print(string.format('Unrecognized argument: %s\n', argument))
-  print_usage()
-  os.exit(1)
+  print_usage_and_exit(1)
 end
 
 local i = 1
@@ -276,8 +278,7 @@ while i <= #arg do
         i = i + 1
         if i > #arg then
           print(string.format("No value provided for option: %s\n", option_name))
-          print_usage()
-          os.exit(1)
+          print_usage_and_exit(1)
         end
         option_value = arg[i]
       end
@@ -304,8 +305,7 @@ end
 assert(#pathnames == #allow_pathname_separators)
 
 if #pathnames == 0 then
-  print_usage()
-  os.exit(1)
+  print_usage_and_exit(1)
 end
 
 -- Group pathnames.
