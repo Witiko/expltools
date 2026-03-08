@@ -262,38 +262,36 @@ while i <= #arg do
     local pos = argument:find("=", 1, true)
     if pos then
       option_name = argument:sub(3, pos - 1)
+      option_value = argument:sub(pos + 1)
     else
       option_name = argument:sub(3)
     end
-    if long_options[option_name] then
-      if pos then
-        option_value = argument:sub(pos + 1)
-      end
-      if long_options[option_name].value_required then
-        if not option_value then
-          i = i + 1
-          if i > #arg then
-            print(string.format("No value provided for option: %s\n", option_name))
-            print_usage()
-            os.exit(1)
-          end
-          option_value = arg[i]
+    if not long_options[option_name] then
+      unknown_argument(argument)
+    end
+    if not long_options[option_name].value_required then
+      long_options[option_name].action()
+    else
+      if not option_value then
+        i = i + 1
+        if i > #arg then
+          print(string.format("No value provided for option: %s\n", option_name))
+          print_usage()
+          os.exit(1)
         end
+        option_value = arg[i]
       end
       long_options[option_name].action(option_value)
-    else
-      unknown_argument(argument)
     end
   -- Parse short options.
   elseif argument:sub(1, 1) == "-" and argument:len() == 2 then
     -- TODO: Support merged short options, e.g. `-abc` as a shorthand for `-a -b -c`.
     local option_name = argument:sub(2, 2)
-    if short_options[option_name] then
-      -- TODO: Support short options with values, e.g. `-p VALUE`.
-      short_options[option_name].action()
-    else
+    if not short_options[option_name] then
       unknown_argument(argument)
     end
+    -- TODO: Support short options with values, e.g. `-p VALUE`.
+    short_options[option_name].action()
   elseif argument:sub(1, 1) == "-" then
     unknown_argument(argument)
   else
