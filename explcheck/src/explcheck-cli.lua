@@ -271,13 +271,7 @@ while i <= #arg do
     if not long_options[option_name] then
       unknown_argument(argument)
     end
-    if not long_options[option_name].value_required then
-      if option_value then
-        print(string.format("Option does not take a value: %s\n", argument))
-        print_usage_and_exit(1)
-      end
-      long_options[option_name].action()
-    else
+    if long_options[option_name].value_required then
       if not option_value then
         -- Parse long option with separate value `--option VALUE`.
         if i == #arg or arg[i + 1]:sub(1, 1) == "-" then
@@ -288,6 +282,12 @@ while i <= #arg do
         option_value = arg[i]
       end
       long_options[option_name].action(option_value)
+    else
+      if option_value then
+        print(string.format("Option does not take a value: %s\n", argument))
+        print_usage_and_exit(1)
+      end
+      long_options[option_name].action()
     end
   -- Parse short options.
   elseif argument:sub(1, 1) == "-" and argument:len() == 2 then
