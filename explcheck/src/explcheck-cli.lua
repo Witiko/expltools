@@ -272,11 +272,16 @@ while i <= #arg do
       unknown_argument(argument)
     end
     if not long_options[option_name].value_required then
+      if option_value then
+        print(string.format("Option does not take a value: %s\n", argument))
+        print_usage_and_exit(1)
+      end
       long_options[option_name].action()
     else
       if not option_value then
+        -- Parse long option with separate value `--option VALUE`.
         if i == #arg or arg[i + 1]:sub(1, 1) == "-" then
-          print(string.format("No value provided for option: %s\n", option_name))
+          print(string.format("No value provided for option: %s\n", argument))
           print_usage_and_exit(1)
         end
         i = i + 1
