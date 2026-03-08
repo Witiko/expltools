@@ -275,11 +275,11 @@ while i <= #arg do
       long_options[option_name].action()
     else
       if not option_value then
-        i = i + 1
-        if i > #arg then
+        if i == #arg or arg[i + 1]:sub(1, 1) == "-" then
           print(string.format("No value provided for option: %s\n", option_name))
           print_usage_and_exit(1)
         end
+        i = i + 1
         option_value = arg[i]
       end
       long_options[option_name].action(option_value)
