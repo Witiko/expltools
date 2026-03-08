@@ -26,8 +26,7 @@ This version of explcheck has fixed the following problems:
   than the replacement texts, confusing the flow analysis.
 
   This change reduces processing time by about 2% for an average package file
-  in TeX Live 2024, and by up to XX% (or XX×) for large files like
-  `expl3-code.tex`.
+  in TeX Live 2024, and by up to 11% for large files like `expl3-code.tex`.
 
 #### Docker image
 
