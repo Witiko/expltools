@@ -25,6 +25,10 @@ This version of explcheck has fixed the following problems:
   This would cause function definition statements to point to segments other
   than the replacement texts, confusing the flow analysis.
 
+  This change reduces processing time by about 2% for an average package file
+  in TeX Live 2024, and by up to XX% (or XX×) for large files like
+  `expl3-code.tex`.
+
 #### Docker image
 
 This version of explcheck has made the following changes to our Docker image
@@ -43,8 +47,13 @@ integration:
 - Run regression tests on different Lua interpreters: Lua 5.2, 5.3, 5.4,
   LuaTeX, and LuaJIT. (#184)
 
-Overall, the changes from this release improve processing time up to XX× for
-large files like `expl3-code.tex`.
+Overall, the changes in this release reduce the processing time for large files
+such as `expl3-code.tex` from months to hours (up to XX×). While this is still
+insufficient for real-time use e.g. in a language server (see ticket #68), it
+makes the tool practical for scenarios such as continuous integration.
+
+For a discussion of other potential speed improvements of the flow analysis,
+see ticket #156.
 
 ## expltools 2026-03-04
 
