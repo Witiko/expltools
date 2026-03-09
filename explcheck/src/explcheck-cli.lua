@@ -313,20 +313,20 @@ local function process_arguments(arguments)
       elseif argument_type == LONG_OPTION then
         assert(option_name ~= nil)
         if long_options[option_name] == nil then
-          parse_error("Unrecognized argument: %s", argument)
+          parse_error('Unrecognized argument: "%s".', argument)
         end
         if long_options[option_name].value_required then
           if option_value == nil then
             -- Parse long option with separate value `--option VALUE`.
             if argument_number == #arguments then
-              parse_error('No value provided for option "%s"', argument)
+              parse_error('No value provided for option "%s".', argument)
             end
             assert(argument_number + 1 <= #arguments)
             local next_argument = arguments[argument_number + 1]
             local next_argument_type, next_option_name, _ = parse_argument(next_argument)
             if next_argument_type == LONG_OPTION and long_options[next_option_name] ~= nil or
                 next_argument_type == SHORT_OPTION and short_options[next_option_name] ~= nil then
-              parse_error('Ambiguous value provided for option "%s": "%s"', argument, next_argument)
+              parse_error('Ambiguous value provided for option "%s": "%s".', argument, next_argument)
             end
             argument_number = argument_number + 1
             option_value = arguments[argument_number]
@@ -342,7 +342,7 @@ local function process_arguments(arguments)
         -- TODO: Support merged short options, e.g. `-abc` as a shorthand for `-a -b -c`?
         assert(option_name ~= nil)
         if short_options[option_name] == nil then
-          parse_error("Unrecognized argument: %s", argument)
+          parse_error('Unrecognized argument: "%s".', argument)
         end
         short_options[option_name].action()
       elseif argument_type == OTHER_ARGUMENT then
@@ -351,7 +351,7 @@ local function process_arguments(arguments)
           --       This is consistent with *TeX but mutually exclusive with support for merged short options, e.g. `-abc`
           --       as a shorthand for `-a -b -c`. See also <https://github.com/witiko/expltools/pull/185#discussion_r2904253886>.
           -- TODO: Support `-` as a short-hand for `/dev/stdin` but check that it has only occurred once in `pathnames`.
-          parse_error("Unrecognized argument: %s", argument)
+          parse_error('Unrecognized argument: "%s".', argument)
         else
           table.insert(pathnames, argument)
           table.insert(allow_pathname_separators, true)
