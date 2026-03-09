@@ -28,6 +28,9 @@ This version of explcheck has fixed the following problems:
   This change reduces processing time by about 2% for an average package file
   in TeX Live 2024, and by up to 11% for large files like `expl3-code.tex`.
 
+- Raise an error on ambiguous uses of `--long-option VALUE`, where `VALUE` is
+  a valid command-line option. (contributed by @muzimuzhi in #185)
+
 #### Docker image
 
 This version of explcheck has made the following changes to our Docker image
