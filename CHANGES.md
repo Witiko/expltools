@@ -9,7 +9,7 @@
 This version of explcheck has fixed the following bugs:
 
 - Raise an error on ambiguous uses of `--long-option VALUE`, where `VALUE` is
-  a valid command-line option. (contributed by @muzimuzhi in #185)
+  a valid command-line option. (contributed by @muzimuzhi in #185 and c48fa116)
 
 #### Docker image
 
