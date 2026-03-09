@@ -4,6 +4,13 @@
 
 ### explcheck v0.19.0
 
+#### Fixes
+
+This version of explcheck has fixed the following bugs:
+
+- Raise an error on ambiguous uses of `--long-option VALUE`, where `VALUE` is
+  a valid command-line option. (contributed by @muzimuzhi in #185)
+
 #### Docker image
 
 This version of explcheck has made the following changes to our Docker image
