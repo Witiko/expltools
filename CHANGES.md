@@ -29,7 +29,7 @@ This version of explcheck has fixed the following problems:
   in TeX Live 2024, and by up to 11% for large files like `expl3-code.tex`.
 
 - Raise an error on ambiguous uses of `--long-option VALUE`, where `VALUE` is
-  a valid command-line option. (contributed by @muzimuzhi in #185)
+  a valid command-line option. (contributed by @muzimuzhi in #185 and c48fa116)
 
 #### Docker image
 
