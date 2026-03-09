@@ -319,14 +319,14 @@ local function process_arguments(arguments)
           if option_value == nil then
             -- Parse long option with separate value `--option VALUE`.
             if argument_number == #arguments then
-              parse_error('No value provided for option "%s".', argument)
+              parse_error('No value provided for option "%s".', option_name)
             end
             assert(argument_number + 1 <= #arguments)
             local next_argument = arguments[argument_number + 1]
             local next_argument_type, next_option_name, _ = parse_argument(next_argument)
             if next_argument_type == LONG_OPTION and long_options[next_option_name] ~= nil or
                 next_argument_type == SHORT_OPTION and short_options[next_option_name] ~= nil then
-              parse_error('Ambiguous value provided for option "%s": "%s".', argument, next_argument)
+              parse_error('Ambiguous value provided for option "%s": "%s".', option_name, next_argument)
             end
             argument_number = argument_number + 1
             option_value = arguments[argument_number]
