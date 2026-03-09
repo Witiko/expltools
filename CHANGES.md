@@ -21,6 +21,7 @@ integration:
 
 - Run regression tests on different Lua interpreters: Lua 5.2, 5.3, 5.4,
   LuaTeX, and LuaJIT. (#184)
+- Bump `docker/login-action` from 3 to 4. (contributed by @dependabot in #186.)
 
 ## expltools 2026-03-04
 
