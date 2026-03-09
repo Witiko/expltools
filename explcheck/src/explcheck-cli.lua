@@ -242,6 +242,7 @@ local function process_arguments(arguments)
         if max_line_length == nil then
           parse_error('Malformed numeric value "%s" for the option "%s".', value, name)
         end
+        options.max_line_length = max_line_length
       end,
     },
     ["no-config-file"] = {
