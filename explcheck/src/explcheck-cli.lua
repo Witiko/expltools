@@ -115,17 +115,25 @@ local function process_arguments(arguments)
     print("Licenses: LPPL 1.3 or later, GNU GPL v2 or later")
   end
 
-  -- Print an unrecognized command-line argument and exit.
-  local function unrecognized_argument(argument)
-    print(string.format('Unrecognized argument: %s\n', argument))
+  -- Print an optional description of a parsing error, followed by information about the usage of the command-line interface.
+  -- Then, terminate with a non-zero exit code.
+  local function parse_error(description_template, ...)
+    if description_template ~= nil then
+      local description
+      if select('#', ...) == 0 then
+        description = description_template
+      else
+        description = string.format(description_template, ...)
+      end
+      print(string.format('%s\n', description))
+    end
     print_usage()
     os.exit(1)
   end
 
   -- In the absence of command-line arguments, print information about the usage of the command-line interface and exit.
   if #arguments == 0 then
-    print_usage()
-    os.exit(1)
+    parse_error('No command-line arguments were specified.')
   end
 
   -- Otherwise, define the recognized command-line options.
@@ -232,9 +240,7 @@ local function process_arguments(arguments)
       action = function(name, value)
         local max_line_length = tonumber(value)
         if max_line_length == nil then
-          print(string.format('Malformed numeric value "%s" for the option "%s".\n', value, name))
-          print_usage()
-          os.exit(1)
+          parse_error('Malformed numeric value "%s" for the option "%s".', value, name)
         end
       end,
     },
@@ -307,24 +313,20 @@ local function process_arguments(arguments)
       elseif argument_type == LONG_OPTION then
         assert(option_name ~= nil)
         if long_options[option_name] == nil then
-          unrecognized_argument(argument)
+          parse_error("Unrecognized argument: %s", argument)
         end
         if long_options[option_name].value_required then
           if option_value == nil then
             -- Parse long option with separate value `--option VALUE`.
             if argument_number == #arguments then
-              print(string.format('No value provided for option "%s".\n', argument))
-              print_usage()
-              os.exit(1)
+              parse_error('No value provided for option "%s"', argument)
             end
             assert(argument_number + 1 <= #arguments)
             local next_argument = arguments[argument_number + 1]
             local next_argument_type, next_option_name, _ = parse_argument(next_argument)
             if next_argument_type == LONG_OPTION and long_options[next_option_name] ~= nil or
                 next_argument_type == SHORT_OPTION and short_options[next_option_name] ~= nil then
-              print(string.format('Ambiguous value provided for option "%s": "%s".\n', argument, next_argument))
-              print_usage()
-              os.exit(1)
+              parse_error('Ambiguous value provided for option "%s": "%s"', argument, next_argument)
             end
             argument_number = argument_number + 1
             option_value = arguments[argument_number]
@@ -332,9 +334,7 @@ local function process_arguments(arguments)
           long_options[option_name].action(option_name, option_value)
         else
           if option_value ~= nil then
-            print(string.format('Option "%s" does not take a value but "%s" was provided.\n', option_name, option_value))
-            print_usage()
-            os.exit(1)
+            parse_error('Option "%s" does not take a value but "%s" was provided.', option_name, option_value)
           end
           long_options[option_name].action(option_name)
         end
@@ -342,7 +342,7 @@ local function process_arguments(arguments)
         -- TODO: Support merged short options, e.g. `-abc` as a shorthand for `-a -b -c`?
         assert(option_name ~= nil)
         if short_options[option_name] == nil then
-          unrecognized_argument(argument)
+          parse_error("Unrecognized argument: %s", argument)
         end
         short_options[option_name].action()
       elseif argument_type == OTHER_ARGUMENT then
@@ -351,7 +351,7 @@ local function process_arguments(arguments)
           --       This is consistent with *TeX but mutually exclusive with support for merged short options, e.g. `-abc`
           --       as a shorthand for `-a -b -c`. See also <https://github.com/witiko/expltools/pull/185#discussion_r2904253886>.
           -- TODO: Support `-` as a short-hand for `/dev/stdin` but check that it has only occurred once in `pathnames`.
-          unrecognized_argument(argument)
+          parse_error("Unrecognized argument: %s", argument)
         else
           table.insert(pathnames, argument)
           table.insert(allow_pathname_separators, true)
@@ -366,8 +366,7 @@ local function process_arguments(arguments)
 
   -- In the absence of file groups, print information about the usage of the command-line interface and exit.
   if #pathnames == 0 then
-    print_usage()
-    os.exit(1)
+    parse_error('No input files were specified.')
   end
 
   -- Group pathnames.
