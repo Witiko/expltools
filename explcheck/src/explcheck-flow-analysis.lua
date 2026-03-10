@@ -47,6 +47,12 @@ local range_flags = ranges.range_flags
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
 
+local macro_statement_types = {
+  FUNCTION_DEFINITIONS = "block of function (variant) (un)definitions",
+}
+
+local FUNCTION_DEFINITIONS = macro_statement_types.FUNCTION_DEFINITIONS
+
 local edge_categories = {
   STATIC = "static",
   DYNAMIC = "dynamic",
@@ -85,27 +91,101 @@ local edge_subtypes = {
 local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
--- Resolve a chunk and a statement number to a statement.
-local function _get_statement(chunk, statement_number)
+-- Merge selected statements into macro-statements, a more useful form for the following analyses.
+-- In the following, we will refer to statements and macro-statements interchangeably.
+local function merge_statements(states, file_number, _)
+  local state = states[file_number]
+
+  local results = state.results
+
+  for _, segment in ipairs(results.segments or {}) do
+    local macro_statements, previous_macro_statement = {}, nil
+    for _, statement in ipairs(segment.statements) do
+      if (
+            statement.type == FUNCTION_DEFINITION or
+            statement.type == FUNCTION_UNDEFINITION or
+            statement.type == FUNCTION_VARIANT_DEFINITION
+          ) then
+        if previous_macro_statement == nil
+            or previous_macro_statement.type ~= FUNCTION_DEFINITIONS then
+          local macro_statement = {
+            type = FUNCTION_DEFINITIONS,
+            -- The following attributes are specific to the type.
+            statements = {},
+          }
+          table.insert(macro_statements, macro_statement)
+          previous_macro_statement = macro_statement
+        end
+        table.insert(previous_macro_statement.statements, statement)
+      else
+        table.insert(macro_statements, statement)
+        previous_macro_statement = statement
+      end
+    end
+    assert(#macro_statements <= #segment.statements)
+    segment.macro_statements = macro_statements
+  end
+end
+
+-- Determine whether a statement is a macro-statement or not.
+local function is_macro_statement(statement)
+  if statement.statements ~= nil then
+    assert(statement.call_range == nil)
+    return true
+  else
+    assert(statement.call_range ~= nil)
+    return false
+  end
+end
+
+-- Resolve a chunk, a macro-statement number, and optionally a statement number to a (macro-)statement.
+local function _get_statement(chunk, macro_statement_number, statement_number)
   local segment = chunk.segment
-  assert(statement_number >= chunk.statement_range:start())
-  assert(statement_number <= chunk.statement_range:stop())
-  local statement = segment.statements[statement_number]
-  assert(statement ~= nil)
-  return statement
+  assert(macro_statement_number >= chunk.statement_range:start())
+  assert(macro_statement_number <= chunk.statement_range:stop())
+  local macro_statement = segment.macro_statements[macro_statement_number]
+  assert(macro_statement ~= nil)
+  if statement_number == nil then
+    return macro_statement
+  else
+    assert(is_macro_statement(macro_statement))
+    assert(statement_number <= #macro_statement.statements)
+    local statement = macro_statement.statements[statement_number]
+    return statement
+  end
 end
 
 -- Get a text representation of a statement or a pseudo-statement "after" a chunk.
-local function format_statement(chunk, statement_number)  ---@diagnostic disable-line:unused-function
+---@diagnostic disable-next-line:unused-function
+local function format_statement(chunk, macro_statement_number, statement_number)
   local statement_text
-  if statement_number == chunk.statement_range:stop() + 1 then
-    statement_text = string.format("pseudo-statement #%d after a chunk", statement_number)
+  if macro_statement_number == chunk.statement_range:stop() + 1 then
+    statement_text = string.format(
+      "pseudo-statement #%d after a chunk",
+      macro_statement_number
+    )
   else
-    local statement = _get_statement(chunk, statement_number)
-    statement_text = string.format("statement #%d (%s) in a chunk", statement_number, statement.subtype or statement.type)
+    local statement = _get_statement(chunk, macro_statement_number, statement_number)
+    if statement_number == nil then
+      statement_text = string.format(
+        "statement #%d (%s) in a chunk",
+        macro_statement_number,
+        statement.subtype or statement.type
+      )
+    else
+      statement_text = string.format(
+        "statement #%d/#%d (%s) in a chunk",
+        macro_statement_number,
+        statement_number,
+        statement.subtype or statement.type
+      )
+    end
   end
   local segment_text = string.format(
-    'from segment "%s" at depth %d', chunk.segment.subtype or chunk.segment.type, chunk.segment.nesting_depth)
+    'from segment "%s" at depth %d',
+    chunk.segment.subtype or chunk.segment.type,
+    chunk.segment.nesting_depth
+  )
   return string.format("%s %s", statement_text, segment_text)
 end
 
@@ -150,8 +230,7 @@ local function is_confused(pathname, results, options)
 end
 
 -- Collect chunks of known statements.
----@diagnostic disable-next-line:unused-local
-local function collect_chunks(states, file_number, options)  -- luacheck: ignore options
+local function collect_chunks(states, file_number, _)
   local state = states[file_number]
 
   local results = state.results
@@ -165,29 +244,26 @@ local function collect_chunks(states, file_number, options)  -- luacheck: ignore
       if first_statement_number ~= nil then
         local chunk = {
           segment = segment,
-          statement_range = new_range(first_statement_number, last_statement_number, flags, #segment.statements),
+          statement_range = new_range(first_statement_number, last_statement_number, flags, #segment.macro_statements),
         }
         table.insert(segment.chunks, chunk)
         first_statement_number = nil
       end
     end
 
-    if segment.statements ~= nil then
-      for statement_number, statement in ipairs(segment.statements or {}) do
-        if statement.type == OTHER_TOKENS and statement.subtype == OTHER_TOKENS_COMPLEX then
-          record_chunk(statement_number, EXCLUSIVE)
-        elseif first_statement_number == nil then
-          first_statement_number = statement_number
-        end
+    for statement_number, statement in ipairs(segment.macro_statements) do
+      if statement.type == OTHER_TOKENS and statement.subtype == OTHER_TOKENS_COMPLEX then
+        record_chunk(statement_number, EXCLUSIVE)
+      elseif first_statement_number == nil then
+        first_statement_number = statement_number
       end
-      record_chunk(#segment.statements, INCLUSIVE)
     end
+    record_chunk(#segment.macro_statements, INCLUSIVE)
   end
 end
 
 -- Draw "static" edges between chunks withing a single file. A static edge is known without extra analysis.
----@diagnostic disable-next-line:unused-local
-local function draw_file_local_static_edges(states, file_number, options)  -- luacheck: ignore options
+local function draw_file_local_static_edges(states, file_number, _)
   local state = states[file_number]
 
   local results = state.results
@@ -261,7 +337,12 @@ local function draw_file_local_static_edges(states, file_number, options)  -- lu
   -- Record edges from conditional functions to their branches and back.
   for _, from_segment in ipairs(results.segments or {}) do
     for _, from_chunk in ipairs(from_segment.chunks or {}) do
-      for from_statement_number, from_statement in from_chunk.statement_range:enumerate(from_segment.statements) do
+      for from_statement_number, from_statement in from_chunk.statement_range:enumerate(from_segment.macro_statements) do
+        if is_macro_statement(from_statement) then
+          -- Avoid edges between statements within a macro-statement, so that we can map macro-statements to vertices of
+          -- the flow graph in the following analyses and ignore the nested statements.
+          goto next_statement
+        end
         for _, call in from_statement.call_range:enumerate(from_segment.calls) do
           for _, argument in ipairs(call.arguments or {}) do
             if argument.segment_number ~= nil then
@@ -316,14 +397,14 @@ local function draw_file_local_static_edges(states, file_number, options)  -- lu
             end
           end
         end
+        ::next_statement::
       end
     end
   end
 end
 
 -- Draw "static" edges between chunks between all files in a file group. A static edge is known without extra analysis.
----@diagnostic disable-next-line:unused-local
-local function draw_group_wide_static_edges(states, _, options)  -- luacheck: ignore options
+local function draw_group_wide_static_edges(states, _, _)
   -- Draw static edges once between all files in the file group, not just individual files.
   if states.results.drew_static_edges ~= nil then
     return
@@ -465,9 +546,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   end
 
   -- Resolve a chunk and a statement number to a statement.
-  local function get_statement(chunk, statement_number)
+  local function get_statement(chunk, macro_statement_number, statement_number)
     assert(not states[chunk.segment.location.file_number].results.stopped_early)
-    return _get_statement(chunk, statement_number)
+    return _get_statement(chunk, macro_statement_number, statement_number)
   end
 
   -- Collect a list of well-behaved function definition and call statements.
@@ -479,22 +560,37 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
     for _, segment in ipairs(state.results.segments or {}) do
       for _, chunk in ipairs(segment.chunks or {}) do
-        for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
-          if statement.type ~= FUNCTION_CALL and
-              statement.type ~= FUNCTION_DEFINITION then
-            goto next_statement
+        for statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
+          if macro_statement.type ~= FUNCTION_CALL and
+              macro_statement.type ~= FUNCTION_DEFINITIONS then
+            goto next_macro_statement
           end
-          if not is_well_behaved(statement) then
-            goto next_statement
+          local any_well_behaved_statements = false
+          for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
+            assert(not is_macro_statement(statement))
+            if statement.type ~= FUNCTION_CALL and
+                statement.type ~= FUNCTION_DEFINITION then
+              goto next_statement
+            end
+            if not is_well_behaved(statement) then
+              goto next_statement
+            end
+            any_well_behaved_statements = true
+            goto skip_remaining_statements
+            ::next_statement::
           end
-          if statement.type == FUNCTION_CALL then
+          ::skip_remaining_statements::
+          if not any_well_behaved_statements then
+            goto next_macro_statement
+          end
+          if macro_statement.type == FUNCTION_CALL then
             table.insert(function_call_list, {chunk, statement_number})
-          elseif statement.type == FUNCTION_DEFINITION then
+          elseif macro_statement.type == FUNCTION_DEFINITIONS then
             table.insert(function_definition_list, {chunk, statement_number})
           else
-            error('Unexpected statement type "' .. statement.type .. '"')
+            error('Unexpected statement type "' .. macro_statement.type .. '"')
           end
-          ::next_statement::
+          ::next_macro_statement::
         end
       end
     end
@@ -558,14 +654,26 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         return true
       end
       -- Well-behaved statements are interesting.
-      local statement = get_statement(chunk, statement_number)
-      if (
-            statement.type == FUNCTION_CALL or
-            statement.type == FUNCTION_DEFINITION or
-            statement.type == FUNCTION_UNDEFINITION or
-            statement.type == FUNCTION_VARIANT_DEFINITION
-          )
-          and is_well_behaved(statement) then
+      local macro_statement = get_statement(chunk, statement_number)
+      if macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
+        return true
+      end
+      -- Macro-statements containing at least one interesting statement are interesting.
+      local any_well_behaved_statements = false
+      for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
+        assert(not is_macro_statement(statement))
+        if (
+              statement.type == FUNCTION_DEFINITION or
+              statement.type == FUNCTION_UNDEFINITION or
+              statement.type == FUNCTION_VARIANT_DEFINITION
+            )
+            and is_well_behaved(statement) then
+          any_well_behaved_statements = true
+          goto skip_remaining_statements
+        end
+      end
+      ::skip_remaining_statements::
+      if any_well_behaved_statements then
         return true
       end
       return false
@@ -606,7 +714,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             edge_confidence = DEFINITELY
           end
 
-          for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
+          for statement_number, statement in chunk.statement_range:enumerate(segment.macro_statements) do
             if is_interesting(chunk, statement_number) then
               record_interesting_statement(statement_number)
 
@@ -738,7 +846,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
 
       -- Determine the reaching definitions from before the current statement.
-      local incoming_definition_list = {}
+      local incoming_definition_list, incoming_definition_index = {}, {}
       do
         local original_incoming_definition_list, original_incoming_definition_index = {}, {}
         local original_incoming_definition_edge_confidence_lists = {}
@@ -789,54 +897,84 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             updated_definition = definition
           end
           table.insert(incoming_definition_list, updated_definition)
+          if incoming_definition_index[updated_definition.csname] == nil then
+            incoming_definition_index[updated_definition.csname] = {}
+          end
+          table.insert(incoming_definition_index[updated_definition.csname], #incoming_definition_list)
         end
       end
 
       -- Determine the definitions and undefinitions from the current statement.
-      local current_definition_list = {}
-      local invalidated_statement_index, invalidated_statement_list = {}, {}
+      local current_definition_list, current_definition_index = {}, {}
+      local invalidated_statement_index = {}
       if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
-        local statement = get_statement(chunk, statement_number)
-        if statement.type ~= FUNCTION_DEFINITION and
-            statement.type ~= FUNCTION_UNDEFINITION and
-            statement.type ~= FUNCTION_VARIANT_DEFINITION then
-          goto next_statement
+        local macro_statement_number = statement_number
+        local macro_statement = get_statement(chunk, macro_statement_number)
+        if macro_statement.type ~= FUNCTION_DEFINITIONS then
+          goto next_macro_statement
         end
-        if not is_well_behaved(statement) then
-          goto next_statement
-        end
-        local defined_or_undefined_csname
-        if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
-          -- Record function and function variant definitions.
-          assert(statement.defined_csname.type == TEXT)
-          defined_or_undefined_csname = statement.defined_csname.payload
-          local definition = {
-            csname = statement.defined_csname.payload,
-            confidence = statement.confidence,
-            statement_number = statement_number,
-            chunk = chunk,
-          }
-          assert(definition.confidence >= MAYBE, "Function definitions shouldn't have confidences less than MAYBE")
-          table.insert(current_definition_list, definition)
-        elseif statement.type == FUNCTION_UNDEFINITION then
-          defined_or_undefined_csname = statement.undefined_csname.payload
-        else
-          error('Unexpected statement type "' .. statement.type .. '"')
-        end
-        if statement.confidence == DEFINITELY then
-          -- Invalidate definitions of the same control sequence names from before the current statement.
-          for _, incoming_definition in ipairs(incoming_definition_list) do
-            local incoming_statement = get_statement(incoming_definition.chunk, incoming_definition.statement_number)
-            if incoming_statement.defined_csname.payload == defined_or_undefined_csname and
-                incoming_statement ~= statement then
-              if invalidated_statement_index[incoming_statement] == nil then
-                table.insert(invalidated_statement_list, incoming_statement)
+        ---@diagnostic disable-next-line:redefined-local
+        for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do  -- luacheck: ignore
+          assert(not is_macro_statement(statement))
+          if statement.type ~= FUNCTION_DEFINITION and
+              statement.type ~= FUNCTION_UNDEFINITION and
+              statement.type ~= FUNCTION_VARIANT_DEFINITION then
+            goto next_statement
+          end
+          if not is_well_behaved(statement) then
+            goto next_statement
+          end
+          local defined_or_undefined_csname
+          if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+            -- Record function and function variant definitions.
+            assert(statement.defined_csname.type == TEXT)
+            defined_or_undefined_csname = statement.defined_csname.payload
+            local definition = {
+              csname = defined_or_undefined_csname,
+              confidence = statement.confidence,
+              chunk = chunk,
+              macro_statement_number = macro_statement_number,
+              statement_number = is_macro_statement(macro_statement) and statement_number or nil,
+            }
+            assert(definition.confidence >= MAYBE, "Function definitions shouldn't have confidences less than MAYBE")
+            table.insert(current_definition_list, definition)
+            if current_definition_index[definition.csname] == nil then
+              current_definition_index[definition.csname] = {}
+            end
+            table.insert(current_definition_index[definition.csname], #current_definition_list)
+          elseif statement.type == FUNCTION_UNDEFINITION then
+            defined_or_undefined_csname = statement.undefined_csname.payload
+          else
+            error('Unexpected statement type "' .. statement.type .. '"')
+          end
+          if statement.confidence == DEFINITELY then
+            -- Invalidate definitions of the same control sequence names from before the current statement.
+            for _, definition_list_and_index in ipairs({
+                  {incoming_definition_list, incoming_definition_index},
+                  {current_definition_list, current_definition_index},
+                }) do
+              local definition_list, definition_index = table.unpack(definition_list_and_index)
+              for _, incoming_definition_number in ipairs(definition_index[defined_or_undefined_csname] or {}) do
+                local incoming_definition = definition_list[incoming_definition_number]
+                assert(incoming_definition.csname == defined_or_undefined_csname)
+                local incoming_statement = get_statement(
+                  incoming_definition.chunk,
+                  incoming_definition.macro_statement_number,
+                  incoming_definition.statement_number
+                )
+                assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
+                if incoming_statement ~= statement then
+                  invalidated_statement_index[incoming_statement] = true
+                end
               end
-              invalidated_statement_index[incoming_statement] = true
             end
           end
+          -- If we previously invalidated a definition that originates from the current statement but reached us from before the
+          -- current statement due to a cycle in the flow-graph, undo the invalidation.
+          invalidated_statement_index[statement] = false
+          ::next_statement::
         end
-        ::next_statement::
+        ::next_macro_statement::
       end
 
       -- Determine the reaching definitions after the current statement.
@@ -844,10 +982,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       local current_reaching_statement_index = {}
       for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
         for _, definition in ipairs(definition_list) do
-          local statement = get_statement(definition.chunk, definition.statement_number)
+          local statement = get_statement(definition.chunk, definition.macro_statement_number, definition.statement_number)
           assert(is_well_behaved(statement))
           -- Skip invalidated definitions.
-          if invalidated_statement_index[statement] ~= nil then
+          if invalidated_statement_index[statement] then
             goto next_definition
           end
           -- Record the first occurrence of a definition.
@@ -896,7 +1034,11 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Check that the definitions and their confidences are the same.
         for _, previous_definition in ipairs(previous_definition_list) do
-          local statement = get_statement(previous_definition.chunk, previous_definition.statement_number)
+          local statement = get_statement(
+            previous_definition.chunk,
+            previous_definition.macro_statement_number,
+            previous_definition.statement_number
+          )
           if current_reaching_statement_index[statement] == nil then
             return true
           end
@@ -969,8 +1111,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       local reaching_function_definition_list = {}
       while reaching_definition_number <= #reaching_function_and_variant_definition_list do
         local definition = reaching_function_and_variant_definition_list[reaching_definition_number]
-        local chunk, statement_number = definition.chunk, definition.statement_number
-        local statement = get_statement(chunk, statement_number)
+        local chunk, macro_statement_number, statement_number
+          = definition.chunk, definition.macro_statement_number, definition.statement_number
+        local statement = get_statement(chunk, macro_statement_number, statement_number)
         assert(is_well_behaved(statement))
         -- Detect any loops within the graph.
         if seen_reaching_statements[statement] ~= nil then
@@ -982,12 +1125,13 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
             or statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the indirect function definitions and function variant definitions.
-          if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][statement_number] ~= nil then
-            local other_reaching_definition_index = reaching_definition_indexes[chunk][statement_number]
+          if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][macro_statement_number] ~= nil then
+            local other_reaching_definition_index = reaching_definition_indexes[chunk][macro_statement_number]
             local base_csname = statement.base_csname.payload
             for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
-              local other_chunk, other_statement_number = other_definition.chunk, other_definition.statement_number
-              local other_statement = get_statement(other_chunk, other_statement_number)
+              local other_chunk, other_macro_statement_number, other_statement_number
+                = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
+              local other_statement = get_statement(other_chunk, other_macro_statement_number, other_statement_number)
               assert(is_well_behaved(other_statement))
               assert(other_definition.csname == base_csname)
               -- Weaken the base function definition confidence with the function variant definition confidence.
@@ -1011,7 +1155,11 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
       -- Draw the function call edges.
       for _, function_definition in ipairs(reaching_function_definition_list) do
-        local function_definition_statement = get_statement(function_definition.chunk, function_definition.statement_number)
+        local function_definition_statement = get_statement(
+          function_definition.chunk,
+          function_definition.macro_statement_number,
+          function_definition.statement_number
+        )
         assert(is_well_behaved(function_definition_statement))
         assert(function_definition_statement.subtype == FUNCTION_DEFINITION_DIRECT)
         assert(function_definition_statement.type == FUNCTION_DEFINITION)
@@ -1113,7 +1261,7 @@ local function report_issues(states, main_file_number, _)
   local definite_function_call_list = {}
   for _, segment in ipairs(results.parts or {}) do
     for _, chunk in ipairs(segment.chunks or {}) do
-      for statement_number, statement in chunk.statement_range:enumerate(segment.statements) do
+      for statement_number, statement in chunk.statement_range:enumerate(segment.macro_statements) do
         if statement.type ~= FUNCTION_CALL then
           goto next_statement
         end
@@ -1185,6 +1333,7 @@ local function report_issues(states, main_file_number, _)
 end
 
 local substeps = {
+  merge_statements,
   collect_chunks,
   draw_file_local_static_edges,
   draw_group_wide_static_edges,

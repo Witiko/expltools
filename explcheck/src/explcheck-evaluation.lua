@@ -142,6 +142,46 @@ local function count_statements(analysis_results)
   return num_statements, num_statement_tokens, num_statement_calls, num_statements_total
 end
 
+-- Count the number of macro-statements in analysis results.
+local function count_macro_statements(analysis_results)
+  local num_macro_statements, num_macro_statement_tokens, num_macro_statement_calls
+  local num_macro_statements_total
+  for _, segment in ipairs(analysis_results.segments or {}) do
+    if segment.macro_statements ~= nil then
+      if num_macro_statements == nil then
+        assert(num_macro_statement_tokens == nil)
+        assert(num_macro_statement_calls == nil)
+        assert(num_macro_statements_total == nil)
+        num_macro_statements, num_macro_statement_tokens, num_macro_statement_calls = {}, {}, {}
+        num_macro_statements_total = 0
+      end
+      local seen_call_numbers = {}
+      for _, macro_statement in ipairs(segment.macro_statements) do
+        if num_macro_statements[macro_statement.type] == nil then
+          assert(num_macro_statement_tokens[macro_statement.type] == nil)
+          assert(num_macro_statement_calls[macro_statement.type] == nil)
+          num_macro_statements[macro_statement.type] = 0
+          num_macro_statement_tokens[macro_statement.type] = 0
+          num_macro_statement_calls[macro_statement.type] = 0
+        end
+        for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
+          assert(statement.call_range ~= nil)
+          for call_number, call in statement.call_range:enumerate(segment.calls) do
+            if seen_call_numbers[call_number] == nil then
+              seen_call_numbers[call_number] = true
+              num_macro_statement_tokens[macro_statement.type] = num_macro_statement_tokens[macro_statement.type] + #call.token_range
+              num_macro_statement_calls[macro_statement.type] = num_macro_statement_calls[macro_statement.type] + 1
+            end
+          end
+        end
+        num_macro_statements[macro_statement.type] = num_macro_statements[macro_statement.type] + 1
+        num_macro_statements_total = num_macro_statements_total + 1
+      end
+    end
+  end
+  return num_macro_statements, num_macro_statement_tokens, num_macro_statement_calls, num_macro_statements_total
+end
+
 -- Determine how many tokens are "well-understood" from analysis results.
 --
 -- Let S be a set of all statements that originate from a maximally nested segment and that contain a token T in part of
@@ -278,6 +318,8 @@ function FileEvaluationResults.new(cls, state)
   local num_statements, num_statement_tokens, num_statement_calls, num_statements_total = count_statements(analysis_results)
   local num_well_understood_tokens = count_well_understood_tokens(analysis_results)
   -- Evaluate the results of the flow analysis.
+  local num_macro_statements, num_macro_statement_tokens, num_macro_statement_calls, num_macro_statements_total
+    = count_macro_statements(analysis_results)
   local num_chunks = count_chunks(analysis_results)
   local num_edges, num_edges_total = count_edges(analysis_results)
   -- Evaluate the early stopping.
@@ -300,6 +342,10 @@ function FileEvaluationResults.new(cls, state)
   self.num_statement_calls = num_statement_calls
   self.num_statements_total = num_statements_total
   self.num_well_understood_tokens = num_well_understood_tokens
+  self.num_macro_statements = num_macro_statements
+  self.num_macro_statement_tokens = num_macro_statement_tokens
+  self.num_macro_statement_calls = num_macro_statement_calls
+  self.num_macro_statements_total = num_macro_statements_total
   self.num_chunks = num_chunks
   self.num_edges = num_edges
   self.num_edges_total = num_edges_total
@@ -332,6 +378,10 @@ function AggregateEvaluationResults.new(cls)
   self.num_statement_calls = {}
   self.num_statements_total = 0
   self.num_well_understood_tokens = 0
+  self.num_macro_statements = {}
+  self.num_macro_statement_tokens = {}
+  self.num_macro_statement_calls = {}
+  self.num_macro_statements_total = 0
   self.num_chunks = 0
   self.num_edges = {}
   self.num_edges_total = 0

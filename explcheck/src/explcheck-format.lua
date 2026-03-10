@@ -321,17 +321,20 @@ local function print_summary(options, evaluation_results)
       io.write(string.format(", %s %s", humanize(num_statements_total), pluralize("statement", num_statements_total)))
     end
     -- Evaluate the evalution results of the flow analysis.
+    local num_macro_statements_total = evaluation_results.num_macro_statements_total
     local num_chunks = evaluation_results.num_chunks
     local num_edges_total = evaluation_results.num_edges_total
-    if num_chunks == 0 then
+    if num_macro_statements_total == 0 or num_chunks == 0 then
       goto skip_to_code_coverage
     end
     io.write(
       string.format(
-        "\n- %s %s %s",
+        "\n- %s %s %s over %s %s",
         colorize("Flow analysis:", BOLD),
         titlecase(humanize(num_chunks)),
-        pluralize("chunk", num_chunks)
+        pluralize("chunk", num_chunks),
+        humanize(num_macro_statements_total),
+        pluralize("macro-statement", num_macro_statements_total)
       )
     )
     if num_edges_total == 0 then
@@ -339,9 +342,10 @@ local function print_summary(options, evaluation_results)
     end
     io.write(
       string.format(
-        " and %s %s between them",
+        ", %s %s between the %s",
         humanize(num_edges_total),
-        pluralize("edge", num_edges_total)
+        pluralize("edge", num_edges_total),
+        pluralize("chunk", num_chunks)
       )
     )
     -- Evaluate code coverage.
@@ -783,18 +787,54 @@ local function print_results(state, options, evaluation_results, is_last_file)
         )
       end
       -- Evaluate the evalution results of the flow analysis.
-      local num_chunks = evaluation_results.num_chunks
-      if num_chunks == nil then
+      if evaluation_results.num_macro_statements == nil then
         goto skip_remaining_additional_information
       end
       io.write(string.format("\n\n%s%s", line_indent, colorize("Flow analysis results:", BOLD)))
+      local num_macro_statements_total = evaluation_results.num_macro_statements_total
+      assert(num_macro_statements_total ~= nil)
+      if num_macro_statements_total == 0 then
+        io.write(string.format("\n%s- No %s", line_indent, pluralize("macro-statement")))
+        goto skip_remaining_additional_information
+      end
+      io.write(
+        string.format(
+          "\n%s- %s %s:",
+          line_indent,
+          titlecase(humanize(num_macro_statements_total)),
+          pluralize("macro-statement", num_macro_statements_total)
+        )
+      )
+      for macro_statement_type, num_macro_statement_tokens
+          in pairs_sorted_by_descending_values(evaluation_results.num_macro_statement_tokens) do
+        local num_macro_statements = evaluation_results.num_macro_statements[macro_statement_type]
+        local num_macro_statement_calls = evaluation_results.num_macro_statement_calls[macro_statement_type]
+        assert(num_macro_statements ~= nil)
+        assert(num_macro_statement_calls ~= nil)
+        io.write(
+          string.format(
+            "\n%s%s- %s %s spanning %s %s",
+            line_indent,
+            line_indent,
+            titlecase(humanize(num_macro_statements)),
+            pluralize(macro_statement_type, num_macro_statements),
+            humanize(num_macro_statement_tokens),
+            pluralize("token", num_macro_statement_tokens)
+          )
+        )
+        if num_macro_statement_calls ~= num_macro_statements then
+          io.write(string.format(" and %s %s", humanize(num_macro_statement_calls), pluralize("call", num_macro_statement_calls)))
+        end
+      end
+      local num_chunks = evaluation_results.num_chunks
+      assert(num_chunks ~= nil)
       if num_chunks == 0 then
         io.write(string.format("\n%s- No chunks of known statements in code segments", line_indent))
         goto skip_remaining_additional_information
       end
       io.write(
         string.format(
-          "\n%s- %s %s of known statements in code segments",
+          "\n%s- %s %s of known macro-statements in code segments",
           line_indent,
           titlecase(humanize(num_chunks)),
           pluralize("chunk", num_chunks)

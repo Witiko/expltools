@@ -1,12 +1,35 @@
 # Changes
 
-## expltools 2026-03-XX
+## expltools 2026-03-10
 
-### explcheck v0.19.0
+### explcheck v0.18.1
 
 #### Fixes
 
-This version of explcheck has fixed the following bugs:
+This version of explcheck has fixed the following problems:
+
+- Merge consecutive blocks of function (variant) definitions and function
+  undefinitions into macro-statements that form flow-graph vertices instead
+  of individual statements. (suggested by @lostenderman in #156, fixed in #183)
+
+  This change improves processing time by about 10% for an average package file
+  in TeX Live 2024, and by up to 98% (or 53×) for large files such as
+  `expl3-code.tex` when flow analysis is enabled despite incomplete code
+  understanding. It also reduces the memory footprint of flow analysis by
+  up to 3× for those files.
+
+  After this change, the default value of the Lua option
+  `max_reaching_definition_inner_loops` has been reduced from 30,000,000
+  to just 650,000 inner-loop iterations.
+
+- Fix the assignment of segment numbers to replacement texts. (#183)
+
+  This would cause function definition statements to point to segments other
+  than the replacement texts, confusing the flow analysis.
+
+  This change reduces processing time by about 2% for an average package file
+  in TeX Live 2024, and by up to 11% for large files such as `expl3-code.tex`
+  when flow analysis is enabled despite incomplete code understanding.
 
 - Raise an error on ambiguous uses of `--long-option VALUE`, where `VALUE` is
   a valid command-line option. (contributed by @muzimuzhi in #185 and c48fa116)
@@ -18,8 +41,10 @@ This version of explcheck has made the following changes to our Docker image
 
 - Replace Lua 5.3 with LuaJIT in `Dockerfile`. (#184)
 
-  These changes improve processing time by about 33% for an average package
-  file in TeX Live 2024, and by up to 61% for large files like `expl3-code.tex`.
+  This change improves processing time by about 33% for an average package
+  file in TeX Live 2024, and by up to 61% for large files such as
+  `expl3-code.tex` when flow analysis is enabled despite incomplete code
+  understanding.
 
 #### Continuous integration
 
@@ -29,6 +54,18 @@ integration:
 - Run regression tests on different Lua interpreters: Lua 5.2, 5.3, 5.4,
   LuaTeX, and LuaJIT. (#184)
 - Bump `docker/login-action` from 3 to 4. (contributed by @dependabot in #186.)
+
+Overall, the changes in this release reduce the processing time for large
+files such as `expl3-code.tex` from months to hours (up to 65×) when flow
+analysis is enabled despite incomplete code understanding, and reduce the
+memory footprint of flow analysis by up to 3× for those files.
+
+While this is still insufficient for real-time use (e.g., in a language server;
+see ticket #68), it makes the tool practical for scenarios such as continuous
+integration.
+
+For a discussion of other potential performance improvements of the flow
+analysis, see ticket #156.
 
 ## expltools 2026-03-04
 
