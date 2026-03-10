@@ -53,7 +53,7 @@ integration:
 
 - Run regression tests on different Lua interpreters: Lua 5.2, 5.3, 5.4,
   LuaTeX, and LuaJIT. (#184)
-- Bump `docker/login-action` from 3 to 4. (contributed by @dependabot in #186.)
+- Bump `docker/login-action` from 3 to 4. (contributed by @dependabot in #186)
 
 Overall, the changes in this release reduce the processing time for large
 files such as `expl3-code.tex` from months to hours (up to 65×) when flow
