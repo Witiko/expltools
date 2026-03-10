@@ -136,3 +136,7 @@ The warnings and errors in this documents do not cover the complete expl3 langua
 - Horizontal box operation on a vertical box or vice
   versa [@latexteam2024interfaces, Chapter 35], similarly for
   coffins
+- Statically checking the invariants in `\debug_assert:*` and,
+  when they cannot be disproven, using them to infer information
+  about the state of variables and constants. [@starynovotny2025adda]
+  [@starynovotny2025addb]
