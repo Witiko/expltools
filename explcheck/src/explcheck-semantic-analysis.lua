@@ -193,9 +193,12 @@ end
 local function extract_pattern_from_tokens(token_range, transformed_tokens, map_forward)
   -- First, extract subpatterns and text transcripts for the simple material.
   local subpatterns, subpattern, transcripts, num_simple_tokens = {}, parsers.success, {}, 0
-  local previous_token_was_simple = true
+  local previous_token, previous_token_was_simple = nil, true
   for _, token in token_range:enumerate(transformed_tokens, map_forward) do
-    if is_token_simple(token) then  -- simple material
+    if previous_token ~= nil and previous_token.type == CHARACTER and previous_token.catcode == 6 and  -- parameter
+        token.type == CHARACTER and lpeg.match(parsers.decimal_digit, token.payload) then  -- followed by a digit
+      assert(not previous_token_was_simple)  -- likely an unrecognized argument in a replacement text, treat it as such
+    elseif is_token_simple(token) then  -- simple material
       subpattern = subpattern * lpeg.P(token.payload)
       table.insert(transcripts, token.payload)
       num_simple_tokens = num_simple_tokens + 1
@@ -208,6 +211,7 @@ local function extract_pattern_from_tokens(token_range, transformed_tokens, map_
       end
       previous_token_was_simple = false
     end
+    previous_token = token
   end
   if previous_token_was_simple then
     table.insert(subpatterns, subpattern)
