@@ -762,6 +762,7 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               is_private = is_function_private(base_csname),
               is_conditional = is_conditional,
+              maybe_called = false,
             }
             table.insert(statements, statement)
           end
@@ -923,6 +924,7 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = definition_token_range,
+                maybe_called = false,
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
                 is_protected = is_protected,
@@ -998,6 +1000,7 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = token_range,
+                maybe_called = false,
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
                 is_conditional = is_conditional,
@@ -1032,6 +1035,7 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             undefined_csname = undefined_csname,
             undefined_csname_argument = undefined_csname_argument,
+            maybe_called = false,
           }
           table.insert(statements, statement)
           goto continue
@@ -1397,6 +1401,11 @@ local function analyze_group_wide_statements(states, _, options)
 
     maybe_used_message_name_texts = {},
     maybe_used_message_name_pattern = parsers.fail,
+
+    -- Index group-wide statements.
+    function_definition_index = {},
+    function_variant_definition_index = {},
+    function_undefinition_index = {},
   }
 
   -- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
@@ -1434,6 +1443,9 @@ local function analyze_group_wide_statements(states, _, options)
 
       used_message_name_texts = {},
       used_message_nums_text_arguments = {},
+
+      -- Index file-local statements.
+      function_call_list = {},
     }
     for _, segment in ipairs(results.segments or {}) do
       assert(file_number == segment.location.file_number)
@@ -1689,6 +1701,10 @@ local function analyze_group_wide_statements(states, _, options)
             local private_function_variant_number = #results.statement_analysis.defined_private_function_variant_byte_ranges
             table.insert(results.statement_analysis.defined_private_function_variant_texts, private_function_variant_number)
           end
+          -- Index the function variant definition.
+          if statement.defined_csname.type == TEXT then
+            table.insert(states.results.statement_analysis.function_variant_definition_index, statement)
+          end
         -- Process a function definition.
         elseif statement.type == FUNCTION_DEFINITION then
           -- Record the base control sequences used in indirect function definitions.
@@ -1723,7 +1739,7 @@ local function analyze_group_wide_statements(states, _, options)
           if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
             process_argument_tokens(statement.replacement_text_argument)
           end
-          -- Record private function defition.
+          -- Record private function definition.
           if statement.defined_csname.type == TEXT and statement.is_private then
             local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
             table.insert(
@@ -1731,8 +1747,16 @@ local function analyze_group_wide_statements(states, _, options)
               {statement.defined_csname.payload, definition_byte_range}
             )
           end
+          -- Index the function definition.
+          if statement.defined_csname.type == TEXT then
+            table.insert(states.results.statement_analysis.function_definition_index, statement)
+          end
         -- Process a function undefinition.
         elseif statement.type == FUNCTION_UNDEFINITION then
+          -- Index the function undefinition.
+          if statement.undefined_csname.type == TEXT then
+            table.insert(states.results.statement_analysis.function_undefinition_index, statement)
+          end
         -- Process a variable declaration.
         elseif statement.type == VARIABLE_DECLARATION then
           -- Record variable names.
@@ -1952,10 +1976,13 @@ end
 
 -- Report any issues.
 local function report_issues(states, file_number, options)
+  assert(states.results.statement_analysis ~= nil)
+
   local state = states[file_number]
 
   local pathname = state.pathname
   local results = state.results
+  assert(results.statement_analysis ~= nil)
   local issues = state.issues
 
   --- Report issues apparent from the collected information.
@@ -2062,6 +2089,8 @@ local function report_issues(states, file_number, options)
           end
         end
       end
+      -- Index the function call.
+      table.insert(results.statement_analysis.function_call_list, statement)
     end
   end
 
@@ -2239,6 +2268,20 @@ local function report_issues(states, file_number, options)
   end
 end
 
+-- Determine which function (variant) (un)definitions might actually affect any function calls in the current file group.
+-- This information is used to exclude definitely unused (un)definitions from future analyses to improve performance.
+local function determine_used_function_definitions(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  -- TODO: Update the `maybe_called` attribute of the function (variant) (un)definition statements similar to the algorithm
+  -- on lines 1103--1154 of the file `explcheck-flow-analysis.lua`.
+end
+
 -- Remove auxiliary intermediate results to free up memory for the following processing steps.
 local function cleanup(states, file_number, _)
   -- Remove group-wide intermediate results.
@@ -2251,6 +2294,7 @@ local function cleanup(states, file_number, _)
 
   local results = state.results
 
+  assert(results.statement_analysis ~= nil)
   results.statement_analysis = nil
 end
 
@@ -2258,6 +2302,7 @@ local substeps = {
   collect_statements,
   analyze_group_wide_statements,
   report_issues,
+  determine_used_function_definitions,
   cleanup,
 }
 
