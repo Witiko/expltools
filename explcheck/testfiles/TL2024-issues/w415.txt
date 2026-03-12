@@ -154,6 +154,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzmark/tikzlibrarytikzmark.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tikzsymbols/tikzsymbols.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/tilings/tikzlibrarytilings.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/tools/l3sys-query.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaexercise.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudaletter.cls
