@@ -1801,6 +1801,26 @@ local function analyze_group_wide_statements(states, _, options)
           -- Record control sequence name usage and definitions.
           if statement.subtype == VARIABLE_DEFINITION_DIRECT then
             process_argument_tokens(statement.definition_text_argument)
+          elseif statement.subtype == VARIABLE_DEFINITION_INDIRECT then
+            if statement.base_csname.type == TEXT then
+              local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
+              table.insert(
+                results.statement_analysis.declared_defined_and_used_variable_csname_texts,
+                {statement.variable_type, statement.base_csname.payload, base_csname_byte_range}
+              )
+              table.insert(results.statement_analysis.used_variable_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
+              states.results.statement_analysis.maybe_used_variable_csname_texts[statement.base_csname.payload] = true
+            elseif statement.base_csname.type == PATTERN then
+              states.results.statement_analysis.maybe_used_variable_csname_pattern = (
+                states.results.statement_analysis.maybe_used_variable_csname_pattern
+                + #(statement.base_csname.payload * parsers.eof)
+                * lpeg.Cc(true)
+              )
+            else
+              error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
+            end
+          else
+            error('Unexpected statement subtype "' .. statement.subtype .. '"')
           end
         -- Process a variable or constant use.
         elseif statement.type == VARIABLE_USE then
