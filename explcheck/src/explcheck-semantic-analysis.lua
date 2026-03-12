@@ -1039,7 +1039,9 @@ local function collect_statements(states, file_number, options)
           local variable_type = table.unpack(variable_declaration)
           -- determine the name of the declared variable
           local declared_csname_argument = call.arguments[1]
-          assert(declared_csname_argument ~= nil)
+          if declared_csname_argument == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
           local declared_csname = extract_csname_from_argument(declared_csname_argument)
           if declared_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
@@ -1069,9 +1071,11 @@ local function collect_statements(states, file_number, options)
         variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, call.csname)
         if variable_definition ~= nil then
           local variable_type, is_constant, is_global, is_direct = table.unpack(variable_definition)
-          -- determine the name of the declared variable
+          -- determine the name of the defined variable
           local defined_csname_argument = call.arguments[1]
-          assert(defined_csname_argument ~= nil)
+          if defined_csname_argument == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
           local defined_csname = extract_csname_from_argument(defined_csname_argument)
           if defined_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement
@@ -1171,7 +1175,9 @@ local function collect_statements(states, file_number, options)
           local variable_type = table.unpack(variable_use)
           -- determine the name of the used variable
           local used_csname_argument = call.arguments[1]
-          assert(used_csname_argument ~= nil)
+          if used_csname_argument == nil then  -- we couldn't extract the csname, give up
+            goto other_statement
+          end
           local used_csname = extract_csname_from_argument(used_csname_argument)
           if used_csname == nil then  -- we couldn't extract the csname, give up
             goto other_statement

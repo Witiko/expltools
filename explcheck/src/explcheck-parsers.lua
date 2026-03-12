@@ -816,7 +816,7 @@ local expl3_variable_declaration_csname = Ct(
     )
     * underscore
   )^-1
-  * P("new:N")
+  * P("new:")
 )
 
 ------ Variable and constant definitions
@@ -841,7 +841,7 @@ local expl3_variable_definition_csname = Ct(
       + Cc(true)  -- direct
     )
   )
-  * P(":N")
+  * P(":")
 )
 
 ------ Variable and constant use
@@ -854,7 +854,7 @@ local expl3_variable_use_csname = Ct(
     + P("show")
     + P("use")
   )
-  * P(":N")
+  * P(":")
 )
 
 ---- Messages
