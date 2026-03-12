@@ -403,7 +403,8 @@ local function expl3_well_known_csname(l3prefixes_max_first_registered_date, oth
     * underscore
   )
   return (
-    well_known_function_csname
+    P("q_no_value")
+    + well_known_function_csname
     + well_known_variable_or_constant_csname
   )
 end
