@@ -478,8 +478,10 @@ local function get_calls(results, part_number, segment, issues, content)
                 )
                 num_parameters = count_parameters_in_parameter_text(next_token_range)
                 argument = {
+                  analyzed = false,
                   specifier = argument_specifier,
                   token_range = next_token_range,
+                  -- The following attributes are specific to the "TeX parameter" argument specifier.
                   num_parameters = num_parameters,
                 }
                 record_argument(argument)
@@ -527,8 +529,10 @@ local function get_calls(results, part_number, segment, issues, content)
                   context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
                   issues:add('w303', 'braced N-type function call argument', next_token.byte_range, context)
                   argument = {
+                    analyzed = false,
                     specifier = argument_specifier,
                     token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
+                    -- The following attributes are specific to a balanced text argument.
                     outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
                   }
                   record_argument(argument)
@@ -577,6 +581,7 @@ local function get_calls(results, part_number, segment, issues, content)
               -- an N-type argument, record it
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               argument = {
+                analyzed = false,
                 specifier = argument_specifier,
                 token_range = next_token_range,
               }
@@ -599,8 +604,10 @@ local function get_calls(results, part_number, segment, issues, content)
                 goto skip_other_token
               else  -- a balanced text, record it
                 argument = {
+                  analyzed = false,
                   specifier = argument_specifier,
                   token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens),
+                  -- The following attributes are specific to a balanced text argument.
                   outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
                 }
                 if argument_specifier == "T" or argument_specifier == "F" then
@@ -647,6 +654,7 @@ local function get_calls(results, part_number, segment, issues, content)
               issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range, format_token(next_token, content))
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               argument = {
+                analyzed = false,
                 specifier = argument_specifier,
                 token_range = next_token_range,
               }
