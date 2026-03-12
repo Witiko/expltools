@@ -57,7 +57,7 @@ A private function or conditional function is defined but unused.
 
 -->
 
-This check is a stronger version of <#unused-private-function> and should only be emitted if <#unused-private-function> has not previously been emitted for this function.
+This check is a stronger version of <#unused-private-function> and the issue should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
 ### Unused private function variant {.w}
 A private function or conditional function variant is defined but unused.
@@ -70,7 +70,7 @@ A private function or conditional function variant is defined but unused.
 
 -->
 
-This check is a stronger version of <#unused-private-function-variant> and should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
+This check is a stronger version of <#unused-private-function-variant> and the issue should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
 ### Function variant for an undefined function {.e label=e505}
 A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
@@ -94,7 +94,7 @@ A function or conditional function variant is defined before the base function h
 
 -->
 
-This check is a stronger version of <#function-variant-for-undefined-function> and should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
+This check is a stronger version of <#function-variant-for-undefined-function> and the issue should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
 ### Calling an undefined function {.e}
 A function or conditional function (variant) is called before it has been defined or after it has been undefined.
@@ -103,7 +103,7 @@ A function or conditional function (variant) is called before it has been define
  /e505-02.tex
  /e505-03.tex
 
-This check is a stronger version of <#calling-undefined-function> and should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
+This check is a stronger version of <#calling-undefined-function> and the issue should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
 ### Indirect function definition from an undefined function {.e}
 A function or conditional function is indirectly defined from a function that has yet to be defined or after it has been undefined.
@@ -119,7 +119,7 @@ A function or conditional function is indirectly defined from a function that ha
 
 -->
 
-This check is a stronger version of <#indirect-function-definition-from-undefined-function> and should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
+This check is a stronger version of <#indirect-function-definition-from-undefined-function> and the issue should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
 
 ### Setting a function before definition {.w}
 A function is set before it has been defined or after it has been undefined.
@@ -357,7 +357,7 @@ A variable or a constant is declared and perhaps defined but unused.
   }
 ```
 
-This check is a stronger version of <#unused-variable-or-constant> and should only be emitted if <#unused-variable-or-constant> has not previously been emitted for this variable or constant.
+This check is a stronger version of <#unused-variable-or-constant> and the issue should only be emitted if <#unused-variable-or-constant> has not previously been emitted for this variable or constant.
 
 ### Setting an undeclared variable {.e}
 A variable is set before it has been declared.
@@ -410,7 +410,7 @@ This also includes usage in `V`- and `v`-type arguments:
   { foo }
 ```
 
-This check is a stronger version of <#using-undeclared-variable-or-constant> and should only be emitted if <#using-undeclared-variable-or-constant> has not previously been emitted for this variable or constant.
+This check is a stronger version of <#using-undeclared-variable-or-constant> and the issue should only be emitted if <#using-undeclared-variable-or-constant> has not previously been emitted for this variable or constant.
 
 ### Multiply declared variable or constant {.e}
 A variable or constant is declared multiple times.
@@ -450,7 +450,7 @@ A message is defined but unused.
   }
 ```
 
-This check is a stronger version of <#unused-message> and should only be emitted if <#unused-message> has not previously been emitted for this message.
+This check is a stronger version of <#unused-message> and the issue should only be emitted if <#unused-message> has not previously been emitted for this message.
 
 ### Using an undefined message {.e}
 A message is used before it has been defined.
@@ -465,7 +465,7 @@ A message is used before it has been defined.
   { baz }
 ```
 
-This check is a stronger version of <#using-undefined-message> and should only be emitted if <#using-undefined-message> has not previously been emitted for this message.
+This check is a stronger version of <#using-undefined-message> and the issue should only be emitted if <#using-undefined-message> has not previously been emitted for this message.
 
 ### Incorrect number of arguments supplied to message {.w}
 A message was supplied fewer or more arguments than there are parameters in the message text.
@@ -500,7 +500,7 @@ A message was supplied fewer or more arguments than there are parameters in the 
   { baz }
 ```
 
-This check is a stronger version of <#incorrect-number-of-arguments-supplied-to-message> and should only be emitted if <#incorrect-number-of-arguments-supplied-to-message> has not previously been emitted for this message.
+This check is a stronger version of <#incorrect-number-of-arguments-supplied-to-message> and the issue should only be emitted if <#incorrect-number-of-arguments-supplied-to-message> has not previously been emitted for this message.
 
 ### Multiply defined message {.e}
 A message is defined multiple times.

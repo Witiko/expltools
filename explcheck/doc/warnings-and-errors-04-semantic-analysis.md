@@ -104,7 +104,7 @@ An undeclared variable is set.
 
  /w416.tex
 
-### Setting a variable as a constant {.e label=e417}
+### Setting a variable as a constant {.e label=e417 #setting-variable-as-constant}
 A variable is set as though it were a constant.
 
  /e417.tex
@@ -136,6 +136,8 @@ A global variable is locally set.
 A local variable is globally set.
 
  /e421.tex
+
+This issue should only be emitted if <#setting-variable-as-constant> has not previously been emitted for this variable.
 
 ### Using a variable of an incompatible type {.t label=t422}
 A variable of one type is used where a variable of a different type should be used.
