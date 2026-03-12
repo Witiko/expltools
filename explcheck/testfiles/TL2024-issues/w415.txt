@@ -15,7 +15,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/generic/witharrows/witharrows.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
-/usr/local/texlive/2024/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-table.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex-dev/tools/l3sys-query.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/acro/acro.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/affilauthor/affilauthor.sty
@@ -64,7 +63,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/enotez/enotez.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/enumext/enumext.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/etl/etl.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-font.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-question.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-symbols.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh-textfigure.sty
@@ -76,7 +74,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/fontspec/fontspec-luatex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/functional/functional.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/ghsystem/ghsystem.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/grading-scheme/grading-scheme.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/hobby/hobby.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/hobby/pml3array.sty
@@ -101,7 +98,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate-2023-10-10.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/langsci-avm/langsci-avm.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-table.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/leadsheets/leadsheets.library.songs.code.tex
 /usr/local/texlive/2024/texmf-dist/tex/latex/leadsheets/leadsheets.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/leftindex/leftindex.sty
@@ -174,10 +170,8 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/unravel/unravel.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/useclass/useclass.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/weiqi/weiqi.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/wheelchart/wheelchart.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/wordle/wordle.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/wrapstuff/wrapstuff.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/xpeek/xpeek.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/xpinyin/xpinyin.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/xsim/xsim.sty
@@ -188,9 +182,6 @@
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/letgut/letgut.cls
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/luaprogtable/luaprogtable.sty
 /usr/local/texlive/2024/texmf-dist/tex/lualatex/piton/piton.sty
-/usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-27c.sty
-/usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-29c.sty
-/usr/local/texlive/2024/texmf-dist/tex/luatex/luatexja/addons/luatexja-fontspec-29e.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/hanzibox/hanzibox.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/langsci/langsci-affiliations.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xduts/xdupgthesis.cls
