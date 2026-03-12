@@ -102,6 +102,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/updatemarks/updatemarks.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/urcls/URspecialopts.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/weiqi/weiqi.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/zxjatype/zxjatype.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/hanzibox/hanzibox.sty
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xepersian-hm/xepersian-hm-kashida.tex
 /usr/local/texlive/2024/texmf-dist/tex/xelatex/xepersian-hm/xepersian-hm.sty

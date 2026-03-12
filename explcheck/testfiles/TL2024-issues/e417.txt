@@ -6,7 +6,9 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/codehigh/codehigh.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/colorist/colorart.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/colorist/colorbook.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/colorist/colorist-fancy.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/einfart/einfart.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/emotion/emotion.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/exam-zh/exam-zh.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/langsci-avm/langsci-avm.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/lebhart/lebhart.cls

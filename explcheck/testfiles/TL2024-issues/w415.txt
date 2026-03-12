@@ -1,3 +1,4 @@
+/usr/local/texlive/2024/texmf-dist/doc/fonts/fontawesome5/fulllist.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/chemmacros/chemmacros-manual.tex
 /usr/local/texlive/2024/texmf-dist/doc/latex/concepts/with.sty
 /usr/local/texlive/2024/texmf-dist/doc/latex/nwafuthesis/nwafudoc.cls
