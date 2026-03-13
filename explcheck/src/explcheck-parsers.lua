@@ -403,7 +403,8 @@ local function expl3_well_known_csname(l3prefixes_max_first_registered_date, oth
     * underscore
   )
   return (
-    well_known_function_csname
+    P("q_no_value")
+    + well_known_function_csname
     + well_known_variable_or_constant_csname
   )
 end
@@ -816,7 +817,7 @@ local expl3_variable_declaration_csname = Ct(
     )
     * underscore
   )^-1
-  * P("new:N")
+  * P("new:")
 )
 
 ------ Variable and constant definitions
@@ -841,7 +842,7 @@ local expl3_variable_definition_csname = Ct(
       + Cc(true)  -- direct
     )
   )
-  * P(":N")
+  * P(":")
 )
 
 ------ Variable and constant use
@@ -854,7 +855,7 @@ local expl3_variable_use_csname = Ct(
     + P("show")
     + P("use")
   )
-  * P(":N")
+  * P(":")
 )
 
 ---- Messages

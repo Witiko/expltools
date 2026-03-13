@@ -9,6 +9,7 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/fduthesis/fduthesis-en.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/fduthesis/fduthesis.cls
 /usr/local/texlive/2024/texmf-dist/tex/latex/fontawesome5/fontawesome5-utex-helper.sty
+/usr/local/texlive/2024/texmf-dist/tex/latex/gs1/GS1.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/kalendarium/kalendarium.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/kanbun/kanbun.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/knowledge/knowledge.sty
@@ -19,3 +20,4 @@
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/hwexam.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/stex/stex.sty
 /usr/local/texlive/2024/texmf-dist/tex/latex/tuda-ci/tudapub.cls
+/usr/local/texlive/2024/texmf-dist/tex/latex/xpinyin/xpinyin.sty

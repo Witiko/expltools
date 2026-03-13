@@ -1,5 +1,57 @@
 # Changes
 
+## expltools 2026-03-13
+
+### explcheck v0.18.2
+
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Support `c`-type arguments in variable and constants declarations,
+  definitions, and uses. (#187)
+
+  This improved [code coverage][] from ca 21% to 25% of all expl3 tokens on
+  TeX Live 2024.
+
+- Do a better job detecting arguments in unrecognized replacement texts when
+  extracting control sequence name patterns from `c`-type arguments in function
+  calls. (#187)
+
+- In semantic analysis, consider the base variables in indirect variable
+  definitions to be used, similarly to how base functions in indirect
+  function definitions are considered used. (#187)
+
+  This has removed a dozen false positive detections of issue W415 (Unused
+  variable or constant) on TeX Live 2024.
+
+- Include `\q_no_value` among well-know expl3 control sequence names. (#187)
+
+- Have the issue E417 (Setting a variable as a constant) mask the issue E421
+  (Globally setting a local variable). (#187)
+
+  This has removed a couple questionable detections of the issue E421 on
+  TeX Live 2024.
+
+- Only consider potentially used function (variant) (un)definitions in the flow
+  analysis. (#187)
+
+  This change improves processing time by about 3% for an average package file
+  in TeX Live 2024, and by up to 91% (or 11×) for large files such as
+  `expl3-code.tex` when flow analysis is enabled despite incomplete code
+  understanding. It also reduces the memory footprint of flow analysis by
+  up to 4× for those files.
+
+  After this change, the default value of the Lua option
+  `max_reaching_definition_inner_loops` has been reduced from 650,000
+  to just 350,000 inner-loop iterations.
+
+Overall, the changes in the past two releases have reduced the processing time
+for large files such as `expl3-code.tex` from months to a little over an hour
+(up to 800×) when flow analysis is enabled despite incomplete code
+understanding, and have reduced the memory footprint of flow analysis by up to
+12× for those files.
+
 ## expltools 2026-03-10
 
 ### explcheck v0.18.1
