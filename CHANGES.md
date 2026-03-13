@@ -34,7 +34,7 @@ This version of explcheck has fixed the following problems:
   TeX Live 2024.
 
 - Only consider potentially used function (variant) (un)definitions in the flow
-  analysis. (#187)
+  analysis. (suggested by @lostenderman in #156, fixed in #187)
 
   This change improves processing time by about 3% for an average package file
   in TeX Live 2024, and by up to 91% (or 11×) for large files such as
