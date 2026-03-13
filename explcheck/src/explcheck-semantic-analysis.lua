@@ -2287,19 +2287,27 @@ local function determine_used_function_definitions(states, file_number, _)
 
   -- For each function call, first collect all relevant (potentially but not necessarily reaching) definitions to a temporary list.
   local function_and_variant_definitions_and_undefinition_list = {}
+  local seen_used_csnames = {}
   for _, statement in ipairs(results.statement_analysis.function_call_list) do
-    if statement.used_csname.type == TEXT then
-      local used_csname = statement.used_csname.payload
-      local other_statements = states.results.statement_analysis.function_definition_index[used_csname]
-      for _, other_statement in ipairs(other_statements or {}) do
-        -- Do not repeatedly check the same definitions.
-        if other_statement.maybe_used then
-          goto next_other_statement
-        end
-        table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
-        ::next_other_statement::
-      end
+    if statement.used_csname.type ~= TEXT then
+      goto next_statement
     end
+    local used_csname = statement.used_csname.payload
+    -- Do not repeatedly check the same calls.
+    if seen_used_csnames[used_csname] ~= nil then
+      goto next_statement
+    end
+    seen_used_csnames[used_csname] = true
+    local other_statements = states.results.statement_analysis.function_definition_index[used_csname]
+    for _, other_statement in ipairs(other_statements or {}) do
+      -- Do not repeatedly check the same definitions.
+      if other_statement.maybe_used then
+        goto next_other_statement
+      end
+      table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+      ::next_other_statement::
+    end
+    ::next_statement::
   end
 
   -- Then, resolve all function variant and indirect function definition calls to the originating direct function definitions,
@@ -2322,17 +2330,18 @@ local function determine_used_function_definitions(states, file_number, _)
     elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
         or statement.type == FUNCTION_VARIANT_DEFINITION then
       -- Resolve the indirect function definitions and function variant definitions.
-      if statement.base_csname.type == TEXT then
-        local base_csname = statement.base_csname.payload
-        local other_statements = states.results.statement_analysis.function_definition_index[base_csname]
-        for _, other_statement in ipairs(other_statements or {}) do
-          -- Do not repeatedly check the same definitions.
-          if other_statement.maybe_used then
-            goto next_other_statement
-          end
-          table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
-          ::next_other_statement::
+      if statement.base_csname.type ~= TEXT then
+        goto next_statement
+      end
+      local base_csname = statement.base_csname.payload
+      local other_statements = states.results.statement_analysis.function_definition_index[base_csname]
+      for _, other_statement in ipairs(other_statements or {}) do
+        -- Do not repeatedly check the same definitions.
+        if other_statement.maybe_used then
+          goto next_other_statement
         end
+        table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+        ::next_other_statement::
       end
     else
       error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
