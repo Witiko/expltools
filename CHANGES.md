@@ -25,7 +25,7 @@ This version of explcheck has fixed the following problems:
   This has removed a dozen false positive detections of issue W415 (Unused
   variable or constant) on TeX Live 2024.
 
-- Include `\q_no_value` among well-know expl3 control sequence names. (#187)
+- Include `\q_no_value` among well-known expl3 control sequence names. (#187)
 
 - Have the issue E417 (Setting a variable as a constant) mask the issue E421
   (Globally setting a local variable). (#187)
