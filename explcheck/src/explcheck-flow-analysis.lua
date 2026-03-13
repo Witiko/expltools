@@ -521,11 +521,11 @@ local function is_well_behaved(statement)
   if statement.type == FUNCTION_CALL then
     result = statement.used_csname.type == TEXT
   elseif statement.type == FUNCTION_DEFINITION then
-    result = statement.defined_csname.type == TEXT
+    result = statement.defined_csname.type == TEXT and statement.maybe_used
   elseif statement.type == FUNCTION_UNDEFINITION then
-    result = statement.undefined_csname.type == TEXT
+    result = statement.undefined_csname.type == TEXT and statement.maybe_used
   elseif statement.type == FUNCTION_VARIANT_DEFINITION then
-    result = statement.base_csname.type == TEXT or statement.defined_csname.type == TEXT
+    result = statement.defined_csname.type == TEXT and statement.maybe_used
   else
     error('Unexpected statement type "' .. statement.type .. '"')
   end
@@ -1106,7 +1106,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         table.insert(reaching_function_and_variant_definition_list, definition)
       end
 
-      -- Then, resolve all function variant calls to the originating function definitions.
+      -- Then, resolve all function variant and indirect function definition calls to the originating direct function definitions,
+      -- if any.
       local reaching_definition_number, seen_reaching_statements = 1, {}
       local reaching_function_definition_list = {}
       while reaching_definition_number <= #reaching_function_and_variant_definition_list do
@@ -1119,6 +1120,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         if seen_reaching_statements[statement] ~= nil then
           goto next_reaching_statement
         end
+        seen_reaching_statements[statement] = true
         if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT then
           -- Simply record the direct function definitions.
           table.insert(reaching_function_definition_list, definition)
@@ -1149,7 +1151,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
         end
         ::next_reaching_statement::
-        seen_reaching_statements[statement] = true
         reaching_definition_number = reaching_definition_number + 1
       end
 

@@ -1404,8 +1404,6 @@ local function analyze_group_wide_statements(states, _, options)
 
     -- Index group-wide statements.
     function_definition_index = {},
-    function_variant_definition_index = {},
-    function_undefinition_index = {},
   }
 
   -- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
@@ -1703,7 +1701,10 @@ local function analyze_group_wide_statements(states, _, options)
           end
           -- Index the function variant definition.
           if statement.defined_csname.type == TEXT then
-            table.insert(states.results.statement_analysis.function_variant_definition_index, statement)
+            if states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] == nil then
+              states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
+            end
+            table.insert(states.results.statement_analysis.function_definition_index[statement.defined_csname.payload], statement)
           end
         -- Process a function definition.
         elseif statement.type == FUNCTION_DEFINITION then
@@ -1749,13 +1750,19 @@ local function analyze_group_wide_statements(states, _, options)
           end
           -- Index the function definition.
           if statement.defined_csname.type == TEXT then
-            table.insert(states.results.statement_analysis.function_definition_index, statement)
+            if states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] == nil then
+              states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
+            end
+            table.insert(states.results.statement_analysis.function_definition_index[statement.defined_csname.payload], statement)
           end
         -- Process a function undefinition.
         elseif statement.type == FUNCTION_UNDEFINITION then
           -- Index the function undefinition.
           if statement.undefined_csname.type == TEXT then
-            table.insert(states.results.statement_analysis.function_undefinition_index, statement)
+            if states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload] == nil then
+              states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload] = {}
+            end
+            table.insert(states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload], statement)
           end
         -- Process a variable declaration.
         elseif statement.type == VARIABLE_DECLARATION then
@@ -2278,8 +2285,61 @@ local function determine_used_function_definitions(states, file_number, _)
   local results = state.results
   assert(results.statement_analysis ~= nil)
 
-  -- TODO: Update the `maybe_called` attribute of the function (variant) (un)definition statements similar to the algorithm
-  -- on lines 1103--1154 of the file `explcheck-flow-analysis.lua`.
+  -- For each function call, first collect all relevant (potentially but not necessarily reaching) definitions to a temporary list.
+  local function_and_variant_definitions_and_undefinition_list = {}
+  for _, statement in ipairs(results.statement_analysis.function_call_list) do
+    if statement.used_csname.type == TEXT then
+      local used_csname = statement.used_csname.payload
+      local other_statements = states.results.statement_analysis.function_definition_index[used_csname]
+      for _, other_statement in ipairs(other_statements or {}) do
+        -- Do not repeatedly check the same definitions.
+        if other_statement.maybe_used then
+          goto next_other_statement
+        end
+        table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+        ::next_other_statement::
+      end
+    end
+  end
+
+  -- Then, resolve all function variant and indirect function definition calls to the originating direct function definitions,
+  -- if any, and mark all intermediate function variant and indirect function definitions as well as all final direct function
+  -- definitions and undefinitions as potentially used by some function calls.
+  local statement_number, seen_statements = 1, {}
+  while statement_number <= #function_and_variant_definitions_and_undefinition_list do
+    local statement = function_and_variant_definitions_and_undefinition_list[statement_number]
+    -- Detect any loops within the graph.
+    if seen_statements[statement] ~= nil then
+      goto next_statement
+    end
+    seen_statements[statement] = true
+    -- Mark the statement as potentially used by some function calls.
+    statement.maybe_used = true
+    if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT
+        or statement.type == FUNCTION_UNDEFINITION then
+      -- Take no further action for direct function definitions and function undefinitions.
+      goto next_statement
+    elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+        or statement.type == FUNCTION_VARIANT_DEFINITION then
+      -- Resolve the indirect function definitions and function variant definitions.
+      if statement.base_csname.type == TEXT then
+        local base_csname = statement.base_csname.payload
+        local other_statements = states.results.statement_analysis.function_definition_index[base_csname]
+        for _, other_statement in ipairs(other_statements or {}) do
+          -- Do not repeatedly check the same definitions.
+          if other_statement.maybe_used then
+            goto next_other_statement
+          end
+          table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+          ::next_other_statement::
+        end
+      end
+    else
+      error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+    end
+    ::next_statement::
+    statement_number = statement_number + 1
+  end
 end
 
 -- Remove auxiliary intermediate results to free up memory for the following processing steps.
