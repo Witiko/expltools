@@ -1260,6 +1260,8 @@ local function report_issues(states, main_file_number, _)
 
   -- Collect a list of well-behaved function call statements.
   local definite_function_call_list = {}
+  -- TODO: Currently, we only consider function calls from within top-level code (`results.parts`).
+  -- Ideally, we would consider all function calls (`results.segments`) that are reachable from top-level code.
   for _, segment in ipairs(results.parts or {}) do
     for _, chunk in ipairs(segment.chunks or {}) do
       for statement_number, statement in chunk.statement_range:enumerate(segment.macro_statements) do

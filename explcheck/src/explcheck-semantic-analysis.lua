@@ -2066,6 +2066,7 @@ local function report_issues(states, file_number, options)
         or states.results.statement_analysis.maybe_defined_csname_texts_anywhere[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
+      -- The following attributes are specific to the type.
       statement.used_csname = {
         payload = csname,
         transcript = csname,
