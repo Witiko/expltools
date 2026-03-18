@@ -170,8 +170,8 @@ jobs:
         run: l3build tag
       - name: Switch to Debian trixie
         if: matrix.interpreter == 'lua5.2'
-        # This is necessary because support for Lua 5.2 was dropped from the Debian package `lua-lpeg` on December 2025
-        # in Debian forky and sid.
+        # This is necessary because support for Lua 5.2 was dropped from the Debian package `lua-lpeg` and `lua-filesystem` on
+        # December 2025 in Debian forky and sid.
         run: |
           set -e
 
@@ -188,7 +188,7 @@ jobs:
           Pin-Priority: 100
 
           # Allow these packages (and only these) to come from trixie.
-          Package: ${{ matrix.interpreter }} lua-lpeg
+          Package: ${{ matrix.interpreter }} lua-lpeg lua-filesystem
           Pin: release n=trixie
           Pin-Priority: 990
           EOF
@@ -198,7 +198,7 @@ jobs:
           set -e
 
           apt update
-          apt install -qy ${{ matrix.interpreter }} lua-lpeg
+          apt install -qy ${{ matrix.interpreter }} lua-lpeg lua-filesystem
       - name: Install GNU Parallel
         run: |
           set -e
