@@ -1,0 +1,8 @@
+\prg_new_conditional:Nnn
+  \module_foo:
+  { p, T, F, TF }
+  { \prg_return_true: }
+\prg_new_conditional:Nnn  % error on this line
+  \module_foo:
+  { p, T, F, TF }
+  { \prg_return_true: }
