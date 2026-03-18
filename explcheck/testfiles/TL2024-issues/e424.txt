@@ -1,6 +1,0 @@
-/usr/local/texlive/2024/texmf-dist/tex/latex/chinesechess/chinesechess.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/hvarabic/hvarabic.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/kotex-oblivoir/memhangul-common/oblivoir-misc.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/l3experimental/l3graphics/l3graphics.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/lwarp/lwarp-fontawesome5-generic-helper.sty
-/usr/local/texlive/2024/texmf-dist/tex/latex/simplebnf/simplebnf.sty

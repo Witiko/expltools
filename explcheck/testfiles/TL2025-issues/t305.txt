@@ -1,0 +1,4 @@
+/usr/local/texlive/2025/texmf-dist/tex/latex/cooking-units/cooking-units.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/datatool/datatool.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/hustvisual/hustvisual.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/numerica-tables/numerica-tables.sty

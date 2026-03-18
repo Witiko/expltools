@@ -1,0 +1,5 @@
+/usr/local/texlive/2025/texmf-dist/doc/latex/dashundergaps/l3doc-TUB.cls
+/usr/local/texlive/2025/texmf-dist/doc/latex/fewerfloatpages/l3doc-TUB.cls
+/usr/local/texlive/2025/texmf-dist/doc/latex/litetable/litetable-zh-cn.tex
+/usr/local/texlive/2025/texmf-dist/doc/latex/litetable/litetable-zh-hk.tex
+/usr/local/texlive/2025/texmf-dist/doc/latex/unicodefonttable/l3doc-TUB2024.cls

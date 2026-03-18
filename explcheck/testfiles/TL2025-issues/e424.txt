@@ -1,0 +1,4 @@
+/usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-block.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/beamer-reveal/beamer-reveal.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/chinesechess/chinesechess.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/lwarp/lwarp-fontawesome5-generic-helper.sty

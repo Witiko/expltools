@@ -142,7 +142,7 @@ jobs:
           #- TL2021
           #- TL2022
           #- TL2023
-          - TL2024
+          #- TL2024
           - TL2025
           - latest
         interpreter:
@@ -154,11 +154,8 @@ jobs:
           - luajit
         # Only test LuaTeX with historic TeX Live releases.
         exclude:
-          - release: TL2024
           - release: TL2025
         include:
-          - release: TL2024
-            interpreter: luatex
           - release: TL2025
             interpreter: luatex
     container:

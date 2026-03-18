@@ -1,0 +1,2 @@
+/usr/local/texlive/2025/texmf-dist/tex/latex/tikzquads/tikzquads.sty
+/usr/local/texlive/2025/texmf-dist/tex/lualatex/lua-unicode-math/lua-unicode-math.sty

@@ -1,0 +1,2 @@
+/usr/local/texlive/2025/texmf-dist/doc/support/expltools/s105.tex
+/usr/local/texlive/2025/texmf-dist/tex/latex/nicematrix/nicematrix.sty

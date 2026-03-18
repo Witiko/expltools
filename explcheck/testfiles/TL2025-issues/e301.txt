@@ -1,0 +1,2 @@
+/usr/local/texlive/2025/texmf-dist/doc/latex/datatool/datatool-user-examples/datatool-user-example006.tex
+/usr/local/texlive/2025/texmf-dist/tex/lualatex/luatex-cn/core/luatex-cn-core-template.sty
