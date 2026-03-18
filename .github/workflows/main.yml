@@ -152,6 +152,10 @@ jobs:
           - lua5.4
           #- lua5.5  # Disabled because support for Lua 5.5 has not yet been added to the Debian package `lua-lpeg` as of March 2025.
           - luajit
+        include:
+          - release: TL2024
+            interpreter: luajit
+          - release: latest
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
