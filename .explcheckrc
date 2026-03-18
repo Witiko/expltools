@@ -250,7 +250,7 @@ ignored_issues = ["e304"]
 ignored_issues = ["e304"]
 
 [package.numerica-tables]
-imported_prefixes = ["nmcA", "nmcB", "nmcC"]
+imported_prefixes = ["nmcC"]
 
 [package.asmejour]
 ignored_issues = ["e304"]
@@ -451,9 +451,6 @@ ignored_issues = ["e201", "e304", "e411"]
 
 [package.mhchem]
 imported_prefixes = ["chemgreek"]
-
-[package.metrix]
-ignored_issues = ["w415"]
 
 [package.tabular2]
 ignored_issues = ["e405", "e411"]

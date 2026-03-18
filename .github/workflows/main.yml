@@ -143,7 +143,7 @@ jobs:
           #- TL2022
           #- TL2023
           - TL2024
-          #- TL2025  # TODO: Reenable after the Docker image `texlive/texlive:TL2025-historic-doc` has been released.
+          - TL2025
           - latest
         interpreter:
           - luatex
@@ -152,10 +152,15 @@ jobs:
           - lua5.4
           #- lua5.5  # Disabled because support for Lua 5.5 has not yet been added to the Debian package `lua-lpeg` as of March 2025.
           - luajit
+        # Only test LuaJIT with historic TeX Live releases.
+        exclude:
+          - release: TL2024
+          - release: TL2025
         include:
           - release: TL2024
             interpreter: luajit
-          - release: latest
+          - release: TL2025
+            interpreter: luajit
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
@@ -242,7 +247,9 @@ jobs:
             issues/
       - name: Compare issues against the baselines
         if: matrix.release != 'latest'
-        run: git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
+        run: |
+          mkdir -p explcheck/testfiles/${{ matrix.release }}-issues/  # Create an empty directory with baselines if it doesn't exist.
+          git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
       - name: Check if the configuration is minimal
         timeout-minutes: 5
         if: matrix.release == 'latest'
