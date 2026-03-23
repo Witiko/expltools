@@ -413,7 +413,7 @@ local function draw_group_wide_static_edges(states, _, _)
 
   -- Record edges from potentially inputting a file from the file group after every other file from the file group.
   for file_number, state in ipairs(states) do
-    if states[file_number].results.stopped_early then
+    if state.results.stopped_early then
       goto next_file
     end
     if state.results.last_part_with_chunks == nil then
@@ -424,7 +424,7 @@ local function draw_group_wide_static_edges(states, _, _)
     assert(from_chunk ~= nil)
     local from_statement_number = from_chunk.statement_range:stop() + 1
     for other_file_number, other_state in ipairs(states) do
-      if states[other_file_number].results.stopped_early then
+      if other_state.results.stopped_early then
         goto next_other_file
       end
       if file_number == other_file_number then
@@ -553,9 +553,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
   -- Collect a list of well-behaved function definition and call statements.
   local function_call_list, function_definition_list = {}, {}
-  for file_number, state in ipairs(states) do
+  for _, state in ipairs(states) do
     -- Skip statements from files in the current file group that haven't reached the flow analysis.
-    if states[file_number].results.stopped_early then
+    if states.results.stopped_early then
       goto next_file
     end
     for _, segment in ipairs(state.results.segments or {}) do
@@ -681,9 +681,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
     -- Index all implicit incoming and outgoing pseudo-edges as well.
     local implicit_in_edge_index, implicit_out_edge_index = {}, {}
-    for file_number, state in ipairs(states) do
+    for _, state in ipairs(states) do
       -- Skip statements from files in the current file group that haven't reached the flow analysis.
-      if states[file_number].results.stopped_early then
+      if state.results.stopped_early then
         goto next_file
       end
       for _, segment in ipairs(state.results.segments or {}) do
@@ -1300,7 +1300,7 @@ local function report_issues(states, main_file_number, _)
     end
   end
 
-  -- Get the byte range of a statement.
+  -- Get the byte range of a regular (non-macro) statement.
   local function statement_to_byte_range(chunk, statement_number)
     local segment = chunk.segment
     assert(segment.location.file_number == main_file_number)
@@ -1313,6 +1313,7 @@ local function report_issues(states, main_file_number, _)
     local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
 
     local statement = _get_statement(chunk, statement_number)
+    assert(not is_macro_statement(statement))
 
     local token_range = call_range_to_token_range(statement.call_range)
     local byte_range = token_range_to_byte_range(token_range)
