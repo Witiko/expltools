@@ -603,7 +603,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   local max_reaching_definition_inner_loops = get_option('max_reaching_definition_inner_loops', options)
   local max_reaching_definition_outer_loops = get_option('max_reaching_definition_outer_loops', options)
   local outer_loop_number = 1
-  repeat
+  while true do
     -- Guard against long (infinite?) loops.
     if outer_loop_number > max_reaching_definition_outer_loops then
       error(
@@ -1230,7 +1230,74 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     outer_loop_number = outer_loop_number + 1
-  until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
+
+    if not any_edges_changed(previous_function_call_edges, current_function_call_edges) then
+      -- After the last outer-loop iteration, report any issues that require the knowledge of the reaching definitions
+      -- and not just the resulting edges before we have freed the corresponding variables.
+      for _, state in ipairs(states) do
+        -- Skip statements from files in the current file group that haven't reached the flow analysis.
+        if state.results.stopped_early then
+          goto next_file
+        end
+        local issues = state.issues
+        for _, segment in ipairs(state.results.segments or {}) do
+          local part_number = segment.location.part_number
+          local tokens = state.results.tokens[part_number]
+          local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
+          for _, chunk in ipairs(segment.chunks or {}) do
+            local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
+            for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
+              if macro_statement.type ~= FUNCTION_DEFINITIONS then
+                goto next_macro_statement
+              end
+              for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
+                assert(not is_macro_statement(statement))
+                if statement.confidence ~= DEFINITELY or
+                    statement.type ~= FUNCTION_DEFINITION or
+                    statement.maybe_redefinition or
+                    statement.defined_csname.type ~= TEXT then
+                  goto next_statement
+                end
+                if reaching_definition_indexes[chunk] == nil or
+                    reaching_definition_indexes[chunk][macro_statement_number] == nil then
+                  goto next_statement
+                end
+                local reaching_definition_index = reaching_definition_indexes[chunk][macro_statement_number]
+
+                -- Get the byte range of the current statement.
+                local function get_byte_range()
+                  local token_range = call_range_to_token_range(statement.call_range)
+                  local byte_range = token_range_to_byte_range(token_range)
+
+                  return byte_range
+                end
+
+                -- Report multiply defined functions.
+                for _, definition in ipairs(reaching_definition_index[statement.defined_csname.payload] or {}) do
+                  assert(definition.csname == statement.defined_csname.payload)
+                  if definition.confidence ~= DEFINITELY then
+                    goto next_definition
+                  end
+                  if definition.macro_statement_number == macro_statement_number and
+                      definition.statement_number >= statement_number then
+                    -- Exclude the same statement as well as any following statements from the same macro-statement.
+                    goto next_definition
+                  end
+                  issues:add("e500", "multiply defined function", get_byte_range(), format_csname(definition.csname))
+                  ::next_definition::
+                end
+
+                ::next_statement::
+              end
+              ::next_macro_statement::
+            end
+          end
+        end
+        ::next_file::
+      end
+      break
+    end
+  end
 
   -- Record edges.
   for _, edge in ipairs(current_function_call_edges) do
