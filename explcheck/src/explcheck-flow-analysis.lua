@@ -834,6 +834,31 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
+      local segment = chunk.segment
+
+      local file_number = segment.location.file_number
+      local part_number = segment.location.part_number
+
+      local state = states[file_number]
+
+      local issues = state.issues
+      local results = state.results
+
+      local tokens = results.tokens[part_number]
+
+      -- Get the byte range of a regular (non-macro) statement.
+      local function statement_to_byte_range(...)
+        local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
+        local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
+
+        local statement = _get_statement(chunk, statement_number, ...)
+        assert(not is_macro_statement(statement))
+
+        local token_range = call_range_to_token_range(statement.call_range)
+        local byte_range = token_range_to_byte_range(token_range)
+
+        return byte_range
+      end
 
       -- Collect reaching definitions from the incoming edges.
       local incoming_edge_list = {}
@@ -964,6 +989,11 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 )
                 assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
                 if incoming_statement ~= statement then
+                  if incoming_statement.type == FUNCTION_DEFINITION and not incoming_statement.maybe_redefinition and
+                      statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition then
+                    local byte_range = statement_to_byte_range(statement_number)
+                    issues:add("e500", "multiply defined function", byte_range, format_csname(defined_or_undefined_csname))
+                  end
                   invalidated_statement_index[incoming_statement] = true
                 end
               end
