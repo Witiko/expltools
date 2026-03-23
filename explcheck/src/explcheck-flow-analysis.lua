@@ -521,7 +521,7 @@ local function is_well_behaved(statement)
   if statement.type == FUNCTION_CALL then
     result = statement.used_csname.type == TEXT
   elseif statement.type == FUNCTION_DEFINITION then
-    result = statement.defined_csname.type == TEXT and statement.maybe_used
+    result = statement.defined_csname.type == TEXT and (statement.maybe_used or statement.maybe_multiply_defined)
   elseif statement.type == FUNCTION_UNDEFINITION then
     result = statement.undefined_csname.type == TEXT and statement.maybe_used
   elseif statement.type == FUNCTION_VARIANT_DEFINITION then
