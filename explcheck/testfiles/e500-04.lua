@@ -10,10 +10,10 @@ local options = {
 local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results
 
-assert(#issues.errors == 1)
+assert(#issues.errors == 4)
 assert(#issues.warnings == 0)
 
-local expected_line_numbers = {{5, 8}}
+local expected_line_numbers = {{5, 8}, {5, 8}, {5, 8}, {5, 8}}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e500")
   assert(err[2] == "multiply defined function")
