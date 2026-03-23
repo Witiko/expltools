@@ -5,6 +5,7 @@ local filename = "e500-04.tex"
 local options = {
   expl3_detection_strategy = "always",
   stop_after = "flow analysis",
+  stop_early_when_confused = false,
 }
 local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results

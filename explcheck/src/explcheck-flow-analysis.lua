@@ -988,9 +988,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                   incoming_definition.statement_number
                 )
                 assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
-                if incoming_statement ~= statement then
-                  if invalidated_statement_index[incoming_statement] == nil and
-                      incoming_statement.type == FUNCTION_DEFINITION and not incoming_statement.maybe_redefinition and
+                if incoming_statement ~= statement and not invalidated_statement_index[incoming_statement] then
+                  if incoming_statement.type == FUNCTION_DEFINITION and not incoming_statement.maybe_redefinition and
                       statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition then
                     local byte_range = statement_to_byte_range(statement_number)
                     issues:add("e500", "multiply defined function", byte_range, format_csname(defined_or_undefined_csname))
