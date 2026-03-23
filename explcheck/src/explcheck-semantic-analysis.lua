@@ -2392,7 +2392,7 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
     assert(defined_or_undefined_csname ~= nil)
     assert(defined_or_undefined_csname.type == TEXT)
     local other_statements = states.results.statement_analysis.non_redefined_function_definition_index[defined_or_undefined_csname.payload]
-    if #other_statements > 1 then
+    if other_statements ~= nil and #other_statements > 1 then
       statement.maybe_multiply_defined = true
     end
   end
