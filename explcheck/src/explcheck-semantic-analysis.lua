@@ -1777,6 +1777,9 @@ local function analyze_group_wide_statements(states, _, options)
               states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload] = {}
             end
             table.insert(states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload], statement)
+            if not statement.maybe_redefined then
+              table.insert(results.statement_analysis.non_redefined_function_definition_list, statement)
+            end
           end
         -- Process a variable declaration.
         elseif statement.type == VARIABLE_DECLARATION then
@@ -2360,7 +2363,7 @@ local function determine_maybe_used_function_definitions(states, file_number, _)
         ::next_other_statement::
       end
     else
-      error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+      error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
     end
     ::next_statement::
     statement_number = statement_number + 1
@@ -2378,10 +2381,17 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
 
   -- For each non-redefining function definition, check if other non-redefining definitions exist.
   for _, statement in ipairs(results.statement_analysis.non_redefined_function_definition_list) do
-    assert(statement.type == FUNCTION_DEFINITION)
-    assert(statement.defined_csname.type == TEXT)
-    local defined_csname = statement.defined_csname.payload
-    local other_statements = states.results.statement_analysis.non_redefined_function_definition_index[defined_csname]
+    local defined_or_undefined_csname
+    if statement.type == FUNCTION_DEFINITION then
+      defined_or_undefined_csname = statement.defined_csname
+    elseif statement.type == FUNCTION_UNDEFINITION then
+      defined_or_undefined_csname = statement.undefined_csname
+    else
+      error('Unexpected statement type "' .. statement.type .. '"')
+    end
+    assert(defined_or_undefined_csname ~= nil)
+    assert(defined_or_undefined_csname.type == TEXT)
+    local other_statements = states.results.statement_analysis.non_redefined_function_definition_index[defined_or_undefined_csname.payload]
     if #other_statements > 1 then
       statement.maybe_multiply_defined = true
     end
