@@ -2383,9 +2383,7 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
     local defined_csname = statement.defined_csname.payload
     local other_statements = states.results.statement_analysis.non_redefined_function_definition_index[defined_csname]
     if #other_statements > 1 then
-      for _, other_statement in ipairs(other_statements) do
-        other_statement.maybe_multiply_defined = true
-      end
+      statement.maybe_multiply_defined = true
     end
   end
 end
