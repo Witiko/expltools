@@ -556,3 +556,6 @@ ignored_issues = ["e505"]
 
 [package.kantlipsum]
 ignored_issues = ["e505"]
+
+[package.novel]
+ignored_issues = ["e506"]
