@@ -1369,8 +1369,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                       statement.type == FUNCTION_VARIANT_DEFINITION or
                       statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
                     ) and statement.base_csname.type == TEXT then
-                  if not any_definite_reaching_definitions(statement.base_csname.payload) then
-                    local formatted_csname = format_csname(statement.base_csname.payload)
+                  local base_csname = statement.base_csname.payload
+                  if not any_definite_reaching_definitions(base_csname) then
+                    local formatted_csname = format_csname(base_csname)
                     local byte_range = get_byte_range()
 
                     -- Report function variants for an undefined function.
@@ -1391,8 +1392,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                     -- TODO: Currently, we only consider function calls from within top-level code (`segment.nesting_depth == 1`).
                     -- Ideally, we would consider all function calls that are reachable from top-level code.
                     and segment.nesting_depth == 1 then
-                  if not any_definite_reaching_definitions(statement.defined_csname.payload) then
-                    local formatted_csname = format_csname(statement.defined_csname.payload)
+                  local defined_csname = statement.defined_csname.payload
+                  if not any_definite_reaching_definitions(defined_csname) then
+                    local formatted_csname = format_csname(defined_csname)
                     local byte_range = get_byte_range()
                     issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
                   end
