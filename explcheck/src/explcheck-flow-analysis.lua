@@ -1354,7 +1354,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
                 local function any_definite_reaching_definitions(csname)
                   for definition in get_reaching_definitions(csname) do
-                    assert(definition.csname == statement.base_csname.payload)
+                    assert(definition.csname == csname)
                     assert(definition.macro_statement_number <= macro_statement_number)
                     if definition.macro_statement_number == macro_statement_number then
                       assert(definition.statement_number < statement_number)
