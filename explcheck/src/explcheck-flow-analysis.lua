@@ -938,6 +938,46 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       return current_definition_list, invalidated_statement_index
     end
 
+    -- Determine the reaching definitions after the current statement.
+    local function get_outgoing_definitions(incoming_definition_list, current_definition_list, invalidated_statement_index)
+      local updated_definition_list, updated_definition_index = {}, {}
+      local current_reaching_statement_index = {}
+      for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
+        for _, definition in ipairs(definition_list) do
+          local statement = get_statement(definition.chunk, definition.macro_statement_number, definition.statement_number)
+          assert(is_well_behaved(statement))
+          -- Skip invalidated definitions.
+          if invalidated_statement_index[statement] then
+            goto next_definition
+          end
+          -- Record the first occurrence of a definition.
+          if current_reaching_statement_index[statement] == nil then
+            table.insert(updated_definition_list, definition)
+            -- Also index the reaching definitions by defined control sequence names.
+            if updated_definition_index[definition.csname] == nil then
+              updated_definition_index[definition.csname] = {}
+            end
+            table.insert(updated_definition_index[definition.csname], definition)
+            current_reaching_statement_index[statement] = {
+              #updated_definition_list,
+              #updated_definition_index[definition.csname],
+            }
+          -- For repeated occurrences of a definition, keep the ones with the highest confidence.
+          else
+            local other_definition_list_number, other_definition_index_number = table.unpack(current_reaching_statement_index[statement])
+            -- If the current occurrence has a higher confidence, replace the previous occurrence with it.
+            local other_definition = updated_definition_list[other_definition_list_number]
+            if definition.confidence > other_definition.confidence then
+              updated_definition_list[other_definition_list_number] = definition
+              updated_definition_index[definition.csname][other_definition_index_number] = definition
+            end
+          end
+          ::next_definition::
+        end
+      end
+      return updated_definition_list, updated_definition_index, current_reaching_statement_index
+    end
+
     -- Determine whether the reaching definitions after the current statement have changed.
     local function have_reaching_definitions_changed(chunk, statement_number, updated_definition_list, current_reaching_statement_index)
       -- Determine the previous set of definitions, if any.
@@ -1057,41 +1097,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         = get_current_definitions(chunk, statement_number, incoming_definition_list, incoming_definition_index)
 
       -- Determine the reaching definitions after the current statement.
-      local updated_definition_list, updated_definition_index = {}, {}
-      local current_reaching_statement_index = {}
-      for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
-        for _, definition in ipairs(definition_list) do
-          local statement = get_statement(definition.chunk, definition.macro_statement_number, definition.statement_number)
-          assert(is_well_behaved(statement))
-          -- Skip invalidated definitions.
-          if invalidated_statement_index[statement] then
-            goto next_definition
-          end
-          -- Record the first occurrence of a definition.
-          if current_reaching_statement_index[statement] == nil then
-            table.insert(updated_definition_list, definition)
-            -- Also index the reaching definitions by defined control sequence names.
-            if updated_definition_index[definition.csname] == nil then
-              updated_definition_index[definition.csname] = {}
-            end
-            table.insert(updated_definition_index[definition.csname], definition)
-            current_reaching_statement_index[statement] = {
-              #updated_definition_list,
-              #updated_definition_index[definition.csname],
-            }
-          -- For repeated occurrences of a definition, keep the ones with the highest confidence.
-          else
-            local other_definition_list_number, other_definition_index_number = table.unpack(current_reaching_statement_index[statement])
-            -- If the current occurrence has a higher confidence, replace the previous occurrence with it.
-            local other_definition = updated_definition_list[other_definition_list_number]
-            if definition.confidence > other_definition.confidence then
-              updated_definition_list[other_definition_list_number] = definition
-              updated_definition_index[definition.csname][other_definition_index_number] = definition
-            end
-          end
-          ::next_definition::
-        end
-      end
+      local updated_definition_list, updated_definition_index, current_reaching_statement_index
+        = get_outgoing_definitions(incoming_definition_list, current_definition_list, invalidated_statement_index)
 
       -- Update the stack of changed statements.
       if have_reaching_definitions_changed(chunk, statement_number, updated_definition_list, current_reaching_statement_index) then
