@@ -6,6 +6,7 @@ local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local semantic_analysis = require("explcheck-semantic-analysis")
 local make_shallow_copy = require("explcheck-utils").make_shallow_copy
+local parsers = require("explcheck-parsers")
 
 local format_csname = lexical_analysis.format_csname
 local get_token_range_to_byte_range = lexical_analysis.get_token_range_to_byte_range
@@ -46,6 +47,8 @@ local range_flags = ranges.range_flags
 
 local EXCLUSIVE = range_flags.EXCLUSIVE
 local INCLUSIVE = range_flags.INCLUSIVE
+
+local lpeg = require("lpeg")
 
 local macro_statement_types = {
   FUNCTION_DEFINITIONS = "block of function (variant) (un)definitions",
@@ -1292,6 +1295,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           goto next_file
         end
         local issues = state.issues
+        local imported_prefixes = get_option('imported_prefixes', options, state.pathname)
+        local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
+        local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
         for _, segment in ipairs(state.results.segments or {}) do
           local part_number = segment.location.part_number
           local tokens = state.results.tokens[part_number]
@@ -1353,6 +1359,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
                 -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
                 local function any_definite_reaching_definitions(csname)
+                  if lpeg.match(expl3_well_known_csname, csname) ~= nil then
+                    -- Always consider definitions for well-known expl3 control sequence names to be reaching.
+                    return true
+                  end
                   for definition in get_reaching_definitions(csname) do
                     assert(definition.csname == csname)
                     assert(definition.macro_statement_number <= macro_statement_number)
