@@ -762,7 +762,7 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               is_private = is_function_private(base_csname),
               is_conditional = is_conditional,
-              maybe_called = false,
+              maybe_used = false,
             }
             table.insert(statements, statement)
           end
@@ -924,7 +924,7 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = definition_token_range,
-                maybe_called = false,
+                maybe_used = false,
                 maybe_multiply_defined = false,
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
@@ -1001,7 +1001,7 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = token_range,
-                maybe_called = false,
+                maybe_used = false,
                 maybe_multiply_defined = false,
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
@@ -1037,7 +1037,7 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             undefined_csname = undefined_csname,
             undefined_csname_argument = undefined_csname_argument,
-            maybe_called = false,
+            maybe_used = false,
           }
           table.insert(statements, statement)
           goto continue
