@@ -938,6 +938,44 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       return current_definition_list, invalidated_statement_index
     end
 
+    -- Determine whether the reaching definitions after the current statement have changed.
+    local function have_reaching_definitions_changed(chunk, statement_number, updated_definition_list, current_reaching_statement_index)
+      -- Determine the previous set of definitions, if any.
+      if reaching_definition_lists[chunk] == nil then
+        return true
+      end
+      if reaching_definition_lists[chunk][statement_number] == nil then
+        return true
+      end
+      local previous_definition_list = reaching_definition_lists[chunk][statement_number]
+      assert(previous_definition_list ~= nil)
+      assert(#previous_definition_list <= #updated_definition_list)
+
+      -- Quickly check for inequality using set cardinalities.
+      if #previous_definition_list ~= #updated_definition_list then
+        return true
+      end
+
+      -- Check that the definitions and their confidences are the same.
+      for _, previous_definition in ipairs(previous_definition_list) do
+        local statement = get_statement(
+          previous_definition.chunk,
+          previous_definition.macro_statement_number,
+          previous_definition.statement_number
+        )
+        if current_reaching_statement_index[statement] == nil then
+          return true
+        end
+        local updated_definition_list_number, _ = table.unpack(current_reaching_statement_index[statement])
+        local updated_definition = updated_definition_list[updated_definition_list_number]
+        if previous_definition.confidence ~= updated_definition.confidence then
+          return true
+        end
+      end
+
+      return false
+    end
+
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
@@ -1055,46 +1093,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
       end
 
-      -- Determine whether the reaching definitions after the current statement have changed.
-      local function have_reaching_definitions_changed()
-        -- Determine the previous set of definitions, if any.
-        if reaching_definition_lists[chunk] == nil then
-          return true
-        end
-        if reaching_definition_lists[chunk][statement_number] == nil then
-          return true
-        end
-        local previous_definition_list = reaching_definition_lists[chunk][statement_number]
-        assert(previous_definition_list ~= nil)
-        assert(#previous_definition_list <= #updated_definition_list)
-
-        -- Quickly check for inequality using set cardinalities.
-        if #previous_definition_list ~= #updated_definition_list then
-          return true
-        end
-
-        -- Check that the definitions and their confidences are the same.
-        for _, previous_definition in ipairs(previous_definition_list) do
-          local statement = get_statement(
-            previous_definition.chunk,
-            previous_definition.macro_statement_number,
-            previous_definition.statement_number
-          )
-          if current_reaching_statement_index[statement] == nil then
-            return true
-          end
-          local updated_definition_list_number, _ = table.unpack(current_reaching_statement_index[statement])
-          local updated_definition = updated_definition_list[updated_definition_list_number]
-          if previous_definition.confidence ~= updated_definition.confidence then
-            return true
-          end
-        end
-
-        return false
-      end
-
       -- Update the stack of changed statements.
-      if have_reaching_definitions_changed() then
+      if have_reaching_definitions_changed(chunk, statement_number, updated_definition_list, current_reaching_statement_index) then
         -- Insert the successive statements into the stack of changed statements.
         for _, out_edge_index in ipairs({explicit_out_edge_index, implicit_out_edge_index}) do
           if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
