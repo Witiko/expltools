@@ -3,7 +3,7 @@ In the flow analysis step, the expl3 analysis tool determines compiler-theoretic
 
 ## Functions and conditional functions
 
-### Multiply defined function {.e}
+### Multiply defined function {.e label=e500}
 A function or conditional function is defined multiple times.
 
  /e500-01.tex
@@ -13,7 +13,7 @@ A function or conditional function is defined multiple times.
  /e500-05.tex
  /e500-06.tex
 
-### Multiply defined function variant {.w}
+### Multiply defined function variant {.w label=w501}
 A function or conditional function variant is defined multiple times.
 
  /w501-01.tex
@@ -76,7 +76,7 @@ A function or conditional function variant is defined before the base function h
 
 This check is a stronger version of <#function-variant-for-undefined-function> and the issue should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
-### Calling an undefined function {.e}
+### Calling an undefined function {.e label=e505}
 A function or conditional function (variant) is called before it has been defined or after it has been undefined.
 
  /e505-01.tex
