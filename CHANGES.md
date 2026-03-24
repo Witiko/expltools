@@ -14,6 +14,7 @@ This version of explcheck has implemented the following new features:
   titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
    1. E500 (Multiply defined function)
+   2. W501 (Multiply defined function variant)
 
 #### Continuous integration
 
