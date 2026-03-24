@@ -1,0 +1,8 @@
+\cs_new:Nn
+  \module_foo:n
+  { bar }
+\cs_undefine:N
+  \module_foo:n
+\cs_generate_variant:Nn  % error on this line
+  \module_foo:n
+  { V }
