@@ -525,7 +525,7 @@ local function is_well_behaved(statement)
   elseif statement.type == FUNCTION_UNDEFINITION then
     result = statement.undefined_csname.type == TEXT and (statement.maybe_used or statement.maybe_multiply_defined)
   elseif statement.type == FUNCTION_VARIANT_DEFINITION then
-    result = statement.defined_csname.type == TEXT and statement.maybe_used
+    result = statement.defined_csname.type == TEXT and (statement.maybe_used or statement.maybe_multiply_defined)
   else
     error('Unexpected statement type "' .. statement.type .. '"')
   end
@@ -989,10 +989,22 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 )
                 assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
                 if incoming_statement ~= statement and not invalidated_statement_index[incoming_statement] then
-                  if incoming_statement.type == FUNCTION_DEFINITION and not incoming_statement.maybe_redefinition and
-                      statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition then
-                    local byte_range = statement_to_byte_range(statement_number)
-                    issues:add("e500", "multiply defined function", byte_range, format_csname(defined_or_undefined_csname))
+                  if incoming_statement.type == FUNCTION_DEFINITION and not incoming_statement.maybe_redefinition
+                      or incoming_statement.type == FUNCTION_VARIANT_DEFINITION then
+                    if statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition
+                        or statement.type == FUNCTION_VARIANT_DEFINITION then
+                      local byte_range = statement_to_byte_range(statement_number)
+                      local formatted_csname = format_csname(defined_or_undefined_csname)
+                      -- Report a multiply defined function.
+                      if statement.type == FUNCTION_DEFINITION then
+                        issues:add("e500", "multiply defined function", byte_range, formatted_csname)
+                      -- Report a multiply defined function variant.
+                      elseif statement.type == FUNCTION_VARIANT_DEFINITION then
+                        issues:add("w501", "multiply defined function variant", byte_range, formatted_csname)
+                      else
+                        error('Unexpected statement type "' .. statement.type .. '"')
+                      end
+                    end
                   end
                   invalidated_statement_index[incoming_statement] = true
                 end
