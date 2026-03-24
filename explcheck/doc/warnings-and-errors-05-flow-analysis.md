@@ -13,20 +13,6 @@ A function or conditional function is defined multiple times.
  /e500-05.tex
  /e500-06.tex
 
-<!--
-
-  We can't really report this issue from the `FUNCTION_CALL` edges alone.
-
-  Instead, we will need to report this issue either inside the inner loop
-  of reaching definitions whenever we are processing a function definition
-  statement or after the outer loop at the end of the function
-  `draw_group_wide_dynamic_edges()`.
-
-  We need to take into account the `maybe_redefinition` attribute of
-  `FUNCTION_DEFINITION` statements to differentiate between `new` and `set`.
-
--->
-
 ### Multiply defined function variant {.w}
 A function or conditional function variant is defined multiple times.
 
@@ -34,12 +20,6 @@ A function or conditional function variant is defined multiple times.
  /w501-02.tex
  /w501-03.tex
  /w501-04.tex
-
-<!--
-
-  The same considerations apply as for the previous issue (E500).
-
--->
 
 ### Unused private function {.w}
 A private function or conditional function is defined but unused.
