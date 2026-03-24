@@ -1307,13 +1307,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 if statement.confidence ~= DEFINITELY then
                   goto next_statement
                 end
-                if statement.type ~= FUNCTION_VARIANT_DEFINITION and
-                    (statement.type ~= FUNCTION_DEFINITION or statement.subtype ~= FUNCTION_DEFINITION_INDIRECT) then
-                  goto next_statement
-                end
-                if statement.base_csname.type ~= TEXT then
-                  goto next_statement
-                end
 
                 -- Get the byte range of the current statement.
                 local function get_byte_range()
@@ -1323,34 +1316,62 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                   return byte_range
                 end
 
-                local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, macro_statement_number)
-                local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
-                  chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, statement_number - 1)
+                -- Get definitions that reach the current statement
+                local function get_reaching_definitions(csname)
+                  local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, macro_statement_number)
+                  local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
+                    chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, statement_number - 1)
+
+                  local definition_lists = {incoming_definition_list, current_definition_list}
+                  local definition_indexes = {incoming_definition_index[csname] or {}, current_definition_index[csname] or {}}
+                  local current_definition_list_number, current_definition_number = 1, 1
+
+                  return function()
+                    while true do
+                      if current_definition_list_number > #definition_lists then
+                        return nil
+                      end
+                      local definition_list = definition_lists[current_definition_list_number]
+                      local definition_index = definition_indexes[current_definition_list_number]
+                      if current_definition_number > #definition_index then
+                        current_definition_list_number = current_definition_list_number + 1
+                        current_definition_number = 1
+                        goto continue
+                      end
+                      local definition_number = definition_index[current_definition_number]
+                      current_definition_number = current_definition_number + 1
+                      local definition = definition_list[definition_number]
+                      local other_statement
+                        = get_statement(definition.chunk, definition.macro_statement_number, definition.statement_number)
+                      if not invalidated_statement_index[other_statement] then
+                        return definition
+                      end
+                      ::continue::
+                    end
+                  end
+                end
+
+                if (statement.type ~= FUNCTION_VARIANT_DEFINITION) and
+                    (statement.type ~= FUNCTION_DEFINITION or statement.subtype ~= FUNCTION_DEFINITION_INDIRECT) then
+                  goto next_statement
+                end
+                if statement.base_csname.type ~= TEXT then
+                  goto next_statement
+                end
 
                 local any_definitions = false
-                for _, definition_list_and_index in ipairs({
-                      {incoming_definition_list, incoming_definition_index},
-                      {current_definition_list, current_definition_index},
-                    }) do
-                  local definition_list, definition_index = table.unpack(definition_list_and_index)
-                  for _, definition_number in ipairs(definition_index[statement.base_csname.payload] or {}) do
-                    local definition = definition_list[definition_number]
-                    assert(definition.csname == statement.base_csname.payload)
-                    assert(definition.macro_statement_number <= macro_statement_number)
-                    if definition.macro_statement_number == macro_statement_number then
-                      assert(definition.statement_number < statement_number)
-                    end
-                    if definition.confidence ~= DEFINITELY then
-                      goto next_definition
-                    end
-                    local other_statement = get_statement(definition.chunk, definition.macro_statement_number, definition.statement_number)
-                    if invalidated_statement_index[other_statement] then
-                      goto next_definition
-                    end
-                    any_definitions = true
-                    goto skip_following_definitions
-                    ::next_definition::
+                for definition in get_reaching_definitions(statement.base_csname.payload) do
+                  assert(definition.csname == statement.base_csname.payload)
+                  assert(definition.macro_statement_number <= macro_statement_number)
+                  if definition.macro_statement_number == macro_statement_number then
+                    assert(definition.statement_number < statement_number)
                   end
+                  if definition.confidence ~= DEFINITELY then
+                    goto next_definition
+                  end
+                  any_definitions = true
+                  goto skip_following_definitions
+                  ::next_definition::
                 end
                 ::skip_following_definitions::
 
