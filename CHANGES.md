@@ -16,6 +16,7 @@ This version of explcheck has implemented the following new features:
    1. E500 (Multiply defined function)
    2. W501 (Multiply defined function variant)
    3. E504 (Function variant for an undefined function)
+   4. E506 (Indirect function definition from an undefined function)
 
 #### Continuous integration
 
