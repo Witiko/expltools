@@ -762,6 +762,68 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       ::next_file::
     end
 
+    -- Determine the reaching definitions from before the current statement.
+    local function get_incoming_definitions(chunk, statement_number)
+      local incoming_definition_list, incoming_definition_index = {}, {}
+      do
+        local original_incoming_definition_list, original_incoming_definition_index = {}, {}
+        local original_incoming_definition_edge_confidence_lists = {}
+        local in_degree = 0
+        for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
+          if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
+            for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
+              if reaching_definition_lists[edge.from.chunk] ~= nil and
+                  reaching_definition_lists[edge.from.chunk][edge.from.statement_number] ~= nil then
+                in_degree = in_degree + 1
+                local reaching_definition_list = reaching_definition_lists[edge.from.chunk][edge.from.statement_number]
+                for _, definition in ipairs(reaching_definition_list) do
+                  -- Record the different incoming definitions together with the corresponding edge confidences.
+                  if original_incoming_definition_index[definition] == nil then
+                    assert(original_incoming_definition_edge_confidence_lists[definition] == nil)
+                    table.insert(original_incoming_definition_list, definition)
+                    original_incoming_definition_index[definition] = #original_incoming_definition_list
+                    table.insert(original_incoming_definition_edge_confidence_lists, {})
+                    assert(#original_incoming_definition_edge_confidence_lists == #original_incoming_definition_list)
+                  end
+                  local definition_number = original_incoming_definition_index[definition]
+                  table.insert(original_incoming_definition_edge_confidence_lists[definition_number], edge.confidence)
+                end
+              end
+            end
+          end
+        end
+        for definition_number, definition in ipairs(original_incoming_definition_list) do
+          local definition_edge_confidence_list = original_incoming_definition_edge_confidence_lists[definition_number]
+
+          -- Determine the weakened confidence of a definition.
+          local combined_edge_confidence
+          if #definition_edge_confidence_list == in_degree then
+            -- If a definition reaches all the incoming edges, use the maximum over the edge confidences as the combined edge
+            -- confidence.
+            combined_edge_confidence = math.max(table.unpack(definition_edge_confidence_list))
+          else
+            -- Otherwise, always use the combined edge confidence of `MAYBE`, regardless of the actual edge confidences.
+            combined_edge_confidence = MAYBE
+          end
+          assert(combined_edge_confidence >= MAYBE, "Edges shouldn't have confidences less than MAYBE")
+          -- Weaken the definition confidence with the combined edge confidence.
+          local updated_definition
+          if combined_edge_confidence < definition.confidence then
+            updated_definition = make_shallow_copy(definition)
+            updated_definition.weakened_confidence = combined_edge_confidence
+          else
+            updated_definition = definition
+          end
+          table.insert(incoming_definition_list, updated_definition)
+          if incoming_definition_index[updated_definition.csname] == nil then
+            incoming_definition_index[updated_definition.csname] = {}
+          end
+          table.insert(incoming_definition_index[updated_definition.csname], #incoming_definition_list)
+        end
+      end
+      return incoming_definition_list, incoming_definition_index
+    end
+
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
@@ -834,20 +896,18 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
       -- Pick a statement from the stack of changed statements.
       local chunk, statement_number = pop_changed_statement()
+
       local segment = chunk.segment
-
       local file_number = segment.location.file_number
-      local part_number = segment.location.part_number
-
       local state = states[file_number]
 
       local issues = state.issues
-      local results = state.results
-
-      local tokens = results.tokens[part_number]
 
       -- Get the byte range of a regular (non-macro) statement.
       local function statement_to_byte_range(...)
+        local part_number = segment.location.part_number
+        local tokens = state.results.tokens[part_number]
+
         local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
         local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
 
@@ -871,63 +931,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
 
       -- Determine the reaching definitions from before the current statement.
-      local incoming_definition_list, incoming_definition_index = {}, {}
-      do
-        local original_incoming_definition_list, original_incoming_definition_index = {}, {}
-        local original_incoming_definition_edge_confidence_lists = {}
-        local in_degree = 0
-        for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
-          if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
-            for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
-              if reaching_definition_lists[edge.from.chunk] ~= nil and
-                  reaching_definition_lists[edge.from.chunk][edge.from.statement_number] ~= nil then
-                in_degree = in_degree + 1
-                local reaching_definition_list = reaching_definition_lists[edge.from.chunk][edge.from.statement_number]
-                for _, definition in ipairs(reaching_definition_list) do
-                  -- Record the different incoming definitions together with the corresponding edge confidences.
-                  if original_incoming_definition_index[definition] == nil then
-                    assert(original_incoming_definition_edge_confidence_lists[definition] == nil)
-                    table.insert(original_incoming_definition_list, definition)
-                    original_incoming_definition_index[definition] = #original_incoming_definition_list
-                    table.insert(original_incoming_definition_edge_confidence_lists, {})
-                    assert(#original_incoming_definition_edge_confidence_lists == #original_incoming_definition_list)
-                  end
-                  local definition_number = original_incoming_definition_index[definition]
-                  table.insert(original_incoming_definition_edge_confidence_lists[definition_number], edge.confidence)
-                end
-              end
-            end
-          end
-        end
-        for definition_number, definition in ipairs(original_incoming_definition_list) do
-          local definition_edge_confidence_list = original_incoming_definition_edge_confidence_lists[definition_number]
-
-          -- Determine the weakened confidence of a definition.
-          local combined_edge_confidence
-          if #definition_edge_confidence_list == in_degree then
-            -- If a definition reaches all the incoming edges, use the maximum over the edge confidences as the combined edge
-            -- confidence.
-            combined_edge_confidence = math.max(table.unpack(definition_edge_confidence_list))
-          else
-            -- Otherwise, always use the combined edge confidence of `MAYBE`, regardless of the actual edge confidences.
-            combined_edge_confidence = MAYBE
-          end
-          assert(combined_edge_confidence >= MAYBE, "Edges shouldn't have confidences less than MAYBE")
-          -- Weaken the definition confidence with the combined edge confidence.
-          local updated_definition
-          if combined_edge_confidence < definition.confidence then
-            updated_definition = make_shallow_copy(definition)
-            updated_definition.weakened_confidence = combined_edge_confidence
-          else
-            updated_definition = definition
-          end
-          table.insert(incoming_definition_list, updated_definition)
-          if incoming_definition_index[updated_definition.csname] == nil then
-            incoming_definition_index[updated_definition.csname] = {}
-          end
-          table.insert(incoming_definition_index[updated_definition.csname], #incoming_definition_list)
-        end
-      end
+      local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, statement_number)
 
       -- Determine the definitions and undefinitions from the current statement.
       local current_definition_list, current_definition_index = {}, {}
