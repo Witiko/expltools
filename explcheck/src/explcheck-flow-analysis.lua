@@ -603,7 +603,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   local max_reaching_definition_inner_loops = get_option('max_reaching_definition_inner_loops', options)
   local max_reaching_definition_outer_loops = get_option('max_reaching_definition_outer_loops', options)
   local outer_loop_number = 1
-  repeat
+  while true do
     -- Guard against long (infinite?) loops.
     if outer_loop_number > max_reaching_definition_outer_loops then
       error(
@@ -825,7 +825,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     -- Determine the definitions and undefinitions from the current statement.
-    local function get_current_definitions(chunk, macro_statement_number, incoming_definition_list, incoming_definition_index)
+    local function get_current_definitions(
+        chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, max_statement_number)
       local segment = chunk.segment
       local file_number = segment.location.file_number
       local state = states[file_number]
@@ -858,6 +859,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
         for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
           assert(not is_macro_statement(statement))
+          if max_statement_number ~= nil and statement_number > max_statement_number then
+            break
+          end
           if statement.type ~= FUNCTION_DEFINITION and
               statement.type ~= FUNCTION_UNDEFINITION and
               statement.type ~= FUNCTION_VARIANT_DEFINITION then
@@ -935,7 +939,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
         ::next_macro_statement::
       end
-      return current_definition_list, invalidated_statement_index
+      return current_definition_list, current_definition_index, invalidated_statement_index
     end
 
     -- Determine the reaching definitions after the current statement.
@@ -1093,7 +1097,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, statement_number)
 
       -- Determine the definitions and undefinitions from the current statement.
-      local current_definition_list, invalidated_statement_index
+      local current_definition_list, _, invalidated_statement_index
         = get_current_definitions(chunk, statement_number, incoming_definition_list, incoming_definition_index)
 
       -- Determine the reaching definitions after the current statement.
@@ -1278,7 +1282,89 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     outer_loop_number = outer_loop_number + 1
-  until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
+
+    if not any_edges_changed(previous_function_call_edges, current_function_call_edges) then
+      -- After the last outer-loop iteration, report any issues that require the knowledge of the reaching definitions
+      -- and not just the resulting edges before we have freed the corresponding variables.
+      for _, state in ipairs(states) do
+        -- Skip statements from files in the current file group that haven't reached the flow analysis.
+        if state.results.stopped_early then
+          goto next_file
+        end
+        local issues = state.issues
+        for _, segment in ipairs(state.results.segments or {}) do
+          local part_number = segment.location.part_number
+          local tokens = state.results.tokens[part_number]
+          local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
+          for _, chunk in ipairs(segment.chunks or {}) do
+            local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
+            for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
+              if macro_statement.type ~= FUNCTION_DEFINITIONS then
+                goto next_macro_statement
+              end
+              for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
+                assert(not is_macro_statement(statement))
+                if statement.confidence ~= DEFINITELY or
+                    statement.type ~= FUNCTION_VARIANT_DEFINITION or
+                    statement.base_csname.type ~= TEXT then
+                  goto next_statement
+                end
+
+                -- Get the byte range of the current statement.
+                local function get_byte_range()
+                  local token_range = call_range_to_token_range(statement.call_range)
+                  local byte_range = token_range_to_byte_range(token_range)
+
+                  return byte_range
+                end
+
+                local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, macro_statement_number)
+                local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
+                  chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, statement_number - 1)
+
+                -- Report function variants for an undefined function.
+                local any_definitions = false
+                for _, definition_list_and_index in ipairs({
+                      {incoming_definition_list, incoming_definition_index},
+                      {current_definition_list, current_definition_index},
+                    }) do
+                  local definition_list, definition_index = table.unpack(definition_list_and_index)
+                  for _, definition_number in ipairs(definition_index[statement.base_csname.payload] or {}) do
+                    local definition = definition_list[definition_number]
+                    assert(definition.csname == statement.base_csname.payload)
+                    assert(definition.macro_statement_number <= macro_statement_number)
+                    if definition.macro_statement_number == macro_statement_number then
+                      assert(definition.statement_number < statement_number)
+                    end
+                    if definition.confidence ~= DEFINITELY then
+                      goto next_definition
+                    end
+                    local other_statement = get_statement(definition.chunk, definition.macro_statement_number, definition.statement_number)
+                    if invalidated_statement_index[other_statement] then
+                      goto next_definition
+                    end
+                    any_definitions = true
+                    goto skip_following_definitions
+                    ::next_definition::
+                  end
+                end
+                ::skip_following_definitions::
+                if not any_definitions then
+                  local formatted_csname = format_csname(statement.base_csname.payload)
+                  issues:add("e504", "function variant for an undefined function", get_byte_range(), formatted_csname)
+                end
+
+                ::next_statement::
+              end
+              ::next_macro_statement::
+            end
+          end
+        end
+        ::next_file::
+      end
+      break
+    end
+  end
 
   -- Record edges.
   for _, edge in ipairs(current_function_call_edges) do
