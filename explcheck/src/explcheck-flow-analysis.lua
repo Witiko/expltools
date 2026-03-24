@@ -1316,7 +1316,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                   return byte_range
                 end
 
-                -- Get definitions that reach the current statement
+                -- Get definitions for a given control sequence name that reach the current statement.
                 local function get_reaching_definitions(csname)
                   local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, macro_statement_number)
                   local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
@@ -1351,45 +1351,53 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                   end
                 end
 
-                if (statement.type ~= FUNCTION_VARIANT_DEFINITION) and
-                    (statement.type ~= FUNCTION_DEFINITION or statement.subtype ~= FUNCTION_DEFINITION_INDIRECT) then
-                  goto next_statement
-                end
-                if statement.base_csname.type ~= TEXT then
-                  goto next_statement
-                end
-
-                local any_definitions = false
-                for definition in get_reaching_definitions(statement.base_csname.payload) do
-                  assert(definition.csname == statement.base_csname.payload)
-                  assert(definition.macro_statement_number <= macro_statement_number)
-                  if definition.macro_statement_number == macro_statement_number then
-                    assert(definition.statement_number < statement_number)
-                  end
-                  if definition.confidence ~= DEFINITELY then
-                    goto next_definition
-                  end
-                  any_definitions = true
-                  goto skip_following_definitions
-                  ::next_definition::
-                end
-                ::skip_following_definitions::
-
-                if not any_definitions then
-                  local formatted_csname = format_csname(statement.base_csname.payload)
-                  local byte_range = get_byte_range()
-
-                  -- Report function variants for an undefined function.
-                  if statement.type == FUNCTION_VARIANT_DEFINITION then
-                    issues:add("e504", "function variant for an undefined function", byte_range, formatted_csname)
-                  -- Report indirect function definitions from an undefined function.
-                  elseif statement.type == FUNCTION_DEFINITION then
-                    assert(statement.subtype == FUNCTION_DEFINITION_INDIRECT)
-                    issues:add("e506", "indirect function definition from an undefined function", byte_range, formatted_csname)
-                  else
-                    error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+                -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
+                local function any_definite_reaching_definitions(csname)
+                  for definition in get_reaching_definitions(csname) do
+                    assert(definition.csname == statement.base_csname.payload)
+                    assert(definition.macro_statement_number <= macro_statement_number)
+                    if definition.macro_statement_number == macro_statement_number then
+                      assert(definition.statement_number < statement_number)
+                    end
+                    if definition.confidence == DEFINITELY then
+                      return true
+                    end
                   end
                 end
+
+                if (
+                      statement.type == FUNCTION_VARIANT_DEFINITION or
+                      statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+                    ) and statement.base_csname.type == TEXT then
+                  if not any_definite_reaching_definitions(statement.base_csname.payload) then
+                    local formatted_csname = format_csname(statement.base_csname.payload)
+                    local byte_range = get_byte_range()
+
+                    -- Report function variants for an undefined function.
+                    if statement.type == FUNCTION_VARIANT_DEFINITION then
+                      issues:add("e504", "function variant for an undefined function", byte_range, formatted_csname)
+                    -- Report indirect function definitions from an undefined function.
+                    elseif statement.type == FUNCTION_DEFINITION then
+                      assert(statement.subtype == FUNCTION_DEFINITION_INDIRECT)
+                      issues:add("e506", "indirect function definition from an undefined function", byte_range, formatted_csname)
+                    else
+                      error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+                    end
+                  end
+                end
+
+                -- Report setting a function before definition.
+                if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT
+                    -- TODO: Currently, we only consider function calls from within top-level code (`segment.nesting_depth == 1`).
+                    -- Ideally, we would consider all function calls that are reachable from top-level code.
+                    and segment.nesting_depth == 1 then
+                  if not any_definite_reaching_definitions(statement.defined_csname.payload) then
+                    local formatted_csname = format_csname(statement.defined_csname.payload)
+                    local byte_range = get_byte_range()
+                    issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
+                  end
+                end
+
                 ::next_statement::
               end
               ::next_macro_statement::
