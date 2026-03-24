@@ -824,79 +824,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       return incoming_definition_list, incoming_definition_index
     end
 
-    -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
-    local changed_statements_list, changed_statements_index = {}, {}
-
-    -- Pop a changed statement off the top of stack.
-    local function pop_changed_statement()
-      -- Pick a statement from the stack of changed statements.
-      local chunk_statements = changed_statements_list[#changed_statements_list]
-      local chunk = chunk_statements.chunk
-      local statement_numbers_list = chunk_statements.statement_numbers_list
-      local statement_numbers_index = chunk_statements.statement_numbers_index
-      assert(#statement_numbers_list > 0)
-      local statement_number = statement_numbers_list[#statement_numbers_list]
-
-      -- Remove the statement from the stack.
-      if #statement_numbers_list > 1 then
-        -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
-        table.remove(statement_numbers_list)
-        statement_numbers_index[statement_number] = nil
-      else
-        -- Otherwise, remove the chunk from the stack as well.
-        table.remove(changed_statements_list)
-        changed_statements_index[chunk] = nil
-      end
-
-      return chunk, statement_number
-    end
-
-    -- Add a changed statement on the top of the stack.
-    local function add_changed_statement(chunk, statement_number)
-      -- Get the stack of statements for the given chunk, inserting it if it doesn't exist.
-      local chunk_statements
-      if changed_statements_index[chunk] == nil then
-        chunk_statements = {
-          chunk = chunk,
-          statement_numbers_list = {},
-          statement_numbers_index = {},
-        }
-        table.insert(changed_statements_list, chunk_statements)
-        changed_statements_index[chunk] = #changed_statements_list
-      else
-        chunk_statements = changed_statements_list[changed_statements_index[chunk]]
-      end
-
-      -- Insert the statement to the stack if it isn't there already.
-      local statement_numbers_list = chunk_statements.statement_numbers_list
-      local statement_numbers_index = chunk_statements.statement_numbers_index
-      if statement_numbers_index[statement_number] == nil then
-        table.insert(statement_numbers_list, statement_number)
-        statement_numbers_index[statement_number] = #statement_numbers_list
-      end
-    end
-
-    for _, chunk_and_statement_number in ipairs(function_definition_list) do
-      local chunk, statement_number = table.unpack(chunk_and_statement_number)
-      add_changed_statement(chunk, statement_number)
-    end
-
-    -- Iterate over the changed statements until convergence.
-    local inner_loop_number = 1
-    while #changed_statements_list > 0 do
-      -- Guard against long (infinite?) loops.
-      if inner_loop_number > max_reaching_definition_inner_loops then
-        error(
-          string.format(
-            "Reaching definitions took more than %d inner loops, try increasing the `max_reaching_definition_inner_loops` Lua option",
-            max_reaching_definition_inner_loops
-          )
-        )
-      end
-
-      -- Pick a statement from the stack of changed statements.
-      local chunk, statement_number = pop_changed_statement()
-
+    -- Determine the definitions and undefinitions from the current statement.
+    local function get_current_definitions(chunk, macro_statement_number, incoming_definition_list, incoming_definition_index)
       local segment = chunk.segment
       local file_number = segment.location.file_number
       local state = states[file_number]
@@ -904,14 +833,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       local issues = state.issues
 
       -- Get the byte range of a regular (non-macro) statement.
-      local function statement_to_byte_range(...)
+      local function statement_to_byte_range(statement_number)
         local part_number = segment.location.part_number
         local tokens = state.results.tokens[part_number]
 
         local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
         local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
 
-        local statement = _get_statement(chunk, statement_number, ...)
+        local statement = _get_statement(chunk, macro_statement_number, statement_number)
         assert(not is_macro_statement(statement))
 
         local token_range = call_range_to_token_range(statement.call_range)
@@ -920,30 +849,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         return byte_range
       end
 
-      -- Collect reaching definitions from the incoming edges.
-      local incoming_edge_list = {}
-      for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
-        if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
-          for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
-            table.insert(incoming_edge_list, edge)
-          end
-        end
-      end
-
-      -- Determine the reaching definitions from before the current statement.
-      local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, statement_number)
-
-      -- Determine the definitions and undefinitions from the current statement.
       local current_definition_list, current_definition_index = {}, {}
       local invalidated_statement_index = {}
-      if statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
-        local macro_statement_number = statement_number
+      if macro_statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
         local macro_statement = get_statement(chunk, macro_statement_number)
         if macro_statement.type ~= FUNCTION_DEFINITIONS then
           goto next_macro_statement
         end
-        ---@diagnostic disable-next-line:redefined-local
-        for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do  -- luacheck: ignore
+        for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
           assert(not is_macro_statement(statement))
           if statement.type ~= FUNCTION_DEFINITION and
               statement.type ~= FUNCTION_UNDEFINITION and
@@ -1022,6 +935,88 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
         ::next_macro_statement::
       end
+      return current_definition_list, invalidated_statement_index
+    end
+
+    -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
+    local changed_statements_list, changed_statements_index = {}, {}
+
+    -- Pop a changed statement off the top of stack.
+    local function pop_changed_statement()
+      -- Pick a statement from the stack of changed statements.
+      local chunk_statements = changed_statements_list[#changed_statements_list]
+      local chunk = chunk_statements.chunk
+      local statement_numbers_list = chunk_statements.statement_numbers_list
+      local statement_numbers_index = chunk_statements.statement_numbers_index
+      assert(#statement_numbers_list > 0)
+      local statement_number = statement_numbers_list[#statement_numbers_list]
+
+      -- Remove the statement from the stack.
+      if #statement_numbers_list > 1 then
+        -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
+        table.remove(statement_numbers_list)
+        statement_numbers_index[statement_number] = nil
+      else
+        -- Otherwise, remove the chunk from the stack as well.
+        table.remove(changed_statements_list)
+        changed_statements_index[chunk] = nil
+      end
+
+      return chunk, statement_number
+    end
+
+    -- Add a changed statement on the top of the stack.
+    local function add_changed_statement(chunk, statement_number)
+      -- Get the stack of statements for the given chunk, inserting it if it doesn't exist.
+      local chunk_statements
+      if changed_statements_index[chunk] == nil then
+        chunk_statements = {
+          chunk = chunk,
+          statement_numbers_list = {},
+          statement_numbers_index = {},
+        }
+        table.insert(changed_statements_list, chunk_statements)
+        changed_statements_index[chunk] = #changed_statements_list
+      else
+        chunk_statements = changed_statements_list[changed_statements_index[chunk]]
+      end
+
+      -- Insert the statement to the stack if it isn't there already.
+      local statement_numbers_list = chunk_statements.statement_numbers_list
+      local statement_numbers_index = chunk_statements.statement_numbers_index
+      if statement_numbers_index[statement_number] == nil then
+        table.insert(statement_numbers_list, statement_number)
+        statement_numbers_index[statement_number] = #statement_numbers_list
+      end
+    end
+
+    for _, chunk_and_statement_number in ipairs(function_definition_list) do
+      local chunk, statement_number = table.unpack(chunk_and_statement_number)
+      add_changed_statement(chunk, statement_number)
+    end
+
+    -- Iterate over the changed statements until convergence.
+    local inner_loop_number = 1
+    while #changed_statements_list > 0 do
+      -- Guard against long (infinite?) loops.
+      if inner_loop_number > max_reaching_definition_inner_loops then
+        error(
+          string.format(
+            "Reaching definitions took more than %d inner loops, try increasing the `max_reaching_definition_inner_loops` Lua option",
+            max_reaching_definition_inner_loops
+          )
+        )
+      end
+
+      -- Pick a statement from the stack of changed statements.
+      local chunk, statement_number = pop_changed_statement()
+
+      -- Determine the reaching definitions from before the current statement.
+      local incoming_definition_list, incoming_definition_index = get_incoming_definitions(chunk, statement_number)
+
+      -- Determine the definitions and undefinitions from the current statement.
+      local current_definition_list, invalidated_statement_index
+        = get_current_definitions(chunk, statement_number, incoming_definition_list, incoming_definition_index)
 
       -- Determine the reaching definitions after the current statement.
       local updated_definition_list, updated_definition_index = {}, {}
