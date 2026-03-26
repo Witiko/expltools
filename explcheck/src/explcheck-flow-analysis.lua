@@ -868,7 +868,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
         local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
 
-        local statement = _get_statement(chunk, macro_statement_number, statement_number)
+        local statement = get_statement(chunk, macro_statement_number, statement_number)
         assert(not is_macro_statement(statement))
 
         local token_range = call_range_to_token_range(statement.call_range)
@@ -1527,7 +1527,7 @@ local function report_issues(states, main_file_number, _)
     local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
     local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
 
-    local statement = _get_statement(chunk, statement_number)
+    local statement = get_statement(chunk, statement_number)
     assert(not is_macro_statement(statement))
 
     local token_range = call_range_to_token_range(statement.call_range)
@@ -1541,7 +1541,7 @@ local function report_issues(states, main_file_number, _)
     local chunk, statement_number = table.unpack(chunk_and_statement_number)
     if states.results.edge_indexes.function_call[chunk] == nil or
         states.results.edge_indexes.function_call[chunk][statement_number] == nil then
-      local statement = _get_statement(chunk, statement_number)
+      local statement = get_statement(chunk, statement_number)
       local byte_range = statement_to_byte_range(chunk, statement_number)
       local csname = statement.used_csname
 
