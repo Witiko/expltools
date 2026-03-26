@@ -1346,7 +1346,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
                 -- Get definitions for a given control sequence name that reach the current statement.
                 local function get_reaching_definitions(csname)
-                  local incoming_definition_list, incoming_definition_index = get_incoming_definitions(states, chunk, macro_statement_number)
+                  local incoming_definition_list, incoming_definition_index
+                    = get_incoming_definitions(states, chunk, macro_statement_number)
                   local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
                     states, chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, statement_number - 1)
 
