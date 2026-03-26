@@ -2422,12 +2422,10 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
   end
 end
 
--- Remove auxiliary intermediate results to free up memory for the following processing steps.
+-- Remove auxiliary intermediate results to free up memory.
 local function cleanup(states, file_number, _)
   -- Remove group-wide intermediate results.
-  if states.results.statement_analysis ~= nil then
-    states.results.statement_analysis = nil
-  end
+  states.results.statement_analysis = nil
 
   -- Remove file-local intermediate results.
   local state = states[file_number]

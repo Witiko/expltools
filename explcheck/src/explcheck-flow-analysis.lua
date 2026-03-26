@@ -504,9 +504,10 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Index an edge in an edge index.
-local function _index_edge(states, edge_index, index_key, edge)
+local function _index_edge(states, edge_index_name, index_key, edge)
   assert(not states[edge.from.chunk.segment.location.file_number].results.stopped_early)
   assert(not states[edge.to.chunk.segment.location.file_number].results.stopped_early)
+  local edge_index = states.results.edge_indexes[edge_index_name]
   local chunk, statement_number = edge[index_key].chunk, edge[index_key].statement_number
   if edge_index[chunk] == nil then
     edge_index[chunk] = {}
@@ -620,10 +621,16 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
     --
     -- First of, we will track the reaching definitions themselves.
-    local reaching_definition_lists, reaching_definition_indexes = {}, {}
+    states.results.reaching_definitions = {
+      lists = {},
+      indexes = {},
+    }
 
     -- Index all explicit "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
-    local explicit_in_edge_index, explicit_out_edge_index = {}, {}
+    states.results.edge_indexes = {
+      explicit_in = {},
+      explicit_out = {},
+    }
     local edge_lists = {current_function_call_edges}
     for _, state in ipairs(states) do
       local edge_category_list = {}
@@ -639,8 +646,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
     for _, edges in ipairs(edge_lists) do
       for _, edge in ipairs(edges) do
-        index_edge(explicit_in_edge_index, 'to', edge)
-        index_edge(explicit_out_edge_index, 'from', edge)
+        index_edge('explicit_in', 'to', edge)
+        index_edge('explicit_out', 'from', edge)
       end
     end
 
@@ -652,8 +659,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         return true
       end
       -- (Pseudo-)statements with incoming or outgoing explicit edges are interesting.
-      if explicit_in_edge_index[chunk] ~= nil and explicit_in_edge_index[chunk][statement_number] ~= nil
-          or explicit_out_edge_index[chunk] ~= nil and explicit_out_edge_index[chunk][statement_number] ~= nil then
+      if states.results.edge_indexes.explicit_in[chunk] ~= nil and
+            states.results.edge_indexes.explicit_in[chunk][statement_number] ~= nil or
+          states.results.edge_indexes.explicit_out[chunk] ~= nil and
+            states.results.edge_indexes.explicit_out[chunk][statement_number] ~= nil then
         return true
       end
       -- Well-behaved statements are interesting.
@@ -683,7 +692,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     -- Index all implicit incoming and outgoing pseudo-edges as well.
-    local implicit_in_edge_index, implicit_out_edge_index = {}, {}
+    states.results.edge_indexes.implicit_in, states.results.edge_indexes.implicit_out = {}, {}
     for _, state in ipairs(states) do
       -- Skip statements from files in the current file group that haven't reached the flow analysis.
       if state.results.stopped_early then
@@ -710,8 +719,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 },
                 confidence = edge_confidence,
               }
-              index_edge(implicit_in_edge_index, 'to', edge)
-              index_edge(implicit_out_edge_index, 'from', edge)
+              index_edge('implicit_in', 'to', edge)
+              index_edge('implicit_out', 'from', edge)
             end
             previous_interesting_statement_number = statement_number
             edge_confidence = DEFINITELY
@@ -729,8 +738,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               end
 
               local has_t_branch, has_f_branch = false, false
-              if explicit_out_edge_index[chunk] ~= nil and explicit_out_edge_index[chunk][statement_number] ~= nil then
-                for _, edge in ipairs(explicit_out_edge_index[chunk][statement_number]) do
+              if states.results.edge_indexes.explicit_out[chunk] ~= nil and
+                  states.results.edge_indexes.explicit_out[chunk][statement_number] ~= nil then
+                for _, edge in ipairs(states.results.edge_indexes.explicit_out[chunk][statement_number]) do
                   -- For fully-resolved function calls, cancel the implicit pseudo-edge towards the next interesting statement;
                   -- instead, the reaching definitions will be routed through the replacement text of the function, at whose end
                   -- we'll return to the (interesting) statement following the function call.
@@ -772,13 +782,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         local original_incoming_definition_list, original_incoming_definition_index = {}, {}
         local original_incoming_definition_edge_confidence_lists = {}
         local in_degree = 0
-        for _, in_edge_index in ipairs({explicit_in_edge_index, implicit_in_edge_index}) do
+        for _, in_edge_index in ipairs({states.results.edge_indexes.explicit_in, states.results.edge_indexes.implicit_in}) do
           if in_edge_index[chunk] ~= nil and in_edge_index[chunk][statement_number] ~= nil then
             for _, edge in ipairs(in_edge_index[chunk][statement_number]) do
-              if reaching_definition_lists[edge.from.chunk] ~= nil and
-                  reaching_definition_lists[edge.from.chunk][edge.from.statement_number] ~= nil then
+              if states.results.reaching_definitions.lists[edge.from.chunk] ~= nil and
+                  states.results.reaching_definitions.lists[edge.from.chunk][edge.from.statement_number] ~= nil then
                 in_degree = in_degree + 1
-                local reaching_definition_list = reaching_definition_lists[edge.from.chunk][edge.from.statement_number]
+                local reaching_definition_list
+                  = states.results.reaching_definitions.lists[edge.from.chunk][edge.from.statement_number]
                 for _, definition in ipairs(reaching_definition_list) do
                   -- Record the different incoming definitions together with the corresponding edge confidences.
                   if original_incoming_definition_index[definition] == nil then
@@ -988,13 +999,13 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     -- Determine whether the reaching definitions after the current statement have changed.
     local function have_reaching_definitions_changed(chunk, statement_number, updated_definition_list, current_reaching_statement_index)
       -- Determine the previous set of definitions, if any.
-      if reaching_definition_lists[chunk] == nil then
+      if states.results.reaching_definitions.lists[chunk] == nil then
         return true
       end
-      if reaching_definition_lists[chunk][statement_number] == nil then
+      if states.results.reaching_definitions.lists[chunk][statement_number] == nil then
         return true
       end
-      local previous_definition_list = reaching_definition_lists[chunk][statement_number]
+      local previous_definition_list = states.results.reaching_definitions.lists[chunk][statement_number]
       assert(previous_definition_list ~= nil)
       assert(#previous_definition_list <= #updated_definition_list)
 
@@ -1110,7 +1121,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       -- Update the stack of changed statements.
       if have_reaching_definitions_changed(chunk, statement_number, updated_definition_list, current_reaching_statement_index) then
         -- Insert the successive statements into the stack of changed statements.
-        for _, out_edge_index in ipairs({explicit_out_edge_index, implicit_out_edge_index}) do
+        for _, out_edge_index in ipairs({states.results.edge_indexes.explicit_out, states.results.edge_indexes.implicit_out}) do
           if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
             for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
               add_changed_statement(edge.to.chunk, edge.to.statement_number)
@@ -1119,18 +1130,18 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
 
         -- Update the reaching definitions.
-        if reaching_definition_lists[chunk] == nil then
-          assert(reaching_definition_indexes[chunk] == nil)
-          reaching_definition_lists[chunk] = {}
-          reaching_definition_indexes[chunk] = {}
+        if states.results.reaching_definitions.lists[chunk] == nil then
+          assert(states.results.reaching_definitions.indexes[chunk] == nil)
+          states.results.reaching_definitions.lists[chunk] = {}
+          states.results.reaching_definitions.indexes[chunk] = {}
         end
-        if reaching_definition_lists[chunk][statement_number] == nil then
-          assert(reaching_definition_indexes[chunk][statement_number] == nil)
-          reaching_definition_lists[chunk][statement_number] = {}
-          reaching_definition_indexes[chunk][statement_number] = {}
+        if states.results.reaching_definitions.lists[chunk][statement_number] == nil then
+          assert(states.results.reaching_definitions.indexes[chunk][statement_number] == nil)
+          states.results.reaching_definitions.lists[chunk][statement_number] = {}
+          states.results.reaching_definitions.indexes[chunk][statement_number] = {}
         end
-        reaching_definition_lists[chunk][statement_number] = updated_definition_list
-        reaching_definition_indexes[chunk][statement_number] = updated_definition_index
+        states.results.reaching_definitions.lists[chunk][statement_number] = updated_definition_list
+        states.results.reaching_definitions.indexes[chunk][statement_number] = updated_definition_index
       end
 
       inner_loop_number = inner_loop_number + 1
@@ -1147,14 +1158,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
-      if reaching_definition_indexes[function_call_chunk] == nil or
-          reaching_definition_indexes[function_call_chunk][function_call_statement_number] == nil then
+      if states.results.reaching_definitions.indexes[function_call_chunk] == nil or
+          states.results.reaching_definitions.indexes[function_call_chunk][function_call_statement_number] == nil then
         goto next_function_call
       end
       local function_call_statement = get_statement(function_call_chunk, function_call_statement_number)
       assert(is_well_behaved(function_call_statement))
       local reaching_function_and_variant_definition_list = {}
-      local reaching_definition_index = reaching_definition_indexes[function_call_chunk][function_call_statement_number]
+      local reaching_definition_index = states.results.reaching_definitions.indexes[function_call_chunk][function_call_statement_number]
       local used_csname = function_call_statement.used_csname.payload
       for _, definition in ipairs(reaching_definition_index[used_csname] or {}) do
         assert(definition.csname == used_csname)
@@ -1182,8 +1193,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
             or statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the indirect function definitions and function variant definitions.
-          if reaching_definition_lists[chunk] ~= nil and reaching_definition_lists[chunk][macro_statement_number] ~= nil then
-            local other_reaching_definition_index = reaching_definition_indexes[chunk][macro_statement_number]
+          if states.results.reaching_definitions.lists[chunk] ~= nil and
+              states.results.reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
+            local other_reaching_definition_index = states.results.reaching_definitions.indexes[chunk][macro_statement_number]
             local base_csname = statement.base_csname.payload
             for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
               local other_chunk, other_macro_statement_number, other_statement_number
@@ -1483,10 +1495,10 @@ local function report_issues(states, main_file_number, _)
   end
 
   -- Collect a list of function call edges.
-  local function_call_edge_index = {}
+  states.results.edge_indexes.function_call = {}
   for _, edge in ipairs(results.edges[DYNAMIC] or {}) do
     if edge.type == FUNCTION_CALL then
-      index_edge(function_call_edge_index, 'from', edge)
+      index_edge('function_call', 'from', edge)
     end
   end
 
@@ -1514,16 +1526,24 @@ local function report_issues(states, main_file_number, _)
   -- Report calling an undefined function.
   for _, chunk_and_statement_number in ipairs(definite_function_call_list) do
     local chunk, statement_number = table.unpack(chunk_and_statement_number)
-    if function_call_edge_index[chunk] == nil or function_call_edge_index[chunk][statement_number] == nil then
+    if states.results.edge_indexes.function_call[chunk] == nil or
+        states.results.edge_indexes.function_call[chunk][statement_number] == nil then
       local statement = _get_statement(chunk, statement_number)
       local byte_range = statement_to_byte_range(chunk, statement_number)
       local csname = statement.used_csname
 
       issues:add("e505", "calling an undefined function", byte_range, format_csname(csname.transcript))
     else
-      assert(#function_call_edge_index[chunk][statement_number] > 0)
+      assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
     end
   end
+end
+
+-- Remove auxiliary intermediate results to free up memory.
+local function cleanup(states, _, _)
+  -- Remove group-wide intermediate results.
+  states.results.edge_indexes = nil
+  states.results.reaching_definitions = nil
 end
 
 local substeps = {
@@ -1533,6 +1553,7 @@ local substeps = {
   draw_group_wide_static_edges,
   draw_group_wide_dynamic_edges,
   report_issues,
+  cleanup,
 }
 
 return {
