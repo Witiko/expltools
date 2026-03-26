@@ -536,6 +536,53 @@ local function is_well_behaved(statement)
   return result
 end
 
+-- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
+-- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
+local function _is_interesting(states, chunk, macro_statement_number)
+
+  -- Resolve the chunk and statement number to a statement.
+  local function get_statement()
+    assert(not states[chunk.segment.location.file_number].results.stopped_early)
+    return _get_statement(chunk, macro_statement_number)
+  end
+
+  -- Chunk boundaries are interesting.
+  if macro_statement_number == chunk.statement_range:start() or macro_statement_number == chunk.statement_range:stop() + 1 then
+    return true
+  end
+  -- (Pseudo-)statements with incoming or outgoing explicit edges are interesting.
+  if states.results.edge_indexes.explicit_in[chunk] ~= nil and
+        states.results.edge_indexes.explicit_in[chunk][macro_statement_number] ~= nil or
+      states.results.edge_indexes.explicit_out[chunk] ~= nil and
+        states.results.edge_indexes.explicit_out[chunk][macro_statement_number] ~= nil then
+    return true
+  end
+  -- Well-behaved statements are interesting.
+  local macro_statement = get_statement()
+  if macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
+    return true
+  end
+  -- Macro-statements containing at least one interesting statement are interesting.
+  local any_well_behaved_statements = false
+  for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
+    assert(not is_macro_statement(statement))
+    if (
+          statement.type == FUNCTION_DEFINITION or
+          statement.type == FUNCTION_UNDEFINITION or
+          statement.type == FUNCTION_VARIANT_DEFINITION
+        )
+        and is_well_behaved(statement) then
+      any_well_behaved_statements = true
+      goto skip_remaining_statements
+    end
+  end
+  ::skip_remaining_statements::
+  if any_well_behaved_statements then
+    return true
+  end
+  return false
+end
+
 -- Draw "dynamic" edges between chunks between all files in a file group. A dynamic edge requires estimation.
 local function draw_group_wide_dynamic_edges(states, _, options)
   -- Draw dynamic edges once between all files in the file group, not just individual files.
@@ -553,6 +600,12 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   local function get_statement(chunk, macro_statement_number, statement_number)
     assert(not states[chunk.segment.location.file_number].results.stopped_early)
     return _get_statement(chunk, macro_statement_number, statement_number)
+  end
+
+  -- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
+  -- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
+  local function is_interesting(chunk, macro_statement_number)
+    return _is_interesting(states, chunk, macro_statement_number)
   end
 
   -- Collect a list of well-behaved function definition and call statements.
@@ -649,46 +702,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         index_edge('explicit_in', 'to', edge)
         index_edge('explicit_out', 'from', edge)
       end
-    end
-
-    -- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
-    -- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
-    local function is_interesting(chunk, statement_number)
-      -- Chunk boundaries are interesting.
-      if statement_number == chunk.statement_range:start() or statement_number == chunk.statement_range:stop() + 1 then
-        return true
-      end
-      -- (Pseudo-)statements with incoming or outgoing explicit edges are interesting.
-      if states.results.edge_indexes.explicit_in[chunk] ~= nil and
-            states.results.edge_indexes.explicit_in[chunk][statement_number] ~= nil or
-          states.results.edge_indexes.explicit_out[chunk] ~= nil and
-            states.results.edge_indexes.explicit_out[chunk][statement_number] ~= nil then
-        return true
-      end
-      -- Well-behaved statements are interesting.
-      local macro_statement = get_statement(chunk, statement_number)
-      if macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
-        return true
-      end
-      -- Macro-statements containing at least one interesting statement are interesting.
-      local any_well_behaved_statements = false
-      for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
-        assert(not is_macro_statement(statement))
-        if (
-              statement.type == FUNCTION_DEFINITION or
-              statement.type == FUNCTION_UNDEFINITION or
-              statement.type == FUNCTION_VARIANT_DEFINITION
-            )
-            and is_well_behaved(statement) then
-          any_well_behaved_statements = true
-          goto skip_remaining_statements
-        end
-      end
-      ::skip_remaining_statements::
-      if any_well_behaved_statements then
-        return true
-      end
-      return false
     end
 
     -- Index all implicit incoming and outgoing pseudo-edges as well.
