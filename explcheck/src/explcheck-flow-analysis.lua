@@ -510,7 +510,7 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Index an edge in an edge index.
-local function _index_edge(states, edge_index_name, index_key, edge)
+local function index_edge(states, edge_index_name, index_key, edge)
   assert(not states[edge.from.chunk.segment.location.file_number].results.stopped_early)
   assert(not states[edge.to.chunk.segment.location.file_number].results.stopped_early)
   local edge_index = states.results.edge_indexes[edge_index_name]
@@ -852,11 +852,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   end
   states.results.drew_dynamic_edges = true
 
-  -- Index an edge in an edge index.
-  local function index_edge(edge_index, index_key, edge)
-    return _index_edge(states, edge_index, index_key, edge)
-  end
-
   -- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
   -- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
   local function is_interesting(chunk, macro_statement_number)
@@ -954,8 +949,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
     for _, edges in ipairs(edge_lists) do
       for _, edge in ipairs(edges) do
-        index_edge('explicit_in', 'to', edge)
-        index_edge('explicit_out', 'from', edge)
+        index_edge(states, 'explicit_in', 'to', edge)
+        index_edge(states, 'explicit_out', 'from', edge)
       end
     end
 
@@ -987,8 +982,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 },
                 confidence = edge_confidence,
               }
-              index_edge('implicit_in', 'to', edge)
-              index_edge('implicit_out', 'from', edge)
+              index_edge(states, 'implicit_in', 'to', edge)
+              index_edge(states, 'implicit_out', 'from', edge)
             end
             previous_interesting_statement_number = statement_number
             edge_confidence = DEFINITELY
@@ -1446,6 +1441,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   end
 
   -- Record edges.
+  states.results.edge_indexes.function_call = {}
   for _, edge in ipairs(current_function_call_edges) do
     local results = states[edge.from.chunk.segment.location.file_number].results
     assert(results.edges ~= nil)
@@ -1453,6 +1449,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       results.edges[DYNAMIC] = {}
     end
     table.insert(results.edges[DYNAMIC], edge)
+    index_edge(states, 'function_call', 'from', edge)
   end
 end
 
@@ -1460,23 +1457,18 @@ end
 local function report_issues(states, main_file_number, _)
   local state = states[main_file_number]
 
-  local content = state.content
-  local results = state.results
-  assert(results.edges ~= nil)
-
   local issues = state.issues
 
-  -- Index an edge in an edge index.
-  local function index_edge(edge_index, index_key, edge)
-    return _index_edge(states, edge_index, index_key, edge)
-  end
-
-  -- Collect a list of well-behaved function call statements.
-  local definite_function_call_list = {}
-  -- TODO: Currently, we only consider function calls from within top-level code (`results.parts`).
-  -- Ideally, we would consider all function calls (`results.segments`) that are reachable from top-level code.
-  for _, segment in ipairs(results.parts or {}) do
+  -- Report calling an undefined function.
+  --
+  -- TODO: Currently, we only consider function calls from within top-level code (`state.results.parts`).
+  -- Ideally, we would consider all function calls (`state.results.segments`) that are reachable from top-level code.
+  for part_number, segment in ipairs(state.results.parts or {}) do
+    assert(part_number == segment.location.part_number)
+    local tokens = state.results.tokens[part_number]
+    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
     for _, chunk in ipairs(segment.chunks or {}) do
+      local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
       for statement_number, statement in chunk.statement_range:enumerate(segment.macro_statements) do
         if statement.type ~= FUNCTION_CALL then
           goto next_statement
@@ -1487,65 +1479,39 @@ local function report_issues(states, main_file_number, _)
         if not is_well_behaved(statement) then
           goto next_statement
         end
-        -- Do not check statements originating from files that did not reach the flow analysis.
+
+        assert(not is_macro_statement(statement))
+
+        -- Get the byte range of the current statement.
+        local function get_byte_range()
+          local token_range = call_range_to_token_range(statement.call_range)
+          local byte_range = token_range_to_byte_range(token_range)
+
+          return byte_range
+        end
+
         assert(statement.definition_file_numbers ~= nil)
         assert(#statement.definition_file_numbers > 0)
         local all_definitions_reached_flow_analysis = true
         for _, file_number in ipairs(statement.definition_file_numbers) do
+          -- Do not check statements originating from files that did not reach the flow analysis.
           if states[file_number].results.stopped_early then
             all_definitions_reached_flow_analysis = false
             break
           end
         end
         if all_definitions_reached_flow_analysis then
-          table.insert(definite_function_call_list, {chunk, statement_number})
+          if states.results.edge_indexes.function_call[chunk] == nil or
+              states.results.edge_indexes.function_call[chunk][statement_number] == nil then
+            local formatted_csname = format_csname(statement.used_csname)
+            local byte_range = get_byte_range()
+            issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
+          else
+            assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
+          end
         end
         ::next_statement::
       end
-    end
-  end
-
-  -- Collect a list of function call edges.
-  states.results.edge_indexes.function_call = {}
-  for _, edge in ipairs(results.edges[DYNAMIC] or {}) do
-    if edge.type == FUNCTION_CALL then
-      index_edge('function_call', 'from', edge)
-    end
-  end
-
-  -- Get the byte range of a regular (non-macro) statement.
-  local function statement_to_byte_range(chunk, statement_number)
-    local segment = chunk.segment
-    assert(segment.location.file_number == main_file_number)
-
-    local part_number = segment.location.part_number
-
-    local tokens = results.tokens[part_number]
-
-    local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
-    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
-
-    local statement = get_statement(states, chunk, statement_number)
-    assert(not is_macro_statement(statement))
-
-    local token_range = call_range_to_token_range(statement.call_range)
-    local byte_range = token_range_to_byte_range(token_range)
-
-    return byte_range
-  end
-
-  -- Report calling an undefined function.
-  for _, chunk_and_statement_number in ipairs(definite_function_call_list) do
-    local chunk, statement_number = table.unpack(chunk_and_statement_number)
-    if states.results.edge_indexes.function_call[chunk] == nil or
-        states.results.edge_indexes.function_call[chunk][statement_number] == nil then
-      local statement = get_statement(states, chunk, statement_number)
-      local byte_range = statement_to_byte_range(chunk, statement_number)
-      local csname = statement.used_csname
-
-      issues:add("e505", "calling an undefined function", byte_range, format_csname(csname.transcript))
-    else
-      assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
     end
   end
 end
