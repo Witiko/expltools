@@ -910,7 +910,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   local max_reaching_definition_inner_loops = get_option('max_reaching_definition_inner_loops', options)
   local max_reaching_definition_outer_loops = get_option('max_reaching_definition_outer_loops', options)
   local outer_loop_number = 1
-  while true do
+  repeat
     -- Guard against long (infinite?) loops.
     if outer_loop_number > max_reaching_definition_outer_loops then
       error(
@@ -1302,143 +1302,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     outer_loop_number = outer_loop_number + 1
-
-    if not any_edges_changed(previous_function_call_edges, current_function_call_edges) then
-      -- After the last outer-loop iteration, report any issues that require the knowledge of the reaching definitions
-      -- and not just the resulting edges before we have freed the corresponding variables.
-      for _, state in ipairs(states) do
-        -- Skip statements from files in the current file group that haven't reached the flow analysis.
-        if state.results.stopped_early then
-          goto next_file
-        end
-        local issues = state.issues
-        local imported_prefixes = get_option('imported_prefixes', options, state.pathname)
-        local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
-        local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
-        for _, segment in ipairs(state.results.segments or {}) do
-          local part_number = segment.location.part_number
-          local tokens = state.results.tokens[part_number]
-          local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
-          for _, chunk in ipairs(segment.chunks or {}) do
-            local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
-            for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
-              if macro_statement.type ~= FUNCTION_DEFINITIONS then
-                goto next_macro_statement
-              end
-              for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
-                assert(not is_macro_statement(statement))
-                if statement.confidence ~= DEFINITELY then
-                  goto next_statement
-                end
-
-                -- Get the byte range of the current statement.
-                local function get_byte_range()
-                  local token_range = call_range_to_token_range(statement.call_range)
-                  local byte_range = token_range_to_byte_range(token_range)
-
-                  return byte_range
-                end
-
-                -- Get definitions for a given control sequence name that reach the current statement.
-                local function get_reaching_definitions(csname)
-                  local incoming_definition_list, incoming_definition_index
-                    = get_incoming_definitions(states, chunk, macro_statement_number)
-                  local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
-                    states, chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, statement_number - 1)
-
-                  local definition_lists = {incoming_definition_list, current_definition_list}
-                  local definition_indexes = {incoming_definition_index[csname] or {}, current_definition_index[csname] or {}}
-                  local current_definition_list_number, current_definition_number = 1, 1
-
-                  return function()
-                    while true do
-                      if current_definition_list_number > #definition_lists then
-                        return nil
-                      end
-                      local definition_list = definition_lists[current_definition_list_number]
-                      local definition_index = definition_indexes[current_definition_list_number]
-                      if current_definition_number > #definition_index then
-                        current_definition_list_number = current_definition_list_number + 1
-                        current_definition_number = 1
-                        goto continue
-                      end
-                      local definition_number = definition_index[current_definition_number]
-                      current_definition_number = current_definition_number + 1
-                      local definition = definition_list[definition_number]
-                      local other_statement
-                        = get_statement(states, definition.chunk, definition.macro_statement_number, definition.statement_number)
-                      if not invalidated_statement_index[other_statement] then
-                        return definition
-                      end
-                      ::continue::
-                    end
-                  end
-                end
-
-                -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
-                local function any_definite_reaching_definitions(csname)
-                  if lpeg.match(expl3_well_known_csname, csname) ~= nil then
-                    -- Always consider definitions for well-known expl3 control sequence names to be reaching.
-                    return true
-                  end
-                  for definition in get_reaching_definitions(csname) do
-                    assert(definition.csname == csname)
-                    assert(definition.macro_statement_number <= macro_statement_number)
-                    if definition.macro_statement_number == macro_statement_number then
-                      assert(definition.statement_number < statement_number)
-                    end
-                    if definition.confidence == DEFINITELY then
-                      return true
-                    end
-                  end
-                end
-
-                if (
-                      statement.type == FUNCTION_VARIANT_DEFINITION or
-                      statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
-                    ) and statement.base_csname.type == TEXT then
-                  local base_csname = statement.base_csname.payload
-                  if not any_definite_reaching_definitions(base_csname) then
-                    local formatted_csname = format_csname(base_csname)
-                    local byte_range = get_byte_range()
-
-                    -- Report function variants for an undefined function.
-                    if statement.type == FUNCTION_VARIANT_DEFINITION then
-                      issues:add("e504", "function variant for an undefined function", byte_range, formatted_csname)
-                    -- Report indirect function definitions from an undefined function.
-                    elseif statement.type == FUNCTION_DEFINITION then
-                      assert(statement.subtype == FUNCTION_DEFINITION_INDIRECT)
-                      issues:add("e506", "indirect function definition from an undefined function", byte_range, formatted_csname)
-                    else
-                      error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
-                    end
-                  end
-                end
-
-                -- Report setting a function before definition.
-                if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT
-                    -- TODO: Currently, we only consider function calls from within top-level code (`segment.nesting_depth == 1`).
-                    -- Ideally, we would consider all function calls that are reachable from top-level code.
-                    and segment.nesting_depth == 1 then
-                  local defined_csname = statement.defined_csname.payload
-                  if not any_definite_reaching_definitions(defined_csname) then
-                    local formatted_csname = format_csname(defined_csname)
-                    local byte_range = get_byte_range()
-                    issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
-                  end
-                end
-
-                ::next_statement::
-              end
-              ::next_macro_statement::
-            end
-          end
-        end
-        ::next_file::
-      end
-      break
-    end
-  end
+  until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record edges.
   states.results.edge_indexes.function_call = {}
@@ -1454,64 +1318,177 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 end
 
 -- Report any issues.
-local function report_issues(states, main_file_number, _)
+local function report_issues(states, main_file_number, options)
   local state = states[main_file_number]
 
   local issues = state.issues
 
-  -- Report calling an undefined function.
-  --
-  -- TODO: Currently, we only consider function calls from within top-level code (`state.results.parts`).
-  -- Ideally, we would consider all function calls (`state.results.segments`) that are reachable from top-level code.
-  for part_number, segment in ipairs(state.results.parts or {}) do
-    assert(part_number == segment.location.part_number)
+  local imported_prefixes = get_option('imported_prefixes', options, state.pathname)
+  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
+  local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
+
+  for _, segment in ipairs(state.results.segments or {}) do
+    local part_number = segment.location.part_number
     local tokens = state.results.tokens[part_number]
     local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
     for _, chunk in ipairs(segment.chunks or {}) do
       local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
-      for statement_number, statement in chunk.statement_range:enumerate(segment.macro_statements) do
-        if statement.type ~= FUNCTION_CALL then
-          goto next_statement
-        end
-        if statement.confidence ~= DEFINITELY then
-          goto next_statement
-        end
-        if not is_well_behaved(statement) then
-          goto next_statement
-        end
+      for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
+        -- Report issues with function (variant) (un)definitions.
+        if macro_statement.type == FUNCTION_DEFINITIONS then
+          for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
+            assert(not is_macro_statement(statement))
+            if statement.confidence ~= DEFINITELY then
+              goto next_statement
+            end
 
-        assert(not is_macro_statement(statement))
+            -- Get the byte range of the current statement.
+            local function get_byte_range()
+              local token_range = call_range_to_token_range(statement.call_range)
+              local byte_range = token_range_to_byte_range(token_range)
 
-        -- Get the byte range of the current statement.
-        local function get_byte_range()
-          local token_range = call_range_to_token_range(statement.call_range)
-          local byte_range = token_range_to_byte_range(token_range)
+              return byte_range
+            end
 
-          return byte_range
-        end
+            -- Get definitions for a given control sequence name that reach the current statement.
+            local function get_reaching_definitions(csname)
+              local incoming_definition_list, incoming_definition_index
+                = get_incoming_definitions(states, chunk, macro_statement_number)
+              local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
+                states, chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, statement_number - 1)
 
-        assert(statement.definition_file_numbers ~= nil)
-        assert(#statement.definition_file_numbers > 0)
-        local all_definitions_reached_flow_analysis = true
-        for _, file_number in ipairs(statement.definition_file_numbers) do
-          -- Do not check statements originating from files that did not reach the flow analysis.
-          if states[file_number].results.stopped_early then
-            all_definitions_reached_flow_analysis = false
-            break
+              local definition_lists = {incoming_definition_list, current_definition_list}
+              local definition_indexes = {incoming_definition_index[csname] or {}, current_definition_index[csname] or {}}
+              local current_definition_list_number, current_definition_number = 1, 1
+
+              return function()
+                while true do
+                  if current_definition_list_number > #definition_lists then
+                    return nil
+                  end
+                  local definition_list = definition_lists[current_definition_list_number]
+                  local definition_index = definition_indexes[current_definition_list_number]
+                  if current_definition_number > #definition_index then
+                    current_definition_list_number = current_definition_list_number + 1
+                    current_definition_number = 1
+                    goto continue
+                  end
+                  local definition_number = definition_index[current_definition_number]
+                  current_definition_number = current_definition_number + 1
+                  local definition = definition_list[definition_number]
+                  local other_statement
+                    = get_statement(states, definition.chunk, definition.macro_statement_number, definition.statement_number)
+                  if not invalidated_statement_index[other_statement] then
+                    return definition
+                  end
+                  ::continue::
+                end
+              end
+            end
+
+            -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
+            local function any_definite_reaching_definitions(csname)
+              if lpeg.match(expl3_well_known_csname, csname) ~= nil then
+                -- Always consider definitions for well-known expl3 control sequence names to be reaching.
+                return true
+              end
+              for definition in get_reaching_definitions(csname) do
+                assert(definition.csname == csname)
+                assert(definition.macro_statement_number <= macro_statement_number)
+                if definition.macro_statement_number == macro_statement_number then
+                  assert(definition.statement_number < statement_number)
+                end
+                if definition.confidence == DEFINITELY then
+                  return true
+                end
+              end
+            end
+
+            if (
+                  statement.type == FUNCTION_VARIANT_DEFINITION or
+                  statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+                ) and statement.base_csname.type == TEXT then
+              local base_csname = statement.base_csname.payload
+              if not any_definite_reaching_definitions(base_csname) then
+                local formatted_csname = format_csname(base_csname)
+                local byte_range = get_byte_range()
+
+                -- Report function variants for an undefined function.
+                if statement.type == FUNCTION_VARIANT_DEFINITION then
+                  issues:add("e504", "function variant for an undefined function", byte_range, formatted_csname)
+                -- Report indirect function definitions from an undefined function.
+                elseif statement.type == FUNCTION_DEFINITION then
+                  assert(statement.subtype == FUNCTION_DEFINITION_INDIRECT)
+                  issues:add("e506", "indirect function definition from an undefined function", byte_range, formatted_csname)
+                else
+                  error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+                end
+              end
+            end
+
+            -- Report setting a function before definition.
+            if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT
+                -- TODO: Currently, we only consider function calls from within top-level code (`segment.nesting_depth == 1`).
+                -- Ideally, we would consider all function calls that are reachable from top-level code.
+                and segment.nesting_depth == 1 then
+              local defined_csname = statement.defined_csname.payload
+              if not any_definite_reaching_definitions(defined_csname) then
+                local formatted_csname = format_csname(defined_csname)
+                local byte_range = get_byte_range()
+                issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
+              end
+            end
+
+            ::next_statement::
+          end
+        -- Report calling an undefined function.
+        elseif macro_statement.type == FUNCTION_CALL then
+          local statement_number, statement = macro_statement_number, macro_statement
+          assert(not is_macro_statement(statement))
+
+          -- TODO: Currently, we only consider function calls from within top-level code (`segment.nesting_depth == 1`).
+          -- Ideally, we would consider all function calls that are reachable from top-level code.
+          if segment.nesting_depth > 1 then
+            goto next_macro_statement
+          end
+          if statement.confidence ~= DEFINITELY then
+            goto next_macro_statement
+          end
+          if not is_well_behaved(statement) then
+            goto next_macro_statement
+          end
+
+          -- Get the byte range of the current statement.
+          local function get_byte_range()
+            local token_range = call_range_to_token_range(statement.call_range)
+            local byte_range = token_range_to_byte_range(token_range)
+
+            return byte_range
+          end
+
+          assert(statement.definition_file_numbers ~= nil)
+          assert(#statement.definition_file_numbers > 0)
+          local all_definitions_reached_flow_analysis = true
+          for _, file_number in ipairs(statement.definition_file_numbers) do
+            -- Do not check statements originating from files that did not reach the flow analysis.
+            if states[file_number].results.stopped_early then
+              all_definitions_reached_flow_analysis = false
+              break
+            end
+          end
+          if all_definitions_reached_flow_analysis then
+            if states.results.edge_indexes.function_call[chunk] == nil or
+                states.results.edge_indexes.function_call[chunk][statement_number] == nil then
+              local formatted_csname = format_csname(statement.used_csname)
+              local byte_range = get_byte_range()
+              issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
+            else
+              assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
+            end
           end
         end
-        if all_definitions_reached_flow_analysis then
-          if states.results.edge_indexes.function_call[chunk] == nil or
-              states.results.edge_indexes.function_call[chunk][statement_number] == nil then
-            local formatted_csname = format_csname(statement.used_csname)
-            local byte_range = get_byte_range()
-            issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
-          else
-            assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
-          end
-        end
-        ::next_statement::
       end
+      ::next_macro_statement::
     end
   end
 end
