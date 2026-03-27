@@ -648,30 +648,6 @@ end
 -- Determine the definitions and undefinitions from the current statement.
 local function get_current_definitions(
     states, chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, max_statement_number)
-
-  local segment = chunk.segment
-  local file_number = segment.location.file_number
-  local state = states[file_number]
-
-  local issues = state.issues
-
-  -- Get the byte range of a regular (non-macro) statement.
-  local function statement_to_byte_range(statement_number)
-    local part_number = segment.location.part_number
-    local tokens = state.results.tokens[part_number]
-
-    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #state.content)
-    local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
-
-    local statement = get_statement(states, chunk, macro_statement_number, statement_number)
-    assert(not is_macro_statement(statement))
-
-    local token_range = call_range_to_token_range(statement.call_range)
-    local byte_range = token_range_to_byte_range(token_range)
-
-    return byte_range
-  end
-
   local current_definition_list, current_definition_index = {}, {}
   local invalidated_statement_index = {}
   if macro_statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
@@ -733,23 +709,6 @@ local function get_current_definitions(
             )
             assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
             if incoming_statement ~= statement and not invalidated_statement_index[incoming_statement] then
-              if incoming_statement.type == FUNCTION_DEFINITION and not incoming_statement.maybe_redefinition
-                  or incoming_statement.type == FUNCTION_VARIANT_DEFINITION then
-                if statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition
-                    or statement.type == FUNCTION_VARIANT_DEFINITION then
-                  local byte_range = statement_to_byte_range(statement_number)
-                  local formatted_csname = format_csname(defined_or_undefined_csname)
-                  -- Report a multiply defined function.
-                  if statement.type == FUNCTION_DEFINITION then
-                    issues:add("e500", "multiply defined function", byte_range, formatted_csname)
-                  -- Report a multiply defined function variant.
-                  elseif statement.type == FUNCTION_VARIANT_DEFINITION then
-                    issues:add("w501", "multiply defined function variant", byte_range, formatted_csname)
-                  else
-                    error('Unexpected statement type "' .. statement.type .. '"')
-                  end
-                end
-              end
               invalidated_statement_index[incoming_statement] = true
             end
           end
@@ -1387,19 +1346,60 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
-            local function any_definite_reaching_definitions(csname)
-              if lpeg.match(expl3_well_known_csname, csname) ~= nil then
-                -- Always consider definitions for well-known expl3 control sequence names to be reaching.
-                return true
-              end
+            local function any_definite_reaching_definitions(csname, check_definition)
               for definition in get_reaching_definitions(csname) do
                 assert(definition.csname == csname)
                 assert(definition.macro_statement_number <= macro_statement_number)
                 if definition.macro_statement_number == macro_statement_number then
                   assert(definition.statement_number < statement_number)
                 end
-                if definition.confidence == DEFINITELY then
+                if definition.confidence ~= DEFINITELY then
+                  goto next_definition
+                end
+                if check_definition ~= nil then
+                  local other_statement = get_statement(
+                    states,
+                    definition.chunk,
+                    definition.macro_statement_number,
+                    definition.statement_number
+                  )
+                  if check_definition(definition, other_statement) then
+                    return true
+                  else
+                    goto next_definition
+                  end
+                else
                   return true
+                end
+                ::next_definition::
+              end
+            end
+
+            if (
+                  statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition or
+                  statement.type == FUNCTION_VARIANT_DEFINITION
+                ) and statement.defined_csname.type == TEXT then
+              local defined_csname = statement.defined_csname.payload
+              if any_definite_reaching_definitions(
+                    defined_csname,
+                    function(_, other_statement)
+                      return (
+                        other_statement.type == FUNCTION_DEFINITION and not other_statement.maybe_redefinition or
+                        other_statement.type == FUNCTION_VARIANT_DEFINITION
+                      )
+                    end
+                  ) then
+                local formatted_csname = format_csname(defined_csname)
+                local byte_range = get_byte_range()
+
+                -- Report a multiply defined function.
+                if statement.type == FUNCTION_DEFINITION then
+                  issues:add("e500", "multiply defined function", byte_range, formatted_csname)
+                -- Report a multiply defined function variant.
+                elseif statement.type == FUNCTION_VARIANT_DEFINITION then
+                  issues:add("w501", "multiply defined function variant", byte_range, formatted_csname)
+                else
+                  error('Unexpected statement type "' .. statement.type .. '"')
                 end
               end
             end
@@ -1409,7 +1409,8 @@ local function report_issues(states, main_file_number, options)
                   statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
                 ) and statement.base_csname.type == TEXT then
               local base_csname = statement.base_csname.payload
-              if not any_definite_reaching_definitions(base_csname) then
+              if lpeg.match(expl3_well_known_csname, base_csname) == nil and
+                  not any_definite_reaching_definitions(base_csname) then
                 local formatted_csname = format_csname(base_csname)
                 local byte_range = get_byte_range()
 
@@ -1432,7 +1433,8 @@ local function report_issues(states, main_file_number, options)
                 -- Ideally, we would consider all function calls that are reachable from top-level code.
                 and segment.nesting_depth == 1 then
               local defined_csname = statement.defined_csname.payload
-              if not any_definite_reaching_definitions(defined_csname) then
+              if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
+                  not any_definite_reaching_definitions(defined_csname) then
                 local formatted_csname = format_csname(defined_csname)
                 local byte_range = get_byte_range()
                 issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
