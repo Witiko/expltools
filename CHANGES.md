@@ -26,6 +26,8 @@ integration:
 
 - Update regression baselines from TeX Live 2024 to 2025. (f57c0080..e0ce50c4)
 - Test TeX Live 2026. (c578802e)
+- Disable caching in the `zauguin/install-texlive` action.
+  (added by @zauguin in zauguin/install-texlive#128 and 611fde4)
 
 ## expltools 2026-03-13
 

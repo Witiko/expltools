@@ -30,9 +30,9 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install lua-language-server
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4
+        uses: zauguin/install-texlive@v4.2
         with:
-          cache_version: ${{ github.run_id }}
+          cache: false
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
@@ -80,9 +80,9 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4
+        uses: zauguin/install-texlive@v4.2
         with:
-          cache_version: ${{ github.run_id }}
+          cache: false
           packages: |
             l3build
             luatex
@@ -114,9 +114,9 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4
+        uses: zauguin/install-texlive@v4.2
         with:
-          cache_version: ${{ github.run_id }}
+          cache: false
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
@@ -279,16 +279,16 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends parallel
       - name: "Install TeX Live: Basic packages"
-        uses: zauguin/install-texlive@v4
+        uses: zauguin/install-texlive@v4.2
         with:
-          cache_version: ${{ github.run_id }}
+          cache: false
           packages: |
             scheme-basic
             l3build
       - name: "Install TeX Live: Dependencies"
-        uses: zauguin/install-texlive@v4
+        uses: zauguin/install-texlive@v4.2
         with:
-          cache_version: ${{ github.run_id }}
+          cache: false
           package_file: |
             explcheck/support/DEPENDS.txt
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
@@ -324,9 +324,9 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4
+        uses: zauguin/install-texlive@v4.2
         with:
-          cache_version: ${{ github.run_id }}
+          cache: false
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
