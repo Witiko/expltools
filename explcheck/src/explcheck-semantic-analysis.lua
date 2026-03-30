@@ -874,6 +874,7 @@ local function collect_statements(states, file_number, options)
                   map_forward = map_forward,
                 },
               }
+              nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
               table.insert(results.segments, nested_segment)
               replacement_text_argument.segment_number = #results.segments
               nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)

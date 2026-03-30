@@ -1000,30 +1000,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
 
-    -- Pop a changed statement off the top of stack.
-    local function pop_changed_statement()
-      -- Pick a statement from the stack of changed statements.
-      local chunk_statements = changed_statements_list[#changed_statements_list]
-      local chunk = chunk_statements.chunk
-      local statement_numbers_list = chunk_statements.statement_numbers_list
-      local statement_numbers_index = chunk_statements.statement_numbers_index
-      assert(#statement_numbers_list > 0)
-      local statement_number = statement_numbers_list[#statement_numbers_list]
-
-      -- Remove the statement from the stack.
-      if #statement_numbers_list > 1 then
-        -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
-        table.remove(statement_numbers_list)
-        statement_numbers_index[statement_number] = nil
-      else
-        -- Otherwise, remove the chunk from the stack as well.
-        table.remove(changed_statements_list)
-        changed_statements_index[chunk] = nil
-      end
-
-      return chunk, statement_number
-    end
-
     -- Add a changed statement on the top of the stack.
     local function add_changed_statement(chunk, statement_number)
       -- Get the stack of statements for the given chunk, inserting it if it doesn't exist.
@@ -1047,6 +1023,30 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         table.insert(statement_numbers_list, statement_number)
         statement_numbers_index[statement_number] = #statement_numbers_list
       end
+    end
+
+    -- Pop a changed statement off the top of stack.
+    local function pop_changed_statement()
+      -- Pick a statement from the stack of changed statements.
+      local chunk_statements = changed_statements_list[#changed_statements_list]
+      local chunk = chunk_statements.chunk
+      local statement_numbers_list = chunk_statements.statement_numbers_list
+      local statement_numbers_index = chunk_statements.statement_numbers_index
+      assert(#statement_numbers_list > 0)
+      local statement_number = statement_numbers_list[#statement_numbers_list]
+
+      -- Remove the statement from the stack.
+      if #statement_numbers_list > 1 then
+        -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
+        table.remove(statement_numbers_list)
+        statement_numbers_index[statement_number] = nil
+      else
+        -- Otherwise, remove the chunk from the stack as well.
+        table.remove(changed_statements_list)
+        changed_statements_index[chunk] = nil
+      end
+
+      return chunk, statement_number
     end
 
     for _, chunk_and_statement_number in ipairs(function_definition_list) do
@@ -1276,6 +1276,91 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   end
 end
 
+-- For each segment, determine the minimum reaching nesting depth from other segments.
+local function determine_min_reaching_nesting_depth(states, _, _)
+  -- Determine the minimum reaching nesting depth once for all files in the file group, not just individual files.
+  if states.results.determined_min_reaching_nesting_depth ~= nil then
+    return
+  end
+  states.results.determined_min_reaching_nesting_depth = true
+
+  local changed_segment_list, changed_segment_index = {}, {}
+
+  -- Add a changed segment on the top of the stack.
+  local function add_changed_segment(segment)
+    if changed_segment_index[segment] == nil then
+      table.insert(changed_segment_list, segment)
+      changed_segment_index[segment] = true
+    end
+  end
+
+  -- Pop a changed segment off the top of stack.
+  local function pop_changed_segment()
+    local segment = table.remove(changed_segment_list)
+    changed_segment_index[segment] = nil
+    return segment
+  end
+
+  -- Collect all segments with incoming or outgoing edges and index all these edges.
+  local incoming_edge_index, outgoing_edge_index = {}, {}
+  for _, state in ipairs(states) do
+    -- Skip statements from files in the current file group that haven't reached the flow analysis.
+    if state.results.stopped_early then
+      goto next_file
+    end
+    local edge_category_list = {}
+    for edge_category, _ in pairs(state.results.edges or {}) do
+      table.insert(edge_category_list, edge_category)
+    end
+    table.sort(edge_category_list)
+    for _, edge_category in ipairs(edge_category_list) do
+      local edges = state.results.edges[edge_category]
+      for _, edge in ipairs(edges) do
+        -- Collect the segments with incoming or outgoing edges.
+        for _, segment in ipairs({edge.from.chunk.segment, edge.to.chunk.segment}) do
+          add_changed_segment(segment)
+        end
+        -- Index the edges.
+        for _, segments_and_edge_index in ipairs({
+              {edge.to.chunk.segment, edge.from.chunk.segment, incoming_edge_index},
+              {edge.from.chunk.segment, edge.to.chunk.segment, outgoing_edge_index},
+            }) do
+          local from_segment, to_segment, edge_index = table.unpack(segments_and_edge_index)
+          if edge_index[from_segment] == nil then
+            edge_index[from_segment] = {}
+          end
+          if edge_index[from_segment][to_segment] == nil then
+            table.insert(edge_index[from_segment], to_segment)
+            edge_index[from_segment][to_segment] = true
+          end
+        end
+      end
+    end
+    ::next_file::
+  end
+
+  -- Iterate over the changed statements until convergence.
+  while #changed_segment_list > 0 do
+    -- Pick a sedgment from the stack of changed segments.
+    local segment = pop_changed_segment()
+
+    -- Determine the incoming minimum reaching nesting depth.
+    local min_reaching_nesting_depth = segment.min_reaching_nesting_depth
+    for _, incoming_segment in ipairs(incoming_edge_index[segment] or {}) do
+      min_reaching_nesting_depth = math.min(min_reaching_nesting_depth, incoming_segment.min_reaching_nesting_depth)
+    end
+
+    -- Update the current minimum reaching nesting depth.
+    if min_reaching_nesting_depth < segment.min_reaching_nesting_depth then
+      segment.min_reaching_nesting_depth = min_reaching_nesting_depth
+      -- If there was an update, mark all outgoing segments as changed.
+      for _, outgoing_segment in ipairs(outgoing_edge_index[segment] or {}) do
+        add_changed_segment(outgoing_segment)
+      end
+    end
+  end
+end
+
 -- Report any issues.
 local function report_issues(states, main_file_number, options)
   local state = states[main_file_number]
@@ -1429,9 +1514,9 @@ local function report_issues(states, main_file_number, options)
 
             -- Report setting a function before definition.
             if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT
-                -- TODO: Currently, we only consider function calls from within top-level code (`segment.nesting_depth == 1`).
-                -- Ideally, we would consider all function calls that are reachable from top-level code.
-                and segment.nesting_depth == 1 then
+                -- Only consider function calls reachable from top-level code. Otherwise, the calls are part of either dead code
+                -- or library functions and we can't accurately determine the reaching definitions.
+                and segment.min_reaching_nesting_depth == 1 then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
                   not any_definite_reaching_definitions(defined_csname) then
@@ -1448,9 +1533,9 @@ local function report_issues(states, main_file_number, options)
           local statement_number, statement = macro_statement_number, macro_statement
           assert(not is_macro_statement(statement))
 
-          -- TODO: Currently, we only consider function calls from within top-level code (`segment.nesting_depth == 1`).
-          -- Ideally, we would consider all function calls that are reachable from top-level code.
-          if segment.nesting_depth > 1 then
+          -- Only consider function calls reachable from top-level code. Otherwise, the calls are part of either dead code
+          -- or library functions and we can't accurately determine the reaching definitions.
+          if segment.min_reaching_nesting_depth > 1 then
             goto next_macro_statement
           end
           if statement.confidence ~= DEFINITELY then
@@ -1500,6 +1585,9 @@ local function cleanup(states, _, _)
   -- Remove group-wide intermediate results.
   states.results.edge_indexes = nil
   states.results.reaching_definitions = nil
+  states.results.drew_static_edges = nil
+  states.results.drew_dynamic_edges = nil
+  states.results.determined_min_reaching_nesting_depth = nil
 end
 
 local substeps = {
@@ -1508,6 +1596,7 @@ local substeps = {
   draw_file_local_static_edges,
   draw_group_wide_static_edges,
   draw_group_wide_dynamic_edges,
+  determine_min_reaching_nesting_depth,
   report_issues,
   cleanup,
 }
