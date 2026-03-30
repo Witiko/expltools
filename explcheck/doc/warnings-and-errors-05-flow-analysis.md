@@ -3,7 +3,7 @@ In the flow analysis step, the expl3 analysis tool determines compiler-theoretic
 
 ## Functions and conditional functions
 
-### Multiply defined function {.e}
+### Multiply defined function {.e label=e500}
 A function or conditional function is defined multiple times.
 
  /e500-01.tex
@@ -13,33 +13,13 @@ A function or conditional function is defined multiple times.
  /e500-05.tex
  /e500-06.tex
 
-<!--
-
-  We can't really report this issue from the `FUNCTION_CALL` edges alone.
-
-  Instead, we will need to report this issue either inside the inner loop
-  of reaching definitions whenever we are processing a function definition
-  statement or after the outer loop at the end of the function
-  `draw_group_wide_dynamic_edges()`.
-
-  We need to take into account the `maybe_redefinition` attribute of
-  `FUNCTION_DEFINITION` statements to differentiate between `new` and `set`.
-
--->
-
-### Multiply defined function variant {.w}
+### Multiply defined function variant {.w label=w501}
 A function or conditional function variant is defined multiple times.
 
  /w501-01.tex
  /w501-02.tex
  /w501-03.tex
  /w501-04.tex
-
-<!--
-
-  The same considerations apply as for the previous issue (E500).
-
--->
 
 ### Unused private function {.w}
 A private function or conditional function is defined but unused.
@@ -72,7 +52,7 @@ A private function or conditional function variant is defined but unused.
 
 This check is a stronger version of <#unused-private-function-variant> and the issue should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
-### Function variant for an undefined function {.e label=e505}
+### Function variant for an undefined function {.e label=e504}
 A function or conditional function variant is defined before the base function has been defined or after it has been undefined.
 
  /e504-01.tex
@@ -82,21 +62,9 @@ A function or conditional function variant is defined before the base function h
  /e504-05.tex
  /e504-06.tex
 
-<!--
-
-  As with all the previous issues, we can't report this issue from the
-  `FUNCTION_CALL` edges alone.
-
-  Instead, we will need to report this issue either inside the inner loop
-  of reaching definitions whenever we are processing a function variant
-  definition statement or after the outer loop at the end of the function
-  `draw_group_wide_dynamic_edges()`.
-
--->
-
 This check is a stronger version of <#function-variant-for-undefined-function> and the issue should only be emitted if <#function-variant-for-undefined-function> has not previously been emitted for this function variant.
 
-### Calling an undefined function {.e}
+### Calling an undefined function {.e label=e505}
 A function or conditional function (variant) is called before it has been defined or after it has been undefined.
 
  /e505-01.tex
@@ -105,7 +73,7 @@ A function or conditional function (variant) is called before it has been define
 
 This check is a stronger version of <#calling-undefined-function> and the issue should only be emitted if <#calling-undefined-function> has not previously been emitted for this function.
 
-### Indirect function definition from an undefined function {.e}
+### Indirect function definition from an undefined function {.e label=e506}
 A function or conditional function is indirectly defined from a function that has yet to be defined or after it has been undefined.
 
  /e506-01.tex
@@ -113,25 +81,13 @@ A function or conditional function is indirectly defined from a function that ha
  /e506-03.tex
  /e506-04.tex
 
-<!--
-
-  The same considerations apply as for the issue E504.
-
--->
-
 This check is a stronger version of <#indirect-function-definition-from-undefined-function> and the issue should only be emitted if <#indirect-function-definition-from-undefined-function> has not previously been emitted for this function.
 
-### Setting a function before definition {.w}
+### Setting a function before definition {.w label=w507}
 A function is set before it has been defined or after it has been undefined.
 
  /w507-01.tex
  /w507-02.tex
-
-<!--
-
-  The same considerations apply as for the issues E504 and E506.
-
--->
 
 ### Unexpandable or restricted-expandable boolean expression {.e}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.

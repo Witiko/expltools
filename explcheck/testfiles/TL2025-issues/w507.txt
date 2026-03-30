@@ -1,0 +1,7 @@
+/usr/local/texlive/2025/texmf-dist/tex/latex/antanilipsum/antanilipsum.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/bookmark/bookmark.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/dataref/dataref.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/econlipsum/econlipsum.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/nameref.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/linguistix/linguistix-greek.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/powerdot/powerdot.cls

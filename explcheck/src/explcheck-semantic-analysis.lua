@@ -762,7 +762,8 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               is_private = is_function_private(base_csname),
               is_conditional = is_conditional,
-              maybe_called = false,
+              maybe_used = false,
+              maybe_multiply_defined = false,
             }
             table.insert(statements, statement)
           end
@@ -873,6 +874,7 @@ local function collect_statements(states, file_number, options)
                   map_forward = map_forward,
                 },
               }
+              nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
               table.insert(results.segments, nested_segment)
               replacement_text_argument.segment_number = #results.segments
               nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
@@ -924,7 +926,8 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = definition_token_range,
-                maybe_called = false,
+                maybe_used = false,
+                maybe_multiply_defined = false,
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
                 is_protected = is_protected,
@@ -1000,7 +1003,8 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = token_range,
-                maybe_called = false,
+                maybe_used = false,
+                maybe_multiply_defined = false,
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
                 is_conditional = is_conditional,
@@ -1035,7 +1039,7 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             undefined_csname = undefined_csname,
             undefined_csname_argument = undefined_csname_argument,
-            maybe_called = false,
+            maybe_used = false,
           }
           table.insert(statements, statement)
           goto continue
@@ -1404,6 +1408,7 @@ local function analyze_group_wide_statements(states, _, options)
 
     -- Index group-wide statements.
     function_definition_index = {},
+    non_redefined_function_and_variant_definition_and_undefinition_index = {},
   }
 
   -- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
@@ -1443,7 +1448,8 @@ local function analyze_group_wide_statements(states, _, options)
       used_message_nums_text_arguments = {},
 
       -- Index file-local statements.
-      function_call_list = {},
+      function_call_variant_definition_and_indirect_definition_list = {},
+      non_redefined_function_and_variant_definition_list = {},
     }
     for _, segment in ipairs(results.segments or {}) do
       assert(file_number == segment.location.file_number)
@@ -1705,6 +1711,16 @@ local function analyze_group_wide_statements(states, _, options)
               states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
             end
             table.insert(states.results.statement_analysis.function_definition_index[statement.defined_csname.payload], statement)
+            local non_redefined_index
+              = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
+            if non_redefined_index[statement.defined_csname.payload] == nil then
+              non_redefined_index[statement.defined_csname.payload] = {}
+            end
+            table.insert(non_redefined_index[statement.defined_csname.payload], statement)
+            table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
+          end
+          if statement.base_csname.type == TEXT then
+            table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
           end
         -- Process a function definition.
         elseif statement.type == FUNCTION_DEFINITION then
@@ -1754,6 +1770,18 @@ local function analyze_group_wide_statements(states, _, options)
               states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
             end
             table.insert(states.results.statement_analysis.function_definition_index[statement.defined_csname.payload], statement)
+            if not statement.maybe_redefined then
+              local non_redefined_index
+                = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
+              if non_redefined_index[statement.defined_csname.payload] == nil then
+                non_redefined_index[statement.defined_csname.payload] = {}
+              end
+              table.insert(non_redefined_index[statement.defined_csname.payload], statement)
+              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
+            end
+          end
+          if statement.subtype == FUNCTION_DEFINITION_INDIRECT and statement.base_csname.type == TEXT then
+            table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
           end
         -- Process a function undefinition.
         elseif statement.type == FUNCTION_UNDEFINITION then
@@ -1763,6 +1791,9 @@ local function analyze_group_wide_statements(states, _, options)
               states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload] = {}
             end
             table.insert(states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload], statement)
+            if not statement.maybe_redefined then
+              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
+            end
           end
         -- Process a variable declaration.
         elseif statement.type == VARIABLE_DECLARATION then
@@ -2098,7 +2129,9 @@ local function report_issues(states, file_number, options)
         end
       end
       -- Index the function call.
-      table.insert(results.statement_analysis.function_call_list, statement)
+      if statement.used_csname.type == TEXT then
+        table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
+      end
     end
   end
 
@@ -2278,7 +2311,7 @@ end
 
 -- Determine which function (variant) (un)definitions might actually affect any function calls in the current file group.
 -- This information is used to exclude definitely unused (un)definitions from future analyses to improve performance.
-local function determine_used_function_definitions(states, file_number, _)
+local function determine_maybe_used_function_definitions(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -2289,17 +2322,26 @@ local function determine_used_function_definitions(states, file_number, _)
   -- For each function call, first collect all relevant (potentially but not necessarily reaching) definitions to a temporary list.
   local function_and_variant_definitions_and_undefinition_list = {}
   local seen_used_csnames = {}
-  for _, statement in ipairs(results.statement_analysis.function_call_list) do
-    if statement.used_csname.type ~= TEXT then
-      goto next_statement
+  for _, statement in ipairs(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list) do
+    local used_csname
+    if statement.type == FUNCTION_CALL then
+      used_csname = statement.used_csname
+    elseif statement.type == FUNCTION_VARIANT_DEFINITION then
+      used_csname = statement.base_csname
+    elseif statement.type == FUNCTION_DEFINITION then
+      assert(statement.subtype == FUNCTION_DEFINITION_INDIRECT)
+      used_csname = statement.base_csname
+    else
+      error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
     end
-    local used_csname = statement.used_csname.payload
+    assert(used_csname ~= nil)
+    assert(used_csname.type == TEXT)
     -- Do not repeatedly check the same calls.
-    if seen_used_csnames[used_csname] ~= nil then
+    if seen_used_csnames[used_csname.payload] ~= nil then
       goto next_statement
     end
-    seen_used_csnames[used_csname] = true
-    local other_statements = states.results.statement_analysis.function_definition_index[used_csname]
+    seen_used_csnames[used_csname.payload] = true
+    local other_statements = states.results.statement_analysis.function_definition_index[used_csname.payload]
     for _, other_statement in ipairs(other_statements or {}) do
       -- Do not repeatedly check the same definitions.
       if other_statement.maybe_used then
@@ -2345,19 +2387,46 @@ local function determine_used_function_definitions(states, file_number, _)
         ::next_other_statement::
       end
     else
-      error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+      error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
     end
     ::next_statement::
     statement_number = statement_number + 1
   end
 end
 
--- Remove auxiliary intermediate results to free up memory for the following processing steps.
+-- Determine which function definitions might be multiply defined.
+local function determine_maybe_multiply_defined_function_definitions(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  -- For each non-redefining function definition, check if other non-redefining definitions exist.
+  for _, statement in ipairs(results.statement_analysis.non_redefined_function_and_variant_definition_list) do
+    local defined_or_undefined_csname
+    if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+      defined_or_undefined_csname = statement.defined_csname
+    elseif statement.type == FUNCTION_UNDEFINITION then
+      defined_or_undefined_csname = statement.undefined_csname
+    else
+      error('Unexpected statement type "' .. statement.type .. '"')
+    end
+    assert(defined_or_undefined_csname ~= nil)
+    assert(defined_or_undefined_csname.type == TEXT)
+    local non_redefined_index = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
+    local other_statements = non_redefined_index[defined_or_undefined_csname.payload]
+    if other_statements ~= nil and #other_statements > 1 then
+      statement.maybe_multiply_defined = true
+    end
+  end
+end
+
+-- Remove auxiliary intermediate results to free up memory.
 local function cleanup(states, file_number, _)
   -- Remove group-wide intermediate results.
-  if states.results.statement_analysis ~= nil then
-    states.results.statement_analysis = nil
-  end
+  states.results.statement_analysis = nil
 
   -- Remove file-local intermediate results.
   local state = states[file_number]
@@ -2372,7 +2441,8 @@ local substeps = {
   collect_statements,
   analyze_group_wide_statements,
   report_issues,
-  determine_used_function_definitions,
+  determine_maybe_multiply_defined_function_definitions,
+  determine_maybe_used_function_definitions,
   cleanup,
 }
 

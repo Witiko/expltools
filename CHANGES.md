@@ -4,6 +4,23 @@
 
 ### explcheck v0.19.0
 
+#### New features
+
+This version of explcheck has implemented the following new features:
+
+- Add more support for flow analysis. (#188)
+
+  This adds support for the following issues from Section 5.1 of the document
+  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+   1. E500 (Multiply defined function)
+   2. W501 (Multiply defined function variant)
+   3. E504 (Function variant for an undefined function)
+   4. E506 (Indirect function definition from an undefined function)
+   5. W507 (Setting a function before definition)
+
+#### Continuous integration
+
 This version of explcheck has made the following changes to our continuous
 integration:
 

@@ -453,7 +453,7 @@ ignored_issues = ["e201", "e304", "e411"]
 imported_prefixes = ["chemgreek"]
 
 [package.tabular2]
-ignored_issues = ["e405", "e411"]
+ignored_issues = ["e411"]
 
 [package.robust-externalize]
 ignored_issues = ["e304", "w423"]
@@ -556,3 +556,6 @@ ignored_issues = ["e505"]
 
 [package.kantlipsum]
 ignored_issues = ["e505"]
+
+[package.novel]
+ignored_issues = ["e506"]
