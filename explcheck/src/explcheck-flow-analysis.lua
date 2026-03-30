@@ -1514,8 +1514,8 @@ local function report_issues(states, main_file_number, options)
 
             -- Report setting a function before definition.
             if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT
-                -- Only consider function calls reachable from top-level code. Otherwise, the calls are part of either dead code
-                -- or library functions and we can't accurately determine the reaching definitions.
+                -- Only consider function definitions reachable from top-level code. Otherwise, the definitions are part of either
+                -- dead code or library functions and we can't accurately determine their reaching definitions.
                 and segment.min_reaching_nesting_depth == 1 then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
@@ -1534,7 +1534,7 @@ local function report_issues(states, main_file_number, options)
           assert(not is_macro_statement(statement))
 
           -- Only consider function calls reachable from top-level code. Otherwise, the calls are part of either dead code
-          -- or library functions and we can't accurately determine the reaching definitions.
+          -- or library functions and we can't accurately determine their reaching definitions.
           if segment.min_reaching_nesting_depth > 1 then
             goto next_macro_statement
           end
