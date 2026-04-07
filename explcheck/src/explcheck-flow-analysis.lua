@@ -1541,6 +1541,7 @@ local function report_issues(states, main_file_number, options)
           if not is_well_behaved(statement) then
             goto next_macro_statement
           end
+          assert(statement.used_csname.type == TEXT)
 
           -- Get the byte range of the current statement.
           local function get_byte_range()
@@ -1563,7 +1564,7 @@ local function report_issues(states, main_file_number, options)
           if all_definitions_reached_flow_analysis then
             if states.results.edge_indexes.function_call[chunk] == nil or
                 states.results.edge_indexes.function_call[chunk][statement_number] == nil then
-              local formatted_csname = format_csname(statement.used_csname)
+              local formatted_csname = format_csname(statement.used_csname.payload)
               local byte_range = get_byte_range()
               issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
             else

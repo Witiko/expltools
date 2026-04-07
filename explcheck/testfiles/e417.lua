@@ -14,6 +14,7 @@ assert(#issues.errors == 1)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{2, 2}}
+local expected_contexts = {[[\g_example_tl]]}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e417")
   assert(err[2] == "setting a variable as a constant")
@@ -22,4 +23,5 @@ for index, err in ipairs(sort_issues(issues.errors)) do
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index][1])
   assert(end_line_number == expected_line_numbers[index][2])
+  assert(err[4] == expected_contexts[index])
 end

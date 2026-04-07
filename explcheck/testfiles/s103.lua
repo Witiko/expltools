@@ -17,6 +17,7 @@ local warnings = sort_issues(issues.warnings)
 assert(warnings[1][1] == "w100")
 assert(warnings[1][2] == "no standard delimiters")
 assert(warnings[1][3] == nil)  -- file-wide warning
+assert(warnings[1][4] == nil)
 
 assert(warnings[2][1] == "s103")
 assert(warnings[2][2] == "line too long")
@@ -25,3 +26,4 @@ local start_line_number = utils.convert_byte_to_line_and_column(results.line_sta
 local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
 assert(start_line_number == 2)
 assert(end_line_number == 2)
+assert(warnings[2][4] == "This line is overly long, because it is 81 characters long excluding the comment.")
