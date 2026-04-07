@@ -63,6 +63,7 @@ end
 
 -- Format a control sequence name as it appears in expl3 code.
 local function format_csname(csname)
+  assert(type(csname) == "string")
   return string.format("\\%s", csname)
 end
 
@@ -227,7 +228,6 @@ local function analyze(states, file_number, options)
         if catcode == 0 then  -- control sequence
           local csname_table = {}
           local csname_index = character_index + character_index_increment
-          local previous_csname_index = csname_index
           if csname_index <= #line_text then
             local csname_index_increment
             character, catcode, csname_index_increment = get_character_and_catcode(csname_index)
@@ -239,7 +239,6 @@ local function analyze(states, file_number, options)
                 character, catcode, csname_index_increment = get_character_and_catcode(csname_index)
                 if catcode == 11 then
                   table.insert(csname_table, character)
-                  previous_csname_index = csname_index
                   csname_index = csname_index + csname_index_increment
                 else
                   break
@@ -252,7 +251,7 @@ local function analyze(states, file_number, options)
             end
           end
           local csname = table.concat(csname_table)
-          range = new_range(character_index, previous_csname_index, INCLUSIVE, #line_text, map_back, #content)
+          range = new_range(character_index, csname_index, EXCLUSIVE, #line_text, map_back, #content)
           table.insert(tokens, {
             type = CONTROL_SEQUENCE,
             payload = csname,
@@ -394,7 +393,6 @@ local function report_issues(states, file_number, options)  -- luacheck: ignore 
   local state = states[file_number]
 
   local pathname = state.pathname
-  local content = state.content
   local issues = state.issues
   local results = state.results
 
@@ -407,14 +405,14 @@ local function report_issues(states, file_number, options)  -- luacheck: ignore 
         local _, _, argument_specifiers = token.payload:find(":([^:]*)")
         if argument_specifiers ~= nil then
           if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
-            issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_token(token, content))
+            issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_csname(token.payload))
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
-            issues:add('e201', 'unknown argument specifiers', token.byte_range, format_token(token, content))
+            issues:add('e201', 'unknown argument specifiers', token.byte_range, argument_specifiers)
           end
         end
         if lpeg.match(expl3_deprecated_csname, token.payload) then
-          issues:add('w202', 'deprecated control sequences', token.byte_range, format_token(token, content))
+          issues:add('w202', 'deprecated control sequences', token.byte_range, format_csname(token.payload))
         end
       end
     end

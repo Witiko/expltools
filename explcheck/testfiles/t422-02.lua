@@ -14,6 +14,7 @@ assert(#issues.errors == 4)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{7, 8}, {11, 12}, {13, 14}, {15, 16}}
+local expected_contexts = {"!(seq ~= tl)", "!(prop ~= tl)", "!(intarray ~= tl)", "!(fparray ~= tl)"}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "t422")
   assert(err[2] == "using a variable of an incompatible type")
@@ -22,4 +23,5 @@ for index, err in ipairs(sort_issues(issues.errors)) do
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index][1])
   assert(end_line_number == expected_line_numbers[index][2])
+  assert(err[4] == expected_contexts[index])
 end

@@ -237,7 +237,7 @@ local expl3_function_csname = (
 
 local any_type = (
   letter^1  -- type
-  * (
+  * #(
     eof
     + (
       any

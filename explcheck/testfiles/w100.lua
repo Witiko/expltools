@@ -14,3 +14,4 @@ local warning = issues.warnings[1]
 assert(warning[1] == "w100")
 assert(warning[2] == "no standard delimiters")
 assert(warning[3] == nil)  -- file-wide warning
+assert(warning[4] == nil)
