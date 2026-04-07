@@ -14,7 +14,14 @@ assert(#issues.errors == 6)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{4, 5}, {6, 7}, {8, 9}, {10, 11}, {12, 13}, {16, 17}}
-local expected_contexts = {"!(tl ~= intarray)", "!(str ~= intarray)", "!(seq ~= intarray)", "!(clist ~= intarray)", "!(prop ~= intarray)", "!(fparray ~= intarray)"}
+local expected_contexts = {
+  "!(tl ~= intarray)",
+  "!(str ~= intarray)",
+  "!(seq ~= intarray)",
+  "!(clist ~= intarray)",
+  "!(prop ~= intarray)",
+  "!(fparray ~= intarray)"
+}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "t422")
   assert(err[2] == "using a variable of an incompatible type")
