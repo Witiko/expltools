@@ -411,7 +411,7 @@ local function report_issues(states, file_number, options)  -- luacheck: ignore 
             issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_token(token, content))
           end
           if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
-            issues:add('e201', 'unknown argument specifiers', token.byte_range, format_token(token, content))
+            issues:add('e201', 'unknown argument specifiers', token.byte_range, argument_specifiers)
           end
         end
         if lpeg.match(expl3_deprecated_csname, token.payload) then
