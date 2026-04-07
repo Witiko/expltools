@@ -63,6 +63,7 @@ end
 
 -- Format a control sequence name as it appears in expl3 code.
 local function format_csname(csname)
+  assert(type(csname) == "string")
   return string.format("\\%s", csname)
 end
 
