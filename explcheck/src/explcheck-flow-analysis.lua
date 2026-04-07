@@ -1383,6 +1383,10 @@ local function report_issues(states, main_file_number, options)
     for _, chunk in ipairs(segment.chunks or {}) do
       local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
       for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
+        -- Skip uninteresting macro statements that would have been skipped during the analysis.
+        if not _is_interesting(states, chunk, macro_statement_number) then
+          goto next_macro_statement
+        end
         -- Report issues with function (variant) (un)definitions.
         if macro_statement.type == FUNCTION_DEFINITIONS then
           for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
@@ -1580,8 +1584,8 @@ local function report_issues(states, main_file_number, options)
             end
           end
         end
+        ::next_macro_statement::
       end
-      ::next_macro_statement::
     end
   end
 end

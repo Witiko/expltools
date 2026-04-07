@@ -45,6 +45,10 @@ This version of explcheck has fixed the following problems:
 - Weaken the confidence of incoming reaching definitions when the in-degree is
   greater than one. (reported by @muzimuzhi in #192, fixed in #194)
 
+- Do not report issues for uninteresting macro-statements that are skipped
+  during flow analysis and therefore have incomplete or unreliable information
+  recorded. (#194)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
