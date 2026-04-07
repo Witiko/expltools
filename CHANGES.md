@@ -30,6 +30,15 @@ This version of explcheck has fixed the following problems:
   input text (like `\tex_let:^^44`) for issues W200 and W202 (Deprecated
   control sequences). (#193)
 
+- Fix an incorrect assertion in code that reports issues E500 (Multiply defined
+  function) and W501 (Multiply defined function variant). (reported by
+  @muzimuzhi in #192, fixed in #194)
+
+- Do not consider a definition being reached by itself a redefinition.
+  (reported by @muzimuzhi in #192, fixed in #194)
+
+  This prevents false positive detections of the issues E500 and W501.
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
