@@ -13,6 +13,7 @@ assert(#issues.errors == 2)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{6, 6}, {10, 10}}
+local expected_contexts = {[[\module_bar:nT]], [[\module_foo:nTF]]}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e405")
   assert(err[2] == "function variant for an undefined function")
@@ -21,4 +22,5 @@ for index, err in ipairs(sort_issues(issues.errors)) do
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index][1])
   assert(end_line_number == expected_line_numbers[index][2])
+  assert(err[4] == expected_contexts[index])
 end

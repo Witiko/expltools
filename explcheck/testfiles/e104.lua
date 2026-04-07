@@ -21,3 +21,4 @@ local start_line_number = utils.convert_byte_to_line_and_column(results.line_sta
 local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
 assert(start_line_number == 4)
 assert(end_line_number == 5)
+assert(err[4] == nil)

@@ -13,6 +13,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 4)
 
 local expected_line_numbers = {1, 2, 3, 4}
+local expected_contexts = {[[\tex_space:D]], [[\tex_italiccor^^3aD]], [[\tex_hyphen^^zD]], [[\tex_let:^]]}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w200")
   assert(warning[2] == '"do not use" argument specifiers')
@@ -21,4 +22,5 @@ for index, warning in ipairs(sort_issues(issues.warnings)) do
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index])
   assert(end_line_number == expected_line_numbers[index])
+  assert(warning[4] == expected_contexts[index])
 end
