@@ -115,6 +115,9 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzquads/tikzquads.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzquests/tikzquests.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tzplot/tzplot.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-abnt.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-coord.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-curr.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/updatemarks/updatemarks.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/urcls/URspecialopts.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/weiqi/weiqi.sty
