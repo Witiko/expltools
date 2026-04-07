@@ -102,6 +102,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/tuda-ci/tudapub.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/tzplot/tzplot.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/udes-genie-these/udes-genie-these.cls
+/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-abnt.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/unicode-math-input/unicode-math-input.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/updatemarks/updatemarks.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/wordle/wordle.sty

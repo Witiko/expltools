@@ -1,3 +1,4 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/spectralsequences/manual/spectralsequencesmanualpreamble.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/stex/stex-docheader.tex
+/usr/local/texlive/2025/texmf-dist/tex/latex/xpeekahead/xpeekahead.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/xstacks/xstacks.sty

@@ -66,6 +66,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/tuda-ci/tudaleaflet.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/tuda-ci/tudaposter.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/tzplot/tzplot.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-curr.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/updatemarks/updatemarks.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/xepersian/unicode-persianmath.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/xpeekahead/xpeekahead.sty

@@ -5,6 +5,7 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/fontscale/beerydoc.cls
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/scaletextbullet/beerydoc.cls
+/usr/local/texlive/2025/texmf-dist/doc/latex/ufrgscca/ufrgscca-forms.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/atableau/atableau.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/bidi/biditools.sty
@@ -65,6 +66,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzquads/tikzquads.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/timechart/timechart.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/typoaid/typoaid.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-coord.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/unicode-math-input/unicode-math-input.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/weiqi/weiqi.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/whatsnote/whatsnote.cls
