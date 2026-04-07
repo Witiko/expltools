@@ -229,6 +229,7 @@ local function analyze(states, file_number, options)
           local csname_table = {}
           local csname_index = character_index + character_index_increment
           if csname_index <= #line_text then
+            local csname_index_increment
             character, catcode, csname_index_increment = get_character_and_catcode(csname_index)
             table.insert(csname_table, character)
             csname_index = csname_index + csname_index_increment
