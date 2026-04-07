@@ -1440,12 +1440,9 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
-            local function any_definite_reaching_definitions(csname, check_definition)
+            local function any_reaching_definitions(csname, check_definition)
               for definition in get_reaching_definitions(csname) do
                 assert(definition.csname == csname)
-                if definition.confidence ~= DEFINITELY then
-                  goto next_definition
-                end
                 if check_definition ~= nil then
                   local other_statement = get_statement(
                     states,
@@ -1470,11 +1467,12 @@ local function report_issues(states, main_file_number, options)
                   statement.type == FUNCTION_VARIANT_DEFINITION
                 ) and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
-              if any_definite_reaching_definitions(
+              if any_reaching_definitions(
                     defined_csname,
-                    function(_, other_statement)  -- TODO: Uncomment the below check (statement ~= other_statement) after #194.
-                      return true  -- statement ~= other_statement  -- a definition is reached by itself, not a redefinition
-                        and (
+                    function(definition, other_statement)  -- TODO: Uncomment the below check (statement ~= other_statement) after #194.
+                      return definition.confidence == DEFINITELY and
+                        true and  -- statement ~= other_statement and  -- a definition is reached by itself, not a redefinition
+                        (
                           other_statement.type == FUNCTION_DEFINITION and not other_statement.maybe_redefinition or
                           other_statement.type == FUNCTION_VARIANT_DEFINITION
                         )
@@ -1501,7 +1499,7 @@ local function report_issues(states, main_file_number, options)
                 ) and statement.base_csname.type == TEXT then
               local base_csname = statement.base_csname.payload
               if lpeg.match(expl3_well_known_csname, base_csname) == nil and
-                  not any_definite_reaching_definitions(base_csname) then
+                  not any_reaching_definitions(base_csname) then
                 local formatted_csname = format_csname(base_csname)
                 local byte_range = get_byte_range()
 
@@ -1525,7 +1523,7 @@ local function report_issues(states, main_file_number, options)
                 and segment.min_reaching_nesting_depth == 1 then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
-                  not any_definite_reaching_definitions(defined_csname) then
+                  not any_reaching_definitions(defined_csname) then
                 local formatted_csname = format_csname(defined_csname)
                 local byte_range = get_byte_range()
                 issues:add("w507", "setting a function before definition", byte_range, formatted_csname)

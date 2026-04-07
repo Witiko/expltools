@@ -49,6 +49,11 @@ This version of explcheck has fixed the following problems:
   during flow analysis and therefore have incomplete or unreliable information
   recorded. (#194)
 
+- Only require definite reaching definitions for issues E500 and W501, not
+  issues E504 (Function variant for an undefined function), E506 (Indirect
+  function definition from an undefined function), and W507 (Setting a function
+  before definition). (#194)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
