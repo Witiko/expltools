@@ -1434,10 +1434,6 @@ local function report_issues(states, main_file_number, options)
             local function any_definite_reaching_definitions(csname, check_definition)
               for definition in get_reaching_definitions(csname) do
                 assert(definition.csname == csname)
-                assert(definition.macro_statement_number <= macro_statement_number)
-                if definition.macro_statement_number == macro_statement_number then
-                  assert(definition.statement_number < statement_number)
-                end
                 if definition.confidence ~= DEFINITELY then
                   goto next_definition
                 end
