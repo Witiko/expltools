@@ -1463,8 +1463,8 @@ local function report_issues(states, main_file_number, options)
               local defined_csname = statement.defined_csname.payload
               if any_definite_reaching_definitions(
                     defined_csname,
-                    function(_, other_statement)
-                      return statement ~= other_statement  -- a definition is reached by itself, not a redefinition
+                    function(_, other_statement)  -- TODO: Uncomment the below check (statement ~= other_statement) after #194.
+                      return true  -- statement ~= other_statement  -- a definition is reached by itself, not a redefinition
                         and (
                           other_statement.type == FUNCTION_DEFINITION and not other_statement.maybe_redefinition or
                           other_statement.type == FUNCTION_VARIANT_DEFINITION
