@@ -228,9 +228,7 @@ local function analyze(states, file_number, options)
         if catcode == 0 then  -- control sequence
           local csname_table = {}
           local csname_index = character_index + character_index_increment
-          local previous_csname_index = csname_index
           if csname_index <= #line_text then
-            local csname_index_increment
             character, catcode, csname_index_increment = get_character_and_catcode(csname_index)
             table.insert(csname_table, character)
             csname_index = csname_index + csname_index_increment
@@ -240,7 +238,6 @@ local function analyze(states, file_number, options)
                 character, catcode, csname_index_increment = get_character_and_catcode(csname_index)
                 if catcode == 11 then
                   table.insert(csname_table, character)
-                  previous_csname_index = csname_index
                   csname_index = csname_index + csname_index_increment
                 else
                   break
@@ -253,7 +250,7 @@ local function analyze(states, file_number, options)
             end
           end
           local csname = table.concat(csname_table)
-          range = new_range(character_index, previous_csname_index, INCLUSIVE, #line_text, map_back, #content)
+          range = new_range(character_index, csname_index, EXCLUSIVE, #line_text, map_back, #content)
           table.insert(tokens, {
             type = CONTROL_SEQUENCE,
             payload = csname,
