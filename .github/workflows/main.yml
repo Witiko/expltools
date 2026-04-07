@@ -30,7 +30,7 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install lua-language-server
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4.2
+        uses: zauguin/install-texlive@v4
         with:
           cache: false
           packages: |
@@ -80,7 +80,7 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4.2
+        uses: zauguin/install-texlive@v4
         with:
           cache: false
           packages: |
@@ -114,7 +114,7 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4.2
+        uses: zauguin/install-texlive@v4
         with:
           cache: false
           packages: |
@@ -279,14 +279,14 @@ jobs:
           sudo apt -qy update
           sudo apt -qy install --no-install-recommends parallel
       - name: "Install TeX Live: Basic packages"
-        uses: zauguin/install-texlive@v4.2
+        uses: zauguin/install-texlive@v4
         with:
           cache: false
           packages: |
             scheme-basic
             l3build
       - name: "Install TeX Live: Dependencies"
-        uses: zauguin/install-texlive@v4.2
+        uses: zauguin/install-texlive@v4
         with:
           cache: false
           package_file: |
@@ -324,7 +324,7 @@ jobs:
         with:
           submodules: true
       - name: Install TeX Live
-        uses: zauguin/install-texlive@v4.2
+        uses: zauguin/install-texlive@v4
         with:
           cache: false
           packages: |
