@@ -631,7 +631,7 @@ local function get_incoming_definitions(states, chunk, macro_statement_number)
       local updated_definition
       if combined_edge_confidence < definition.confidence then
         updated_definition = make_shallow_copy(definition)
-        updated_definition.weakened_confidence = combined_edge_confidence
+        updated_definition.confidence = combined_edge_confidence
       else
         updated_definition = definition
       end

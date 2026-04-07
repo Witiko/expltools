@@ -42,6 +42,9 @@ This version of explcheck has fixed the following problems:
 - Do not report issue E505 (Calling an undefined function) when calling empty
   functions. (reported by @muzimuzhi in #192, fixed in #194)
 
+- Weaken the confidence of incoming reaching definitions when the in-degree is
+  greater than one. (reported by @muzimuzhi in #192, fixed in #194)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
