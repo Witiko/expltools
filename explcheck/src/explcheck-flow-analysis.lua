@@ -1118,6 +1118,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
     -- Update the current estimation of the function call edges.
     current_function_call_edges = {}
+    states.results.elided_function_call_edge_index = {}
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
@@ -1206,6 +1207,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Elide function calls with empty replacement texts.
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
+          if states.results.elided_function_call_edge_index[function_call_chunk] == nil then
+            states.results.elided_function_call_edge_index[function_call_chunk] = {}
+          end
+          states.results.elided_function_call_edge_index[function_call_chunk][function_call_statement_number] = true
           goto next_function_definition
         end
 
@@ -1564,9 +1569,12 @@ local function report_issues(states, main_file_number, options)
           if all_definitions_reached_flow_analysis then
             if states.results.edge_indexes.function_call[chunk] == nil or
                 states.results.edge_indexes.function_call[chunk][statement_number] == nil then
-              local formatted_csname = format_csname(statement.used_csname.payload)
-              local byte_range = get_byte_range()
-              issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
+              if states.results.elided_function_call_edge_index[chunk] == nil or
+                  states.results.elided_function_call_edge_index[chunk][statement_number] == nil then
+                local formatted_csname = format_csname(statement.used_csname.payload)
+                local byte_range = get_byte_range()
+                issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
+              end
             else
               assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
             end
@@ -1581,11 +1589,12 @@ end
 -- Remove auxiliary intermediate results to free up memory.
 local function cleanup(states, _, _)
   -- Remove group-wide intermediate results.
-  states.results.edge_indexes = nil
-  states.results.reaching_definitions = nil
-  states.results.drew_static_edges = nil
-  states.results.drew_dynamic_edges = nil
   states.results.determined_min_reaching_nesting_depth = nil
+  states.results.drew_dynamic_edges = nil
+  states.results.drew_static_edges = nil
+  states.results.edge_indexes = nil
+  states.results.elided_function_call_edge_index = nil
+  states.results.reaching_definitions = nil
 end
 
 local substeps = {

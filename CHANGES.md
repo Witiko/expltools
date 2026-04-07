@@ -39,6 +39,9 @@ This version of explcheck has fixed the following problems:
 
   This prevents false positive detections of the issues E500 and W501.
 
+- Do not report issue E505 (Calling an undefined function) when calling empty
+  functions. (reported by @muzimuzhi in #192, fixed in #194)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
