@@ -393,7 +393,6 @@ local function report_issues(states, file_number, options)  -- luacheck: ignore 
   local state = states[file_number]
 
   local pathname = state.pathname
-  local content = state.content
   local issues = state.issues
   local results = state.results
 
