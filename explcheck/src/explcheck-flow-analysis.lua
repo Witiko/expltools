@@ -1464,10 +1464,11 @@ local function report_issues(states, main_file_number, options)
               if any_definite_reaching_definitions(
                     defined_csname,
                     function(_, other_statement)
-                      return (
-                        other_statement.type == FUNCTION_DEFINITION and not other_statement.maybe_redefinition or
-                        other_statement.type == FUNCTION_VARIANT_DEFINITION
-                      )
+                      return statement ~= other_statement  -- a definition is reached by itself, not a redefinition
+                        and (
+                          other_statement.type == FUNCTION_DEFINITION and not other_statement.maybe_redefinition or
+                          other_statement.type == FUNCTION_VARIANT_DEFINITION
+                        )
                     end
                   ) then
                 local formatted_csname = format_csname(defined_csname)
