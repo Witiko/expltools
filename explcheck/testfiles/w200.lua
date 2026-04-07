@@ -13,7 +13,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 4)
 
 local expected_line_numbers = {1, 2, 3, 4}
-local expected_contexts = {[[\tex_space:D]], [[\tex_italiccor^^3aD]], [[\tex_hyphen^^zD]], [[\tex_let:^^44]]}
+local expected_contexts = {[[\tex_space:D]], [[\tex_italiccor:D]], [[\tex_hyphen:D]], [[\tex_let:D]]}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w200")
   assert(warning[2] == '"do not use" argument specifiers')
