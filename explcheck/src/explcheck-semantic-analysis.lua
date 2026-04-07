@@ -905,7 +905,8 @@ local function collect_statements(states, file_number, options)
                 local effectively_defined_csname = get_conditional_function_csname(defined_csname_stem, argument_specifiers, condition)
                 if condition == "p" and is_protected then
                   local definition_byte_range = token_range_to_byte_range(definition_token_range)
-                  issues:add("e404", "protected predicate function", definition_byte_range, format_csname(effectively_defined_csname))
+                  local formatted_csname = format_csname(effectively_defined_csname.transcript)
+                  issues:add("e404", "protected predicate function", definition_byte_range, formatted_csname)
                 end
                 table.insert(effectively_defined_csnames, {effectively_defined_csname, confidence})
               end
