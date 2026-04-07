@@ -1,8 +1,41 @@
 # Changes
 
-## expltools 2026-04-XX
+## expltools 2026-04-07
 
-### explcheck v0.20.0
+### explcheck v0.19.1
+
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Fix malformed context for issue E505 (Calling an undefined function).
+  (reported by @muzimuzhi in #191, fixed in #193)
+
+- Do not capture a newline after expl3-like material. (#193)
+
+  This excludes the newline from the context messages and byte ranges for
+  issues like E102 (Expl3 material in non-expl3 parts).
+
+- Only put argument specifiers in the context of issue E201 (Unknown argument
+  specifiers), not the whole control sequence name. (#193)
+
+  This makes the context of issue E201 consistent with issue E427 (Comparison
+  conditional without signature `:nnTF`).
+
+- Fix the context of issue W200 ("Do not use" argument specifiers) missing
+  characters when the name of the control sequence ends with double-superscript
+  characters, like `\tex_let:^^44`. (#193)
+
+- Report resolved control sequence names (like `\tex_let:D`) instead of the raw
+  input text (like `\tex_let:^^44`) for issues W200 and W202 (Deprecated
+  control sequences). (#193)
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Check issue context in tests. (reported by @muzimuzhi in #191, added in #193)
 
 ## expltools 2026-03-30
 
