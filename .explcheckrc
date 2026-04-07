@@ -335,7 +335,6 @@ ignored_issues = ["e304"]
 
 [package.ufrgscca]
 ignored_issues = ["e304"]
-imported_prefixes = ["ufrgscca"]
 
 [package.zugferd]
 ignored_issues = ["e304"]
@@ -535,9 +534,6 @@ imported_prefixes = ["datatool"]
 
 [filename."glossaries.sty"]
 imported_prefixes = ["datatool"]
-
-[package.xpeekahead]
-ignored_issues = ["e411"]
 
 [filename."latex-lab-testphase-l3doc.sty"]
 imported_prefixes = ["l3doc"]
