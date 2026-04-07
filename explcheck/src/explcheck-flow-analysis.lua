@@ -631,7 +631,7 @@ local function get_incoming_definitions(states, chunk, macro_statement_number)
       local updated_definition
       if combined_edge_confidence < definition.confidence then
         updated_definition = make_shallow_copy(definition)
-        updated_definition.weakened_confidence = combined_edge_confidence
+        updated_definition.confidence = combined_edge_confidence
       else
         updated_definition = definition
       end
@@ -1118,6 +1118,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
     -- Update the current estimation of the function call edges.
     current_function_call_edges = {}
+    states.results.elided_function_call_edge_index = {}
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
@@ -1206,6 +1207,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Elide function calls with empty replacement texts.
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
+          if states.results.elided_function_call_edge_index[function_call_chunk] == nil then
+            states.results.elided_function_call_edge_index[function_call_chunk] = {}
+          end
+          states.results.elided_function_call_edge_index[function_call_chunk][function_call_statement_number] = true
           goto next_function_definition
         end
 
@@ -1378,6 +1383,10 @@ local function report_issues(states, main_file_number, options)
     for _, chunk in ipairs(segment.chunks or {}) do
       local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
       for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
+        -- Skip uninteresting macro statements that would have been skipped during the analysis.
+        if not _is_interesting(states, chunk, macro_statement_number) then
+          goto next_macro_statement
+        end
         -- Report issues with function (variant) (un)definitions.
         if macro_statement.type == FUNCTION_DEFINITIONS then
           for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
@@ -1431,16 +1440,9 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
-            local function any_definite_reaching_definitions(csname, check_definition)
+            local function any_reaching_definitions(csname, check_definition)
               for definition in get_reaching_definitions(csname) do
                 assert(definition.csname == csname)
-                assert(definition.macro_statement_number <= macro_statement_number)
-                if definition.macro_statement_number == macro_statement_number then
-                  assert(definition.statement_number < statement_number)
-                end
-                if definition.confidence ~= DEFINITELY then
-                  goto next_definition
-                end
                 if check_definition ~= nil then
                   local other_statement = get_statement(
                     states,
@@ -1465,13 +1467,15 @@ local function report_issues(states, main_file_number, options)
                   statement.type == FUNCTION_VARIANT_DEFINITION
                 ) and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
-              if any_definite_reaching_definitions(
+              if any_reaching_definitions(
                     defined_csname,
-                    function(_, other_statement)
-                      return (
-                        other_statement.type == FUNCTION_DEFINITION and not other_statement.maybe_redefinition or
-                        other_statement.type == FUNCTION_VARIANT_DEFINITION
-                      )
+                    function(definition, other_statement)
+                      return definition.confidence == DEFINITELY and
+                        statement ~= other_statement and  -- a definition is reached by itself, not a redefinition
+                        (
+                          other_statement.type == FUNCTION_DEFINITION and not other_statement.maybe_redefinition or
+                          other_statement.type == FUNCTION_VARIANT_DEFINITION
+                        )
                     end
                   ) then
                 local formatted_csname = format_csname(defined_csname)
@@ -1495,7 +1499,7 @@ local function report_issues(states, main_file_number, options)
                 ) and statement.base_csname.type == TEXT then
               local base_csname = statement.base_csname.payload
               if lpeg.match(expl3_well_known_csname, base_csname) == nil and
-                  not any_definite_reaching_definitions(base_csname) then
+                  not any_reaching_definitions(base_csname) then
                 local formatted_csname = format_csname(base_csname)
                 local byte_range = get_byte_range()
 
@@ -1519,7 +1523,7 @@ local function report_issues(states, main_file_number, options)
                 and segment.min_reaching_nesting_depth == 1 then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
-                  not any_definite_reaching_definitions(defined_csname) then
+                  not any_reaching_definitions(defined_csname) then
                 local formatted_csname = format_csname(defined_csname)
                 local byte_range = get_byte_range()
                 issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
@@ -1567,16 +1571,19 @@ local function report_issues(states, main_file_number, options)
           if all_definitions_reached_flow_analysis then
             if states.results.edge_indexes.function_call[chunk] == nil or
                 states.results.edge_indexes.function_call[chunk][statement_number] == nil then
-              local formatted_csname = format_csname(statement.used_csname.payload)
-              local byte_range = get_byte_range()
-              issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
+              if states.results.elided_function_call_edge_index[chunk] == nil or
+                  states.results.elided_function_call_edge_index[chunk][statement_number] == nil then
+                local formatted_csname = format_csname(statement.used_csname.payload)
+                local byte_range = get_byte_range()
+                issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
+              end
             else
               assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
             end
           end
         end
+        ::next_macro_statement::
       end
-      ::next_macro_statement::
     end
   end
 end
@@ -1584,11 +1591,12 @@ end
 -- Remove auxiliary intermediate results to free up memory.
 local function cleanup(states, _, _)
   -- Remove group-wide intermediate results.
-  states.results.edge_indexes = nil
-  states.results.reaching_definitions = nil
-  states.results.drew_static_edges = nil
-  states.results.drew_dynamic_edges = nil
   states.results.determined_min_reaching_nesting_depth = nil
+  states.results.drew_dynamic_edges = nil
+  states.results.drew_static_edges = nil
+  states.results.edge_indexes = nil
+  states.results.elided_function_call_edge_index = nil
+  states.results.reaching_definitions = nil
 end
 
 local substeps = {

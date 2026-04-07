@@ -30,6 +30,30 @@ This version of explcheck has fixed the following problems:
   input text (like `\tex_let:^^44`) for issues W200 and W202 (Deprecated
   control sequences). (#193)
 
+- Fix an incorrect assertion in code that reports issues E500 (Multiply defined
+  function) and W501 (Multiply defined function variant). (reported by
+  @muzimuzhi in #192, fixed in #194)
+
+- Do not consider a definition being reached by itself a redefinition.
+  (reported by @muzimuzhi in #192, fixed in #194)
+
+  This prevents false positive detections of the issues E500 and W501.
+
+- Do not report issue E505 (Calling an undefined function) when calling empty
+  functions. (reported by @muzimuzhi in #192, fixed in #194)
+
+- Weaken the confidence of incoming reaching definitions when the in-degree is
+  greater than one. (reported by @muzimuzhi in #192, fixed in #194)
+
+- Do not report issues for uninteresting macro-statements that are skipped
+  during flow analysis and therefore have incomplete or unreliable information
+  recorded. (#194)
+
+- Only require definite reaching definitions for issues E500 and W501, not
+  issues E504 (Function variant for an undefined function), E506 (Indirect
+  function definition from an undefined function), and W507 (Setting a function
+  before definition). (#194)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
