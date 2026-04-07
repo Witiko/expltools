@@ -545,6 +545,7 @@ local function collect_statements(states, file_number, options)
         return nil  -- we couldn't parse the csname, give up
       end
       base_argument_specifiers = base_argument_specifiers.payload
+      assert(base_argument_specifiers ~= nil)
 
       local specifiers_token_range = argument.outer_token_range or argument.token_range
       local specifiers_byte_range = token_range_to_byte_range(specifiers_token_range)
