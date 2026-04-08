@@ -1205,7 +1205,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
         local to_segment = results.segments[to_segment_number]
 
-        -- Elide function calls with empty replacement texts.
+        -- Elide calls to function definitions with empty replacement texts.
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
           if states.results.elided_function_call_edge_index[function_call_chunk] == nil then
             states.results.elided_function_call_edge_index[function_call_chunk] = {}
