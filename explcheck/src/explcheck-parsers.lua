@@ -817,7 +817,9 @@ local expl3_variable_declaration_csname = Ct(
     )
     * underscore
   )^-1
-  * P("new:")
+  * P("new")
+  * P("_linked")^-1
+  * colon
 )
 
 ------ Variable and constant definitions
