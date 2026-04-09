@@ -2,7 +2,17 @@
 
 ## expltools 2026-04-XX
 
-### explcheck v0.20.0
+### explcheck v0.19.2
+
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Recognize `\prop_new_linked:N` as a variable declaration statement.
+  (reported by @muzimuzhi in #196, fixed in #198)
+
+  This improves [code coverage][] by a negligible amount: 28 expl3 tokens
+  (~0.0003% of all expl3 tokens) on TeX Live 2026.
 
 #### Continuous integration
 
