@@ -12,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
-local expected_line_numbers = {{2, 3}}
+local expected_line_numbers = {{3, 3}}
 local expected_contexts = {[[\g_my_tmpa_prop]]}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w415")
