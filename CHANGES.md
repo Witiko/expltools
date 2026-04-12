@@ -20,6 +20,7 @@ This version of explcheck has made the following changes to our continuous
 integration:
 
 - Update the `zauguin/install-texlive` action to v4.3. (484989a)
+- Retry `tlmgr install` and `update`. (#198)
 
 ## expltools 2026-04-07
 
