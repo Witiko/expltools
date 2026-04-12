@@ -1,7 +1,7 @@
 local sort_issues = require("explcheck-issues").sort_issues
 local utils = require("explcheck-utils")
 
-local filename = "regression-issue-196.tex"
+local filename = "regression-issue-196-02.tex"
 local options = {
   expl3_detection_strategy = "always",
   stop_after = "semantic analysis",
@@ -10,10 +10,10 @@ local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results
 
 assert(#issues.errors == 0)
-assert(#issues.warnings == 1)
+assert(#issues.warnings == 2)
 
-local expected_line_numbers = {{3, 3}}
-local expected_contexts = {[[\g_my_tmpa_prop]]}
+local expected_line_numbers = {{3, 3}, {6, 6}}
+local expected_contexts = {[[\c_my_tmpa_prop]], [[\c_my_tmpb_prop]]}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w415")
   assert(warning[2] == "unused variable or constant")
