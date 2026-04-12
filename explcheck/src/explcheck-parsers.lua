@@ -838,7 +838,7 @@ local expl3_variable_definition_csname = Ct(
       * underscore
       * (
         P("eq")
-        + P("from_")
+        + P("from_")  -- TODO: only indirect if the arguments are :[cN][cN]
         * C(expl3_variable_or_constant_type)
       )
       + Cc(true)  -- direct
