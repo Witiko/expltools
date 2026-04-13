@@ -4,6 +4,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/circledtext/circledtext.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/customenvs/customenvs-macros.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/datatool/datagidx.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/dbshow/dbshow.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/els-cas-templates/cas-common.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/elsarticle/elsarticle.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/exam-zh/exam-zh-chinese-english.sty
