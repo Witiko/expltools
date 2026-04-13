@@ -10,7 +10,7 @@ local state = table.unpack(utils.process_files({filename}, options))
 local issues, results = state.issues, state.results
 
 assert(#issues.errors == 0)
-assert(#issues.warnings == 2)
+assert(#issues.warnings == 4)
 
 local expected_line_numbers = {{3, 3}, {6, 6}, {9, 9}, {12, 12}}
 local expected_contexts = {[[\c_my_tmpa_prop]], [[\c_my_tmpb_prop]], [[\c_my_tmpa_seq]], [[\c_my_tmpa_intarray]]}
