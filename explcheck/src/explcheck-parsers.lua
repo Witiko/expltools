@@ -838,19 +838,23 @@ local expl3_variable_definition_csname = Ct(
     )
   )
   * P("_linked")^-1
-  * underscore
   * (
-    P("eq")
-    + P("from")
-    * underscore
-    * C(expl3_variable_or_constant_type)
-  )
-  * P(":")
-  * csname_argument_specifier
-  * (
-    Cc(false)  -- indirect
+    underscore
+    * (
+      P("eq")
+      + P("from")
+      * underscore
+      * C(expl3_variable_or_constant_type)
+    )
+    * P(":")
     * csname_argument_specifier
-    + Cc(false)  -- direct
+    * (
+      Cc(false)  -- indirect
+      * csname_argument_specifier
+      + Cc(true)  -- direct
+    )
+    + Cc(true)  -- direct
+    * P(":")
   )
 )
 
