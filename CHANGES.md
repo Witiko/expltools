@@ -1,5 +1,17 @@
 # Changes
 
+## expltools 2026-04-XX
+
+### explcheck v0.20.0
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Bump `softprops/action-gh-release` from 2 to 3. (contributed by @dependabot
+  in #199)
+
 ## expltools 2026-04-13
 
 ### explcheck v0.19.2
