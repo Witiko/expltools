@@ -1118,21 +1118,11 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
     -- Update the current estimation of the function call edges.
     current_function_call_edges = {}
-    states.results.elided_function_call_edge_index = {}
-
+    states.results.function_definition_in_edge_index = {}
+    states.results.elided_function_call_out_edge_index = {}
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
-
-      -- Record a function call statement as having the function call edge elided for some reason, so that we know that we
-      -- shouldn't report issues for that statement.
-      local function elide_function_call_edge()
-        if states.results.elided_function_call_edge_index[function_call_chunk] == nil then
-          states.results.elided_function_call_edge_index[function_call_chunk] = {}
-        end
-        states.results.elided_function_call_edge_index[function_call_chunk][function_call_statement_number] = true
-      end
-
       if states.results.reaching_definitions.indexes[function_call_chunk] == nil or
           states.results.reaching_definitions.indexes[function_call_chunk][function_call_statement_number] == nil then
         goto next_function_call
@@ -1179,7 +1169,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
               local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
               if lpeg.match(expl3_well_known_csname, base_csname) ~= nil then
-                elide_function_call_edge()
+                states.results.elided_function_call_out_edge_index[function_call_statement] = true
               end
             else
               for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
@@ -1227,9 +1217,12 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
         local to_segment = results.segments[to_segment_number]
 
+        -- Index the definitions used in the function calls.
+        states.results.function_definition_in_edge_index[function_definition_statement] = true
+
         -- Elide calls to function definitions with empty replacement texts.
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
-          elide_function_call_edge()
+          states.results.elided_function_call_out_edge_index[function_call_statement] = true
           goto next_function_definition
         end
 
@@ -1288,7 +1281,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record edges.
-  states.results.edge_indexes.function_call = {}
+  states.results.edge_indexes.function_call_out = {}
   for _, edge in ipairs(current_function_call_edges) do
     local results = states[edge.from.chunk.segment.location.file_number].results
     assert(results.edges ~= nil)
@@ -1296,7 +1289,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       results.edges[DYNAMIC] = {}
     end
     table.insert(results.edges[DYNAMIC], edge)
-    index_edge(states, 'function_call', 'from', edge)
+    index_edge(states, 'function_call_out', 'from', edge)
   end
 end
 
@@ -1484,7 +1477,8 @@ local function report_issues(states, main_file_number, options)
             if (
                   statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition or
                   statement.type == FUNCTION_VARIANT_DEFINITION
-                ) and statement.defined_csname.type == TEXT then
+                ) then
+              assert(statement.defined_csname.type == TEXT)
               local defined_csname = statement.defined_csname.payload
               if any_reaching_definitions(
                     defined_csname,
@@ -1522,7 +1516,8 @@ local function report_issues(states, main_file_number, options)
             if (
                   statement.type == FUNCTION_VARIANT_DEFINITION or
                   statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
-                ) and statement.base_csname.type == TEXT then
+                ) then
+              assert(statement.base_csname.type == TEXT)
               local base_csname = statement.base_csname.payload
               if lpeg.match(expl3_well_known_csname, base_csname) == nil and
                   not any_reaching_definitions(base_csname) then
@@ -1543,16 +1538,46 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Report setting a function before definition.
-            if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT
-                -- Only consider function definitions reachable from top-level code. Otherwise, the definitions are part of either
-                -- dead code or library functions and we can't accurately determine their reaching definitions.
-                and segment.min_reaching_nesting_depth == 1 then
+            if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition then
+              assert(statement.defined_csname.type == TEXT)
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
                   not any_reaching_definitions(defined_csname) then
                 local formatted_csname = format_csname(defined_csname)
                 local byte_range = get_byte_range()
                 issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
+              end
+            end
+
+            if (
+                  (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and
+                  statement.is_private and
+                  states.results.function_definition_in_edge_index[statement] == nil and
+                  statement.call_file_numbers ~= nil
+                ) then
+              assert(statement.defined_csname.type == TEXT)
+              assert(#statement.call_file_numbers > 0)
+              local all_calls_reached_flow_analysis = true
+              for _, file_number in ipairs(statement.call_file_numbers) do
+                -- Do not check statements with calls in files that did not reach the flow analysis.
+                if states[file_number].results.stopped_early then
+                  all_calls_reached_flow_analysis = false
+                  break
+                end
+              end
+              if all_calls_reached_flow_analysis then
+                local formatted_csname = format_csname(statement.defined_csname.payload)
+                local byte_range = get_byte_range()
+
+                -- Report unused private function definitions.
+                if statement.type == FUNCTION_DEFINITION then
+                  issues:add("w502", "unused private function", byte_range, formatted_csname)
+                -- Report unused private function variant definitions.
+                elseif statement.type == FUNCTION_VARIANT_DEFINITION then
+                  issues:add("w503", "unused private function variant", byte_range, formatted_csname)
+                else
+                  error('Unexpected statement type "' .. statement.type .. '"')
+                end
               end
             end
 
@@ -1588,23 +1613,22 @@ local function report_issues(states, main_file_number, options)
           assert(#statement.definition_file_numbers > 0)
           local all_definitions_reached_flow_analysis = true
           for _, file_number in ipairs(statement.definition_file_numbers) do
-            -- Do not check statements originating from files that did not reach the flow analysis.
+            -- Do not check statements with definitions in files that did not reach the flow analysis.
             if states[file_number].results.stopped_early then
               all_definitions_reached_flow_analysis = false
               break
             end
           end
           if all_definitions_reached_flow_analysis then
-            if states.results.edge_indexes.function_call[chunk] == nil or
-                states.results.edge_indexes.function_call[chunk][statement_number] == nil then
-              if states.results.elided_function_call_edge_index[chunk] == nil or
-                  states.results.elided_function_call_edge_index[chunk][statement_number] == nil then
+            if states.results.edge_indexes.function_call_out[chunk] == nil or
+                states.results.edge_indexes.function_call_out[chunk][statement_number] == nil then
+              if states.results.elided_function_call_out_edge_index[statement] == nil then
                 local formatted_csname = format_csname(statement.used_csname.payload)
                 local byte_range = get_byte_range()
                 issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
               end
             else
-              assert(#states.results.edge_indexes.function_call[chunk][statement_number] > 0)
+              assert(#states.results.edge_indexes.function_call_out[chunk][statement_number] > 0)
             end
           end
         end
@@ -1621,7 +1645,8 @@ local function cleanup(states, _, _)
   states.results.drew_dynamic_edges = nil
   states.results.drew_static_edges = nil
   states.results.edge_indexes = nil
-  states.results.elided_function_call_edge_index = nil
+  states.results.function_definition_in_edge_index = nil
+  states.results.elided_function_call_out_edge_index = nil
   states.results.reaching_definitions = nil
 end
 

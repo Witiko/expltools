@@ -21,34 +21,17 @@ A function or conditional function variant is defined multiple times.
  /w501-03.tex
  /w501-04.tex
 
-### Unused private function {.w}
+### Unused private function {.w label=w502}
 A private function or conditional function is defined but unused.
 
  /w502.tex
 
-<!--
-
-  We can't really report this issue from the `FUNCTION_CALL` edges alone
-  either, as is the case for the previous two issues. Furthermore, this
-  issue will require a live variable analysis, in addition to the reaching
-  definitions analysis. However, since liveness likely won't affect our ability
-  to determine reaching definitions, it might make sense to make it into a
-  separate substep.
-
--->
-
 This check is a stronger version of <#unused-private-function> and the issue should only be emitted if <#unused-private-function> has not previously been emitted for this function.
 
-### Unused private function variant {.w}
+### Unused private function variant {.w label=w503}
 A private function or conditional function variant is defined but unused.
 
  /w503.tex
-
-<!--
-
-  The same considerations apply as for the previous issue (W502).
-
--->
 
 This check is a stronger version of <#unused-private-function-variant> and the issue should only be emitted if <#unused-private-function-variant> has not previously been emitted for this function variant.
 
