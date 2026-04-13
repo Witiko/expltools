@@ -21,6 +21,11 @@ This version of explcheck has fixed the following problems:
 - Correctly differentiate between direct and indirect variable and constant
   definitions in the form `\⟨type⟩_(set|gset|const)_from_⟨base_type⟩:*`. (#198)
 
+- Only report issues E504 (Function variant for an undefined function),
+  E506 (Indirect function definition from an undefined function), and
+  W507 (Setting a function before definition) for top-level reachable segments.
+  (reported by @muzimuzhi in #195, fixed in #198)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous

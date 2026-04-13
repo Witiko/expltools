@@ -1493,6 +1493,13 @@ local function report_issues(states, main_file_number, options)
               end
             end
 
+            -- For the following issues, only consider statements reachable from top-level code.
+            -- Otherwise, the statements are part of either dead code or library functions and we can't accurately
+            -- determine their reaching definitions.
+            if segment.min_reaching_nesting_depth > 1 then
+              goto next_macro_statement
+            end
+
             if (
                   statement.type == FUNCTION_VARIANT_DEFINITION or
                   statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
