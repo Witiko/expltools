@@ -360,7 +360,7 @@ jobs:
         with:
           merge-multiple: true
       - name: Publish prerelease
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: The latest version
           tag_name: latest
