@@ -3,7 +3,7 @@
 local latex3 = require("explcheck-latex3")
 
 local lpeg = require("lpeg")
-local C, Cc, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cc, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
+local C, Cb, Cc, Cg, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cb, lpeg.Cc, lpeg.Cg, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
 
 -- Base parsers
 ---- Generic
@@ -826,7 +826,8 @@ local expl3_variable_declaration_csname = Ct(
 
 ------ Variable and constant definitions
 local expl3_variable_definition_csname = Ct(
-  C(expl3_variable_or_constant_type)
+  Cg(expl3_variable_or_constant_type, "variable_type")
+  * Cb("variable_type")
   * underscore
   * (
     Cc(true)^-2  -- constant definition
@@ -838,13 +839,14 @@ local expl3_variable_definition_csname = Ct(
     )
   )
   * P("_linked")^-1
+  * Cg(Cb("variable_type"), "base_variable_type")
   * (
     underscore
     * (
       P("eq")
       + P("from")
       * underscore
-      * C(expl3_variable_or_constant_type)
+      * Cg(expl3_variable_or_constant_type, "base_variable_type")
     )
     * P(":")
     * csname_argument_specifier
@@ -856,6 +858,7 @@ local expl3_variable_definition_csname = Ct(
     + Cc(true)  -- direct
     * P(":")
   )
+  * Cb("base_variable_type")
 )
 
 ------ Variable and constant use
