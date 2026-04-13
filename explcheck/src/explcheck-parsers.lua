@@ -829,20 +829,20 @@ local expl3_variable_definition_csname = Ct(
   C(expl3_variable_or_constant_type)
   * underscore
   * (
-    P("const") * Cc(true)^-3  -- constant definition
+    Cc(true)^-2  -- constant definition
+    * P("const")
     + Cc(false)  -- variable definition
     * (
       P("gset") * Cc(true)  -- global
       + P("set") * Cc(false)  -- local
     )
-    * (
-      underscore
-      * (
-        P("eq")
-        + P("from_")  -- TODO: only indirect if the arguments are :[cN][cN]
-        * C(expl3_variable_or_constant_type)
-      )
-    )
+  )
+  * underscore
+  * (
+    P("eq")
+    + P("from")
+    * underscore
+    * C(expl3_variable_or_constant_type)
   )
   * P(":")
   * csname_argument_specifier
