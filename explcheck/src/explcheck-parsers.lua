@@ -181,6 +181,7 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
+local csname_argument_specifier = S("Nc")
 local expansionless_argument_specifier = S("NVnTF")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
@@ -834,17 +835,21 @@ local expl3_variable_definition_csname = Ct(
       + P("set") * Cc(false)  -- local
     )
     * (
-      Cc(false)  -- indirect
-      * underscore
+      underscore
       * (
         P("eq")
         + P("from_")  -- TODO: only indirect if the arguments are :[cN][cN]
         * C(expl3_variable_or_constant_type)
       )
-      + Cc(true)  -- direct
     )
   )
   * P(":")
+  * csname_argument_specifier
+  * (
+    Cc(false)  -- indirect
+    * csname_argument_specifier
+    + Cc(false)  -- direct
+  )
 )
 
 ------ Variable and constant use
