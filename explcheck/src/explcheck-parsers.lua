@@ -3,7 +3,8 @@
 local latex3 = require("explcheck-latex3")
 
 local lpeg = require("lpeg")
-local C, Cb, Cc, Cg, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cb, lpeg.Cc, lpeg.Cg, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
+local P, R, S = lpeg.P, lpeg.R, lpeg.S
+local C, Cb, Cc, Cg, Cp, Cs, Ct, Cmt = lpeg.C, lpeg.Cb, lpeg.Cc, lpeg.Cg, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt
 
 -- Base parsers
 ---- Generic
