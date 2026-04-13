@@ -14,8 +14,12 @@ This version of explcheck has fixed the following problems:
   constant and variable definition statements. (reported by @muzimuzhi in #196,
   fixed in #198)
 
-  This improves [code coverage][] by a negligible amount: 37,759 expl3 tokens
-  (~0.004% of all expl3 tokens) on TeX Live 2026.
+  More generally, this change also adds support for constant definitions in the
+  form `\⟨type⟩_const_from_⟨base_type⟩:*`. This improves [code coverage][] by
+  37,759 expl3 tokens (~0.004% of all expl3 tokens) on TeX Live 2026.
+
+- Correctly differentiate between direct and indirect variable and constant
+  definitions in the form `\⟨type⟩_(set|gset|const)_from_⟨base_type⟩:*`. (#198)
 
 #### Continuous integration
 
