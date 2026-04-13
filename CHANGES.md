@@ -26,6 +26,10 @@ This version of explcheck has fixed the following problems:
   W507 (Setting a function before definition) for top-level reachable segments.
   (reported by @muzimuzhi in #195, fixed in #198)
 
+- Do not report issue E505 (Calling an undefined function) for indirect
+  definitions that resolve to well-known control sequence names.
+  (reported by @muzimuzhi in #197, fixed in #198)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
