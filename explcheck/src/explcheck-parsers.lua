@@ -837,6 +837,7 @@ local expl3_variable_definition_csname = Ct(
       + P("set") * Cc(false)  -- local
     )
   )
+  * P("_linked")^-1
   * underscore
   * (
     P("eq")
