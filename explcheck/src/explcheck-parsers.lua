@@ -288,6 +288,7 @@ local expl3_unexpandable_variable_or_constant_type = (
   + P("fparray")
   + P("intarray")
   + P("io") * S("rw")
+  + P("keyval")
   + P("prop")
   + P("quark")
   + P("regex")
