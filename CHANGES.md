@@ -8,11 +8,14 @@
 
 This version of explcheck has fixed the following problems:
 
-- Recognize `\prop_new_linked:N` as a variable declaration statement.
-  (reported by @muzimuzhi in #196, fixed in #198)
+- Recognize `\prop_new_linked:N` as a variable declaration statement
+  and `\prop_const_from_keyval:Nn`, `\prop_const_linked_from_keyval:Nn`,
+  `\prop_set_from_keyval:Nn`, and `\prop_gset_from_keyval:Nn` as
+  constant and variable definition statements. (reported by @muzimuzhi in #196,
+  fixed in #198)
 
-  This improves [code coverage][] by a negligible amount: 28 expl3 tokens
-  (~0.0003% of all expl3 tokens) on TeX Live 2026.
+  This improves [code coverage][] by a negligible amount: 37,759 expl3 tokens
+  (~0.004% of all expl3 tokens) on TeX Live 2026.
 
 #### Continuous integration
 
