@@ -1084,7 +1084,7 @@ local function collect_statements(states, file_number, options)
         -- Process a variable or constant definition.
         variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, call.csname)
         if variable_definition ~= nil then
-          local variable_type, is_constant, is_global, is_direct = table.unpack(variable_definition)
+          local variable_type, is_constant, is_global, is_direct, base_variable_type = table.unpack(variable_definition)
           -- determine the name of the defined variable
           local defined_csname_argument = call.arguments[1]
           if defined_csname_argument == nil then  -- we couldn't extract the csname, give up
@@ -1152,7 +1152,6 @@ local function collect_statements(states, file_number, options)
               definition_text_argument = definition_text_argument,
             }
           else
-            local base_variable_type = variable_definition[5] or variable_type
             -- determine the name of the base variable or constant
             local base_csname_argument = call.arguments[2]
             assert(base_csname_argument ~= nil)

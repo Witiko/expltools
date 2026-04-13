@@ -1,8 +1,34 @@
 # Changes
 
-## expltools 2026-04-XX
+## expltools 2026-04-13
 
-### explcheck v0.20.0
+### explcheck v0.19.2
+
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Recognize `\prop_new_linked:N` as a variable declaration statement
+  and `\prop_const_from_keyval:Nn`, `\prop_const_linked_from_keyval:Nn`,
+  `\prop_set_from_keyval:Nn`, and `\prop_gset_from_keyval:Nn` as
+  constant and variable definition statements. (reported by @muzimuzhi in #196,
+  fixed in #198)
+
+  More generally, this change also adds support for constant definitions in the
+  form `\⟨type⟩_const_from_⟨base_type⟩:*`. This improves [code coverage][] by
+  37,759 expl3 tokens (~0.004% of all expl3 tokens) on TeX Live 2026.
+
+- Correctly differentiate between direct and indirect variable and constant
+  definitions in the form `\⟨type⟩_(set|gset|const)_from_⟨base_type⟩:*`. (#198)
+
+- Only report issues E504 (Function variant for an undefined function),
+  E506 (Indirect function definition from an undefined function), and
+  W507 (Setting a function before definition) for top-level reachable segments.
+  (reported by @muzimuzhi in #195, fixed in #198)
+
+- Do not report issue E505 (Calling an undefined function) for indirect
+  definitions that resolve to well-known control sequence names.
+  (reported by @muzimuzhi in #197, fixed in #198)
 
 #### Continuous integration
 
@@ -10,6 +36,7 @@ This version of explcheck has made the following changes to our continuous
 integration:
 
 - Update the `zauguin/install-texlive` action to v4.3. (484989a)
+- Retry `tlmgr install` and `update`. (#198)
 
 ## expltools 2026-04-07
 

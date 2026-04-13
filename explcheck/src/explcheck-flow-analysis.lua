@@ -1119,9 +1119,20 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     -- Update the current estimation of the function call edges.
     current_function_call_edges = {}
     states.results.elided_function_call_edge_index = {}
+
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
+
+      -- Record a function call statement as having the function call edge elided for some reason, so that we know that we
+      -- shouldn't report issues for that statement.
+      local function elide_function_call_edge()
+        if states.results.elided_function_call_edge_index[function_call_chunk] == nil then
+          states.results.elided_function_call_edge_index[function_call_chunk] = {}
+        end
+        states.results.elided_function_call_edge_index[function_call_chunk][function_call_statement_number] = true
+      end
+
       if states.results.reaching_definitions.indexes[function_call_chunk] == nil or
           states.results.reaching_definitions.indexes[function_call_chunk][function_call_statement_number] == nil then
         goto next_function_call
@@ -1161,21 +1172,32 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               states.results.reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
             local other_reaching_definition_index = states.results.reaching_definitions.indexes[chunk][macro_statement_number]
             local base_csname = statement.base_csname.payload
-            for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
-              local other_chunk, other_macro_statement_number, other_statement_number
-                = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
-              local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
-              assert(is_well_behaved(other_statement))
-              assert(other_definition.csname == base_csname)
-              -- Weaken the base function definition confidence with the function variant definition confidence.
-              local combined_definition
-              if definition.confidence < other_definition.confidence then
-                combined_definition = make_shallow_copy(other_definition)
-                combined_definition.confidence = definition.confidence
-              else
-                combined_definition = other_definition
+            if other_reaching_definition_index[base_csname] == nil then
+              -- Elide calls to function definitions that are indirectly defined as well-know control sequences.
+              local state = states[function_call_chunk.segment.location.file_number]
+              local imported_prefixes = get_option('imported_prefixes', options, state.pathname)
+              local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
+              local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
+              if lpeg.match(expl3_well_known_csname, base_csname) ~= nil then
+                elide_function_call_edge()
               end
-              table.insert(reaching_function_and_variant_definition_list, combined_definition)
+            else
+              for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
+                local other_chunk, other_macro_statement_number, other_statement_number
+                  = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
+                local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
+                assert(is_well_behaved(other_statement))
+                assert(other_definition.csname == base_csname)
+                -- Weaken the base function definition confidence with the function variant definition confidence.
+                local combined_definition
+                if definition.confidence < other_definition.confidence then
+                  combined_definition = make_shallow_copy(other_definition)
+                  combined_definition.confidence = definition.confidence
+                else
+                  combined_definition = other_definition
+                end
+                table.insert(reaching_function_and_variant_definition_list, combined_definition)
+              end
             end
           end
         else
@@ -1207,10 +1229,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Elide calls to function definitions with empty replacement texts.
         if to_segment.chunks == nil or #to_segment.chunks == 0 then
-          if states.results.elided_function_call_edge_index[function_call_chunk] == nil then
-            states.results.elided_function_call_edge_index[function_call_chunk] = {}
-          end
-          states.results.elided_function_call_edge_index[function_call_chunk][function_call_statement_number] = true
+          elide_function_call_edge()
           goto next_function_definition
         end
 
@@ -1491,6 +1510,13 @@ local function report_issues(states, main_file_number, options)
                   error('Unexpected statement type "' .. statement.type .. '"')
                 end
               end
+            end
+
+            -- For the following issues, only consider statements reachable from top-level code.
+            -- Otherwise, the statements are part of either dead code or library functions and we can't accurately
+            -- determine their reaching definitions.
+            if segment.min_reaching_nesting_depth > 1 then
+              goto next_macro_statement
             end
 
             if (

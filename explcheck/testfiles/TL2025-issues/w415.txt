@@ -113,6 +113,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/langsci-avm/langsci-avm.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/leadsheets.library.songs.code.tex
+/usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/leadsheets.library.transposing.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/leadsheets.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/leftindex/leftindex.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lengthconvert/lengthconvert.sty
@@ -218,6 +219,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/xpinyin/xpinyin.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/xsim/xsim.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/zennote/zennote.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/zhlipsum/zhlipsum.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/zref-clever/zref-clever.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/zugferd/zugferd.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/zxjatype/zxjatype.sty

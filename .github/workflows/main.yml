@@ -16,16 +16,16 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
+      - name: Update APT package lists
+        run: sudo apt -qy update
+      - name: Install Retry
+        run: sudo apt -qy install --no-install-recommends retry
       - name: Install Luacheck
-        run: |
-          set -e
-          sudo apt -qy update
-          sudo apt -qy install --no-install-recommends lua-check
+        run: sudo apt -qy install --no-install-recommends lua-check
       - name: Install LuaLS
         run: |
           set -e
-          sudo apt -qy update
-          sudo apt -qy install build-essential procps curl file git
+          sudo apt -qy install --no-install-recommends build-essential procps curl file git
           NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install lua-language-server
@@ -36,7 +36,7 @@ jobs:
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: tlmgr install --reinstall --with-doc l3kernel-dev
+        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Extract Lua code blocks from file "README.md"
@@ -79,6 +79,10 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
+      - name: Update APT package lists
+        run: sudo apt -qy update
+      - name: Install Retry
+        run: sudo apt -qy install --no-install-recommends retry
       - name: Install TeX Live
         uses: zauguin/install-texlive@v4
         with:
@@ -87,7 +91,7 @@ jobs:
             l3build
             luatex
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: tlmgr install --reinstall --with-doc l3kernel-dev
+        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Run explcheck
@@ -113,6 +117,10 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
+      - name: Update APT package lists
+        run: sudo apt -qy update
+      - name: Install Retry
+        run: sudo apt -qy install --no-install-recommends retry
       - name: Install TeX Live
         uses: zauguin/install-texlive@v4
         with:
@@ -120,7 +128,7 @@ jobs:
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: tlmgr install --reinstall --with-doc l3kernel-dev
+        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Run unit tests
         timeout-minutes: 1
         run: l3build check
@@ -165,11 +173,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Update the TeX Live Package Manager
-        if: matrix.release == 'latest'
-        run: tlmgr update --self
-      - name: Generate file "explcheck-latex3.lua"
-        run: l3build tag
       - name: Switch to Debian trixie
         if: matrix.interpreter == 'lua5.2'
         # This is necessary because support for Lua 5.2 was dropped from the Debian package `lua-lpeg` and `lua-filesystem` on
@@ -194,19 +197,21 @@ jobs:
           Pin: release n=trixie
           Pin-Priority: 990
           EOF
+      - name: Update APT package lists
+        run: apt -qy update
+      - name: Install Retry
+        if: matrix.release == 'latest'
+        run: apt -qy install --no-install-recommends retry
+      - name: Update the TeX Live Package Manager
+        if: matrix.release == 'latest'
+        run: retry -t 30 -d 60 tlmgr update --self
+      - name: Generate file "explcheck-latex3.lua"
+        run: l3build tag
       - name: Install the Lua interpreter
         if: matrix.interpreter != 'luatex'
-        run: |
-          set -e
-
-          apt update
-          apt install -qy ${{ matrix.interpreter }} lua-lpeg lua-filesystem
+        run: apt install -qy ${{ matrix.interpreter }} lua-lpeg lua-filesystem
       - name: Install GNU Parallel
-        run: |
-          set -e
-
-          apt update
-          apt install -qy parallel
+        run: apt -qy install --no-install-recommends parallel
       - name: Run explcheck
         timeout-minutes: 5
         env:
@@ -273,11 +278,12 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Install additional packages
-        run: |
-          set -e
-          sudo apt -qy update
-          sudo apt -qy install --no-install-recommends parallel
+      - name: Update APT package lists
+        run: sudo apt -qy update
+      - name: Install Retry
+        run: sudo apt -qy install --no-install-recommends retry
+      - name: Install GNU Parallel
+        run: sudo apt -qy install --no-install-recommends parallel
       - name: "Install TeX Live: Basic packages"
         uses: zauguin/install-texlive@v4
         with:
@@ -292,7 +298,7 @@ jobs:
           package_file: |
             explcheck/support/DEPENDS.txt
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: tlmgr install --reinstall --with-doc l3kernel-dev
+        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Build CTAN archive and documentation
@@ -323,6 +329,10 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
+      - name: Update APT package lists
+        run: sudo apt -qy update
+      - name: Install Retry
+        run: sudo apt -qy install --no-install-recommends retry
       - name: Install TeX Live
         uses: zauguin/install-texlive@v4
         with:
@@ -330,7 +340,7 @@ jobs:
           packages: |
             l3build
       - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: tlmgr install --reinstall --with-doc l3kernel-dev
+        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Determine Docker image tag

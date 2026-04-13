@@ -3,7 +3,8 @@
 local latex3 = require("explcheck-latex3")
 
 local lpeg = require("lpeg")
-local C, Cc, Cp, Cs, Ct, Cmt, P, R, S = lpeg.C, lpeg.Cc, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt, lpeg.P, lpeg.R, lpeg.S
+local P, R, S = lpeg.P, lpeg.R, lpeg.S
+local C, Cb, Cc, Cg, Cp, Cs, Ct, Cmt = lpeg.C, lpeg.Cb, lpeg.Cc, lpeg.Cg, lpeg.Cp, lpeg.Cs, lpeg.Ct, lpeg.Cmt
 
 -- Base parsers
 ---- Generic
@@ -181,6 +182,7 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
+local csname_argument_specifier = S("Nc")
 local expansionless_argument_specifier = S("NVnTF")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
@@ -287,6 +289,7 @@ local expl3_unexpandable_variable_or_constant_type = (
   + P("fparray")
   + P("intarray")
   + P("io") * S("rw")
+  + P("keyval")
   + P("prop")
   + P("quark")
   + P("regex")
@@ -817,32 +820,46 @@ local expl3_variable_declaration_csname = Ct(
     )
     * underscore
   )^-1
-  * P("new:")
+  * P("new")
+  * P("_linked")^-1
+  * colon
 )
 
 ------ Variable and constant definitions
 local expl3_variable_definition_csname = Ct(
-  C(expl3_variable_or_constant_type)
+  Cg(expl3_variable_or_constant_type, "variable_type")
+  * Cb("variable_type")
   * underscore
   * (
-    P("const") * Cc(true)^-3  -- constant definition
+    Cc(true)^-2  -- constant definition
+    * P("const")
     + Cc(false)  -- variable definition
     * (
       P("gset") * Cc(true)  -- global
       + P("set") * Cc(false)  -- local
     )
+  )
+  * P("_linked")^-1
+  * Cg(Cb("variable_type"), "base_variable_type")
+  * (
+    underscore
+    * (
+      P("eq")
+      + P("from")
+      * underscore
+      * Cg(expl3_variable_or_constant_type, "base_variable_type")
+    )
+    * P(":")
+    * csname_argument_specifier
     * (
       Cc(false)  -- indirect
-      * underscore
-      * (
-        P("eq")
-        + P("from_")
-        * C(expl3_variable_or_constant_type)
-      )
+      * csname_argument_specifier
       + Cc(true)  -- direct
     )
+    + Cc(true)  -- direct
+    * P(":")
   )
-  * P(":")
+  * Cb("base_variable_type")
 )
 
 ------ Variable and constant use

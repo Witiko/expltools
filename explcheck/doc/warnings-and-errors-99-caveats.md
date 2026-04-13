@@ -140,3 +140,5 @@ The warnings and errors in this documents do not cover the complete expl3 langua
   when they cannot be disproven, using them to infer information
   about the state of variables and constants. [@starynovotny2025adda]
   [@starynovotny2025addb]
+- Combined functions `\*_g?clear_new(_linked)?:*`, whose calls should be
+  recognized as several statements by the semantic analysis.

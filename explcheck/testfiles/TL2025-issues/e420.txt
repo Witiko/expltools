@@ -7,6 +7,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/duckuments/duckuments.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/exam-zh/exam-zh.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/flowfram/flowfram.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/genealogy-profiles/genealogy-profiles.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/hobete/hobete.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/intexgral/intexgral.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/keytheorems/keytheorems.sty
