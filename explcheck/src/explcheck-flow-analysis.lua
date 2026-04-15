@@ -1162,32 +1162,24 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               states.results.reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
             local other_reaching_definition_index = states.results.reaching_definitions.indexes[chunk][macro_statement_number]
             local base_csname = statement.base_csname.payload
-            if other_reaching_definition_index[base_csname] == nil then
-              -- Elide calls to function definitions that are indirectly defined as well-know control sequences.
-              local state = states[function_call_chunk.segment.location.file_number]
-              local imported_prefixes = get_option('imported_prefixes', options, state.pathname)
-              local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
-              local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
-              if lpeg.match(expl3_well_known_csname, base_csname) ~= nil then
-                states.results.elided_function_call_out_edge_index[function_call_statement] = true
+            -- Elide calls to indirect function definitions and index those definitions.
+            states.results.elided_function_call_out_edge_index[function_call_statement] = true
+            states.results.function_definition_in_edge_index[statement] = true
+            for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
+              local other_chunk, other_macro_statement_number, other_statement_number
+                = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
+              local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
+              assert(is_well_behaved(other_statement))
+              assert(other_definition.csname == base_csname)
+              -- Weaken the base function definition confidence with the function variant definition confidence.
+              local combined_definition
+              if definition.confidence < other_definition.confidence then
+                combined_definition = make_shallow_copy(other_definition)
+                combined_definition.confidence = definition.confidence
+              else
+                combined_definition = other_definition
               end
-            else
-              for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
-                local other_chunk, other_macro_statement_number, other_statement_number
-                  = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
-                local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
-                assert(is_well_behaved(other_statement))
-                assert(other_definition.csname == base_csname)
-                -- Weaken the base function definition confidence with the function variant definition confidence.
-                local combined_definition
-                if definition.confidence < other_definition.confidence then
-                  combined_definition = make_shallow_copy(other_definition)
-                  combined_definition.confidence = definition.confidence
-                else
-                  combined_definition = other_definition
-                end
-                table.insert(reaching_function_and_variant_definition_list, combined_definition)
-              end
+              table.insert(reaching_function_and_variant_definition_list, combined_definition)
             end
           end
         else
