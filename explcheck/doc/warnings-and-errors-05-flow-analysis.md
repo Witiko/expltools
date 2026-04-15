@@ -72,7 +72,7 @@ A function is set before it has been defined or after it has been undefined.
  /w507-01.tex
  /w507-02.tex
 
-### Unexpandable or restricted-expandable boolean expression {.e}
+### Unexpandable or restricted-expandable boolean expression {.e label=e508 .work-in-progress #flow-aware-unexpandable-or-restricted-expandable-boolean-expression}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
 
  /e508.tex
@@ -85,13 +85,14 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
   First, in the semantic analysis, we'll need to determine in a flow-unaware
   fashion which user-defined functions are definitely not fully-expandable. We
-  should be able to achieve this by looking at whether any built-in functions
-  within the top segments of the replacement texts of these functions are not
-  fully-expandable, likely by parsing l3kernel .dtx files and distilling this
-  information in `explcheck-latex3.lua`.
+  should be able to achieve this by looking at (a) whether the function is defined
+  as protected and (b) whether any built-in functions within the top segments
+  of the replacement texts of these functions are not fully-expandable, likely
+  by parsing l3kernel .dtx files and distilling this information in
+  `explcheck-latex3.lua`.
 
   Incidentally, this should allow us to report a weaker version of this issue
-  during the semantic analysis.
+  during the semantic analysis (E428).
 
   Then, in the flow analysis, we'll need to determine in a flow-aware
   fashion which user-defined functions are definitely not fully-expandable. We
@@ -104,34 +105,13 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
      user-defined functions they call are definitely not fully-expandable.
 
   To determine the latter, we should be able to use a "backwards may" data-flow
-  analysis, similar to the live variable analysis that we'll need for the previous
-  issue W502.
+  analysis.
 
 -->
 
-### Expanding an unexpandable function {.e}
-An unexpandable function or conditional function is called within an `x`-type, `e`-type, or `f`-type argument.
+This check is a stronger version of <#unexpandable-or-restricted-expandable-boolean-expression> and the issue should only be emitted if <#unexpandable-or-restricted-expandable-boolean-expression> has not previously been emitted for this function.
 
- /e509.tex
-
-<!--
-
-  The same considerations apply as for the previous issue (E508).
-
--->
-
-### Fully-expanding a restricted-expandable function {.e}
-An restricted-expadable function or conditional function is called within an `f`-type argument.
-
- /e510.tex
-
-<!--
-
-  The same considerations apply as for the previous two issues (E508 and E509).
-
--->
-
-### Defined an expandable function as protected {.w}
+### Defined an expandable function as protected {.w label=w511 .work-in-progress}
 A fully-expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]
 
  /w511-01.tex
@@ -140,20 +120,20 @@ A fully-expandable function or conditional function is defined using a creator f
 <!--
 
   We can't really report this issue at this moment at all, similar to the
-  previous issues E508 through E510.
+  previous issue E508.
 
   Here's what we'll need to do before we can report this issue:
 
   First, in the semantic analysis, we'll need to determine which user-defined
   functions are definitely fully-expandable, ignoring nested function calls:
 
-  1. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
+  1. A function that is defined as protected is definitely not fully expandable.
+  2. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
      might not be fully-expandable.
-  
-  2. All calls to built-in functions within the top segment of a
+  3. All calls to built-in functions within the top segment of a
      fully-expandable function's replacement text must be fully-expandable.
   
-  To determine the latter, we may need to parse l3kernel .dtx files and
+  To determine the third condition, we may need to parse l3kernel .dtx files and
   distill this information in `explcheck-latex3.lua`.
 
   Then, in the flow analysis, we'll need to determine which user-defined
@@ -165,13 +145,12 @@ A fully-expandable function or conditional function is defined using a creator f
   3. All user-defined functions they call are definitely fully-expandable.
 
   To determine the third condition, we should be able to use a "backwards may"
-  data-flow analysis, similar to the live variable analysis that we'll need for
-  the previous issue W502, as well as the expandability analysis that we'll
-  need for the previous issues E508 through E510.
+  data-flow analysis, similar to the expandability analysis that we'll need for
+  the previous issue E508.
 
 -->
 
-### Defined an unexpandable function as unprotected {.w}
+### Defined an unexpandable function as unprotected {.w label=w512 .work-in-progress}
 An unexpandable or restricted-expandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 
  /w512-01.tex
@@ -179,9 +158,11 @@ An unexpandable or restricted-expandable function or conditional function is def
 
 <!--
 
-  The same considerations apply as for the previous issues E508 through E510.
+  The same considerations apply as for the previous issue E508.
 
 -->
+
+This check is a stronger version of <#defined-unexpandable-function-as-unprotected> and the issue should only be emitted if <#defined-unexpandable-function-as-unprotected> has not previously been emitted for this function.
 
 ### Conditional function with no return value {.e}
 A conditional functions has no return value.
@@ -214,7 +195,7 @@ A conditional functions has no return value.
 
   To determine the third condition, we should be able to use a "backwards may"
   data-flow analysis, similar to the live variable analysis that we'll need for
-  issue W502, as well as the expandability analysis that we'll need for the
+  ~~issue W502,~~ as well as the expandability analysis that we'll need for the
   previous issues E508 through E510, and W511 and W512.
 
 -->

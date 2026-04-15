@@ -1,0 +1,19 @@
+\bool_set:Nn  % error on this line
+  \l_tmpa_bool
+  {
+    \tl_set:Nn
+      \l_tmpa_tl
+      { bar }
+    \c_true_bool
+  }
+\bool_set:Nn  % error on this line
+  \l_tmpa_bool
+  {
+    \bool_do_while:Nn
+      \c_false_bool
+      { }
+    \c_true_bool
+  }
+\bool_set:Nn
+  \l_tmpa_bool
+  { \c_true_bool }

@@ -142,3 +142,8 @@ The warnings and errors in this documents do not cover the complete expl3 langua
   [@starynovotny2025addb]
 - Combined functions `\*_g?clear_new(_linked)?:*`, whose calls should be
   recognized as several statements by the semantic analysis.
+- Checking whether integer expressions are fully- or restricted-expandable
+  and do not contain `\exp_not:N` [@latexteam2024interfaces, Chapter 21.1],
+  similar to what we do for boolean expressions in
+  <#unexpandable-or-restricted-expandable-boolean-expression> and
+  <#flow-aware-unexpandable-or-restricted-expandable-boolean-expression>.
