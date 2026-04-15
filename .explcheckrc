@@ -545,13 +545,13 @@ imported_prefixes = ["hooks"]
 expl3_detection_strategy = "never"
 
 [package.antanilipsum]
-ignored_issues = ["e505"]
+ignored_issues = ["e505", "w502"]
 
 [package.econlipsum]
-ignored_issues = ["e505"]
+ignored_issues = ["e505", "w502"]
 
 [package.kantlipsum]
-ignored_issues = ["e505"]
+ignored_issues = ["e505", "w502"]
 
 [package.novel]
 ignored_issues = ["e506"]

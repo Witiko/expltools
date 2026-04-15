@@ -765,6 +765,7 @@ local function collect_statements(states, file_number, options)
               is_conditional = is_conditional,
               maybe_used = false,
               maybe_multiply_defined = false,
+              call_file_numbers = nil,  -- later filled in by `determine_function_calls_for_definitions()`
             }
             table.insert(statements, statement)
           end
@@ -930,6 +931,7 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = definition_token_range,
                 maybe_used = false,
                 maybe_multiply_defined = false,
+                call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
                 is_protected = is_protected,
@@ -1007,6 +1009,7 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = token_range,
                 maybe_used = false,
                 maybe_multiply_defined = false,
+                call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
                 is_conditional = is_conditional,
@@ -1384,6 +1387,9 @@ local function analyze_group_wide_statements(states, _, options)
     defined_csname_texts_anywhere = {},
     defined_csname_texts_anywhere_file_numbers = {},
 
+    called_functions_anywhere_segments_index = {},
+    called_functions_anywhere_segments_list = {},
+
     defined_message_nums_text_parameters = {},
 
     -- Collect group-wide information about symbols that may have been defined.
@@ -1451,6 +1457,7 @@ local function analyze_group_wide_statements(states, _, options)
       -- Index file-local statements.
       function_call_variant_definition_and_indirect_definition_list = {},
       non_redefined_function_and_variant_definition_list = {},
+      function_and_variant_definition_list = {},
     }
     for _, segment in ipairs(results.segments or {}) do
       assert(file_number == segment.location.file_number)
@@ -1708,6 +1715,7 @@ local function analyze_group_wide_statements(states, _, options)
           end
           -- Index the function variant definition.
           if statement.defined_csname.type == TEXT then
+            table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
             if states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] == nil then
               states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
             end
@@ -1767,6 +1775,7 @@ local function analyze_group_wide_statements(states, _, options)
           end
           -- Index the function definition.
           if statement.defined_csname.type == TEXT then
+            table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
             if states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] == nil then
               states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
             end
@@ -1982,6 +1991,14 @@ local function analyze_group_wide_statements(states, _, options)
         elseif statement.type == OTHER_STATEMENT or statement.type == FUNCTION_CALL then
           -- Record control sequence name usage and definitions.
           for _, call in statement.call_range:enumerate(segment.calls) do
+            if states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname] == nil then
+              states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname] = {}
+              states.results.statement_analysis.called_functions_anywhere_segments_list[call.csname] = {}
+            end
+            if states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname][segment] == nil then
+              states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname][segment] = true
+              table.insert(states.results.statement_analysis.called_functions_anywhere_segments_list[call.csname], segment)
+            end
             states.results.statement_analysis.maybe_used_csname_texts[call.csname] = true
             local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
             table.insert(results.statement_analysis.called_functions_and_variants, {segment, statement, call.csname, csname_byte_range})
@@ -2310,6 +2327,23 @@ local function report_issues(states, file_number, options)
   end
 end
 
+-- Determine and record the potential function calls for all function (variant) definitions.
+local function determine_function_calls_for_definitions(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  for _, statement in ipairs(results.statement_analysis.function_and_variant_definition_list) do
+    assert(statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
+    assert(statement.defined_csname.type == TEXT)
+    local defined_csname = statement.defined_csname.payload
+    statement.call_segments = states.results.statement_analysis.called_functions_anywhere_segments_list[defined_csname]
+  end
+end
+
 -- Determine which function (variant) (un)definitions might actually affect any function calls in the current file group.
 -- This information is used to exclude definitely unused (un)definitions from future analyses to improve performance.
 local function determine_maybe_used_function_definitions(states, file_number, _)
@@ -2442,6 +2476,7 @@ local substeps = {
   collect_statements,
   analyze_group_wide_statements,
   report_issues,
+  determine_function_calls_for_definitions,
   determine_maybe_multiply_defined_function_definitions,
   determine_maybe_used_function_definitions,
   cleanup,
