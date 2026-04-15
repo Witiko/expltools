@@ -1553,19 +1553,25 @@ local function report_issues(states, main_file_number, options)
                   (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and
                   statement.is_private and
                   states.results.function_definition_in_edge_index[statement] == nil and
-                  statement.call_file_numbers ~= nil
+                  statement.call_segments ~= nil
                 ) then
               assert(statement.defined_csname.type == TEXT)
-              assert(#statement.call_file_numbers > 0)
-              local all_calls_reached_flow_analysis = true
-              for _, file_number in ipairs(statement.call_file_numbers) do
-                -- Do not check statements with calls in files that did not reach the flow analysis.
-                if states[file_number].results.stopped_early then
-                  all_calls_reached_flow_analysis = false
+              assert(#statement.call_segments > 0)
+              local all_calls_reached_flow_analysis_and_are_top_level_reachable = true
+              for _, call_segment in ipairs(statement.call_segments) do
+                if (
+                      -- Only consider function (variant) definition statements with calls reachable from top-level code.
+                      -- Otherwise, the calls are part of either dead code or library functions and we can't accurately determine
+                      -- their reaching definitions.
+                      call_segment.min_reaching_nesting_depth > 1 or
+                      -- Do not consider function (variant) definition statements with calls in files that did not reach the flow analysis.
+                      states[call_segment.location.file_number].results.stopped_early
+                    ) then
+                  all_calls_reached_flow_analysis_and_are_top_level_reachable = false
                   break
                 end
               end
-              if all_calls_reached_flow_analysis then
+              if all_calls_reached_flow_analysis_and_are_top_level_reachable then
                 local formatted_csname = format_csname(statement.defined_csname.payload)
                 local byte_range = get_byte_range()
 

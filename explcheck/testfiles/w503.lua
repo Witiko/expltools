@@ -12,7 +12,7 @@ local issues, results = state.issues, state.results
 assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
-local expected_line_numbers = {{13, 15}}
+local expected_line_numbers = {{14, 16}}
 local expected_contexts = {[[\__module_foo:V]]}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w503")
