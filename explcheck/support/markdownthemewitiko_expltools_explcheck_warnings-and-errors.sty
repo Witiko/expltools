@@ -17,6 +17,8 @@
   \l__expltools_explcheck_work_in_progress_bool
 \prop_new:N
   \g__expltools_explcheck_labels_prop
+\seq_new:N
+  \g__expltools_explcheck_labels_seq
 \RequirePackage
   { xcolor }
 \cs_new:Nn
@@ -77,6 +79,9 @@
           \index
           \l__expltools_explcheck_current_label_tl
       }
+    \seq_gput_right:NV
+      \g__expltools_explcheck_labels_seq
+      \l__expltools_explcheck_current_label_tl
   }
 \color_set:nnn
   { __expltools_explcheck_gray }
@@ -225,33 +230,25 @@
                           { \tl_tail:V \l_tmpa_tl }
                         % If the provided label is out-of-order, check whether
                         % it had already been used.
-                        \bool_if:nTF
+                        \seq_if_in:NVTF
+                          \g__expltools_explcheck_labels_seq
+                          \l_tmpb_tl
                           {
-                            \int_compare_p:nNn
-                              { \thesection  }
-                              =
-                              { \tl_head:V \l_tmpb_tl } &&
-                            \int_compare_p:nNn
-                              { \g__expltools_explcheck_subsection_int }
-                              <
-                              { \tl_tail:V \l_tmpb_tl }
+                            % If it had already been used, raise an error.
+                            \msg_error:nnVV
+                              { expltools / explcheck }
+                              { unexpected-label }
+                              \l_tmpa_tl
+                              \l__expltools_explcheck_current_label_tl
                           }
                           {
-                            % If not, skip any intermediate labels and use it.
+                            % Otherwise, skip any intermediate labels and use it.
                             \int_gset:Nn
                               \g__expltools_explcheck_subsection_int
                               { \tl_tail:V \l_tmpb_tl }
                             \tl_set:NV
                               \l__expltools_explcheck_current_label_tl
                               \l_tmpa_tl
-                          }
-                          {
-                            % Otherwise, raise an error.
-                            \msg_error:nnVV
-                              { expltools / explcheck }
-                              { unexpected-label }
-                              \l_tmpa_tl
-                              \l__expltools_explcheck_current_label_tl
                           }
                       }
                   }
@@ -280,45 +277,54 @@
                   }
               },
               attributeClassName = {
-                \tl_set:Nx
-                  \l__expltools_explcheck_current_label_tl
+                \str_if_eq:nnTF
+                  { ##1 }
+                  { work-in-progress }
                   {
-                    \str_uppercase:n { ##1 }
-                    \thesection
-                    \g__expltools_explcheck_subsection_tl
+                    \bool_set_true:N
+                      \l__expltools_explcheck_work_in_progress_bool
                   }
-                \markdownSetup
                   {
-                    renderers = {
-                      headingTwo = {
-                        \tl_set:Nn
-                          \l_tmpa_tl
-                          { ####1~[ }
-                        \tl_put_right:NV
-                          \l_tmpa_tl
-                          \l__expltools_explcheck_current_label_tl
-                        \tl_put_right:Nn
-                          \l_tmpa_tl
-                          { ] }
-                        \__expltools_explcheck_display_heading:NV
-                          \subsection
-                          \l_tmpa_tl
-                      },
-                      headingThree = {
-                        \tl_set:Nn
-                          \l_tmpa_tl
-                          { ####1~[ }
-                        \tl_put_right:NV
-                          \l_tmpa_tl
-                          \l__expltools_explcheck_current_label_tl
-                        \tl_put_right:Nn
-                          \l_tmpa_tl
-                          { ] }
-                        \__expltools_explcheck_display_heading:NV
-                          \subsubsection
-                          \l_tmpa_tl
-                      },
-                    },
+                    \tl_set:Nx
+                      \l__expltools_explcheck_current_label_tl
+                      {
+                        \str_uppercase:n { ##1 }
+                        \thesection
+                        \g__expltools_explcheck_subsection_tl
+                      }
+                    \markdownSetup
+                      {
+                        renderers = {
+                          headingTwo = {
+                            \tl_set:Nn
+                              \l_tmpa_tl
+                              { ####1~[ }
+                            \tl_put_right:NV
+                              \l_tmpa_tl
+                              \l__expltools_explcheck_current_label_tl
+                            \tl_put_right:Nn
+                              \l_tmpa_tl
+                              { ] }
+                            \__expltools_explcheck_display_heading:NV
+                              \subsection
+                              \l_tmpa_tl
+                          },
+                          headingThree = {
+                            \tl_set:Nn
+                              \l_tmpa_tl
+                              { ####1~[ }
+                            \tl_put_right:NV
+                              \l_tmpa_tl
+                              \l__expltools_explcheck_current_label_tl
+                            \tl_put_right:Nn
+                              \l_tmpa_tl
+                              { ] }
+                            \__expltools_explcheck_display_heading:NV
+                              \subsubsection
+                              \l_tmpa_tl
+                          },
+                        },
+                      }
                   }
               }
             },

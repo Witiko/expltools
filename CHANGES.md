@@ -16,6 +16,22 @@ This version of explcheck has implemented the following new features:
   1. W502 (Unused private function)
   2. W503 (Unused private function variant)
 
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Remove planned issues E509 (Expanding an unexpandable function) and E510
+  (Fully-expanding a restricted-expandable function), since none of these
+  constitute an error: the functions simply remain unexpanded. (#201)
+
+- Plan for weaker versions of the issues E508 (Unexpandable or
+  restricted-expandable boolean expression) and W512 (Defined an unexpandable
+  function as unprotected) in semantic analysis under the identifiers E428 and
+  W429, respectively, and the same names. (#201)
+
+- Plan for further analysis of integer expressions in Section "Caveats". (#201)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
@@ -23,6 +39,8 @@ integration:
 
 - Bump `softprops/action-gh-release` from 2 to 3. (contributed by @dependabot
   in #199)
+
+- Check that third-party submodules are up-to-date. (#201)
 
 ## expltools 2026-04-13
 
@@ -787,7 +805,7 @@ This version of explcheck has made the following changes to the document titled
   under the identifier E524 and the same name. (#110, #112)
 
 - Plan for a weaker version of issue E522 (Too few arguments supplied to
-  message) to semantic analysis under the identifier E425 and the same name.
+  message) in semantic analysis under the identifier E425 and the same name.
   (#110, #112)
 
 - Remove issues S205 (Malformed function name), S206 (Malformed variable or

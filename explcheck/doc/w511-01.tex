@@ -1,3 +1,12 @@
 \cs_new_protected:Nn  % warning on this line
-  \example_expandable:
+  \example_expandable_first:
   { foo }
+\cs_new_protected:Nn  % warning on this line
+  \example_expandable_second:
+  { \prg_do_nothing: }
+\cs_new:Nn
+  \example_expandable_third:
+  { bar }
+\cs_new_protected:Nn  % warning on this line
+  \example_expandable_fourth:
+  { \example_expandable_third: }
