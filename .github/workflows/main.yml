@@ -9,14 +9,14 @@ env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   third-party:
-    name: Check that third-party submodules are up-to-date
+    name: Check third-party submodules
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           submodules: true
-          fetch-depth: 500  # Historically, the maximum number of commits between two tags in the latex3 repository is ~300.
+          fetch-depth: 500  # Historically, the maximum number of commits between two tags in the LaTeX3 repository is ~300.
           fetch-tags: true
       - name: Install TeX Live
         uses: zauguin/install-texlive@v4
@@ -24,7 +24,7 @@ jobs:
           cache: false
           packages: |
             l3kernel
-      - name: Check latex3
+      - name: Check that LaTeX3 is up-to-date
         run: |
           set -e
           cd third-party/latex3
@@ -37,7 +37,7 @@ jobs:
           else
             printf 'Submodule "third-party/latex3" is up-to-date with the latest TeX Live.\n'
           fi
-      - name: Check lua-toml
+      - name: Check that lua-toml is up-to-date
         if: success() || steps.luacheck.outcome == 'failure'  # Check lua-toml even if checking latex3 failed.
         run: |
           set -e
