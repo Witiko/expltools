@@ -40,6 +40,8 @@ integration:
 - Bump `softprops/action-gh-release` from 2 to 3. (contributed by @dependabot
   in #199)
 
+- Check that third-party submodules are up-to-date. (#201)
+
 ## expltools 2026-04-13
 
 ### explcheck v0.19.2

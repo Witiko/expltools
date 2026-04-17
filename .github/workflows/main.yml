@@ -8,6 +8,28 @@ on:
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
+  third-party:
+    name: Check that third-party submodules are up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Check lua-toml
+        run: |
+          set -e
+          cd third-party/lua-toml
+          CURRENT_SHA="$(git rev-parse --short HEAD)"
+          git fetch origin dev
+          REMOTE_SHA="$(git rev-parse --short origin/dev)"
+          if [ "$CURRENT_SHA" != "$REMOTE_SHA" ]
+          then
+            printf 'Submodule "third-party/lua-toml" (%s) is not up-to-date with the remote branch "dev" (%s).\n' "$CURRENT_SHA" "$REMOTE_SHA"
+            exit 1
+          else
+            printf 'Submodule "third-party/lua-toml" is up-to-date with the remote branch "dev".\n'
+          fi
   luacheck:
     name: Check code style (Lua)
     runs-on: ubuntu-latest
