@@ -1,3 +1,6 @@
 [submodule "third-party/lua-toml"]
 	path = third-party/lua-toml
 	url = https://github.com/OlegHQ/toml2lua.git
+[submodule "third-party/latex3"]
+	path = third-party/latex3
+	url = https://github.com/latex3/latex3.git
