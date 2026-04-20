@@ -211,7 +211,7 @@ end
 
 -- Extract registered module names from file "l3prefixes.csv".
 local function parse_l3prefixes()
-  local latest_date, prefixes, dates = nil, {}, {}
+  local latest_date, latest_prefix, prefixes, dates = nil, nil, {}, {}
   local input_pathname = string.format("%s/l3kernel/doc/l3prefixes.csv", latex3_pathname)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local csv_field = (
@@ -227,7 +227,7 @@ local function parse_l3prefixes()
     if date:find("(%d%d%d%d%-%d%d%-%d%d)$") == nil then
       print(string.format('Failed to parse date out of line "%s", skipping it in determining the latest registered prefix', line))
     elseif latest_date == nil or date > latest_date then
-      latest_date = date
+      latest_date, latest_prefix = date, prefix
     end
     table.insert(prefixes, prefix)
     if date ~= nil and (dates[prefix] == nil or dates[prefix] > date) then  -- only record earliest first registered prefix for duplicates
@@ -235,7 +235,8 @@ local function parse_l3prefixes()
     end
   end
   assert(latest_date ~= nil)
-  return prefixes, dates, latest_date
+  assert(latest_prefix ~= nil)
+  return prefixes, dates, latest_date, latest_prefix
 end
 
 -- Generate an LPEG parser of registered module names from file "l3prefixes.csv".
@@ -351,8 +352,11 @@ add_comment(output_file, "LPEG parsers and other information extracted from LaTe
 add_comment(output_file, string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
 local csnames, l3obsolete_dates, l3obsolete_latest_date = parse_l3obsolete()
 add_comment(output_file, string.format('- "l3obsolete.txt" with the latest obsolete entry from %s', l3obsolete_latest_date))
-local prefixes, l3prefixes_dates, l3prefixes_latest_date = parse_l3prefixes()
-add_comment(output_file, string.format('- "l3prefixes.csv" with the latest registered prefix from %s', l3prefixes_latest_date))
+local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_prefix = parse_l3prefixes()
+add_comment(
+  output_file,
+  string.format('- "l3prefixes.csv" with the latest registered prefix from %s (%s)', l3prefixes_latest_date, l3prefixes_latest_prefix)
+)
 output_file:write("\n")
 
 ---- Generate the LPEG parsers.
