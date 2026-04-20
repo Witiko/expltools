@@ -1,12 +1,11 @@
 #!/usr/bin/env texlua
 -- Generates a file with up-to-date LPEG parsers and other information extracted from LaTeX3 data files.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "generate-explcheck-latex3")
-
 local lpeg = require("lpeg")
 local C, Ct, Cs, P, R, S = lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.P, lpeg.R, lpeg.S
 local any, eof = P(1), P(-1)
+
+local latex3_pathname = "../../third-party/latex3"
 
 -- Perform a depth-first-search algorithm on a tree.
 local function depth_first_search(node, path, visit, leave)
@@ -27,8 +26,7 @@ end
 -- Extract obsolete control sequence names from file "l3obsolete.txt".
 local function parse_l3obsolete()
   local latest_date, csnames, dates = nil, {}, {}
-  local input_filename = "l3obsolete.txt"
-  local input_pathname = assert(kpse.find_file(input_filename, "TeX system documentation") or input_filename)
+  local input_pathname = string.format("%s/l3kernel/doc/l3obsolete.txt", latex3_pathname)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local line, input_state, seen_csnames = input_file:read("*line"), "preamble", {}
   while line ~= nil do
@@ -214,8 +212,7 @@ end
 -- Extract registered module names from file "l3prefixes.csv".
 local function parse_l3prefixes()
   local latest_date, prefixes, dates = nil, {}, {}
-  local input_filename = "l3prefixes.csv"
-  local input_pathname = assert(kpse.find_file(input_filename, "TeX system documentation") or input_filename)
+  local input_pathname = string.format("%s/l3kernel/doc/l3prefixes.csv", latex3_pathname)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local csv_field = (
     '"' * Cs(((any - P('"')) + P('""') / '"')^0) * '"'  -- quoted field
