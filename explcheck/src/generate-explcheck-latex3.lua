@@ -390,11 +390,6 @@ local function parse_dtx_files()
 
   local percent_sign = P("%")
 
-  local optional_whitespace = (
-    space
-    + tab
-    + newline
-  )^0
   local optional_commented_whitespace = (
     space
     + tab
@@ -502,7 +497,7 @@ local function parse_dtx_files()
     local content = assert(input_file:read("*all"))
     assert(input_file:close())
 
-    definitions = lpeg.match(macro_definitions, content)
+    local definitions = lpeg.match(macro_definitions, content)
     if #definitions > 0 then
       parsed_dtx_files[input_pathname] = definitions
       table.insert(parsed_dtx_files, input_pathname)
