@@ -35,7 +35,7 @@ jobs:
             printf 'Submodule "third-party/latex3" (%s) is not up-to-date with the latest TeX Live (%s).\n' "$CURRENT_RELEASE" "$REMOTE_RELEASE"
             exit 1
           else
-            printf 'Submodule "third-party/latex3" is up-to-date with the latest TeX Live.\n'
+            printf 'Submodule "third-party/latex3" (%s) is up-to-date with the latest TeX Live.\n' "$CURRENT_RELEASE"
           fi
       - name: Check that lua-toml is up-to-date
         if: success() || steps.luacheck.outcome == 'failure'  # Check lua-toml even if checking latex3 failed.
@@ -50,7 +50,7 @@ jobs:
             printf 'Submodule "third-party/lua-toml" (%s) is not up-to-date with the remote branch "dev" (%s).\n' "$CURRENT_SHA" "$REMOTE_SHA"
             exit 1
           else
-            printf 'Submodule "third-party/lua-toml" is up-to-date with the remote branch "dev".\n'
+            printf 'Submodule "third-party/lua-toml" (%s) is up-to-date with the remote branch "dev".\n' "$CURRENT_SHA"
           fi
   luacheck:
     name: Check code style (Lua)
