@@ -1,11 +1,18 @@
 #!/usr/bin/env texlua
 -- Generates a file with up-to-date LPEG parsers and other information extracted from LaTeX3 data files.
 
+local format = require("explcheck-format")
+
+local humanize = format.humanize
+local pluralize = format.pluralize
+
+local lfs = require("lfs")
+
 local lpeg = require("lpeg")
-local C, Ct, Cs, P, R, S = lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.P, lpeg.R, lpeg.S
+local C, Cc, Ct, Cs, P, R, S = lpeg.C, lpeg.Cc, lpeg.Ct, lpeg.Cs, lpeg.P, lpeg.R, lpeg.S
 local any, eof = P(1), P(-1)
 
-local latex3_pathname = "../../third-party/latex3"
+local LATEX3_PATHNAME = "../../third-party/latex3"
 
 -- Perform a depth-first-search algorithm on a tree.
 local function depth_first_search(node, path, visit, leave)
@@ -26,7 +33,7 @@ end
 -- Extract obsolete control sequence names from file "l3obsolete.txt".
 local function parse_l3obsolete()
   local latest_date, csnames, dates = nil, {}, {}
-  local input_pathname = string.format("%s/l3kernel/doc/l3obsolete.txt", latex3_pathname)
+  local input_pathname = string.format("%s/l3kernel/doc/l3obsolete.txt", LATEX3_PATHNAME)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local line, input_state, seen_csnames = input_file:read("*line"), "preamble", {}
   while line ~= nil do
@@ -212,7 +219,7 @@ end
 -- Extract registered module names from file "l3prefixes.csv".
 local function parse_l3prefixes()
   local latest_date, latest_prefix, prefixes, dates = nil, nil, {}, {}
-  local input_pathname = string.format("%s/l3kernel/doc/l3prefixes.csv", latex3_pathname)
+  local input_pathname = string.format("%s/l3kernel/doc/l3prefixes.csv", LATEX3_PATHNAME)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local csv_field = (
     '"' * Cs(((any - P('"')) + P('""') / '"')^0) * '"'  -- quoted field
@@ -337,6 +344,174 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
   assert(produced_parsers == 1)
 end
 
+-- Collect all .dtx files from LaTeX3.
+local function collect_dtx_files()
+  local seen_directory_pathnames, future_directory_pathnames = {}, {LATEX3_PATHNAME}
+  local input_file_pathnames = {}
+  while #future_directory_pathnames > 0 do
+    local current_directory_pathname = table.remove(future_directory_pathnames)
+    if seen_directory_pathnames[current_directory_pathname] ~= nil then
+      goto next_directory
+    end
+    seen_directory_pathnames[current_directory_pathname] = true
+    for current_file_filename in lfs.dir(current_directory_pathname) do
+      if current_file_filename == "." or current_file_filename == ".." then
+        goto next_file
+      end
+      local current_file_pathname = string.format("%s/%s", current_directory_pathname, current_file_filename)
+      if lfs.attributes(current_file_pathname, "mode") == "directory" then
+        table.insert(future_directory_pathnames, current_file_pathname)
+      elseif current_file_filename:sub(1, 2) == "l3" and current_file_pathname:sub(-4):lower() == ".dtx" then
+        table.insert(input_file_pathnames, current_file_pathname)
+      end
+      ::next_file::
+    end
+    ::next_directory::
+  end
+  table.sort(input_file_pathnames)
+  return input_file_pathnames
+end
+
+-- Extract variable and function names from .dtx files.
+local function parse_dtx_files()
+  local newline = (
+    P("\n")
+    + P("\r\n")
+    + P("\r")
+  )
+  local linechar = any - newline
+  local endline = (
+    newline
+    + eof
+  )
+
+  local space = P(" ")
+  local tab = P("\t")
+
+  local percent_sign = P("%")
+
+  local optional_whitespace = (
+    space
+    + tab
+    + newline
+  )^0
+  local optional_commented_whitespace = (
+    space
+    + tab
+    + (newline * percent_sign)
+  )^0
+
+  local function comma_list(item_parser, ender)
+    return Ct(
+      optional_commented_whitespace
+      * ender
+      + C(item_parser)
+      * optional_commented_whitespace
+      * (
+        P(",")
+        * optional_commented_whitespace
+        * C(item_parser)
+        * optional_commented_whitespace
+      )^0
+      * P(",")^-1
+      * optional_commented_whitespace
+      * ender
+    )
+  end
+
+  local csname = (
+    P([[\]])
+    * (
+      R("AZ", "az")
+      + P(":")
+      + P("_")
+    )^1
+  )
+
+  local macro_definition = Ct(
+    P([[\begin]])
+    * optional_commented_whitespace
+    * P("{")
+    * optional_commented_whitespace
+    * (
+      P("variable")
+      + P("function")
+      + P("macro")
+    )
+    * optional_commented_whitespace
+    * P("}")
+    * optional_commented_whitespace
+    * (
+      P("[")
+      * optional_commented_whitespace
+      * comma_list(
+        (
+          (
+            P("added")
+            + P("updated")
+          )
+          * optional_commented_whitespace
+          * P("=")
+          * optional_commented_whitespace
+          * -S(",]")
+          + P("EXP")
+          + P("rEXP")
+          + P("TF")
+          + P("pTF")
+          + P("noTF")
+        ),
+        P("]")
+      )
+      + #(
+        optional_commented_whitespace
+        * P("{")
+      )
+      * Cc({})
+    )
+    * optional_commented_whitespace
+    * P("{")
+    * optional_commented_whitespace
+    * comma_list(csname, P("}"))
+  )
+
+  local commented_lines = (
+    percent_sign
+    * (
+      macro_definition
+      + linechar
+    )^0
+    * endline
+  )
+  local non_commented_line = (
+    linechar^1
+    * endline
+    + linechar^0
+    * newline
+  )
+
+  local macro_definitions = Ct(
+    (
+      commented_lines
+      + non_commented_line
+    )^0
+  )
+
+  local parsed_dtx_files, num_definitions = {}, 0
+  for _, input_pathname in ipairs(collect_dtx_files()) do
+    local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
+    local content = assert(input_file:read("*all"))
+    assert(input_file:close())
+
+    definitions = lpeg.match(macro_definitions, content)
+    if #definitions > 0 then
+      parsed_dtx_files[input_pathname] = definitions
+      table.insert(parsed_dtx_files, input_pathname)
+      num_definitions = num_definitions + #definitions
+    end
+  end
+  return parsed_dtx_files, num_definitions
+end
+
 -- Add a comment, both to an output file and to the standard output.
 local function add_comment(output_file, text)
   print(text)
@@ -356,6 +531,16 @@ local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_pref
 add_comment(
   output_file,
   string.format('- "l3prefixes.csv" with the latest registered prefix from %s (%s)', l3prefixes_latest_date, l3prefixes_latest_prefix)
+)
+local parsed_dtx_files, num_definitions = parse_dtx_files()
+add_comment(
+  output_file,
+  string.format(
+    '- %s "l3*.dtx" files with %s public function and variable %s',
+    humanize(#parsed_dtx_files),
+    humanize(num_definitions),
+    pluralize("definition", num_definitions)
+  )
 )
 output_file:write("\n")
 

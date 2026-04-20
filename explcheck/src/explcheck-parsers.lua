@@ -42,8 +42,8 @@ local newline = (
   + P("\r")
 )
 local linechar = any - newline
-local space = S(" ")
-local tab = S("\t")
+local space = P(" ")
+local tab = P("\t")
 
 ---- Comma-lists
 local function comma_list(item_parser)
