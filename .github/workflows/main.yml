@@ -23,7 +23,7 @@ jobs:
         with:
           cache: false
           packages: |
-            l3kernel
+            l3kernel-dev
       - name: Check that LaTeX3 is up-to-date
         run: |
           set -e
