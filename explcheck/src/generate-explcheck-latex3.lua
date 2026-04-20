@@ -32,7 +32,7 @@ end
 
 -- Extract obsolete control sequence names from file "l3obsolete.txt".
 local function parse_l3obsolete()
-  local latest_date, csnames, dates = nil, {}, {}
+  local latest_date, latest_raw_csname, csnames, dates = nil, nil, {}, {}
   local input_pathname = string.format("%s/l3kernel/doc/l3obsolete.txt", LATEX3_PATHNAME)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local line, input_state, seen_csnames = input_file:read("*line"), "preamble", {}
@@ -44,10 +44,11 @@ local function parse_l3obsolete()
     elseif input_state == "deprecated" and line:sub(1, 1) == [[\]] then
       local _, _, date = line:find("(%d%d%d%d%-%d%d%-%d%d)%s*$")
       assert(date ~= nil, string.format('Failed to parse date out of line "%s"', line))
+      local _, _, raw_csname = line:find([[\(%S*)]])
       if latest_date == nil or date > latest_date then
         latest_date = date
+        latest_raw_csname = raw_csname
       end
-      local _, _, raw_csname = line:find([[\(%S*)]])
       local extracted_csnames = {raw_csname}
       -- Try to determine the base form for conditional function names, so that occurences in calls like
       -- `\prg_generate_conditional_variant:Nnn` are also detected even without semantic analysis.
@@ -78,7 +79,8 @@ local function parse_l3obsolete()
   end
   assert(input_file:close())
   assert(latest_date ~= nil)
-  return csnames, dates, latest_date
+  assert(latest_raw_csname ~= nil)
+  return csnames, dates, latest_date, latest_raw_csname
 end
 
 -- Generate LPEG parsers of obsolete control sequence names from file "l3obsolete.txt".
@@ -520,8 +522,11 @@ local output_file = assert(io.open(output_filename, "w"), "Could not open " .. o
 ---- Generate the preamble.
 add_comment(output_file, "LPEG parsers and other information extracted from LaTeX3 data files.")
 add_comment(output_file, string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
-local csnames, l3obsolete_dates, l3obsolete_latest_date = parse_l3obsolete()
-add_comment(output_file, string.format('- "l3obsolete.txt" with the latest obsolete entry from %s', l3obsolete_latest_date))
+local csnames, l3obsolete_dates, l3obsolete_latest_date, l3obsolete_latest_raw_csname = parse_l3obsolete()
+add_comment(
+  output_file,
+  string.format('- "l3obsolete.txt" with the latest obsolete entry from %s (\\%s)', l3obsolete_latest_date, l3obsolete_latest_raw_csname)
+)
 local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_prefix = parse_l3prefixes()
 add_comment(
   output_file,
