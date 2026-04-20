@@ -79,8 +79,6 @@ jobs:
           cache: false
           packages: |
             l3build
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Extract Lua code blocks from file "README.md"
@@ -134,8 +132,6 @@ jobs:
           packages: |
             l3build
             luatex
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Run explcheck
@@ -171,8 +167,6 @@ jobs:
           cache: false
           packages: |
             l3build
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Run unit tests
         timeout-minutes: 1
         run: l3build check
@@ -341,8 +335,6 @@ jobs:
           cache: false
           package_file: |
             explcheck/support/DEPENDS.txt
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Build CTAN archive and documentation
@@ -383,8 +375,6 @@ jobs:
           cache: false
           packages: |
             l3build
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Determine Docker image tag
