@@ -81,7 +81,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-profiles.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-stones.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/pgfkeysearch/pgfkeysearch.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pkgloader/pkgloader.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pmhanguljamo/pmhanguljamo-frkim.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/pmhanguljamo/pmhanguljamo.sty
@@ -111,15 +110,8 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/texnegar/texnegar-ini.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/texnegar/texnegar-xetex-kashida.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/thermodynamics/thermodynamics.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/tikzfxgraph/tikzfxgraph.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzquads/tikzquads.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/tikzquests/tikzquests.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tzplot/tzplot.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-abnt.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-coord.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-cover.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-curr.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/updatemarks/updatemarks.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/urcls/URspecialopts.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/weiqi/weiqi.sty
