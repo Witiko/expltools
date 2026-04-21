@@ -376,127 +376,131 @@ end
 
 -- Extract variable and function names from .dtx files.
 local function parse_dtx_files()
-  local newline = (
-    P("\n")
-    + P("\r\n")
-    + P("\r")
-  )
-  local linechar = any - newline
-  local endline = (
-    newline
-    + eof
-  )
+  -- Define an LPEG parser for variable and function name definitions.
+  local macro_definitions
+  do
+    local newline = (
+      P("\n")
+      + P("\r\n")
+      + P("\r")
+    )
+    local linechar = any - newline
+    local endline = (
+      newline
+      + eof
+    )
 
-  local space = P(" ")
-  local tab = P("\t")
+    local space = P(" ")
+    local tab = P("\t")
 
-  local percent_sign = P("%")
+    local percent_sign = P("%")
 
-  local optional_commented_whitespace = (
-    space
-    + tab
-    + (newline * percent_sign)
-  )^0
+    local optional_commented_whitespace = (
+      space
+      + tab
+      + (newline * percent_sign)
+    )^0
 
-  local function comma_list(item_parser, ender)
-    return Ct(
-      optional_commented_whitespace
-      * ender
-      + item_parser
+    local function comma_list(item_parser, ender)
+      return Ct(
+        optional_commented_whitespace
+        * ender
+        + item_parser
+        * optional_commented_whitespace
+        * (
+          P(",")
+          * optional_commented_whitespace
+          * item_parser
+          * optional_commented_whitespace
+        )^0
+        * P(",")^-1
+        * optional_commented_whitespace
+        * ender
+      )
+    end
+
+    local csname = (
+      P([[\]])
+      * C(
+        (
+          R("AZ", "az")
+          + P(":")
+          + P("_")
+        )^1
+      )
+    )
+
+    local macro_definition = Ct(
+      P([[\begin]])
+      * optional_commented_whitespace
+      * P("{")
+      * optional_commented_whitespace
+      * C(
+        P("variable")
+        + P("function")
+        + P("macro")
+      )
+      * optional_commented_whitespace
+      * P("}")
       * optional_commented_whitespace
       * (
-        P(",")
+        P("[")
         * optional_commented_whitespace
-        * item_parser
-        * optional_commented_whitespace
-      )^0
-      * P(",")^-1
+        * comma_list(
+          (
+            Ct(
+              C(P("added"))
+              * optional_commented_whitespace
+              * P("=")
+              * optional_commented_whitespace
+              * C(
+                -S(",]")
+              )
+            )
+            + C(
+              P("EXP")
+              + P("rEXP")
+              + P("TF")
+              + P("pTF")
+              + P("noTF")
+            )
+            + (
+              any
+              -S(",]")
+            )^0
+          ),
+          P("]")
+        )
+        + Cc({})
+      )
       * optional_commented_whitespace
-      * ender
+      * P("{")
+      * optional_commented_whitespace
+      * comma_list(csname, P("}"))
+    )
+
+    local commented_lines = (
+      percent_sign
+      * (
+        macro_definition
+        + linechar
+      )^0
+      * endline
+    )
+    local non_commented_line = (
+      linechar^1
+      * endline
+      + linechar^0
+      * newline
+    )
+
+    macro_definitions = Ct(
+      (
+        commented_lines
+        + non_commented_line
+      )^0
     )
   end
-
-  local csname = (
-    P([[\]])
-    * C(
-      (
-        R("AZ", "az")
-        + P(":")
-        + P("_")
-      )^1
-    )
-  )
-
-  local macro_definition = Ct(
-    P([[\begin]])
-    * optional_commented_whitespace
-    * P("{")
-    * optional_commented_whitespace
-    * C(
-      P("variable")
-      + P("function")
-      + P("macro")
-    )
-    * optional_commented_whitespace
-    * P("}")
-    * optional_commented_whitespace
-    * (
-      P("[")
-      * optional_commented_whitespace
-      * comma_list(
-        (
-          Ct(
-            C(P("added"))
-            * optional_commented_whitespace
-            * P("=")
-            * optional_commented_whitespace
-            * C(
-              -S(",]")
-            )
-          )
-          + C(
-            P("EXP")
-            + P("rEXP")
-            + P("TF")
-            + P("pTF")
-            + P("noTF")
-          )
-          + (
-            any
-            -S(",]")
-          )^0
-        ),
-        P("]")
-      )
-      + Cc({})
-    )
-    * optional_commented_whitespace
-    * P("{")
-    * optional_commented_whitespace
-    * comma_list(csname, P("}"))
-  )
-
-  local commented_lines = (
-    percent_sign
-    * (
-      macro_definition
-      + linechar
-    )^0
-    * endline
-  )
-  local non_commented_line = (
-    linechar^1
-    * endline
-    + linechar^0
-    * newline
-  )
-
-  local macro_definitions = Ct(
-    (
-      commented_lines
-      + non_commented_line
-    )^0
-  )
 
   local parsed_dtx_files, definitions = {}, {}
   for _, input_pathname in ipairs(collect_dtx_files()) do
@@ -504,7 +508,7 @@ local function parse_dtx_files()
     local content = assert(input_file:read("*all"))
     assert(input_file:close())
 
-    -- For each DTX file, parse the definitions using LPEG.
+    -- For each DTX file, parse the definitions.
     local raw_definitions = lpeg.match(macro_definitions, content)
     if #raw_definitions == 0 then
       goto next_file
@@ -528,7 +532,6 @@ local function parse_dtx_files()
       end
       -- Determine when the definition was first added.
       local definition = {
-        path = input_path,
         type = definition_type,
       }
       if options["added"] ~= nil then
