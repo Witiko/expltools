@@ -55,12 +55,10 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/stex/problem.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/suanpan-l3/suanpan-l3.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/sysuthesis/sysuthesis.cls
-/usr/local/texlive/2025/texmf-dist/tex/latex/tabular2/tabular2.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/timechart/timechart.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/typoaid/typoaid.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/unicode-math-input/unicode-math-input.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/weiqi/weiqi.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/whatsnote/whatsnote.cls
 /usr/local/texlive/2025/texmf-dist/tex/lualatex/luatex-cn/core/luatex-cn-footnote.sty
 /usr/local/texlive/2025/texmf-dist/tex/platex/jlreq-deluxe/jlreq-deluxe.sty
