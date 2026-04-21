@@ -1376,9 +1376,7 @@ local function report_issues(states, main_file_number, options)
 
   local issues = state.issues
 
-  local imported_prefixes = get_option('imported_prefixes', options, state.pathname)
-  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
-  local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
+  local expl3_well_known_csname = parsers.expl3_well_known_csname(options, state.pathname)
 
   for _, segment in ipairs(state.results.segments or {}) do
     local part_number = segment.location.part_number

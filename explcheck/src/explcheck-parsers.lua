@@ -1,6 +1,7 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
 local latex3 = require("explcheck-latex3")
+local get_option = require("explcheck-config").get_option
 
 local lpeg = require("lpeg")
 local P, R, S = lpeg.P, lpeg.R, lpeg.S
@@ -363,9 +364,13 @@ local expl3_standard_library_prefixes = (
   + P("use")
   + P("withargs")  -- part of the withargs package
 )
-local function expl3_well_known_csname(l3prefixes_max_first_registered_date, other_prefix_texts)
+local function expl3_well_known_csname(options, pathname)
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+
   local other_prefixes = fail
-  for _, prefix_text in ipairs(other_prefix_texts) do
+  for _, prefix_text in ipairs(imported_prefixes) do
     other_prefixes = (
       other_prefixes +
       #(P(prefix_text) * (underscore + colon))
@@ -377,7 +382,7 @@ local function expl3_well_known_csname(l3prefixes_max_first_registered_date, oth
     function(_, _, maybe_first_registered_date)
       return (
         not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
-        or maybe_first_registered_date  -- actual first registered date has been specified in the file `l3prefixes.csv`
+        or maybe_first_registered_date ~= nil  -- actual first registered date has been specified in the file "l3prefixes.csv"
         and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
       )
     end
@@ -389,8 +394,21 @@ local function expl3_well_known_csname(l3prefixes_max_first_registered_date, oth
     * latex3_prefixes
     + other_prefixes
   )
+
+  local latex3_csname = Cmt(
+    latex3.definitions,
+    function(_, _, definition)
+      return (
+        not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
+        or (definition ~= nil and definition.added_date ~= nil)  -- actual added date has been specified in "l3*.dtx" files
+        and definition.added_date <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+      )
+    end
+  )
+
   local well_known_function_csname = (
-    P("__")^-1
+    latex3_csname
+    + P("__")^-1
     * prefix
     * (
       underscore
@@ -405,6 +423,7 @@ local function expl3_well_known_csname(l3prefixes_max_first_registered_date, oth
     * prefix
     * underscore
   )
+
   return (
     P("q_no_value")
     + well_known_function_csname
@@ -877,9 +896,12 @@ local expl3_variable_use_csname = Ct(
 
 ---- Messages
 ------ Message names
-local function expl3_well_known_message_name(l3prefixes_max_first_registered_date, other_prefix_texts)
+local function expl3_well_known_message_name(options, pathname)
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
+
   local other_prefixes = fail
-  for _, prefix_text in ipairs(other_prefix_texts) do
+  for _, prefix_text in ipairs(imported_prefixes) do
     other_prefixes = (
       other_prefixes
       + #(P(prefix_text) * slash)
@@ -891,7 +913,7 @@ local function expl3_well_known_message_name(l3prefixes_max_first_registered_dat
     function(_, _, maybe_first_registered_date)
       return (
         not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
-        or maybe_first_registered_date  -- actual first registered date has been specified in the file `l3prefixes.csv`
+        or maybe_first_registered_date  -- actual first registered date has been specified in the file "l3prefixes.csv"
         and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
       )
     end
