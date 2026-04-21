@@ -555,18 +555,18 @@ local function parse_dtx_files()
       local csnames = {}
       for _, raw_csname in ipairs(raw_csnames) do
         if not (options["TF"] or options["pTF"]) or options["noTF"] then
-          table.insert(csnames, string.format("\\%s", raw_csname))
+          table.insert(csnames, raw_csname)
         end
         if options["TF"] or options["pTF"] or options["noTF"] then
-          table.insert(csnames, string.format("\\%sTF", raw_csname))
-          table.insert(csnames, string.format("\\%sT", raw_csname))
-          table.insert(csnames, string.format("\\%sF", raw_csname))
+          table.insert(csnames, string.format("%sTF", raw_csname))
+          table.insert(csnames, string.format("%sT", raw_csname))
+          table.insert(csnames, string.format("%sF", raw_csname))
         end
         if options["pTF"] then
           local raw_csname_stem, argument_specifiers = raw_csname:match("([^:]*):([^:]*)")
           assert(raw_csname_stem ~= nil)
           assert(argument_specifiers ~= nil)
-          table.insert(csnames, string.format("\\%s_p:%s", raw_csname_stem, argument_specifiers))
+          table.insert(csnames, string.format("%s_p:%s", raw_csname_stem, argument_specifiers))
         end
       end
       -- Record the control sequence names and their definitions.
@@ -577,38 +577,24 @@ local function parse_dtx_files()
             -- based on whether one of the definitions originates from `\begin{macro}`, which makes the values less reliable.
             if definitions[csname][key] ~= nil and definition[key] ~= nil and definitions[csname][key] ~= definition[key] then
               local message =  string.format(
-                'Conflicting value of "%s" for `%s`: "%s" in "%s" versus "%s" in "%s"',
+                'Conflicting value of "%s" for `\\%s`: "%s" in "%s" (`\\begin{%s}`) versus "%s" in "%s" (`\\begin{%s}`)',
                 key,
                 csname,
                 definitions[csname][key],
                 get_basename(definitions[csname].pathname),
+                definitions[csname].type,
                 definition[key],
-                get_basename(definition.pathname)
+                get_basename(definition.pathname),
+                definition.type
               )
               if definitions[csname].type == "macro" or definition.type == "macro" then
                 io.write(string.format("Warning: %s", message))
-                local template = '; going with "%s" (from `\\begin{%s}`) over "%s" (from `\\begin{%s}`)'
+                local template = '; preferring "%s" over "%s"'
                 if definitions[csname].type == "macro" and definition.type ~= "macro" then
-                  print(
-                    string.format(
-                      template,
-                      definition[key],
-                      definition.type,
-                      definitions[csname][key],
-                      definitions[csname].type
-                    )
-                  )
+                  print(string.format(template, definition[key], definitions[csname][key]))
                   definitions[csname][key] = definition[key]
                 else
-                  print(
-                    string.format(
-                      template,
-                      definitions[csname][key],
-                      definitions[csname].type,
-                      definition[key],
-                      definition.type
-                    )
-                  )
+                  print(string.format(template, definitions[csname][key], definition[key]))
                 end
               else
                 error(message)
@@ -645,12 +631,12 @@ add_comment(output_file, string.format("Generated on %s from the following files
 local csnames, l3obsolete_dates, l3obsolete_latest_date, l3obsolete_latest_raw_csname = parse_l3obsolete()
 add_comment(
   output_file,
-  string.format('- "l3obsolete.txt" with the latest obsolete entry from %s (\\%s)', l3obsolete_latest_date, l3obsolete_latest_raw_csname)
+  string.format('- "l3obsolete.txt" with the latest obsolete entry from %s: `\\%s`', l3obsolete_latest_date, l3obsolete_latest_raw_csname)
 )
 local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_prefix = parse_l3prefixes()
 add_comment(
   output_file,
-  string.format('- "l3prefixes.csv" with the latest registered prefix from %s (%s)', l3prefixes_latest_date, l3prefixes_latest_prefix)
+  string.format('- "l3prefixes.csv" with the latest registered prefix from %s: "%s"', l3prefixes_latest_date, l3prefixes_latest_prefix)
 )
 local parsed_dtx_files, definitions = parse_dtx_files()
 add_comment(
