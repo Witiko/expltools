@@ -615,32 +615,29 @@ local function parse_dtx_files()
   return parsed_dtx_files, definitions
 end
 
--- Add a comment, both to an output file and to the standard output.
-local function add_comment(output_file, text)
-  print(text)
-  output_file:write(string.format("-- %s\n", text))
-end
-
 -- Generate the file "explcheck-latex3.lua".
 local output_filename = "explcheck-latex3.lua"
 local output_file = assert(io.open(output_filename, "w"), "Could not open " .. output_filename .. " for writing")
 
+-- Add a comment, both to an output file and to the standard output.
+local function add_comment(text)
+  print(text)
+  output_file:write(string.format("-- %s\n", text))
+end
+
 ---- Generate the preamble.
-add_comment(output_file, "LPEG parsers and other information extracted from LaTeX3 data files.")
-add_comment(output_file, string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
+add_comment("LPEG parsers and other information extracted from LaTeX3 data files.")
+add_comment(string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
 local csnames, l3obsolete_dates, l3obsolete_latest_date, l3obsolete_latest_raw_csname = parse_l3obsolete()
 add_comment(
-  output_file,
   string.format('- "l3obsolete.txt" with the latest obsolete entry from %s: `\\%s`', l3obsolete_latest_date, l3obsolete_latest_raw_csname)
 )
 local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_prefix = parse_l3prefixes()
 add_comment(
-  output_file,
   string.format('- "l3prefixes.csv" with the latest registered prefix from %s: "%s"', l3prefixes_latest_date, l3prefixes_latest_prefix)
 )
 local parsed_dtx_files, definitions = parse_dtx_files()
 add_comment(
-  output_file,
   string.format(
     '- %s "l3*.dtx" files with %s public function and variable %s',
     humanize(#parsed_dtx_files),
