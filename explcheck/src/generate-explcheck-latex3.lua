@@ -425,7 +425,10 @@ local function parse_definitions()
         * comma_list(
           (
             Ct(
-              C(P("added"))
+              C(
+                P("added")
+                + P("updated")
+              )
               * optional_commented_whitespace
               * P("=")
               * optional_commented_whitespace
@@ -510,6 +513,7 @@ local function parse_definitions()
   end
 
   local parsed_dtx_files, definitions = {}, {}
+  local latest_csname, latest_date = {}, {}
   for _, input_pathname in ipairs(collect_dtx_files()) do
     local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
     local content = assert(input_file:read("*all"))
@@ -537,15 +541,17 @@ local function parse_definitions()
           options[key] = value
         end
       end
-      -- Determine when the definition was first added.
+      -- Determine when the definition was first added or most recently updated.
       local definition = {
         pathname = input_pathname,
         type = definition_type,
       }
-      if options.added ~= nil then
-        local _, _, added_date = options.added:find("(%d%d%d%d%-%d%d%-%d%d)")
-        assert(added_date ~= nil, string.format('Failed to parse date out of value "%s"', options.added))
-        definition.added = added_date
+      for _, key in ipairs({"added", "updated"}) do
+        if options[key] ~= nil then
+          local _, _, date = options[key]:find("(%d%d%d%d%-%d%d%-%d%d)")
+          assert(date ~= nil, string.format('Failed to parse date out of value "%s"', options[key]))
+          definition[key] = date
+        end
       end
       -- Determine expandability.
       if options.EXP or options.pTF then
@@ -577,8 +583,14 @@ local function parse_definitions()
       end
       -- Record the control sequence names and their definitions.
       for _, csname in ipairs(csnames) do
+        for _, key in ipairs({"added", "updated"}) do
+          if definition[key] ~= nil and (latest_date[key] == nil or definition[key] > latest_date[key]) then
+            latest_date[key] = definition[key]
+            latest_csname[key] = csname
+          end
+        end
         if definitions[csname] ~= nil then
-          for _, key in ipairs({"added", "EXP"}) do
+          for _, key in ipairs({"added", "updated", "EXP"}) do
             -- When a definition is repeated and the recorded values are incompatible, either log a warning or report an error,
             -- based on whether one of the definitions originates from `\begin{macro}`, which makes the values less reliable.
             if definitions[csname][key] ~= nil and definition[key] ~= nil and definitions[csname][key] ~= definition[key] then
@@ -619,7 +631,12 @@ local function parse_definitions()
     end
     ::next_file::
   end
-  return parsed_dtx_files, definitions
+
+  for _, key in ipairs({"added", "updated"}) do
+    assert(latest_date[key] ~= nil)
+    assert(latest_csname[key] ~= nil)
+  end
+  return parsed_dtx_files, definitions, latest_date, latest_csname
 end
 
 -- Generate an LPEG parser of variable and function names defined in "l3*.dtx" files.
@@ -751,15 +768,18 @@ local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_pref
 add_comment(
   string.format('- "l3prefixes.csv" with the latest registered prefix from %s: "%s"', l3prefixes_latest_date, l3prefixes_latest_prefix)
 )
-local parsed_dtx_files, definitions = parse_definitions()
+local parsed_dtx_files, definitions, latest_defined_date, latest_defined_csname = parse_definitions()
 add_comment(
   string.format(
-    '- %s "l3*.dtx" files with %s public function and variable %s',
+    '- %s "l3*.dtx" files with %s public function and variable %s:',
     humanize(#parsed_dtx_files),
     humanize(#definitions),
     pluralize("definition", #definitions)
   )
 )
+for _, key in ipairs({"added", "updated"}) do
+  add_comment(string.format('  - Latest %s function or variable from %s: `\\%s`', key, latest_defined_date[key], latest_defined_csname[key]))
+end
 output_file:write("\n")
 
 ---- Generate the LPEG parsers.
