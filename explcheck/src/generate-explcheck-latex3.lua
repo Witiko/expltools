@@ -2,6 +2,7 @@
 -- Generates a file with up-to-date LPEG parsers and other information extracted from LaTeX3 data files.
 
 local format = require("explcheck-format")
+local get_basename = require("explcheck-utils").get_basename
 
 local humanize = format.humanize
 local pluralize = format.pluralize
@@ -532,6 +533,7 @@ local function parse_dtx_files()
       end
       -- Determine when the definition was first added.
       local definition = {
+        pathname = input_pathname,
         type = definition_type,
       }
       if options["added"] ~= nil then
@@ -575,12 +577,13 @@ local function parse_dtx_files()
             -- based on whether one of the definitions originates from `\begin{macro}`, which makes the values less reliable.
             if definitions[csname][key] ~= nil and definition[key] ~= nil and definitions[csname][key] ~= definition[key] then
               local message =  string.format(
-                'Conflicting value of "%s" for "%s" in "%s": "%s" versus "%s"',
+                'Conflicting value of "%s" for `%s`: "%s" in "%s" versus "%s" in "%s"',
                 key,
                 csname,
-                input_pathname,
                 definitions[csname][key],
-                definition[key]
+                get_basename(definitions[csname].pathname),
+                definition[key],
+                get_basename(definition.pathname)
               )
               if definitions[csname].type == "macro" or definition.type == "macro" then
                 io.write(string.format("Warning: %s", message))
