@@ -52,7 +52,7 @@ local function parse_l3obsolete()
       local extracted_csnames = {raw_csname}
       -- Try to determine the base form for conditional function names, so that occurences in calls like
       -- `\prg_generate_conditional_variant:Nnn` are also detected even without semantic analysis.
-      local _, _, csname_stem, argument_specifiers = raw_csname:find("([^:]*):([^:]*)")
+      local csname_stem, argument_specifiers = raw_csname:match("([^:]*):([^:]*)")
       if csname_stem ~= nil then
         if argument_specifiers:sub(-2) == "TF" then
           table.insert(extracted_csnames, string.format("%s:%s", csname_stem, argument_specifiers:sub(1, -3)))
@@ -402,12 +402,12 @@ local function parse_dtx_files()
     return Ct(
       optional_commented_whitespace
       * ender
-      + C(item_parser)
+      + item_parser
       * optional_commented_whitespace
       * (
         P(",")
         * optional_commented_whitespace
-        * C(item_parser)
+        * item_parser
         * optional_commented_whitespace
       )^0
       * P(",")^-1
@@ -418,11 +418,13 @@ local function parse_dtx_files()
 
   local csname = (
     P([[\]])
-    * (
-      R("AZ", "az")
-      + P(":")
-      + P("_")
-    )^1
+    * C(
+      (
+        R("AZ", "az")
+        + P(":")
+        + P("_")
+      )^1
+    )
   )
 
   local macro_definition = Ct(
@@ -430,7 +432,7 @@ local function parse_dtx_files()
     * optional_commented_whitespace
     * P("{")
     * optional_commented_whitespace
-    * (
+    * C(
       P("variable")
       + P("function")
       + P("macro")
@@ -443,27 +445,30 @@ local function parse_dtx_files()
       * optional_commented_whitespace
       * comma_list(
         (
-          (
-            P("added")
-            + P("updated")
+          Ct(
+            C(P("added"))
+            * optional_commented_whitespace
+            * P("=")
+            * optional_commented_whitespace
+            * C(
+              -S(",]")
+            )
           )
-          * optional_commented_whitespace
-          * P("=")
-          * optional_commented_whitespace
-          * -S(",]")
-          + P("EXP")
-          + P("rEXP")
-          + P("TF")
-          + P("pTF")
-          + P("noTF")
+          + C(
+            P("EXP")
+            + P("rEXP")
+            + P("TF")
+            + P("pTF")
+            + P("noTF")
+          )
+          + (
+            any
+            -S(",]")
+          )^0
         ),
         P("]")
       )
-      + #(
-        optional_commented_whitespace
-        * P("{")
-      )
-      * Cc({})
+      + Cc({})
     )
     * optional_commented_whitespace
     * P("{")
@@ -493,20 +498,129 @@ local function parse_dtx_files()
     )^0
   )
 
-  local parsed_dtx_files, num_definitions = {}, 0
+  local parsed_dtx_files, definitions = {}, {}
   for _, input_pathname in ipairs(collect_dtx_files()) do
     local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
     local content = assert(input_file:read("*all"))
     assert(input_file:close())
 
-    local definitions = lpeg.match(macro_definitions, content)
-    if #definitions > 0 then
-      parsed_dtx_files[input_pathname] = definitions
-      table.insert(parsed_dtx_files, input_pathname)
-      num_definitions = num_definitions + #definitions
+    -- For each DTX file, parse the definitions using LPEG.
+    local raw_definitions = lpeg.match(macro_definitions, content)
+    if #raw_definitions == 0 then
+      goto next_file
     end
+
+    -- Record the DTX file.
+    table.insert(parsed_dtx_files, input_pathname)
+
+    -- Then, interpret these definitions.
+    for _, raw_definition in ipairs(raw_definitions) do
+      local definition_type, options, raw_csnames = table.unpack(raw_definition)
+      for _, option in ipairs(options) do
+        if type(option) == "string" then
+          options[option] = true
+        elseif type(option) == "table" then
+          local key, value = table.unpack(option)
+          assert(type(key) == "string")
+          assert(type(value) == "string")
+          options[key] = value
+        end
+      end
+      -- Determine when the definition was first added.
+      local definition = {
+        path = input_path,
+        type = definition_type,
+      }
+      if options["added"] ~= nil then
+        local _, _, added_date = options["added"]:find("(%d%d%d%d%-%d%d%-%d%d)")
+        assert(added_date ~= nil, string.format('Failed to parse date out of value "%s"', options["added"]))
+        definition["added"] = added_date
+      end
+      -- Determine expandability.
+      if options["EXP"] or options["pTF"] then
+        assert(options["rEXP"] == nil)
+        definition["expandability"] = "full"
+      end
+      if options["rEXP"] then
+        assert(options["EXP"] == nil)
+        assert(options["pTF"] == nil)
+        definition["expandability"] = "restricted"
+      end
+      -- Determine the actual defined control sequence names.
+      local csnames = {}
+      for _, raw_csname in ipairs(raw_csnames) do
+        if not (options["TF"] or options["pTF"]) or options["noTF"] then
+          table.insert(csnames, string.format("\\%s", raw_csname))
+        end
+        if options["TF"] or options["pTF"] or options["noTF"] then
+          table.insert(csnames, string.format("\\%sTF", raw_csname))
+          table.insert(csnames, string.format("\\%sT", raw_csname))
+          table.insert(csnames, string.format("\\%sF", raw_csname))
+        end
+        if options["pTF"] then
+          local raw_csname_stem, argument_specifiers = raw_csname:match("([^:]*):([^:]*)")
+          assert(raw_csname_stem ~= nil)
+          assert(argument_specifiers ~= nil)
+          table.insert(csnames, string.format("\\%s_p:%s", raw_csname_stem, argument_specifiers))
+        end
+      end
+      -- Record the control sequence names and their definitions.
+      for _, csname in ipairs(csnames) do
+        if definitions[csname] ~= nil then
+          for _, key in ipairs({"added", "expandability"}) do
+            -- When a definition is repeated and the recorded values are incompatible, either log a warning or report an error,
+            -- based on whether one of the definitions originates from `\begin{macro}`, which makes the values less reliable.
+            if definitions[csname][key] ~= nil and definition[key] ~= nil and definitions[csname][key] ~= definition[key] then
+              local message =  string.format(
+                'Conflicting value of "%s" for "%s" in "%s": "%s" versus "%s"',
+                key,
+                csname,
+                input_pathname,
+                definitions[csname][key],
+                definition[key]
+              )
+              if definitions[csname].type == "macro" or definition.type == "macro" then
+                io.write(string.format("Warning: %s", message))
+                local template = '; going with "%s" (from `\\begin{%s}`) over "%s" (from `\\begin{%s}`)'
+                if definitions[csname].type == "macro" and definition.type ~= "macro" then
+                  print(
+                    string.format(
+                      template,
+                      definition[key],
+                      definition.type,
+                      definitions[csname][key],
+                      definitions[csname].type
+                    )
+                  )
+                  definitions[csname][key] = definition[key]
+                else
+                  print(
+                    string.format(
+                      template,
+                      definitions[csname][key],
+                      definitions[csname].type,
+                      definition[key],
+                      definition.type
+                    )
+                  )
+                end
+              else
+                error(message)
+              end
+            elseif definitions[csname][key] == nil and definition[key] ~= nil then
+              -- When a definition is repeated and the next definition specifies some new values, record them.
+              definitions[csname][key] = definition[key]
+            end
+          end
+        else
+          definitions[csname] = definition
+          table.insert(definitions, csname)
+        end
+      end
+    end
+    ::next_file::
   end
-  return parsed_dtx_files, num_definitions
+  return parsed_dtx_files, definitions
 end
 
 -- Add a comment, both to an output file and to the standard output.
@@ -532,14 +646,14 @@ add_comment(
   output_file,
   string.format('- "l3prefixes.csv" with the latest registered prefix from %s (%s)', l3prefixes_latest_date, l3prefixes_latest_prefix)
 )
-local parsed_dtx_files, num_definitions = parse_dtx_files()
+local parsed_dtx_files, definitions = parse_dtx_files()
 add_comment(
   output_file,
   string.format(
     '- %s "l3*.dtx" files with %s public function and variable %s',
     humanize(#parsed_dtx_files),
-    humanize(num_definitions),
-    pluralize("definition", num_definitions)
+    humanize(#definitions),
+    pluralize("definition", #definitions)
   )
 )
 output_file:write("\n")
