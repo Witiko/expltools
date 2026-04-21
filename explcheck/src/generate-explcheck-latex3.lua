@@ -778,7 +778,14 @@ add_comment(
   )
 )
 for _, key in ipairs({"added", "updated"}) do
-  add_comment(string.format('  - Latest %s function or variable from %s: `\\%s`', key, latest_defined_date[key], latest_defined_csname[key]))
+  add_comment(
+    string.format(
+      '  - Latest %s function or variable from %s: `\\%s`',
+      key,
+      latest_defined_date[key],
+      latest_defined_csname[key]
+    )
+  )
 end
 output_file:write("\n")
 
