@@ -16,6 +16,43 @@ This version of explcheck has implemented the following new features:
   1. W502 (Unused private function)
   2. W503 (Unused private function variant)
 
+- Add option `latex3_definitions_max_added_date`, which limits how recent
+  standard-library LaTeX3 function and variable definitions are considered
+  during analysis. (#201)
+
+  This affects issues E428 and E508 (Unexpandable or restricted-expandable
+  boolean expression) and W429 and W512 (Defined an unexpandable function as
+  unprotected), as well as any issues that are only reported for user-defined
+  functions and variables, not for standard-library LaTeX3 ones.
+
+  For example, your config file `.explcheckrc` might look as follows if you
+  want to only consider deprecations, prefixes, and definitions from
+  TeX Live 2025 and earlier:
+
+  ```toml
+  [defaults]
+  l3obsolete_max_deprecated_date = "2025-09-29"
+  l3prefixes_max_first_registered_date = "2025-12-02"
+  latex3_definitions_max_added_date = "2025-07-08"
+  ```
+
+  These dates can be obtained by running `generate-explcheck-latex3.lua` with
+  the Git submodule `third-party/latex3` checked out at a commit corresponding
+  to TeX Live 2025. One reasonable approximation is the Git tag `2026-01-19`,
+  since `/usr/local/texlive/2025/texmf-dist/tex/latex/l3kernel/expl3-code.tex`
+  in the Docker image `texlive/texlive:TL2025-historic` contains
+  `\def\ExplFileDate{2026-01-19}`. The script then produces output such as:
+
+  ```
+  LPEG parsers and other information extracted from LaTeX3 data files.
+  Generated on 2026-04-21 from the following files:
+  - "l3obsolete.txt" with the latest obsolete entry from 2025-09-29: `\l_keys_choice_tl`
+  - "l3prefixes.csv" with the latest registered prefix from 2025-12-02: "asmejour"
+  - 85 "l3*.dtx" files with 5,989 public function and variable definitions:
+    - Latest added function or variable from 2025-07-08: `\tl_retokenize:n`
+    - Latest updated function or variable from 2025-09-29: `\l_keys_choice_int`
+  ```
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
