@@ -2,10 +2,13 @@
 -- Generates a file with up-to-date LPEG parsers and other information extracted from LaTeX3 data files.
 
 local format = require("explcheck-format")
-local get_basename = require("explcheck-utils").get_basename
+local utils = require("explcheck-utils")
 
 local humanize = format.humanize
 local pluralize = format.pluralize
+
+local get_basename = utils.get_basename
+local make_shallow_copy = utils.make_shallow_copy
 
 local lfs = require("lfs")
 
@@ -604,6 +607,7 @@ local function parse_definitions()
               end
             elseif definitions[csname][key] == nil and definition[key] ~= nil then
               -- When a definition is repeated and the next definition specifies some new values, record them.
+              definitions[csname] = make_shallow_copy(definitions[csname])
               definitions[csname][key] = definition[key]
             end
           end
