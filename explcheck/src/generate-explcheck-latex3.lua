@@ -134,22 +134,22 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
   -- Finally, generate parsers out of the trees.
   local output_wildcard = P("wildcard")
   local output_regular_character = any - P('"')
-  local output_date = P(' / "') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
+  local output_date = P('/"') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
   local output_regular_characters = (
-    P('P("')
+    P('P"')
     * C(output_regular_character^1)
-    * P('")')
+    * P('"')
   )
   local simplified_output_regular_characters = (
     Ct(
       output_regular_characters
       * (
-        P(' * ')
+        P('*')
         * output_regular_characters
       )^0
     )
     / function(accumulator)
-      return 'P("' .. table.concat(accumulator, "") .. '")'
+      return 'P"' .. table.concat(accumulator, "") .. '"'
     end
   )
   local simplified_output_parsers = Cs(
@@ -172,14 +172,14 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
           suffix = "wildcard"
         else
           assert(node ~= '"')
-          suffix = 'P("' .. node .. '")'
+          suffix = 'P"' .. node .. '"'
         end
         local maybe_date = dates[csname_type][path .. node]
         if maybe_date ~= nil then
-          suffix = suffix .. ' / "' .. maybe_date .. '"'
+          suffix = suffix .. '/"' .. maybe_date .. '"'
         end
         if subparsers[path] ~= nil then
-          subparsers[path] = subparsers[path] .. " + " .. suffix
+          subparsers[path] = subparsers[path] .. "+" .. suffix
         else
           subparsers[path] = suffix
         end
@@ -193,21 +193,21 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
           prefix = "wildcard"
         else
           assert(character ~= '"')
-          prefix = 'P("' .. character .. '")'
+          prefix = 'P"' .. character .. '"'
         end
         local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
         local suffix
         if simplified_pattern ~= nil then  -- simple pattern
-          suffix = prefix .. " * " .. simplified_pattern
+          suffix = prefix .. "*" .. simplified_pattern
           local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
           if simplified_suffix ~= nil then
             suffix = simplified_suffix
           end
         else  -- complex pattern
-          suffix = prefix .. " * (" .. subparsers[path] .. ")"
+          suffix = prefix .. "*(" .. subparsers[path] .. ")"
         end
         if subparsers[parent_path] ~= nil then
-          subparsers[parent_path] = subparsers[parent_path] .. " + " .. suffix
+          subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
         else
           subparsers[parent_path] = suffix
         end
@@ -274,22 +274,22 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
 
   -- Then, generate a parser out of the tree.
   local output_regular_character = any - P('"')
-  local output_date = P(' / "') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
+  local output_date = P('/"') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
   local output_regular_characters = (
-    P('P("')
+    P('P"')
     * C(output_regular_character^1)
-    * P('")')
+    * P('"')
   )
   local simplified_output_regular_characters = (
     Ct(
       output_regular_characters
       * (
-        P(' * ')
+        P('*')
         * output_regular_characters
       )^0
     )
     / function(accumulator)
-      return 'P("' .. table.concat(accumulator, "") .. '")'
+      return 'P"' .. table.concat(accumulator, "") .. '"'
     end
   )
   local simplified_output_parsers = Cs(
@@ -307,13 +307,13 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
     if type(node) == "string" then  -- leaf node
       local suffix
       assert(node ~= '"')
-      suffix = 'P("' .. node .. '")'
+      suffix = 'P"' .. node .. '"'
       local maybe_date = dates[path .. node]
       if maybe_date ~= nil then
-        suffix = suffix .. ' / "' .. maybe_date .. '"'
+        suffix = suffix .. '/"' .. maybe_date .. '"'
       end
       if subparsers[path] ~= nil then
-        subparsers[path] = subparsers[path] .. " + " .. suffix
+        subparsers[path] = subparsers[path] .. "+" .. suffix
       else
         subparsers[path] = suffix
       end
@@ -324,20 +324,20 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
       local parent_path = path:sub(1, #path - 1)
       local prefix
       assert(character ~= '"')
-      prefix = 'P("' .. character .. '")'
+      prefix = 'P"' .. character .. '"'
       local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
       local suffix
       if simplified_pattern ~= nil then  -- simple pattern
-        suffix = prefix .. " * " .. simplified_pattern
+        suffix = prefix .. "*" .. simplified_pattern
         local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
         if simplified_suffix ~= nil then
           suffix = simplified_suffix
         end
       else  -- complex pattern
-        suffix = prefix .. " * (" .. subparsers[path] .. ")"
+        suffix = prefix .. "*(" .. subparsers[path] .. ")"
       end
       if subparsers[parent_path] ~= nil then
-        subparsers[parent_path] = subparsers[parent_path] .. " + " .. suffix
+        subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
       else
         subparsers[parent_path] = suffix
       end
@@ -661,22 +661,22 @@ local function generate_definitions_parser(output_file, definitions)
 
   -- Then, generate a parser out of the tree.
   local output_regular_character = any - P('"')
-  local output_capture = P(" * Cc({") * (any - P("}"))^0 * P("})")
+  local output_capture = P("*Cc{") * (any - P("}"))^0 * P("}")
   local output_regular_characters = (
-    P('P("')
+    P('P"')
     * C(output_regular_character^1)
-    * P('")')
+    * P('"')
   )
   local simplified_output_regular_characters = (
     Ct(
       output_regular_characters
       * (
-        P(' * ')
+        P('*')
         * output_regular_characters
       )^0
     )
     / function(accumulator)
-      return 'P("' .. table.concat(accumulator, "") .. '")'
+      return 'P"' .. table.concat(accumulator, "") .. '"'
     end
   )
   local simplified_output_parsers = Cs(
@@ -693,7 +693,7 @@ local function generate_definitions_parser(output_file, definitions)
   depth_first_search(prefix_tree, "", function(node, path)  -- visit
     if type(node) == "string" then  -- leaf node
       assert(node ~= '"')
-      local suffix_buffer = {'P("' .. node .. '")'}
+      local suffix_buffer = {'P"' .. node .. '"'}
       local definition = definitions[path .. node]
       assert(definition ~= nil)
       local options_buffer = {}
@@ -704,13 +704,13 @@ local function generate_definitions_parser(output_file, definitions)
         end
       end
       if #options_buffer > 0 then
-        table.insert(suffix_buffer, " * Cc({")
-        table.insert(suffix_buffer, table.concat(options_buffer, ", "))
-        table.insert(suffix_buffer, "})")
+        table.insert(suffix_buffer, "*Cc{")
+        table.insert(suffix_buffer, table.concat(options_buffer, ","))
+        table.insert(suffix_buffer, "}")
       end
       local suffix = table.concat(suffix_buffer)
       if subparsers[path] ~= nil then
-        subparsers[path] = subparsers[path] .. " + " .. suffix
+        subparsers[path] = subparsers[path] .. "+" .. suffix
       else
         subparsers[path] = suffix
       end
@@ -721,20 +721,20 @@ local function generate_definitions_parser(output_file, definitions)
       local parent_path = path:sub(1, #path - 1)
       local prefix
       assert(character ~= '"')
-      prefix = 'P("' .. character .. '")'
+      prefix = 'P"' .. character .. '"'
       local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
       local suffix
       if simplified_pattern ~= nil then  -- simple pattern
-        suffix = prefix .. " * " .. simplified_pattern
+        suffix = prefix .. "*" .. simplified_pattern
         local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
         if simplified_suffix ~= nil then
           suffix = simplified_suffix
         end
       else  -- complex pattern
-        suffix = prefix .. " * (" .. subparsers[path] .. ")"
+        suffix = prefix .. "*(" .. subparsers[path] .. ")"
       end
       if subparsers[parent_path] ~= nil then
-        subparsers[parent_path] = subparsers[parent_path] .. " + " .. suffix
+        subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
       else
         subparsers[parent_path] = suffix
       end
