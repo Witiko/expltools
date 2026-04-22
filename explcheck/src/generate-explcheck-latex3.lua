@@ -92,7 +92,6 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
   -- First, generate some variable names that the parsers will use.
   output_file:write('M.obsolete = {}\n')
   output_file:write('do\n')
-  output_file:write('  local any, eof = P(1), P(-1)\n')
   output_file:write('  ---@diagnostic disable-next-line:unused-local\n')
   output_file:write('  local wildcard = any^0  -- luacheck: ignore wildcard\n\n')
 
@@ -739,7 +738,7 @@ local function generate_definitions_parser(output_file, definitions)
         subparsers[parent_path] = suffix
       end
     else  -- root node
-      output_file:write('M.definitions = (' .. subparsers[path] .. ')\n')
+      output_file:write('M.definitions = (' .. subparsers[path] .. ') * eof\n')
       produced_parsers = produced_parsers + 1
     end
   end)
@@ -792,6 +791,7 @@ output_file:write("\n")
 ---- Generate the LPEG parsers.
 output_file:write('local lpeg = require("lpeg")\n')
 output_file:write('local Cc, P = lpeg.Cc, lpeg.P\n\n')
+output_file:write('local any, eof = P(1), P(-1)\n\n')
 output_file:write('local M = {}\n\n')
 generate_l3obsolete_parsers(output_file, l3obsolete_dates, csnames)
 output_file:write("\n")
