@@ -462,6 +462,10 @@ local function parse_definitions()
 
     local commented_lines = (
       percent_sign
+      * -#(  -- Ignore lines with code examples that start with `% %` inside `\begin{verbatim}` from `l3doc.dtx`.
+        space
+        * percent_sign
+      )
       * (
         macro_definition
         + linechar
