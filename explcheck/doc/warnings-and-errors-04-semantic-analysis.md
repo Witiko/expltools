@@ -76,6 +76,25 @@ Furthermore, this also extends to function variants:
 ### Unexpandable or restricted-expandable boolean expression {.e label=e428 .work-in-progress #unexpandable-or-restricted-expandable-boolean-expression}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
 
+<!--
+
+  Here's what needs to happen for us to support this issue:
+
+  1. In `collect_statements()`, for statements `VARIABLE_DEFINITION` with
+     `variable_type == "bool"`, create a new segment of a new "boolean expression"
+     type from `definition_text_argument`. Ignore this segment in the semantic
+     analysis and only record calls for this segment; this may break some
+     invariants in later analyses, which may expect all segments in files that
+     reached that analysis to contain statements; fix these.
+  2. Widen the mechanism used to index part segments to all segment types, so that
+     we can collect all segments of type "boolean expression" more easily.
+  3. Add a new substep for the semantic analysis that takes all segments of type
+     "boolean expression" and raises an error when a standard-library function
+     that is not fully-expandable or a definitely protected user-defined function
+     appears in some of the calls within the segment.
+
+-->
+
  /e428.tex
 
 ### Defined an unexpandable function as unprotected {.w label=w429 .work-in-progress #defined-unexpandable-function-as-unprotected}
