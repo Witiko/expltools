@@ -713,7 +713,12 @@ end
 -- Add a new nested segment to the list of segments.
 add_segment = function(results, part_number, segment, issues, content)
   assert(results.segments ~= nil)
+  assert(results.segment_type_index ~= nil)
   table.insert(results.segments, segment)
+  if results.segment_type_index[segment.type] == nil then
+    results.segment_type_index[segment.type] = {}
+  end
+  table.insert(results.segment_type_index[segment.type], segment)
   local segment_number = #results.segments
   segment.calls = get_calls(results, part_number, segment, issues, content)
   assert(results.segments[segment_number] == segment)
@@ -729,7 +734,7 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   local issues = state.issues
   local results = state.results
 
-  results.segments, results.parts = {}, {}
+  results.segments, results.segment_type_index = {}, {}
   for part_number, part_tokens in ipairs(results.tokens) do
     local segment = {
       type = PART,
@@ -748,7 +753,6 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
     }
     assert(segment.min_reaching_nesting_depth == segment.nesting_depth)
     add_segment(results, part_number, segment, issues, content)
-    table.insert(results.parts, segment)
   end
 end
 
