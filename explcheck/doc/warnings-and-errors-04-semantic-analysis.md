@@ -80,7 +80,7 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
   Here's what needs to happen for us to support this issue:
 
-  1. [ ] In `collect_statements()`, for statements `VARIABLE_DEFINITION` with
+  1. [x] In `collect_statements()`, for statements `VARIABLE_DEFINITION` with
      `variable_type == "bool"`, create a new segment of a new `BOOLEAN_EXPRESSION`
      type from `definition_text_argument`. Ignore this segment in the semantic
      analysis and only record calls for this segment; this may break some
