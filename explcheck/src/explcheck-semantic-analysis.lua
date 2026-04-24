@@ -24,7 +24,7 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
-local get_calls = syntactic_analysis.get_calls
+local add_segment = syntactic_analysis.add_segment
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
 
@@ -877,9 +877,7 @@ local function collect_statements(states, file_number, options)
                 },
               }
               nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
-              table.insert(results.segments, nested_segment)
-              replacement_text_argument.segment_number = #results.segments
-              nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
+              replacement_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
               assert(results.segments[replacement_text_argument.segment_number].type == REPLACEMENT_TEXT)
             end
             ::skip_replacement_text::

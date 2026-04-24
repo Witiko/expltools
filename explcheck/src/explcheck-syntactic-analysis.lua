@@ -217,6 +217,8 @@ local function is_confused(pathname, results, options)
   return false
 end
 
+local add_segment
+
 -- Extract function calls from TeX tokens and groupings.
 local function get_calls(results, part_number, segment, issues, content)
 
@@ -624,10 +626,7 @@ local function get_calls(results, part_number, segment, issues, content)
                     },
                   }
                   nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
-                  table.insert(results.segments, nested_segment)
-                  argument.segment_number = #results.segments
-                  nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
-                  assert(results.segments[argument.segment_number].type == TF_TYPE_ARGUMENTS)
+                  argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
                 end
                 record_argument(argument)
                 next_token_number = map_forward(next_grouping.stop)
@@ -711,10 +710,19 @@ local function get_calls(results, part_number, segment, issues, content)
   return calls
 end
 
+-- Add a new nested segment to the list of segments.
+add_segment = function(results, part_number, segment, issues, content)
+  assert(results.segments ~= nil)
+  table.insert(results.segments, segment)
+  local segment_number = #results.segments
+  segment.calls = get_calls(results, part_number, segment, issues, content)
+  assert(results.segments[segment_number] == segment)
+  return segment_number
+end
+
 -- Convert the tokens to top-level and nested segments of function calls and report any issues.
 ---@diagnostic disable-next-line:unused-local
 local function analyze_and_report_issues(states, file_number, options)  -- luacheck: ignore options
-
   local state = states[file_number]
 
   local content = state.content
@@ -739,9 +747,8 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
       },
     }
     assert(segment.min_reaching_nesting_depth == segment.nesting_depth)
-    table.insert(results.segments, segment)
+    add_segment(results, part_number, segment, issues, content)
     table.insert(results.parts, segment)
-    segment.calls = get_calls(results, part_number, segment, issues, content)
   end
 end
 
@@ -750,9 +757,9 @@ local substeps = {
 }
 
 return {
+  add_segment = add_segment,
   call_types = call_types,
   extract_text_from_tokens = extract_text_from_tokens,
-  get_calls = get_calls,
   get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
