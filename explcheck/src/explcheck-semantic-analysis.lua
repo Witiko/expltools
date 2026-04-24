@@ -878,7 +878,6 @@ local function collect_statements(states, file_number, options)
                   map_forward = map_forward,
                 },
               }
-              nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
               replacement_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
               assert(results.segments[replacement_text_argument.segment_number].type == REPLACEMENT_TEXT)
             end
@@ -1167,7 +1166,6 @@ local function collect_statements(states, file_number, options)
                   map_forward = first_map_forward,
                 },
               }
-              nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
               definition_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
             end
           else

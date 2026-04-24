@@ -625,7 +625,6 @@ local function get_calls(results, part_number, segment, issues, content)
                       map_forward = map_forward,
                     },
                   }
-                  nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
                   argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
                 end
                 record_argument(argument)
@@ -743,7 +742,6 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
         part_number = part_number,
       },
       nesting_depth = 1,
-      min_reaching_nesting_depth = 1,
       transformed_tokens = {
         tokens = part_tokens,
         token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),
@@ -751,7 +749,6 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
         map_forward = identity,
       },
     }
-    assert(segment.min_reaching_nesting_depth == segment.nesting_depth)
     add_segment(results, part_number, segment, issues, content)
   end
 end
