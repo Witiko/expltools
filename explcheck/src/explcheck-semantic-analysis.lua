@@ -32,9 +32,11 @@ local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 
 local segment_types = {
+  BOOLEAN_EXPRESSION = "boolean expression",
   REPLACEMENT_TEXT = "function definition replacement text",
 }
 
+local BOOLEAN_EXPRESSION = segment_types.BOOLEAN_EXPRESSION
 local REPLACEMENT_TEXT = segment_types.REPLACEMENT_TEXT
 
 local lpeg = require("lpeg")
@@ -1152,6 +1154,22 @@ local function collect_statements(states, file_number, options)
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
+            -- For boolean variables, extract the definition text into a new segment and analyze its calls.
+            if variable_type == "bool" then
+              local nested_segment = {
+                type = BOOLEAN_EXPRESSION,
+                location = segment.location,
+                nesting_depth = segment.nesting_depth + 1,
+                  transformed_tokens = {
+                  tokens = transformed_tokens,
+                  token_range = definition_text_argument.token_range,
+                  map_back = first_map_back,
+                  map_forward = first_map_forward,
+                },
+              }
+              nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
+              definition_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
+            end
           else
             -- determine the name of the base variable or constant
             local base_csname_argument = call.arguments[2]
@@ -1368,7 +1386,9 @@ local function collect_statements(states, file_number, options)
   local segment_number = 1
   while segment_number <= #results.segments do
     local segment = results.segments[segment_number]
-    segment.statements = get_statements(segment)  -- may produce new segments in `results.segments`
+    if segment.type ~= BOOLEAN_EXPRESSION then  -- skip some segment types, where we don't need full semantic analysis
+      segment.statements = get_statements(segment)  -- may produce new segments in `results.segments`
+    end
     segment_number = segment_number + 1
   end
 end
