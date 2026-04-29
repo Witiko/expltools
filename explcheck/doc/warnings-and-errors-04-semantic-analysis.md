@@ -92,7 +92,7 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
      type `BOOLEAN_EXPRESSION` and raises an error when a standard-library
      function that is not fully-expandable or a definitely protected user-defined
      function appears in some of the calls within the segment.
-     - [ ] In function `collect_statements()`, determine which function (variant)
+     - [x] In function `collect_statements()`, determine which function (variant)
            definitions might be fully expandable, based on whether the functions
            are defined as protected (for direct definitions) and the argument
            specifiers (`x`-type arguments are never fully expandable).

@@ -183,6 +183,7 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
+local x_type_argument_specifier = S("x")
 local csname_argument_specifier = S("Nc")
 local expansionless_argument_specifier = S("NVnTF")
 local parameter_argument_specifier = S("p")
@@ -208,13 +209,13 @@ local argument_specifiers = (
   * eof
 )
 local variant_argument_specifiers = comma_list(argument_specifier^0)
-local do_not_use_argument_specifiers = (
-  (
-    argument_specifier
-    - do_not_use_argument_specifier
-  )^0
-  * do_not_use_argument_specifier
-)
+
+local function any_argument_specifiers(parser)
+  return (any - parser)^0 * parser
+end
+
+local x_type_argument_specifiers = any_argument_specifiers(x_type_argument_specifier)
+local do_not_use_argument_specifiers = any_argument_specifiers(do_not_use_argument_specifier)
 
 local compatible_argument_specifiers = (
   P("N") * Cc({"N", "c"})
@@ -1016,4 +1017,5 @@ return {
   tab = tab,
   tex_lines = tex_lines,
   variant_argument_specifiers = variant_argument_specifiers,
+  x_type_argument_specifiers = x_type_argument_specifiers,
 }

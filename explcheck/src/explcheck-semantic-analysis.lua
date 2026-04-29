@@ -755,6 +755,14 @@ local function collect_statements(states, file_number, options)
           -- record function variant definition statements for all effectively defined csnames
           for _, defined_csname_table in ipairs(defined_csnames) do  -- lua
             local effective_base_csname, defined_csname, confidence = table.unpack(defined_csname_table)
+            local _, defined_argument_specifiers = parse_expl3_csname(defined_csname)
+            local maybe_fully_expandable = true
+            if (
+              defined_argument_specifiers ~= nil and
+              lpeg.match(parsers.x_type_argument_specifiers, defined_argument_specifiers.transcript) ~= nil
+            ) then
+              maybe_fully_expandable = false
+            end
             local statement = {
               type = FUNCTION_VARIANT_DEFINITION,
               call_range = call_range,
@@ -767,6 +775,7 @@ local function collect_statements(states, file_number, options)
               is_conditional = is_conditional,
               maybe_used = false,
               maybe_multiply_defined = false,
+              maybe_fully_expandable = maybe_fully_expandable,
               call_file_numbers = nil,  -- later filled in by `determine_function_calls_for_definitions()`
             }
             table.insert(statements, statement)
@@ -916,6 +925,16 @@ local function collect_statements(states, file_number, options)
             -- record function definition statements for all effectively defined csnames
             for _, effectively_defined_csname_table in ipairs(effectively_defined_csnames) do  -- lua
               local effectively_defined_csname, confidence = table.unpack(effectively_defined_csname_table)
+              local maybe_fully_expandable = not is_protected
+              if maybe_fully_expandable then
+                local _, effectively_defined_argument_specifiers = parse_expl3_csname(effectively_defined_csname)
+                if (
+                  effectively_defined_argument_specifiers ~= nil and
+                  lpeg.match(parsers.x_type_argument_specifiers, effectively_defined_argument_specifiers.transcript) ~= nil
+                ) then
+                  maybe_fully_expandable = false
+                end
+              end
               local statement = {
                 type = FUNCTION_DEFINITION,
                 call_range = call_range,
@@ -930,6 +949,7 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = definition_token_range,
                 maybe_used = false,
                 maybe_multiply_defined = false,
+                maybe_fully_expandable = maybe_fully_expandable,
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
@@ -994,6 +1014,14 @@ local function collect_statements(states, file_number, options)
             for _, effective_defined_and_base_csname_table in ipairs(effective_defined_and_base_csnames) do  -- lua
               local effectively_defined_csname, effective_base_csname, confidence
                 = table.unpack(effective_defined_and_base_csname_table)
+              local _, effectively_defined_argument_specifiers = parse_expl3_csname(effectively_defined_csname)
+              local maybe_fully_expandable = true
+              if (
+                effectively_defined_argument_specifiers ~= nil and
+                lpeg.match(parsers.x_type_argument_specifiers, effectively_defined_argument_specifiers.transcript) ~= nil
+              ) then
+                maybe_fully_expandable = false
+              end
               local statement = {
                 type = FUNCTION_DEFINITION,
                 call_range = call_range,
@@ -1008,6 +1036,7 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = token_range,
                 maybe_used = false,
                 maybe_multiply_defined = false,
+                maybe_fully_expandable = maybe_fully_expandable,
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
