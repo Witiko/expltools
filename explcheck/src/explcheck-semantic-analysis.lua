@@ -1430,7 +1430,8 @@ local function analyze_group_wide_statements(states, _, options)
     maybe_used_message_name_pattern = parsers.fail,
 
     -- Index group-wide statements.
-    function_definition_index = {},
+    function_and_variant_definition_and_undefinition_index = {},
+    function_and_variant_definition_csname_list = {},
     non_redefined_function_and_variant_definition_and_undefinition_index = {},
   }
 
@@ -1732,16 +1733,20 @@ local function analyze_group_wide_statements(states, _, options)
           -- Index the function variant definition.
           if statement.defined_csname.type == TEXT then
             table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
-            if states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] == nil then
-              states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
+            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
+            local list = states.results.statement_analysis.function_and_variant_definition_csname_list
+            local csname = statement.defined_csname.payload
+            if index[csname] == nil then
+              index[csname] = {}
+              table.insert(list, csname)
             end
-            table.insert(states.results.statement_analysis.function_definition_index[statement.defined_csname.payload], statement)
+            table.insert(index[csname], statement)
             local non_redefined_index
               = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
-            if non_redefined_index[statement.defined_csname.payload] == nil then
-              non_redefined_index[statement.defined_csname.payload] = {}
+            if non_redefined_index[csname] == nil then
+              non_redefined_index[csname] = {}
             end
-            table.insert(non_redefined_index[statement.defined_csname.payload], statement)
+            table.insert(non_redefined_index[csname], statement)
             table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
           end
           if statement.base_csname.type == TEXT then
@@ -1792,17 +1797,21 @@ local function analyze_group_wide_statements(states, _, options)
           -- Index the function definition.
           if statement.defined_csname.type == TEXT then
             table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
-            if states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] == nil then
-              states.results.statement_analysis.function_definition_index[statement.defined_csname.payload] = {}
+            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
+            local list = states.results.statement_analysis.function_and_variant_definition_csname_list
+            local csname = statement.defined_csname.payload
+            if index[csname] == nil then
+              index[csname] = {}
+              table.insert(list, csname)
             end
-            table.insert(states.results.statement_analysis.function_definition_index[statement.defined_csname.payload], statement)
+            table.insert(index[csname], statement)
             if not statement.maybe_redefined then
               local non_redefined_index
                 = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
-              if non_redefined_index[statement.defined_csname.payload] == nil then
-                non_redefined_index[statement.defined_csname.payload] = {}
+              if non_redefined_index[csname] == nil then
+                non_redefined_index[csname] = {}
               end
-              table.insert(non_redefined_index[statement.defined_csname.payload], statement)
+              table.insert(non_redefined_index[csname], statement)
               table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
             end
           end
@@ -1813,10 +1822,12 @@ local function analyze_group_wide_statements(states, _, options)
         elseif statement.type == FUNCTION_UNDEFINITION then
           -- Index the function undefinition.
           if statement.undefined_csname.type == TEXT then
-            if states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload] == nil then
-              states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload] = {}
+            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
+            local csname = statement.undefined_csname.payload
+            if index[csname] == nil then
+              index[csname] = {}
             end
-            table.insert(states.results.statement_analysis.function_definition_index[statement.undefined_csname.payload], statement)
+            table.insert(index[csname], statement)
             if not statement.maybe_redefined then
               table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
             end
@@ -2043,6 +2054,78 @@ local function analyze_group_wide_statements(states, _, options)
         end
       end
     end
+  end
+end
+
+-- Analyze all segments that correspond to boolean expressions, in order to determine their expandability.
+---@diagnostic disable-next-line:unused-function, unused-local
+local function analyze_boolean_expression_expandability(states, file_number, _)  -- luacheck: ignore
+  local state = states[file_number]
+
+  local results = state.results
+
+  -- Determine which control sequences have some function definitions that might be fully expandable.
+  local has_function_definitions = {}
+  local may_any_function_definitions_be_fully_expandable = {}
+  for _, csname in ipairs(states.results.statement_analysis.function_and_variant_definition_csname_list) do
+    local function_definitions = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[csname]
+    assert(function_definitions ~= nil and #function_definitions > 0)
+    has_function_definitions[csname] = true
+    may_any_function_definitions_be_fully_expandable[csname] = false
+    for _, statement in ipairs(function_definitions) do
+      assert(statement.maybe_fully_expandable ~= nil)
+      if statement.maybe_fully_expandable then
+        may_any_function_definitions_be_fully_expandable[csname] = true
+        goto next_csname
+      end
+    end
+    ::next_csname::
+  end
+
+  -- Determine whether the boolean expression segments might be fully expandable.
+  for _, segment in ipairs(results.segment_type_index[BOOLEAN_EXPRESSION] or {}) do
+    assert(segment.calls ~= nil)
+
+    local transformed_tokens = segment.transformed_tokens.tokens
+    local map_forward = segment.transformed_tokens.map_forward
+
+    segment.maybe_fully_expandable = true
+
+    -- Check whether a top-level control sequence might be fully expandable.
+    ---@diagnostic disable-next-line:unused-function
+    local function check_csname(csname)
+      -- Check whether the control sequence is a user-defined function that is not fully expandable.
+      if has_function_definitions[csname] and not may_any_function_definitions_be_fully_expandable[csname] then
+        segment.maybe_fully_expandable = false
+        return
+      end
+      -- Check whether the control sequence is a standard-library expl3 function that is not fully expandable.
+      local latex3_csname = lpeg.match(parsers.latex3_csname, csname)
+      if latex3_csname ~= nil and type(latex3_csname) == "table" and latex3_csname.EXP ~= "full" then
+        segment.maybe_fully_expandable = false
+        return
+      end
+    end
+
+    for _, call in ipairs(segment.calls) do
+      if call.type == CALL then
+        -- Check function calls.
+        check_csname(call.csname)
+      elseif call.type == OTHER_TOKENS then
+        -- Check control sequence tokens in unrecognized calls.
+        for _, token in call.token_range:enumerate(transformed_tokens, map_forward) do
+          if token.type == CONTROL_SEQUENCE then
+            check_csname(token.payload)
+          end
+        end
+      end
+
+      -- If we have determined that the segment can't be fully expandable, skip further checks.
+      if not segment.maybe_fully_expandable then
+        goto next_segment
+      end
+    end
+    ::next_segment::
   end
 end
 
@@ -2390,7 +2473,7 @@ local function determine_maybe_used_function_definitions(states, file_number, _)
       goto next_statement
     end
     seen_used_csnames[used_csname.payload] = true
-    local other_statements = states.results.statement_analysis.function_definition_index[used_csname.payload]
+    local other_statements = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[used_csname.payload]
     for _, other_statement in ipairs(other_statements or {}) do
       -- Do not repeatedly check the same definitions.
       if other_statement.maybe_used then
@@ -2426,7 +2509,7 @@ local function determine_maybe_used_function_definitions(states, file_number, _)
         goto next_statement
       end
       local base_csname = statement.base_csname.payload
-      local other_statements = states.results.statement_analysis.function_definition_index[base_csname]
+      local other_statements = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[base_csname]
       for _, other_statement in ipairs(other_statements or {}) do
         -- Do not repeatedly check the same definitions.
         if other_statement.maybe_used then
@@ -2489,6 +2572,7 @@ end
 local substeps = {
   collect_statements,
   analyze_group_wide_statements,
+--  analyze_boolean_expression_expandability,
   report_issues,
   determine_function_calls_for_definitions,
   determine_maybe_multiply_defined_function_definitions,

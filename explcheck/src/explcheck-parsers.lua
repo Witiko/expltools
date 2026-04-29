@@ -313,7 +313,7 @@ local expl3_maybe_unexpandable_csname = (
   * eof
 )
 
-local expl3_standard_library_prefixes = (
+local expl3_well_known_prefixes = (
   expl3_variable_or_constant_type
   + P("benchmark")
   + P("char")
@@ -364,20 +364,11 @@ local expl3_standard_library_prefixes = (
   + P("use")
   + P("withargs")  -- part of the withargs package
 )
-local function expl3_well_known_csname(options, pathname)
-  local imported_prefixes = get_option('imported_prefixes', options, pathname)
-  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
-  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
-  local other_prefixes = fail
-  for _, prefix_text in ipairs(imported_prefixes) do
-    other_prefixes = (
-      other_prefixes +
-      #(P(prefix_text) * (underscore + colon))
-      * P(prefix_text)
-    )
-  end
-  local latex3_prefixes = Cmt(
+local function latex3_prefixes(options, pathname)
+  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
+
+  return Cmt(
     latex3.prefixes,
     function(_, _, maybe_first_registered_date)
       return (
@@ -387,15 +378,11 @@ local function expl3_well_known_csname(options, pathname)
       )
     end
   )
-  local prefix = (
-    #(expl3_standard_library_prefixes * (underscore + colon))
-    * expl3_standard_library_prefixes
-    + #(latex3_prefixes * (underscore + colon))
-    * latex3_prefixes
-    + other_prefixes
-  )
+end
+local function latex3_csname(options, pathname)
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
-  local latex3_csname = Cmt(
+  return Cmt(
     latex3.definitions,
     function(_, _, definition)
       return (
@@ -405,9 +392,31 @@ local function expl3_well_known_csname(options, pathname)
       )
     end
   )
+end
 
+local function expl3_well_known_csname(options, pathname)
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+
+  local other_prefixes = fail
+  for _, prefix_text in ipairs(imported_prefixes) do
+    other_prefixes = (
+      other_prefixes +
+      #(P(prefix_text) * (underscore + colon))
+      * P(prefix_text)
+    )
+  end
+  local _latex3_prefixes = latex3_prefixes(options, pathname)
+  local prefix = (
+    #(expl3_well_known_prefixes * (underscore + colon))
+    * expl3_well_known_prefixes
+    + #(_latex3_prefixes * (underscore + colon))
+    * _latex3_prefixes
+    + other_prefixes
+  )
+
+  local _latex3_csname = latex3_csname(options, pathname)
   local well_known_function_csname = (
-    latex3_csname
+    _latex3_csname
     + P("__")^-1
     * prefix
     * (
@@ -898,7 +907,6 @@ local expl3_variable_use_csname = Ct(
 ------ Message names
 local function expl3_well_known_message_name(options, pathname)
   local imported_prefixes = get_option('imported_prefixes', options, pathname)
-  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
 
   local other_prefixes = fail
   for _, prefix_text in ipairs(imported_prefixes) do
@@ -908,21 +916,12 @@ local function expl3_well_known_message_name(options, pathname)
       * P(prefix_text)
     )
   end
-  local latex3_prefixes = Cmt(
-    latex3.prefixes,
-    function(_, _, maybe_first_registered_date)
-      return (
-        not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
-        or maybe_first_registered_date  -- actual first registered date has been specified in the file "l3prefixes.csv"
-        and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
-      )
-    end
-  )
+  local _latex3_prefixes = latex3_prefixes(options, pathname)
   return (
-    #(expl3_standard_library_prefixes * slash)
-    * expl3_standard_library_prefixes
-    + #(latex3_prefixes * slash)
-    * latex3_prefixes
+    #(expl3_well_known_prefixes * slash)
+    * expl3_well_known_prefixes
+    + #(_latex3_prefixes * slash)
+    * _latex3_prefixes
     + other_prefixes
   )
 end
@@ -1004,6 +1003,7 @@ return {
   fail = fail,
   ignored_issues = ignored_issues,
   latex_style_file_content = latex_style_file_content,
+  latex3_csname = latex3_csname,
   linechar = linechar,
   newline = newline,
   N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,

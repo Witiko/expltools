@@ -92,6 +92,17 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
      type `BOOLEAN_EXPRESSION` and raises an error when a standard-library
      function that is not fully-expandable or a definitely protected user-defined
      function appears in some of the calls within the segment.
+     - [ ] In function `collect_statements()`, determine which function (variant)
+           definitions might be fully expandable, based on whether the functions
+           are defined as protected (for direct definitions) and the argument
+           specifiers (`x`-type arguments are never fully expandable).
+     - [ ] Add function `analyze_function_definition_expandability()` that
+           determines which function variant definitions and indirect function
+           definitions might be fully expandable, by resolving them to the
+           originating direct function definitions.
+     - [x] Add function `analyze_boolean_expression_expandability()` that
+           determines which boolean expression segments might be fully expandable
+           and report the issue E428 for these segments.
 
 -->
 
