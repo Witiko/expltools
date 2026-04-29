@@ -99,7 +99,8 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
      - [ ] Add function `analyze_function_definition_expandability()` that
            determines which function variant definitions and indirect function
            definitions might be fully expandable, by resolving them to the
-           originating direct function definitions.
+           originating direct function definitions. If done right, this should
+           modestly increase the number of E428 detections.
      - [x] Add function `analyze_boolean_expression_expandability()` that
            determines which boolean expression segments might be fully expandable
            and report the issue E428 for these segments.
@@ -108,7 +109,8 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
            functions. On variables, do not use LaTeX3 definitions at all; if
            it looks like a variable, check the variable type against the list
            of expandable/unexpandable types in [@latexteam2024programming, Section
-           1.1].
+           1.1]. This should drastically reduce the number of false positive
+           detections of E428.
 
 -->
 
