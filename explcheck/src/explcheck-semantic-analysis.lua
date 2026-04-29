@@ -2087,10 +2087,10 @@ local function analyze_group_wide_statements(states, _, options)
 end
 
 -- Analyze all segments that correspond to boolean expressions, in order to determine their expandability.
----@diagnostic disable-next-line:unused-function, unused-local
-local function analyze_boolean_expression_expandability(states, file_number, _)  -- luacheck: ignore
+local function analyze_boolean_expression_expandability(states, file_number, options)
   local state = states[file_number]
 
+  local pathname = state.pathname
   local content = state.content
   local issues = state.issues
   local results = state.results
@@ -2113,6 +2113,8 @@ local function analyze_boolean_expression_expandability(states, file_number, _) 
     ::next_csname::
   end
 
+  local latex3_csname = parsers.latex3_csname(options, pathname)
+
   -- Determine whether the boolean expression segments might be fully expandable.
   for _, segment in ipairs(results.segment_type_index[BOOLEAN_EXPRESSION] or {}) do
     assert(segment.calls ~= nil)
@@ -2123,7 +2125,6 @@ local function analyze_boolean_expression_expandability(states, file_number, _) 
     segment.maybe_fully_expandable = true
 
     -- Get the byte range of the current segment.
-    ---@diagnostic disable-next-line:unused-function
     local function get_byte_range()
       local part_number = segment.location.part_number
       local tokens = results.tokens[part_number]
@@ -2134,7 +2135,6 @@ local function analyze_boolean_expression_expandability(states, file_number, _) 
     end
 
     -- Check whether a top-level control sequence might be fully expandable.
-    ---@diagnostic disable-next-line:unused-function
     local function check_csname(csname)
       -- Check whether the control sequence is a user-defined function that is not fully expandable.
       if has_function_definitions[csname] and not might_any_function_definitions_be_fully_expandable[csname] then
@@ -2142,8 +2142,8 @@ local function analyze_boolean_expression_expandability(states, file_number, _) 
         return
       end
       -- Check whether the control sequence is a standard-library expl3 function that is not fully expandable.
-      local latex3_csname = lpeg.match(parsers.latex3_csname, csname)
-      if latex3_csname ~= nil and type(latex3_csname) == "table" and latex3_csname.EXP ~= "full" then
+      local csname_properties = lpeg.match(latex3_csname, csname)
+      if csname_properties ~= nil and (type(csname_properties) ~= "table" or csname_properties.EXP ~= "full") then
         segment.maybe_fully_expandable = false
         return
       end
@@ -2615,7 +2615,7 @@ end
 local substeps = {
   collect_statements,
   analyze_group_wide_statements,
---  analyze_boolean_expression_expandability,
+  analyze_boolean_expression_expandability,
   report_issues,
   determine_function_calls_for_definitions,
   determine_maybe_multiply_defined_function_definitions,
