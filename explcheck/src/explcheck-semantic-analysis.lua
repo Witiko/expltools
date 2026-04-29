@@ -2091,20 +2091,22 @@ end
 local function analyze_boolean_expression_expandability(states, file_number, _)  -- luacheck: ignore
   local state = states[file_number]
 
+  local content = state.content
+  local issues = state.issues
   local results = state.results
 
   -- Determine which control sequences have some function definitions that might be fully expandable.
   local has_function_definitions = {}
-  local may_any_function_definitions_be_fully_expandable = {}
+  local might_any_function_definitions_be_fully_expandable = {}
   for _, csname in ipairs(states.results.statement_analysis.function_and_variant_definition_csname_list) do
     local function_definitions = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[csname]
     assert(function_definitions ~= nil and #function_definitions > 0)
     has_function_definitions[csname] = true
-    may_any_function_definitions_be_fully_expandable[csname] = false
+    might_any_function_definitions_be_fully_expandable[csname] = false
     for _, statement in ipairs(function_definitions) do
       assert(statement.maybe_fully_expandable ~= nil)
       if statement.maybe_fully_expandable then
-        may_any_function_definitions_be_fully_expandable[csname] = true
+        might_any_function_definitions_be_fully_expandable[csname] = true
         goto next_csname
       end
     end
@@ -2120,11 +2122,22 @@ local function analyze_boolean_expression_expandability(states, file_number, _) 
 
     segment.maybe_fully_expandable = true
 
+    -- Get the byte range of the current segment.
+    ---@diagnostic disable-next-line:unused-function
+    local function get_byte_range()
+      local part_number = segment.location.part_number
+      local tokens = results.tokens[part_number]
+      local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+      local token_range = segment.transformed_tokens.token_range
+      local byte_range = token_range_to_byte_range(token_range)
+      return byte_range
+    end
+
     -- Check whether a top-level control sequence might be fully expandable.
     ---@diagnostic disable-next-line:unused-function
     local function check_csname(csname)
       -- Check whether the control sequence is a user-defined function that is not fully expandable.
-      if has_function_definitions[csname] and not may_any_function_definitions_be_fully_expandable[csname] then
+      if has_function_definitions[csname] and not might_any_function_definitions_be_fully_expandable[csname] then
         segment.maybe_fully_expandable = false
         return
       end
@@ -2149,8 +2162,9 @@ local function analyze_boolean_expression_expandability(states, file_number, _) 
         end
       end
 
-      -- If we have determined that the segment can't be fully expandable, skip further checks.
+      -- If we have determined that the segment can't be fully expandable, report an issue, and skip further checks.
       if not segment.maybe_fully_expandable then
+        issues:add("e428", "unexpandable or restricted-expandable boolean expression", get_byte_range())
         goto next_segment
       end
     end
