@@ -1460,6 +1460,7 @@ local function analyze_group_wide_statements(states, _, options)
 
     -- Index group-wide statements.
     function_and_variant_definition_and_undefinition_index = {},
+    function_and_variant_definition_index = {},
     function_and_variant_definition_csname_list = {},
     non_redefined_function_and_variant_definition_and_undefinition_index = {},
   }
@@ -1763,8 +1764,13 @@ local function analyze_group_wide_statements(states, _, options)
           if statement.defined_csname.type == TEXT then
             table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
             local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
-            local list = states.results.statement_analysis.function_and_variant_definition_csname_list
             local csname = statement.defined_csname.payload
+            if index[csname] == nil then
+              index[csname] = {}
+            end
+            table.insert(index[csname], statement)
+            local index = states.results.statement_analysis.function_and_variant_definition_index
+            local list = states.results.statement_analysis.function_and_variant_definition_csname_list
             if index[csname] == nil then
               index[csname] = {}
               table.insert(list, csname)
@@ -1827,8 +1833,13 @@ local function analyze_group_wide_statements(states, _, options)
           if statement.defined_csname.type == TEXT then
             table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
             local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
-            local list = states.results.statement_analysis.function_and_variant_definition_csname_list
             local csname = statement.defined_csname.payload
+            if index[csname] == nil then
+              index[csname] = {}
+            end
+            table.insert(index[csname], statement)
+            local index = states.results.statement_analysis.function_and_variant_definition_index
+            local list = states.results.statement_analysis.function_and_variant_definition_csname_list
             if index[csname] == nil then
               index[csname] = {}
               table.insert(list, csname)
@@ -2099,7 +2110,7 @@ local function analyze_boolean_expression_expandability(states, file_number, opt
   local has_function_definitions = {}
   local might_any_function_definitions_be_fully_expandable = {}
   for _, csname in ipairs(states.results.statement_analysis.function_and_variant_definition_csname_list) do
-    local function_definitions = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[csname]
+    local function_definitions = states.results.statement_analysis.function_and_variant_definition_index[csname]
     assert(function_definitions ~= nil and #function_definitions > 0)
     has_function_definitions[csname] = true
     might_any_function_definitions_be_fully_expandable[csname] = false
