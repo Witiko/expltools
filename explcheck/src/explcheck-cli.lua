@@ -75,7 +75,8 @@ local function process_arguments(arguments)
     local max_line_length = tostring(get_option("max_line_length"))
     print(
       "Options:\n\n"
-      .. "\t--config-file FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
+      .. "\t--config-file FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n"
+      .. "\t                           See also --no-config-file.\n\n"
       .. "\t--error-format FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
       .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
       .. "\t--expl3-detection-strategy {never|always|precision|recall|auto}\n\n"
