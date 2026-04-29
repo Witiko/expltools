@@ -1769,7 +1769,7 @@ local function analyze_group_wide_statements(states, _, options)
               index[csname] = {}
             end
             table.insert(index[csname], statement)
-            local index = states.results.statement_analysis.function_and_variant_definition_index
+            index = states.results.statement_analysis.function_and_variant_definition_index
             local list = states.results.statement_analysis.function_and_variant_definition_csname_list
             if index[csname] == nil then
               index[csname] = {}
@@ -1838,7 +1838,7 @@ local function analyze_group_wide_statements(states, _, options)
               index[csname] = {}
             end
             table.insert(index[csname], statement)
-            local index = states.results.statement_analysis.function_and_variant_definition_index
+            index = states.results.statement_analysis.function_and_variant_definition_index
             local list = states.results.statement_analysis.function_and_variant_definition_csname_list
             if index[csname] == nil then
               index[csname] = {}
