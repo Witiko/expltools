@@ -103,6 +103,12 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
      - [x] Add function `analyze_boolean_expression_expandability()` that
            determines which boolean expression segments might be fully expandable
            and report the issue E428 for these segments.
+     - [ ] Separate `parsers.latex3_csname()` to functions and variables. Then,
+           in `analyze_boolean_expression_expandability()`, only check `EXP` on
+           functions. On variables, do not use LaTeX3 definitions at all; if
+           it looks like a variable, check the variable type against the list
+           of expandable/unexpandable types in [@latexteam2024programming, Section
+           1.1].
 
 -->
 
