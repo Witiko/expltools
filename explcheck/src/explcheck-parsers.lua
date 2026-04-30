@@ -380,18 +380,22 @@ local function latex3_prefixes(options, pathname)
     end
   )
 end
-local function latex3_csname(options, pathname)
+local function latex3_csname(definition_type, options, pathname)
   local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
-  return Cmt(
-    latex3.definitions,
-    function(_, _, definition)
-      return (
-        not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
-        or (definition ~= nil and definition.added_date ~= nil)  -- actual added date has been specified in "l3*.dtx" files
-        and definition.added_date <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
-      )
-    end
+  return (
+    Cg(latex3.definitions[definition_type], "definition")
+    * Cmt(
+      Cb("definition"),
+      function(_, _, definition)
+        return (
+          not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
+          or (definition ~= nil and definition.added_date ~= nil)  -- actual added date has been specified in "l3*.dtx" files
+          and definition.added_date <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+        )
+      end
+    )
+    * Cb("definition")
   )
 end
 
@@ -415,16 +419,15 @@ local function expl3_well_known_csname(options, pathname)
     + other_prefixes
   )
 
-  local _latex3_csname = latex3_csname(options, pathname)
   local well_known_function_csname = (
-    _latex3_csname
-    + P("__")^-1
+    P("__")^-1
     * prefix
     * (
       underscore
       * (any - colon)^0
     )^0
     * colon
+    + latex3_csname("function", options, pathname)
   )
   local well_known_variable_or_constant_csname = (
     S("cgl")  -- scope
@@ -432,6 +435,7 @@ local function expl3_well_known_csname(options, pathname)
     * underscore^-1
     * prefix
     * underscore
+    + latex3_csname("variable", options, pathname)
   )
 
   return (

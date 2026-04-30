@@ -110,10 +110,10 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
       end
     )^0
   )
-  local prefix_trees, num_prefix_trees = {}, 0
+  local prefix_trees = {}
   for csname_type, csname_list in pairs(csnames) do
     prefix_trees[csname_type] = {}
-    num_prefix_trees = num_prefix_trees + 1
+    table.insert(prefix_trees, csname_type)
     for _, csname in ipairs(csname_list) do
       local node = prefix_trees[csname_type]
       local characters = lpeg.match(csname_characters, csname)
@@ -162,7 +162,8 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
 
   output_file:write('  -- luacheck: push no max line length\n')
   local produced_parsers = 0
-  for csname_type, prefix_tree in pairs(prefix_trees) do
+  for _, csname_type in ipairs(prefix_trees) do
+    local prefix_tree = prefix_trees[csname_type]
     local subparsers = {}
     depth_first_search(prefix_tree, "", function(node, path)  -- visit
       if type(node) == "string" then  -- leaf node
@@ -218,7 +219,7 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
   end
   output_file:write('  -- luacheck: pop\n')
   output_file:write('end\n')
-  assert(produced_parsers == num_prefix_trees)
+  assert(produced_parsers == #prefix_trees)
 end
 
 -- Extract registered module names from file "l3prefixes.csv".
@@ -515,154 +516,238 @@ local function parse_definitions()
     return input_file_pathnames
   end
 
-  local parsed_dtx_files, definitions = {}, {}
+  local parsed_dtx_files, definition_types = {}, {}
   local latest_csname, latest_date = {}, {}
+
+  -- Interpret the options from a raw definition and record them in a new definition.
+  local function interpret_raw_options(input_pathname, definition_type, raw_options)
+    local options = {}
+
+    -- Interpret the boolean and key-value options.
+    for _, option in ipairs(raw_options) do
+      if type(option) == "string" then
+        options[option] = true
+      elseif type(option) == "table" then
+        local key, value = table.unpack(option)
+        assert(type(key) == "string")
+        assert(type(value) == "string")
+        options[key] = value
+      end
+    end
+
+    -- Determine when the definition was first added or most recently updated.
+    local definition = {
+      pathname = input_pathname,
+      type = definition_type,
+    }
+    for _, key in ipairs({"added", "updated"}) do
+      if options[key] ~= nil then
+        local _, _, date = options[key]:find("(%d%d%d%d%-%d%d%-%d%d)")
+        assert(date ~= nil, string.format('Failed to parse date out of value "%s"', options[key]))
+        definition[key] = date
+      end
+    end
+
+    -- Determine expandability.
+    if options.EXP or options.pTF then
+      assert(options.rEXP == nil)
+      definition.EXP = "full"
+    end
+    if options.rEXP then
+      assert(options.EXP == nil)
+      assert(options.pTF == nil)
+      definition.EXP = "restricted"
+    end
+
+    return options, definition
+  end
+
+  -- Interpret the control sequence names from a raw definition.
+  local function interpret_raw_csnames(options, raw_csnames)
+    -- Determine the actual defined control sequence names.
+    local csnames = {}
+    for _, raw_csname in ipairs(raw_csnames) do
+      if not (options.TF or options.pTF) or options.noTF then
+        table.insert(csnames, raw_csname)
+      end
+      if options.TF or options.pTF or options.noTF then
+        table.insert(csnames, string.format("%sTF", raw_csname))
+        table.insert(csnames, string.format("%sT", raw_csname))
+        table.insert(csnames, string.format("%sF", raw_csname))
+      end
+      if options.pTF then
+        local raw_csname_stem, argument_specifiers = raw_csname:match("([^:]*):([^:]*)")
+        assert(raw_csname_stem ~= nil)
+        assert(argument_specifiers ~= nil)
+        table.insert(csnames, string.format("%s_p:%s", raw_csname_stem, argument_specifiers))
+      end
+    end
+
+    return csnames
+  end
+
+  -- Record a definition under one or more control sequence names.
+  local function record_definition(definitions, definition, csnames, only_update_existing)
+    -- Record the control sequence names and their definitions.
+    for _, csname in ipairs(csnames) do
+      for _, key in ipairs({"added", "updated"}) do
+        if definition[key] ~= nil and (latest_date[key] == nil or definition[key] > latest_date[key]) then
+          latest_date[key] = definition[key]
+          latest_csname[key] = csname
+        end
+      end
+      if definitions[csname] ~= nil then
+        for _, key in ipairs({"added", "updated", "EXP"}) do
+          -- When a definition is repeated and the recorded values are incompatible, either log a warning or report an error,
+          -- based on whether one of the definitions originates from `\begin{macro}`, which makes the values less reliable.
+          if definitions[csname][key] ~= nil and definition[key] ~= nil and definitions[csname][key] ~= definition[key] then
+            local message =  string.format(
+              'Conflicting value of "%s" for `\\%s`: "%s" in "%s" (`\\begin{%s}`) versus "%s" in "%s" (`\\begin{%s}`)',
+              key,
+              csname,
+              definitions[csname][key],
+              get_basename(definitions[csname].pathname),
+              definitions[csname].type,
+              definition[key],
+              get_basename(definition.pathname),
+              definition.type
+            )
+            if definitions[csname].type == "macro" or definition.type == "macro" then
+              io.write(string.format("Warning: %s", message))
+              local template = '; preferring "%s" over "%s"'
+              if definitions[csname].type == "macro" and definition.type ~= "macro" then
+                print(string.format(template, definition[key], definitions[csname][key]))
+                definitions[csname][key] = definition[key]
+              else
+                print(string.format(template, definitions[csname][key], definition[key]))
+              end
+            else
+              error(message)
+            end
+          elseif definitions[csname][key] == nil and definition[key] ~= nil and not only_update_existing then
+            -- When a definition is repeated and the next definition specifies some new values, record them.
+            definitions[csname] = make_shallow_copy(definitions[csname])
+            definitions[csname][key] = definition[key]
+          end
+        end
+      elseif not only_update_existing then
+        definitions[csname] = definition
+        table.insert(definitions, csname)
+      end
+    end
+  end
+
   for _, input_pathname in ipairs(collect_dtx_files()) do
     local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
     local content = assert(input_file:read("*all"))
     assert(input_file:close())
 
-    -- For each DTX file, parse the definitions.
+    -- For each DTX file, parse the raw definitions.
     local raw_definitions = lpeg.match(macro_definitions, content)
+
+    -- If there are no raw definitions, skip the file.
     if #raw_definitions == 0 then
       goto next_file
     end
 
-    -- Record the DTX file.
-    table.insert(parsed_dtx_files, input_pathname)
-
-    -- Then, interpret these definitions.
+    -- Split the raw definitions by type.
+    local raw_definition_types = {}
     for _, raw_definition in ipairs(raw_definitions) do
-      local definition_type, options, raw_csnames = table.unpack(raw_definition)
-      for _, option in ipairs(options) do
-        if type(option) == "string" then
-          options[option] = true
-        elseif type(option) == "table" then
-          local key, value = table.unpack(option)
-          assert(type(key) == "string")
-          assert(type(value) == "string")
-          options[key] = value
-        end
+      local definition_type, _, _ = table.unpack(raw_definition)
+      if raw_definition_types[definition_type] == nil then
+        raw_definition_types[definition_type] = {}
       end
-      -- Determine when the definition was first added or most recently updated.
-      local definition = {
-        pathname = input_pathname,
-        type = definition_type,
-      }
-      for _, key in ipairs({"added", "updated"}) do
-        if options[key] ~= nil then
-          local _, _, date = options[key]:find("(%d%d%d%d%-%d%d%-%d%d)")
-          assert(date ~= nil, string.format('Failed to parse date out of value "%s"', options[key]))
-          definition[key] = date
-        end
+      table.insert(raw_definition_types[definition_type], raw_definition)
+    end
+
+    -- Record the DTX file and its type-split raw definitions.
+    table.insert(parsed_dtx_files, input_pathname)
+    assert(parsed_dtx_files[input_pathname] == nil)
+    parsed_dtx_files[input_pathname] = raw_definition_types
+
+    -- First, interpret and record the variable and function raw definitions.
+    for _, definition_type in ipairs({"function", "variable"}) do
+      ---@diagnostic disable-next-line:redefined-local
+      local raw_definitions = raw_definition_types[definition_type]  -- luacheck: ignore raw_definitions
+
+      if definition_types[definition_type] == nil then
+        definition_types[definition_type] = {}
+        table.insert(definition_types, definition_type)
       end
-      -- Determine expandability.
-      if options.EXP or options.pTF then
-        assert(options.rEXP == nil)
-        definition.EXP = "full"
+      local definitions = definition_types[definition_type]
+
+      for _, raw_definition in ipairs(raw_definitions or {}) do
+        local other_definition_type, raw_options, raw_csnames = table.unpack(raw_definition)
+        assert(definition_type == other_definition_type)
+
+        local options, definition = interpret_raw_options(input_pathname, definition_type, raw_options)
+        local csnames = interpret_raw_csnames(options, raw_csnames)
+        record_definition(definitions, definition, csnames, false)
       end
-      if options.rEXP then
-        assert(options.EXP == nil)
-        assert(options.pTF == nil)
-        definition.EXP = "restricted"
-      end
-      -- Determine the actual defined control sequence names.
-      local csnames = {}
-      for _, raw_csname in ipairs(raw_csnames) do
-        if not (options.TF or options.pTF) or options.noTF then
-          table.insert(csnames, raw_csname)
-        end
-        if options.TF or options.pTF or options.noTF then
-          table.insert(csnames, string.format("%sTF", raw_csname))
-          table.insert(csnames, string.format("%sT", raw_csname))
-          table.insert(csnames, string.format("%sF", raw_csname))
-        end
-        if options.pTF then
-          local raw_csname_stem, argument_specifiers = raw_csname:match("([^:]*):([^:]*)")
-          assert(raw_csname_stem ~= nil)
-          assert(argument_specifiers ~= nil)
-          table.insert(csnames, string.format("%s_p:%s", raw_csname_stem, argument_specifiers))
-        end
-      end
-      -- Record the control sequence names and their definitions.
-      for _, csname in ipairs(csnames) do
-        for _, key in ipairs({"added", "updated"}) do
-          if definition[key] ~= nil and (latest_date[key] == nil or definition[key] > latest_date[key]) then
-            latest_date[key] = definition[key]
-            latest_csname[key] = csname
-          end
-        end
-        if definitions[csname] ~= nil then
-          for _, key in ipairs({"added", "updated", "EXP"}) do
-            -- When a definition is repeated and the recorded values are incompatible, either log a warning or report an error,
-            -- based on whether one of the definitions originates from `\begin{macro}`, which makes the values less reliable.
-            if definitions[csname][key] ~= nil and definition[key] ~= nil and definitions[csname][key] ~= definition[key] then
-              local message =  string.format(
-                'Conflicting value of "%s" for `\\%s`: "%s" in "%s" (`\\begin{%s}`) versus "%s" in "%s" (`\\begin{%s}`)',
-                key,
-                csname,
-                definitions[csname][key],
-                get_basename(definitions[csname].pathname),
-                definitions[csname].type,
-                definition[key],
-                get_basename(definition.pathname),
-                definition.type
-              )
-              if definitions[csname].type == "macro" or definition.type == "macro" then
-                io.write(string.format("Warning: %s", message))
-                local template = '; preferring "%s" over "%s"'
-                if definitions[csname].type == "macro" and definition.type ~= "macro" then
-                  print(string.format(template, definition[key], definitions[csname][key]))
-                  definitions[csname][key] = definition[key]
-                else
-                  print(string.format(template, definitions[csname][key], definition[key]))
-                end
-              else
-                error(message)
-              end
-            elseif definitions[csname][key] == nil and definition[key] ~= nil then
-              -- When a definition is repeated and the next definition specifies some new values, record them.
-              definitions[csname] = make_shallow_copy(definitions[csname])
-              definitions[csname][key] = definition[key]
-            end
-          end
-        else
-          definitions[csname] = definition
-          table.insert(definitions, csname)
+    end
+
+    ::next_file::
+  end
+
+  for _, input_pathname in ipairs(parsed_dtx_files) do
+    local raw_definition_types = parsed_dtx_files[input_pathname]
+    assert(raw_definition_types ~= nil)
+
+    -- Next, interpret the macro raw definitions and use them to update the variable and function definitions
+    -- or report inconsistencies, if any.
+    for _, definition_type in ipairs({"macro"}) do
+      local raw_definitions = raw_definition_types[definition_type]
+      for _, raw_definition in ipairs(raw_definitions or {}) do
+        local other_definition_type, raw_options, raw_csnames = table.unpack(raw_definition)
+        assert(definition_type == other_definition_type)
+
+        local options, definition = interpret_raw_options(input_pathname, definition_type, raw_options)
+        local csnames = interpret_raw_csnames(options, raw_csnames)
+        for _, updated_definition_type in ipairs({"function", "variable"}) do
+          local updated_definitions = definition_types[updated_definition_type]
+          assert(updated_definitions ~= nil)
+          record_definition(updated_definitions, definition, csnames, true)
         end
       end
     end
-    ::next_file::
   end
 
   for _, key in ipairs({"added", "updated"}) do
     assert(latest_date[key] ~= nil)
     assert(latest_csname[key] ~= nil)
   end
-  return parsed_dtx_files, definitions, latest_date, latest_csname
+  return parsed_dtx_files, definition_types, latest_date, latest_csname
 end
 
--- Generate an LPEG parser of variable and function names defined in "l3*.dtx" files.
-local function generate_definitions_parser(output_file, definitions)
-  -- In order to minimize the size and speed of the parser, first construct a prefix tree of the definitions.
-  local prefix_tree = {}
-  for _, csname in ipairs(definitions) do
-    local node = prefix_tree
-    for character_index = 1, #csname do
-      local character = csname:sub(character_index, character_index)
-      assert(#character == 1)
-      if character_index < #csname then  -- an intermediate node
-        if node[character] == nil then
-          node[character] = {}
+-- Generate LPEG parsers of function and variable names defined in "l3*.dtx" files.
+local function generate_definitions_parsers(output_file, definition_types)
+  output_file:write('M.definitions = {}\n')
+  output_file:write('do\n')
+
+  -- In order to minimize the size and speed of the parsers, first construct prefix trees of the definitions.
+  local prefix_trees = {}
+  for _, definition_type in ipairs(definition_types) do
+    prefix_trees[definition_type] = {}
+    table.insert(prefix_trees, definition_type)
+    local definitions = definition_types[definition_type]
+    for _, csname in ipairs(definitions) do
+      local node = prefix_trees[definition_type]
+      for character_index = 1, #csname do
+        local character = csname:sub(character_index, character_index)
+        assert(#character == 1)
+        if character_index < #csname then  -- an intermediate node
+          if node[character] == nil then
+            node[character] = {}
+          end
+          node = node[character]
+        else  -- a leaf node
+          table.insert(node, character)
         end
-        node = node[character]
-      else  -- a leaf node
-        table.insert(node, character)
       end
     end
   end
 
-  -- Then, generate a parser out of the tree.
+  -- Then, generate parsers out of the trees.
   local output_regular_character = any - P('"')
   local output_capture = P("*Cc{") * (any - P("}"))^0 * P("}")
   local output_regular_characters = (
@@ -690,64 +775,75 @@ local function generate_definitions_parser(output_file, definitions)
     * eof
   )
 
-  output_file:write('-- luacheck: push no max line length\n')
-  local subparsers = {}
+  output_file:write('  -- luacheck: push no max line length\n')
   local produced_parsers = 0
-  depth_first_search(prefix_tree, "", function(node, path)  -- visit
-    if type(node) == "string" then  -- leaf node
-      assert(node ~= '"')
-      local suffix_buffer = {'P"' .. node .. '"'}
-      local definition = definitions[path .. node]
-      assert(definition ~= nil)
-      local options_buffer = {}
-      for _, key in ipairs({"added", "EXP"}) do
-        local value = definition[key]
-        if value ~= nil then
-          table.insert(options_buffer, string.format('%s="%s"', key, value))
+  for _, definition_type in ipairs(prefix_trees) do
+    local prefix_tree = prefix_trees[definition_type]
+    local definitions = definition_types[definition_type]
+    local subparsers = {}
+    depth_first_search(prefix_tree, "", function(node, path)  -- visit
+      if type(node) == "string" then  -- leaf node
+        assert(node ~= '"')
+        local suffix_buffer = {'P"' .. node .. '"'}
+        local definition = definitions[path .. node]
+        assert(definition ~= nil)
+        local options_buffer = {}
+        for _, key in ipairs({"added", "EXP"}) do
+          local value = definition[key]
+          if value ~= nil then
+            table.insert(options_buffer, string.format('%s="%s"', key, value))
+          end
+        end
+        if #options_buffer > 0 then
+          table.insert(suffix_buffer, "*Cc{")
+          table.insert(suffix_buffer, table.concat(options_buffer, ","))
+          table.insert(suffix_buffer, "}")
+        end
+        local suffix = table.concat(suffix_buffer)
+        if subparsers[path] ~= nil then
+          subparsers[path] = subparsers[path] .. "+" .. suffix
+        else
+          subparsers[path] = suffix
         end
       end
-      if #options_buffer > 0 then
-        table.insert(suffix_buffer, "*Cc{")
-        table.insert(suffix_buffer, table.concat(options_buffer, ","))
-        table.insert(suffix_buffer, "}")
-      end
-      local suffix = table.concat(suffix_buffer)
-      if subparsers[path] ~= nil then
-        subparsers[path] = subparsers[path] .. "+" .. suffix
-      else
-        subparsers[path] = suffix
-      end
-    end
-  end, function(_, path)  -- leave
-    if #path > 0 then  -- non-root node
-      local character = path:sub(#path, #path)
-      local parent_path = path:sub(1, #path - 1)
-      local prefix
-      assert(character ~= '"')
-      prefix = 'P"' .. character .. '"'
-      local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
-      local suffix
-      if simplified_pattern ~= nil then  -- simple pattern
-        suffix = prefix .. "*" .. simplified_pattern
-        local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
-        if simplified_suffix ~= nil then
-          suffix = simplified_suffix
+    end, function(_, path)  -- leave
+      if #path > 0 then  -- non-root node
+        local character = path:sub(#path, #path)
+        local parent_path = path:sub(1, #path - 1)
+        local prefix
+        assert(character ~= '"')
+        prefix = 'P"' .. character .. '"'
+        local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
+        local suffix
+        if simplified_pattern ~= nil then  -- simple pattern
+          suffix = prefix .. "*" .. simplified_pattern
+          local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
+          if simplified_suffix ~= nil then
+            suffix = simplified_suffix
+          end
+        else  -- complex pattern
+          suffix = prefix .. "*(" .. subparsers[path] .. ")"
         end
-      else  -- complex pattern
-        suffix = prefix .. "*(" .. subparsers[path] .. ")"
+        if subparsers[parent_path] ~= nil then
+          subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
+        else
+          subparsers[parent_path] = suffix
+        end
+      else  -- root node
+        local type_selector
+        if definition_type == "function" then
+          type_selector = '["' .. definition_type .. '"]'
+        else
+          type_selector = '.' .. definition_type
+        end
+        output_file:write('  M.definitions' .. type_selector .. ' = (' .. subparsers[path] .. ') * eof\n')
+        produced_parsers = produced_parsers + 1
       end
-      if subparsers[parent_path] ~= nil then
-        subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
-      else
-        subparsers[parent_path] = suffix
-      end
-    else  -- root node
-      output_file:write('M.definitions = (' .. subparsers[path] .. ') * eof\n')
-      produced_parsers = produced_parsers + 1
-    end
-  end)
-  output_file:write('-- luacheck: pop\n')
-  assert(produced_parsers == 1)
+    end)
+  end
+  output_file:write('  -- luacheck: pop\n')
+  output_file:write('end\n')
+  assert(produced_parsers == #prefix_trees)
 end
 
 -- Generate the file "explcheck-latex3.lua".
@@ -771,13 +867,14 @@ local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_pref
 add_comment(
   string.format('- "l3prefixes.csv" with the latest registered prefix from %s: "%s"', l3prefixes_latest_date, l3prefixes_latest_prefix)
 )
-local parsed_dtx_files, definitions, latest_defined_date, latest_defined_csname = parse_definitions()
+local parsed_dtx_files, definition_types, latest_defined_date, latest_defined_csname = parse_definitions()
 add_comment(
   string.format(
-    '- %s "l3*.dtx" files with %s public function and variable %s:',
+    '- %s "l3*.dtx" files with %s function and %s variable %s:',
     humanize(#parsed_dtx_files),
-    humanize(#definitions),
-    pluralize("definition", #definitions)
+    humanize(#definition_types["function"]),
+    humanize(#definition_types["variable"]),
+    pluralize("definition", #definition_types["function"] + #definition_types["variable"])
   )
 )
 for _, key in ipairs({"added", "updated"}) do
@@ -801,6 +898,6 @@ generate_l3obsolete_parsers(output_file, l3obsolete_dates, csnames)
 output_file:write("\n")
 generate_l3prefixes_parser(output_file, l3prefixes_dates, prefixes)
 output_file:write("\n")
-generate_definitions_parser(output_file, definitions)
+generate_definitions_parsers(output_file, definition_types)
 output_file:write("\nreturn M")
 assert(output_file:close())
