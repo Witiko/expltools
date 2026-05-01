@@ -304,7 +304,7 @@ local expl3_variable_or_constant_type = (
   + expl3_unexpandable_variable_or_constant_type
 )
 
-local expl3_maybe_unexpandable_csname = (
+local expl3_unexpandable_variable_csname = (
   (
     -#(expl3_unexpandable_variable_or_constant_type * eof)
     * (any - underscore)^0
@@ -986,12 +986,12 @@ return {
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
-  expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_message_definition = expl3_message_definition,
   expl3_message_use = expl3_message_use,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_function_undefinition_csname = expl3_function_undefinition_csname,
+  expl3_unexpandable_variable_csname = expl3_unexpandable_variable_csname,
   expl3_variable_declaration_csname = expl3_variable_declaration_csname,
   expl3_variable_definition_csname = expl3_variable_definition_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,

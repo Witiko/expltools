@@ -1294,18 +1294,6 @@ local function determine_min_reaching_nesting_depth(states, _, _)
   end
   states.results.determined_min_reaching_nesting_depth = true
 
-  -- Set the initial minimum reaching nesting depth for all segments.
-  for _, state in ipairs(states) do
-    -- Skip statements from files in the current file group that haven't reached the flow analysis.
-    if state.results.stopped_early then
-      goto next_file
-    end
-    for _, segment in ipairs(state.results.segments or {}) do
-      segment.min_reaching_nesting_depth = segment.nesting_depth
-    end
-    ::next_file::
-  end
-
   local changed_segment_list, changed_segment_index = {}, {}
 
   -- Add a changed segment on the top of the stack.

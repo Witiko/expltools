@@ -401,7 +401,7 @@ local function get_calls(results, part_number, segment, issues, content)
           if argument.specifier == "V" then
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
-                  lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_token.payload) ~= nil then
+                  lpeg.match(parsers.expl3_unexpandable_variable_csname, argument_token.payload) ~= nil then
                 issues:add(
                   't305',
                   'expanding an unexpandable variable or constant',
@@ -412,7 +412,7 @@ local function get_calls(results, part_number, segment, issues, content)
             end
           elseif argument.specifier == "v" then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
-            if argument_text ~= nil and lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_text) ~= nil then
+            if argument_text ~= nil and lpeg.match(parsers.expl3_unexpandable_variable_csname, argument_text) ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
               issues:add(
                 't305',
@@ -713,6 +713,10 @@ end
 add_segment = function(results, part_number, segment, issues, content)
   assert(results.segments ~= nil)
   assert(results.segment_type_index ~= nil)
+  if segment.min_reaching_nesting_depth == nil then
+    assert(segment.nesting_depth ~= nil)
+    segment.min_reaching_nesting_depth = segment.nesting_depth  -- later refined by `determine_min_reaching_nesting_depth()`
+  end
   table.insert(results.segments, segment)
   if results.segment_type_index[segment.type] == nil then
     results.segment_type_index[segment.type] = {}
