@@ -10,11 +10,12 @@ This version of explcheck has implemented the following new features:
 
 - Add more support for flow analysis. (#188)
 
-  This adds support for the following issues from Section 5.1 of the document
-  titled [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+  This adds support for the following issues from the document titled
+  [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
-  1. W502 (Unused private function)
-  2. W503 (Unused private function variant)
+  1. E428 (Unexpandable or restricted-expandable boolean expression)
+  2. W502 (Unused private function)
+  3. W503 (Unused private function variant)
 
 - In `explcheck-latex3.lua`, add `definitions["function"]` and
   `definitions.variable` properties with LPEG parsers that accept LaTeX3

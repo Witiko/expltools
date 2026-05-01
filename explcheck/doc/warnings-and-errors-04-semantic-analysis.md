@@ -73,7 +73,7 @@ Furthermore, this also extends to function variants:
 
  /s412-08.tex
 
-### Unexpandable or restricted-expandable boolean expression {.e label=e428 .work-in-progress #unexpandable-or-restricted-expandable-boolean-expression}
+### Unexpandable or restricted-expandable boolean expression {.e label=e428 #unexpandable-or-restricted-expandable-boolean-expression}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
 
  /e428-01.tex
