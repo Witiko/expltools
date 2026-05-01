@@ -92,8 +92,7 @@ local function process_arguments(arguments)
       .. "\t                           The default setting is --expl3-detection-strategy " .. expl3_detection_strategy .. ".\n\n"
       .. "\t--files-from FILE          Read the list of FILENAMES from FILE.\n\n"
       .. '\t--group-files              Always group files into sets that are assumed to be used together unless "," is written\n'
-      .. "\t                           between a pair of FILENAMES.\n\n"
-      .. "\t                           The default setting is --group-files " .. get_option("group_files") .. ".\n\n"
+      .. "\t                           between a pair of FILENAMES. See also --no-group-files.\n\n"
       .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
       .. '\t--make-at-letter           Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n\n'
       .. '\t--make-at-other            Tokenize "@" as an other character (catcode 12), like in plain TeX.\n\n'
