@@ -109,8 +109,8 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
            functions. On variables, do not use LaTeX3 definitions at all; if
            it looks like a variable, check the variable type against the list
            of expandable/unexpandable types in [@latexteam2024programming, Section
-           1.1]. This should drastically reduce the number of false positive
-           detections of E428.
+           1.1] and report issue T305 (Expanding an unexpandable variable or
+           constant) instead if it doesn't.
 
 -->
 
