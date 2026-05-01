@@ -310,7 +310,7 @@ local expl3_maybe_unexpandable_csname = (
     * (any - underscore)^0
     * underscore
   )^0
-  * expl3_unexpandable_variable_or_constant_type
+  * C(expl3_unexpandable_variable_or_constant_type)
   * eof
 )
 

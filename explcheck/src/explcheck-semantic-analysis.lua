@@ -2135,52 +2135,53 @@ local function analyze_boolean_expression_expandability(states, file_number, opt
 
     segment.maybe_fully_expandable = true
 
-    -- Get the byte range of the current segment.
-    local function get_byte_range()
-      local part_number = segment.location.part_number
-      local tokens = results.tokens[part_number]
-      local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
-      local token_range = segment.transformed_tokens.token_range
-      local byte_range = token_range_to_byte_range(token_range)
-      return byte_range
-    end
+    local part_number = segment.location.part_number
+    local tokens = results.tokens[part_number]
+    local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
 
     -- Check whether a top-level control sequence might be fully expandable.
-    local function check_csname(csname)
-      -- Check whether the control sequence is a user-defined function that is not fully expandable.
-      if has_function_definitions[csname] and not might_any_function_definitions_be_fully_expandable[csname] then
+    local function check_csname(csname, get_byte_range)
+      if segment.maybe_fully_expandable then
+        -- Check whether the control sequence is a user-defined function that is not fully expandable.
+        if has_function_definitions[csname] and not might_any_function_definitions_be_fully_expandable[csname] then
+          segment.maybe_fully_expandable = false
+          return
+        end
+        -- Check whether the control sequence is a standard-library function that is not fully expandable.
+        local csname_properties = lpeg.match(latex3_function_csname, csname)
+        if csname_properties ~= nil and (type(csname_properties) ~= "table" or csname_properties.EXP ~= "full") then
+          segment.maybe_fully_expandable = false
+          return
+        end
+      end
+      -- Check whether the control sequence is a variable of a type that is not fully expandable.
+      local variable_type = lpeg.match(parsers.expl3_maybe_unexpandable_csname, csname)
+      if variable_type ~= nil and variable_type ~= "bool" then
+        issues:add("t305", "expanding an unexpandable variable or constant", get_byte_range(), format_csname(csname))
         segment.maybe_fully_expandable = false
         return
       end
-      -- Check whether the control sequence is a standard-library function that is not fully expandable.
-      local csname_properties = lpeg.match(latex3_function_csname, csname)
-      if csname_properties ~= nil and (type(csname_properties) ~= "table" or csname_properties.EXP ~= "full") then
-        segment.maybe_fully_expandable = false
-        return
-      end
-      -- TODO: Check whether the control sequence is a variable of a type that is not fully expandable.
     end
 
     for _, call in ipairs(segment.calls) do
       if call.type == CALL then
         -- Check function calls.
-        check_csname(call.csname)
+        check_csname(call.csname, function() return token_range_to_byte_range(call.token_range) end)
       elseif call.type == OTHER_TOKENS then
         -- Check control sequence tokens in unrecognized calls.
         for _, token in call.token_range:enumerate(transformed_tokens, map_forward) do
           if token.type == CONTROL_SEQUENCE then
-            check_csname(token.payload)
+            check_csname(token.payload, function() return token.byte_range end)
           end
         end
       end
-
-      -- If we have determined that the segment can't be fully expandable, report an issue, and skip further checks.
-      if not segment.maybe_fully_expandable then
-        issues:add("e428", "unexpandable or restricted-expandable boolean expression", get_byte_range())
-        goto next_segment
-      end
     end
-    ::next_segment::
+    -- If we have determined that the segment can't be fully expandable, report an issue, and skip further checks.
+    if not segment.maybe_fully_expandable then
+      local token_range = segment.transformed_tokens.token_range
+      local byte_range = token_range_to_byte_range(token_range)
+      issues:add("e428", "unexpandable or restricted-expandable boolean expression", byte_range)
+    end
   end
 end
 
