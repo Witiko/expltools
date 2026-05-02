@@ -27,7 +27,7 @@ local user_configs = {}
 -- Try to load user-defined configuration.
 local function get_user_configs(options)
   -- Read the configuration.
-  local default_pathnames, options_pathname
+  local default_pathnames, options_pathnames
   default_pathnames = default_config.defaults["config_file"]
   assert(default_pathnames ~= nil)
   if options ~= nil and options["config_file"] ~= nil then
