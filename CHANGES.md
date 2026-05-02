@@ -17,10 +17,6 @@ This version of explcheck has implemented the following new features:
   2. W502 (Unused private function)
   3. W503 (Unused private function variant)
 
-- Support multiple user config files being specified in the command-line option
-  `--config-file` and the corresponding Lua option `config_file`. (discussed
-  with @muzimuzhi in #203, added in #201)
-
 - In `explcheck-latex3.lua`, add `definitions["function"]` and
   `definitions.variable` properties with LPEG parsers that accept LaTeX3
   standard-library function and variable names, respectively, and capture their
@@ -38,7 +34,38 @@ This version of explcheck has implemented the following new features:
   latex3/latex3@ff6927ae8, the parsers recognize 4,850 LaTeX3 standard-library
   functions and 339 variables.
 
-- Add option `latex3_definitions_max_added_date`, which limits how recent
+- Support multiple user config files being specified in the command-line option
+  `--config-file` and the corresponding Lua option `config_file`. (discussed
+  with @muzimuzhi in #203, added in #201)
+
+- Add Lua option `defined_csnames` that specifies which control sequences
+  should always be assumed to be defined. (discussed with @muzimuzhi and
+  @alceu-frigeri in #206, added in #201)
+
+  This option provides a more fine-grained alternative to the earlier
+  `imported_prefixes`. For example, suppose the control sequences
+  `\module_foo:` and `\module_bar:` are imported and should always be
+  considered defined. A coarse-grained way to express this is:
+
+  ``` toml
+  [defaults]
+  imported_prefixes = ["module"]
+  ```
+
+  However, this also suppresses warnings and errors for all control sequence
+  names matching `\module_*`, as well as message names matching `module/*`,
+  which may be undesirable. Using `defined_csnames`, the same intent can be
+  expressed more precisely:
+
+  ``` toml
+  [defaults]
+  defined_csnames = ["module_foo:", "module_bar:"]
+  ```
+
+  This way, only warnings and errors related to the listed control sequence
+  names are suppressed.
+
+- Add Lua option `latex3_definitions_max_added_date`, which limits how recent
   LaTeX3 standard-library function and variable definitions are considered
   during analysis. (#201)
 
@@ -51,7 +78,7 @@ This version of explcheck has implemented the following new features:
   want to only consider deprecations, prefixes, and definitions from
   TeX Live 2025 and earlier:
 
-  ```toml
+  ``` toml
   [defaults]
   l3obsolete_max_deprecated_date = "2025-09-29"
   l3prefixes_max_first_registered_date = "2025-12-02"

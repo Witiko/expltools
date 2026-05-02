@@ -401,6 +401,7 @@ end
 
 local function expl3_well_known_csname(options, pathname)
   local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local defined_csnames = get_option('defined_csnames', options, pathname)
 
   local other_prefixes = fail
   for _, prefix_text in ipairs(imported_prefixes) do
@@ -418,6 +419,22 @@ local function expl3_well_known_csname(options, pathname)
     * _latex3_prefixes
     + other_prefixes
   )
+
+  local defined_csname
+  if #defined_csnames > 0 then
+    local defined_csname_index = {}
+    for _, csname in ipairs(defined_csnames) do
+      defined_csname_index[csname] = true
+    end
+    defined_csname = Cmt(
+      C(any^1),
+      function(_, _, csname)
+        return defined_csname_index[csname] == true
+      end
+    )
+  else
+    defined_csname = fail
+  end
 
   local well_known_function_csname = (
     P("__")^-1
@@ -440,6 +457,7 @@ local function expl3_well_known_csname(options, pathname)
 
   return (
     P("q_no_value")
+    + defined_csname
     + well_known_function_csname
     + well_known_variable_or_constant_csname
   )

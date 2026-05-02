@@ -1,5 +1,6 @@
 [defaults]
 config_file = [".explcheckrc"]
+defined_csnames = []
 error_format = "%f:%l:%c: %t%n %M"
 expl3_detection_strategy = "auto"
 fail_fast = true
