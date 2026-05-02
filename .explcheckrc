@@ -87,9 +87,6 @@ ignored_issues = ["e209", "e300", "e405"]
 [filename."polexprcore.tex"]
 expl3_detection_strategy = "precision"
 
-[filename."csvsimple-l3.sty"]
-max_line_length = 110
-
 [package.unicode-math]
 ignored_issues = ["e209", "e405"]
 max_line_length = 130
