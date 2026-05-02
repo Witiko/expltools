@@ -715,7 +715,7 @@ add_segment = function(results, part_number, segment, issues, content)
   assert(results.segment_type_index ~= nil)
   if segment.min_reaching_nesting_depth == nil then
     assert(segment.nesting_depth ~= nil)
-    segment.min_reaching_nesting_depth = segment.nesting_depth  -- later refined by `determine_min_reaching_nesting_depth()`
+    segment.min_reaching_nesting_depth = segment.nesting_depth  -- later refined by the flow analysis
   end
   table.insert(results.segments, segment)
   if results.segment_type_index[segment.type] == nil then
