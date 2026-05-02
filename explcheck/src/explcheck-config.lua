@@ -24,7 +24,7 @@ local default_config = assert(read_config_file(default_config_pathname))
 
 local user_configs = {}
 
--- Try to load user-defined configuration.
+-- Try to load user-defined configuration files.
 local function get_user_configs(options)
   -- Read the configuration.
   local default_pathnames, options_pathnames
@@ -55,7 +55,8 @@ local function get_user_configs(options)
   assert(pathnames ~= nil)
   -- Try to read the configuration files.
   local effective_user_configs, effective_pathnames = {}, {}
-  for _, pathname in ipairs(pathnames) do
+  for pathname_number = #pathnames, 1, -1 do  -- read last-specified files first
+    local pathname = pathnames[pathname_number]
     if user_configs[pathname] == nil then
       user_configs[pathname] = read_config_file(pathname)  -- only read the file from the disk once
     end
