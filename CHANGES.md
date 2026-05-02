@@ -17,6 +17,10 @@ This version of explcheck has implemented the following new features:
   2. W502 (Unused private function)
   3. W503 (Unused private function variant)
 
+- Support multiple user config files being specified in the command-line option
+  `--config-file` and the corresponding Lua option `config_file`. (discussed
+  with @muzimuzhi in #203, added in #201)
+
 - In `explcheck-latex3.lua`, add `definitions["function"]` and
   `definitions.variable` properties with LPEG parsers that accept LaTeX3
   standard-library function and variable names, respectively, and capture their

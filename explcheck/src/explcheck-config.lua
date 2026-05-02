@@ -25,39 +25,51 @@ local default_config = assert(read_config_file(default_config_pathname))
 local user_configs = {}
 
 -- Try to load user-defined configuration.
-local function get_user_config(options)
+local function get_user_configs(options)
   -- Read the configuration.
-  local default_pathname, options_pathname
-  default_pathname = default_config.defaults["config_file"]
-  assert(default_pathname ~= nil)
+  local default_pathnames, options_pathname
+  default_pathnames = default_config.defaults["config_file"]
+  assert(default_pathnames ~= nil)
   if options ~= nil and options["config_file"] ~= nil then
-    options_pathname = options["config_file"]
+    options_pathnames = options["config_file"]
   end
-  -- Determine the pathname of the user-defined config file.
-  local pathname, must_exist
-  if options_pathname ~= nil then
-    pathname = options_pathname
-    if options_pathname ~= "" and options_pathname ~= default_pathname then
-      must_exist = true  -- if the options specify a distinct pathname, it must exist
+  -- Determine the pathnames of the user-defined config files.
+  local pathnames, must_exist
+  if options_pathnames ~= nil then
+    pathnames = options_pathnames
+    -- TODO: Remove support for `type(options_pathnames) == "string"` in v1.0.0.
+    if type(options_pathnames) == "string" then
+      local options_pathname = options_pathnames
+      if options_pathname == "" then
+        options_pathnames = {}
+      else
+        options_pathnames = {options_pathname}
+      end
     end
+    assert(type(options_pathnames) == "table")
+    must_exist = true
   else
-    pathname = default_pathname
+    pathnames = default_pathnames
     must_exist = false
   end
-  assert(pathname ~= nil)
-  -- Try to read the configuration.
-  if user_configs[pathname] == nil then
-    user_configs[pathname] = read_config_file(pathname)  -- only read the file from the disk once
-  end
-  if user_configs[pathname] == nil or user_configs[pathname] == false then
-    if must_exist then
-      error(string.format('Config file "%s" does not exist', pathname))
+  assert(pathnames ~= nil)
+  -- Try to read the configuration files.
+  local effective_user_configs, effective_pathnames = {}, {}
+  for _, pathname in ipairs(pathnames) do
+    if user_configs[pathname] == nil then
+      user_configs[pathname] = read_config_file(pathname)  -- only read the file from the disk once
     end
-    user_configs[pathname] = false  -- mark the file as read, so that we don't read it again
-    return nil
-  else
-    return user_configs[pathname], pathname
+    if user_configs[pathname] == nil or user_configs[pathname] == false then
+      if must_exist then
+        error(string.format('Config file "%s" does not exist', pathname))
+      end
+      user_configs[pathname] = false  -- mark the file as read, so that we don't read it again
+    else
+      table.insert(effective_user_configs, user_configs[pathname])
+      table.insert(effective_pathnames, pathname)
+    end
   end
+  return effective_user_configs, effective_pathnames
 end
 
 -- Get the filename of a file.
@@ -77,13 +89,8 @@ local function get_option(key, options, pathname)
     return options[key]
   end
   -- Otherwise, try and load the user-defined configuration.
-  local configs
-  local user_config = get_user_config(options)
-  if user_config ~= nil then
-    configs = {user_config, default_config}
-  else
-    configs = {default_config}
-  end
+  local configs = get_user_configs(options)
+  table.insert(configs, default_config)
   -- Then, try the user-defined configuration first, if it exists, and then the default configuration.
   for _, config in ipairs(configs) do
     if pathname ~= nil then
@@ -114,5 +121,5 @@ return {
   get_filename = get_filename,
   get_option = get_option,
   get_package = get_package,
-  get_user_config = get_user_config,
+  get_user_configs = get_user_configs,
 }

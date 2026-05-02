@@ -8,7 +8,7 @@ local new_issues = require("explcheck-issues").new_issues
 local utils = require("explcheck-utils")
 
 local default_config = config.default_config
-local get_user_config = config.get_user_config
+local get_user_configs = config.get_user_configs
 
 local get_stem = utils.get_stem
 local get_suffix = utils.get_suffix
@@ -19,10 +19,12 @@ local input_file_pathname = arg[1]
 local input_issue_directory_pathname = arg[2]
 local input_task_pathname = arg[3]
 
--- Read the user config
-local user_config, user_config_pathname = get_user_config()
-assert(user_config ~= nil)
-assert(user_config_pathname ~= nil)
+-- Read the user config file.
+local user_configs, user_config_pathnames = get_user_configs()
+assert(#user_configs == 1)
+assert(#user_config_pathnames == 1)
+local user_config = user_configs[1]
+local user_config_pathname = user_config_pathnames[1]
 
 -- Collect all pathnames.
 local pathnames, allow_pathname_separators = {}, {}

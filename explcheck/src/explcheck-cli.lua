@@ -73,9 +73,10 @@ local function process_arguments(arguments)
     print("Run static analysis on expl3 files.\n")
     local expl3_detection_strategy = get_option("expl3_detection_strategy")
     local max_line_length = tostring(get_option("max_line_length"))
+    local config_files = table.concat(get_option("config_file"), ", ")
     print(
       "Options:\n\n"
-      .. "\t--config-file FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n"
+      .. "\t--config-file FILENAMES    A comma-list of user config files. Defaults to FILENAMES=\"" .. config_files .. "\".\n"
       .. "\t                           See also --no-config-file.\n\n"
       .. "\t--error-format FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
       .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
@@ -156,7 +157,10 @@ local function process_arguments(arguments)
     ["config-file"] = {
       value_required = true,
       action = function(_, value)
-        options.config_file = value
+        if options.config_file == nil then
+          options.config_file = {}
+        end
+        table.insert(options.config_file, value)
       end,
     },
     ["error-format"] = {
@@ -247,7 +251,7 @@ local function process_arguments(arguments)
     },
     ["no-config-file"] = {
       action = function()
-        options.config_file = ""
+        options.config_file = {}
       end,
     },
     ["no-group-files"] = {
