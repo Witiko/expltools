@@ -157,10 +157,10 @@ local function process_arguments(arguments)
     ["config-file"] = {
       value_required = true,
       action = function(_, value)
-        if options.config_file == nil then
-          options.config_file = {}
+        options.config_file = {}
+        for config_file in value:gmatch('[^,]+') do
+          table.insert(options.config_file, config_file)
         end
-        table.insert(options.config_file, value)
       end,
     },
     ["error-format"] = {
