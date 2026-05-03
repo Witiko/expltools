@@ -73,9 +73,11 @@ local function process_arguments(arguments)
     print("Run static analysis on expl3 files.\n")
     local expl3_detection_strategy = get_option("expl3_detection_strategy")
     local max_line_length = tostring(get_option("max_line_length"))
+    local config_files = table.concat(get_option("config_file"), ", ")
     print(
       "Options:\n\n"
-      .. "\t--config-file FILENAME     The name of the user config file. Defaults to FILENAME=\"" .. get_option("config_file") .. "\".\n\n"
+      .. "\t--config-file FILENAMES    A comma-list of user config files. Defaults to FILENAMES=\"" .. config_files .. "\".\n"
+      .. "\t                           See also --no-config-file.\n\n"
       .. "\t--error-format FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
       .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
       .. "\t--expl3-detection-strategy {never|always|precision|recall|auto}\n\n"
@@ -91,8 +93,7 @@ local function process_arguments(arguments)
       .. "\t                           The default setting is --expl3-detection-strategy " .. expl3_detection_strategy .. ".\n\n"
       .. "\t--files-from FILE          Read the list of FILENAMES from FILE.\n\n"
       .. '\t--group-files              Always group files into sets that are assumed to be used together unless "," is written\n'
-      .. "\t                           between a pair of FILENAMES.\n\n"
-      .. "\t                           The default setting is --group-files " .. get_option("group_files") .. ".\n\n"
+      .. "\t                           between a pair of FILENAMES. See also --no-group-files.\n\n"
       .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
       .. '\t--make-at-letter           Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n\n'
       .. '\t--make-at-other            Tokenize "@" as an other character (catcode 12), like in plain TeX.\n\n'
@@ -156,7 +157,10 @@ local function process_arguments(arguments)
     ["config-file"] = {
       value_required = true,
       action = function(_, value)
-        options.config_file = value
+        options.config_file = {}
+        for config_file in value:gmatch('[^,]+') do
+          table.insert(options.config_file, config_file)
+        end
       end,
     },
     ["error-format"] = {
@@ -247,7 +251,7 @@ local function process_arguments(arguments)
     },
     ["no-config-file"] = {
       action = function()
-        options.config_file = ""
+        options.config_file = {}
       end,
     },
     ["no-group-files"] = {

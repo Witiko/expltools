@@ -1,9 +1,17 @@
-\prg_new_conditional:Nnn  % warning on this line
-  \example_unexpandable:
-  { p, T, F, TF }
+\prg_new_protected_conditional:Nnn
+  \example_unexpandable_first:
+  { T, F, TF }
   {
     \tl_set:Nn
       \l_tmpa_tl
       { bar }
     \prg_return_true:
+  }
+\prg_new_conditional:Nnn  % warning on this line
+  \example_unexpandable_second:
+  { T, F, TF }
+  {
+    \example_unexpandable_first:TF
+      { \prg_return_true: }
+      { \prg_return_false: }
   }

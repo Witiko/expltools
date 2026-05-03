@@ -73,6 +73,20 @@ Furthermore, this also extends to function variants:
 
  /s412-08.tex
 
+### Unexpandable or restricted-expandable boolean expression {.e label=e428 #unexpandable-or-restricted-expandable-boolean-expression}
+A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
+
+ /e428-01.tex
+ /e428-02.tex
+ /e428-03.tex
+ /e428-04.tex
+ /e428-05.tex
+
+### Defined an unexpandable function as unprotected {.w label=w429 #defined-unexpandable-function-as-unprotected}
+
+ /w429-01.tex
+ /w429-02.tex
+
 ## Variables and constants
 
 ### Malformed variable or constant name {.s label=s413}

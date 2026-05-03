@@ -221,6 +221,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/creationboites/CreationBoites.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/crefthe/crefthe.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/crumbs/crumbs.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/csvsimple/csvsimple-l3.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/customenvs/customenvs-mathpictos.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/customenvs/customenvs.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/cvss/cvss.sty

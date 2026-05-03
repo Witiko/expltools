@@ -217,6 +217,8 @@ local function is_confused(pathname, results, options)
   return false
 end
 
+local add_segment
+
 -- Extract function calls from TeX tokens and groupings.
 local function get_calls(results, part_number, segment, issues, content)
 
@@ -399,7 +401,7 @@ local function get_calls(results, part_number, segment, issues, content)
           if argument.specifier == "V" then
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
-                  lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_token.payload) ~= nil then
+                  lpeg.match(parsers.expl3_unexpandable_variable_csname, argument_token.payload) ~= nil then
                 issues:add(
                   't305',
                   'expanding an unexpandable variable or constant',
@@ -410,7 +412,7 @@ local function get_calls(results, part_number, segment, issues, content)
             end
           elseif argument.specifier == "v" then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
-            if argument_text ~= nil and lpeg.match(parsers.expl3_maybe_unexpandable_csname, argument_text) ~= nil then
+            if argument_text ~= nil and lpeg.match(parsers.expl3_unexpandable_variable_csname, argument_text) ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
               issues:add(
                 't305',
@@ -623,11 +625,7 @@ local function get_calls(results, part_number, segment, issues, content)
                       map_forward = map_forward,
                     },
                   }
-                  nested_segment.min_reaching_nesting_depth = nested_segment.nesting_depth
-                  table.insert(results.segments, nested_segment)
-                  argument.segment_number = #results.segments
-                  nested_segment.calls = get_calls(results, part_number, nested_segment, issues, content)
-                  assert(results.segments[argument.segment_number].type == TF_TYPE_ARGUMENTS)
+                  argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
                 end
                 record_argument(argument)
                 next_token_number = map_forward(next_grouping.stop)
@@ -711,17 +709,35 @@ local function get_calls(results, part_number, segment, issues, content)
   return calls
 end
 
+-- Add a new nested segment to the list of segments.
+add_segment = function(results, part_number, segment, issues, content)
+  assert(results.segments ~= nil)
+  assert(results.segment_type_index ~= nil)
+  if segment.min_reaching_nesting_depth == nil then
+    assert(segment.nesting_depth ~= nil)
+    segment.min_reaching_nesting_depth = segment.nesting_depth  -- later refined by the flow analysis
+  end
+  table.insert(results.segments, segment)
+  if results.segment_type_index[segment.type] == nil then
+    results.segment_type_index[segment.type] = {}
+  end
+  table.insert(results.segment_type_index[segment.type], segment)
+  local segment_number = #results.segments
+  segment.calls = get_calls(results, part_number, segment, issues, content)
+  assert(results.segments[segment_number] == segment)
+  return segment_number
+end
+
 -- Convert the tokens to top-level and nested segments of function calls and report any issues.
 ---@diagnostic disable-next-line:unused-local
 local function analyze_and_report_issues(states, file_number, options)  -- luacheck: ignore options
-
   local state = states[file_number]
 
   local content = state.content
   local issues = state.issues
   local results = state.results
 
-  results.segments, results.parts = {}, {}
+  results.segments, results.segment_type_index = {}, {}
   for part_number, part_tokens in ipairs(results.tokens) do
     local segment = {
       type = PART,
@@ -730,7 +746,6 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
         part_number = part_number,
       },
       nesting_depth = 1,
-      min_reaching_nesting_depth = 1,
       transformed_tokens = {
         tokens = part_tokens,
         token_range = new_range(1, #part_tokens, INCLUSIVE, #part_tokens),
@@ -738,10 +753,7 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
         map_forward = identity,
       },
     }
-    assert(segment.min_reaching_nesting_depth == segment.nesting_depth)
-    table.insert(results.segments, segment)
-    table.insert(results.parts, segment)
-    segment.calls = get_calls(results, part_number, segment, issues, content)
+    add_segment(results, part_number, segment, issues, content)
   end
 end
 
@@ -750,9 +762,9 @@ local substeps = {
 }
 
 return {
+  add_segment = add_segment,
   call_types = call_types,
   extract_text_from_tokens = extract_text_from_tokens,
-  get_calls = get_calls,
   get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,

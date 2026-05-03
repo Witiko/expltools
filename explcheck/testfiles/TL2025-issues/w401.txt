@@ -5,7 +5,6 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/fontscale/beerydoc.cls
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/scaletextbullet/beerydoc.cls
-/usr/local/texlive/2025/texmf-dist/doc/latex/ufrgscca/ufrgscca-forms.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/l3kernel/expl3-code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/atableau/atableau.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/bidi/biditools.sty
@@ -45,14 +44,9 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/l3kernel/expl3-code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/mathcommand/mathcommand.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/memoize-ext/memoize-ext-debug.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/memoize-ext/memoize-ext-expl3-common-debug.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/memoize-ext/memoize-ext-expl3-common.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/memoize-ext/memoize-ext.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/modernruler/modernruler.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/nwafuthesis/nwafuthesis.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/physics2/physics2.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/pkginfograb/pkginfograb.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/precattl/precattl.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/secnum/secnum.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/skdoc/skdoc.cls
@@ -61,14 +55,10 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/stex/problem.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/suanpan-l3/suanpan-l3.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/sysuthesis/sysuthesis.cls
-/usr/local/texlive/2025/texmf-dist/tex/latex/tabular2/tabular2.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/tikzquads/tikzquads.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/timechart/timechart.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/typoaid/typoaid.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-coord.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/unicode-math-input/unicode-math-input.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/weiqi/weiqi.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/whatsnote/whatsnote.cls
 /usr/local/texlive/2025/texmf-dist/tex/lualatex/luatex-cn/core/luatex-cn-footnote.sty
 /usr/local/texlive/2025/texmf-dist/tex/platex/jlreq-deluxe/jlreq-deluxe.sty

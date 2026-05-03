@@ -8,6 +8,50 @@ on:
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
+  third-party:
+    name: Check third-party submodules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 500  # Historically, the maximum number of commits between two tags in the LaTeX3 repository is ~300.
+          fetch-tags: true
+      - name: Install TeX Live
+        uses: zauguin/install-texlive@v4
+        with:
+          cache: false
+          packages: |
+            l3kernel-dev
+      - name: Check that LaTeX3 is up-to-date
+        run: |
+          set -e
+          cd third-party/latex3
+          CURRENT_RELEASE="$(git describe --tags --abbrev=0)"
+          REMOTE_RELEASE="$(sed -rn '/^\\def\\ExplFileDate/s/.*([0-9]{4}-[0-9]{2}-[0-9]{2}).*/\1/p' "$(kpsewhich expl3-code.tex)")"
+          if [ "$CURRENT_RELEASE" '<' "$REMOTE_RELEASE" ]
+          then
+            printf 'Submodule "third-party/latex3" (%s) is not up-to-date with the latest TeX Live (%s).\n' "$CURRENT_RELEASE" "$REMOTE_RELEASE"
+            exit 1
+          else
+            printf 'Submodule "third-party/latex3" (%s) is up-to-date with the latest TeX Live.\n' "$CURRENT_RELEASE"
+          fi
+      - name: Check that lua-toml is up-to-date
+        if: success() || steps.luacheck.outcome == 'failure'  # Check lua-toml even if checking latex3 failed.
+        run: |
+          set -e
+          cd third-party/lua-toml
+          CURRENT_SHA="$(git rev-parse --short HEAD)"
+          git fetch origin dev
+          REMOTE_SHA="$(git rev-parse --short origin/dev)"
+          if [ "$CURRENT_SHA" != "$REMOTE_SHA" ]
+          then
+            printf 'Submodule "third-party/lua-toml" (%s) is not up-to-date with the remote branch "dev" (%s).\n' "$CURRENT_SHA" "$REMOTE_SHA"
+            exit 1
+          else
+            printf 'Submodule "third-party/lua-toml" (%s) is up-to-date with the remote branch "dev".\n' "$CURRENT_SHA"
+          fi
   luacheck:
     name: Check code style (Lua)
     runs-on: ubuntu-latest
@@ -35,8 +79,6 @@ jobs:
           cache: false
           packages: |
             l3build
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Extract Lua code blocks from file "README.md"
@@ -90,8 +132,6 @@ jobs:
           packages: |
             l3build
             luatex
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Run explcheck
@@ -127,8 +167,6 @@ jobs:
           cache: false
           packages: |
             l3build
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Run unit tests
         timeout-minutes: 1
         run: l3build check
@@ -297,8 +335,6 @@ jobs:
           cache: false
           package_file: |
             explcheck/support/DEPENDS.txt
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Build CTAN archive and documentation
@@ -339,8 +375,6 @@ jobs:
           cache: false
           packages: |
             l3build
-      - name: Install files "l3obsolete.txt" and "l3prefixes.csv"
-        run: retry -t 30 -d 60 tlmgr install --reinstall --with-doc l3kernel-dev
       - name: Generate file "explcheck-latex3.lua"
         run: l3build tag
       - name: Determine Docker image tag

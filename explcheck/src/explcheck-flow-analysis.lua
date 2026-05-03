@@ -19,6 +19,7 @@ local csname_types = semantic_analysis.csname_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
 
+local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
 local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
@@ -309,7 +310,7 @@ local function draw_file_local_static_edges(states, file_number, _)
 
   -- Record edges from skipping ahead to the following expl3 part.
   local previous_part
-  for _, part in ipairs(results.parts or {}) do
+  for _, part in ipairs(results.segment_type_index and results.segment_type_index[PART] or {}) do
     if #part.chunks > 0 then
       results.last_part_with_chunks = part
       if previous_part == nil then
@@ -1376,9 +1377,7 @@ local function report_issues(states, main_file_number, options)
 
   local issues = state.issues
 
-  local imported_prefixes = get_option('imported_prefixes', options, state.pathname)
-  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, state.pathname)
-  local expl3_well_known_csname = parsers.expl3_well_known_csname(l3prefixes_max_first_registered_date, imported_prefixes)
+  local expl3_well_known_csname = parsers.expl3_well_known_csname(options, state.pathname)
 
   for _, segment in ipairs(state.results.segments or {}) do
     local part_number = segment.location.part_number

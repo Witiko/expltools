@@ -1,6 +1,7 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
 local latex3 = require("explcheck-latex3")
+local get_option = require("explcheck-config").get_option
 
 local lpeg = require("lpeg")
 local P, R, S = lpeg.P, lpeg.R, lpeg.S
@@ -42,8 +43,8 @@ local newline = (
   + P("\r")
 )
 local linechar = any - newline
-local space = S(" ")
-local tab = S("\t")
+local space = P(" ")
+local tab = P("\t")
 
 ---- Comma-lists
 local function comma_list(item_parser)
@@ -182,6 +183,7 @@ local argument = (
 
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
+local x_type_argument_specifier = S("x")
 local csname_argument_specifier = S("Nc")
 local expansionless_argument_specifier = S("NVnTF")
 local parameter_argument_specifier = S("p")
@@ -207,13 +209,13 @@ local argument_specifiers = (
   * eof
 )
 local variant_argument_specifiers = comma_list(argument_specifier^0)
-local do_not_use_argument_specifiers = (
-  (
-    argument_specifier
-    - do_not_use_argument_specifier
-  )^0
-  * do_not_use_argument_specifier
-)
+
+local function any_argument_specifiers(parser)
+  return (any - parser)^0 * parser
+end
+
+local x_type_argument_specifiers = any_argument_specifiers(x_type_argument_specifier)
+local do_not_use_argument_specifiers = any_argument_specifiers(do_not_use_argument_specifier)
 
 local compatible_argument_specifiers = (
   P("N") * Cc({"N", "c"})
@@ -302,17 +304,17 @@ local expl3_variable_or_constant_type = (
   + expl3_unexpandable_variable_or_constant_type
 )
 
-local expl3_maybe_unexpandable_csname = (
+local expl3_unexpandable_variable_csname = (
   (
     -#(expl3_unexpandable_variable_or_constant_type * eof)
     * (any - underscore)^0
     * underscore
   )^0
-  * expl3_unexpandable_variable_or_constant_type
+  * C(expl3_unexpandable_variable_or_constant_type)
   * eof
 )
 
-local expl3_standard_library_prefixes = (
+local expl3_well_known_prefixes = (
   expl3_variable_or_constant_type
   + P("benchmark")
   + P("char")
@@ -363,32 +365,77 @@ local expl3_standard_library_prefixes = (
   + P("use")
   + P("withargs")  -- part of the withargs package
 )
-local function expl3_well_known_csname(l3prefixes_max_first_registered_date, other_prefix_texts)
+
+local function latex3_prefixes(options, pathname)
+  local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
+
+  return Cmt(
+    latex3.prefixes,
+    function(_, _, maybe_first_registered_date)
+      return (
+        not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
+        or maybe_first_registered_date ~= nil  -- actual first registered date has been specified in the file "l3prefixes.csv"
+        and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
+      )
+    end
+  )
+end
+local function latex3_csname(definition_type, options, pathname)
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+
+  return (
+    Cg(latex3.definitions[definition_type], "definition")
+    * Cmt(
+      Cb("definition"),
+      function(_, _, definition)
+        return (
+          not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
+          or (definition ~= nil and definition.added_date ~= nil)  -- actual added date has been specified in "l3*.dtx" files
+          and definition.added_date <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+        )
+      end
+    )
+    * Cb("definition")
+  )
+end
+
+local function expl3_well_known_csname(options, pathname)
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+  local defined_csnames = get_option('defined_csnames', options, pathname)
+
   local other_prefixes = fail
-  for _, prefix_text in ipairs(other_prefix_texts) do
+  for _, prefix_text in ipairs(imported_prefixes) do
     other_prefixes = (
       other_prefixes +
       #(P(prefix_text) * (underscore + colon))
       * P(prefix_text)
     )
   end
-  local latex3_prefixes = Cmt(
-    latex3.prefixes,
-    function(_, _, maybe_first_registered_date)
-      return (
-        not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
-        or maybe_first_registered_date  -- actual first registered date has been specified in the file `l3prefixes.csv`
-        and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
-      )
-    end
-  )
+  local _latex3_prefixes = latex3_prefixes(options, pathname)
   local prefix = (
-    #(expl3_standard_library_prefixes * (underscore + colon))
-    * expl3_standard_library_prefixes
-    + #(latex3_prefixes * (underscore + colon))
-    * latex3_prefixes
+    #(expl3_well_known_prefixes * (underscore + colon))
+    * expl3_well_known_prefixes
+    + #(_latex3_prefixes * (underscore + colon))
+    * _latex3_prefixes
     + other_prefixes
   )
+
+  local defined_csname
+  if #defined_csnames > 0 then
+    local defined_csname_index = {}
+    for _, csname in ipairs(defined_csnames) do
+      defined_csname_index[csname] = true
+    end
+    defined_csname = Cmt(
+      C(any^1),
+      function(_, _, csname)
+        return defined_csname_index[csname] == true
+      end
+    )
+  else
+    defined_csname = fail
+  end
+
   local well_known_function_csname = (
     P("__")^-1
     * prefix
@@ -397,6 +444,7 @@ local function expl3_well_known_csname(l3prefixes_max_first_registered_date, oth
       * (any - colon)^0
     )^0
     * colon
+    + latex3_csname("function", options, pathname)
   )
   local well_known_variable_or_constant_csname = (
     S("cgl")  -- scope
@@ -404,9 +452,12 @@ local function expl3_well_known_csname(l3prefixes_max_first_registered_date, oth
     * underscore^-1
     * prefix
     * underscore
+    + latex3_csname("variable", options, pathname)
   )
+
   return (
     P("q_no_value")
+    + defined_csname
     + well_known_function_csname
     + well_known_variable_or_constant_csname
   )
@@ -877,30 +928,23 @@ local expl3_variable_use_csname = Ct(
 
 ---- Messages
 ------ Message names
-local function expl3_well_known_message_name(l3prefixes_max_first_registered_date, other_prefix_texts)
+local function expl3_well_known_message_name(options, pathname)
+  local imported_prefixes = get_option('imported_prefixes', options, pathname)
+
   local other_prefixes = fail
-  for _, prefix_text in ipairs(other_prefix_texts) do
+  for _, prefix_text in ipairs(imported_prefixes) do
     other_prefixes = (
       other_prefixes
       + #(P(prefix_text) * slash)
       * P(prefix_text)
     )
   end
-  local latex3_prefixes = Cmt(
-    latex3.prefixes,
-    function(_, _, maybe_first_registered_date)
-      return (
-        not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
-        or maybe_first_registered_date  -- actual first registered date has been specified in the file `l3prefixes.csv`
-        and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
-      )
-    end
-  )
+  local _latex3_prefixes = latex3_prefixes(options, pathname)
   return (
-    #(expl3_standard_library_prefixes * slash)
-    * expl3_standard_library_prefixes
-    + #(latex3_prefixes * slash)
-    * latex3_prefixes
+    #(expl3_well_known_prefixes * slash)
+    * expl3_well_known_prefixes
+    + #(_latex3_prefixes * slash)
+    * _latex3_prefixes
     + other_prefixes
   )
 end
@@ -960,12 +1004,12 @@ return {
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
-  expl3_maybe_unexpandable_csname = expl3_maybe_unexpandable_csname,
   expl3_message_definition = expl3_message_definition,
   expl3_message_use = expl3_message_use,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_function_undefinition_csname = expl3_function_undefinition_csname,
+  expl3_unexpandable_variable_csname = expl3_unexpandable_variable_csname,
   expl3_variable_declaration_csname = expl3_variable_declaration_csname,
   expl3_variable_definition_csname = expl3_variable_definition_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,
@@ -982,6 +1026,7 @@ return {
   fail = fail,
   ignored_issues = ignored_issues,
   latex_style_file_content = latex_style_file_content,
+  latex3_csname = latex3_csname,
   linechar = linechar,
   newline = newline,
   N_or_n_type_argument_specifier = N_or_n_type_argument_specifier,
@@ -994,4 +1039,5 @@ return {
   tab = tab,
   tex_lines = tex_lines,
   variant_argument_specifiers = variant_argument_specifiers,
+  x_type_argument_specifiers = x_type_argument_specifiers,
 }

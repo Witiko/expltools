@@ -1,12 +1,22 @@
 #!/usr/bin/env texlua
 -- Generates a file with up-to-date LPEG parsers and other information extracted from LaTeX3 data files.
 
-local kpse = require("kpse")
-kpse.set_program_name("texlua", "generate-explcheck-latex3")
+local format = require("explcheck-format")
+local utils = require("explcheck-utils")
+
+local humanize = format.humanize
+local pluralize = format.pluralize
+
+local get_basename = utils.get_basename
+local make_shallow_copy = utils.make_shallow_copy
+
+local lfs = require("lfs")
 
 local lpeg = require("lpeg")
-local C, Ct, Cs, P, R, S = lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.P, lpeg.R, lpeg.S
+local C, Cc, Ct, Cs, P, R, S = lpeg.C, lpeg.Cc, lpeg.Ct, lpeg.Cs, lpeg.P, lpeg.R, lpeg.S
 local any, eof = P(1), P(-1)
+
+local LATEX3_PATHNAME = "../../third-party/latex3"
 
 -- Perform a depth-first-search algorithm on a tree.
 local function depth_first_search(node, path, visit, leave)
@@ -26,9 +36,8 @@ end
 
 -- Extract obsolete control sequence names from file "l3obsolete.txt".
 local function parse_l3obsolete()
-  local latest_date, csnames, dates = nil, {}, {}
-  local input_filename = "l3obsolete.txt"
-  local input_pathname = assert(kpse.find_file(input_filename, "TeX system documentation") or input_filename)
+  local latest_date, latest_raw_csname, csnames, dates = nil, nil, {}, {}
+  local input_pathname = string.format("%s/l3kernel/doc/l3obsolete.txt", LATEX3_PATHNAME)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local line, input_state, seen_csnames = input_file:read("*line"), "preamble", {}
   while line ~= nil do
@@ -39,14 +48,15 @@ local function parse_l3obsolete()
     elseif input_state == "deprecated" and line:sub(1, 1) == [[\]] then
       local _, _, date = line:find("(%d%d%d%d%-%d%d%-%d%d)%s*$")
       assert(date ~= nil, string.format('Failed to parse date out of line "%s"', line))
+      local _, _, raw_csname = line:find([[\(%S*)]])
       if latest_date == nil or date > latest_date then
         latest_date = date
+        latest_raw_csname = raw_csname
       end
-      local _, _, raw_csname = line:find([[\(%S*)]])
       local extracted_csnames = {raw_csname}
       -- Try to determine the base form for conditional function names, so that occurences in calls like
       -- `\prg_generate_conditional_variant:Nnn` are also detected even without semantic analysis.
-      local _, _, csname_stem, argument_specifiers = raw_csname:find("([^:]*):([^:]*)")
+      local csname_stem, argument_specifiers = raw_csname:match("([^:]*):([^:]*)")
       if csname_stem ~= nil then
         if argument_specifiers:sub(-2) == "TF" then
           table.insert(extracted_csnames, string.format("%s:%s", csname_stem, argument_specifiers:sub(1, -3)))
@@ -73,15 +83,15 @@ local function parse_l3obsolete()
   end
   assert(input_file:close())
   assert(latest_date ~= nil)
-  return csnames, dates, latest_date
+  assert(latest_raw_csname ~= nil)
+  return csnames, dates, latest_date, latest_raw_csname
 end
 
 -- Generate LPEG parsers of obsolete control sequence names from file "l3obsolete.txt".
 local function generate_l3obsolete_parsers(output_file, dates, csnames)
   -- First, generate some variable names that the parsers will use.
-  output_file:write('local obsolete = {}\n')
+  output_file:write('M.obsolete = {}\n')
   output_file:write('do\n')
-  output_file:write('  local any, eof = P(1), P(-1)\n')
   output_file:write('  ---@diagnostic disable-next-line:unused-local\n')
   output_file:write('  local wildcard = any^0  -- luacheck: ignore wildcard\n\n')
 
@@ -100,10 +110,10 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
       end
     )^0
   )
-  local prefix_trees, num_prefix_trees = {}, 0
+  local prefix_trees = {}
   for csname_type, csname_list in pairs(csnames) do
     prefix_trees[csname_type] = {}
-    num_prefix_trees = num_prefix_trees + 1
+    table.insert(prefix_trees, csname_type)
     for _, csname in ipairs(csname_list) do
       local node = prefix_trees[csname_type]
       local characters = lpeg.match(csname_characters, csname)
@@ -123,22 +133,22 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
   -- Finally, generate parsers out of the trees.
   local output_wildcard = P("wildcard")
   local output_regular_character = any - P('"')
-  local output_date = P(' / "') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
+  local output_date = P('/"') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
   local output_regular_characters = (
-    P('P("')
+    P('P"')
     * C(output_regular_character^1)
-    * P('")')
+    * P('"')
   )
   local simplified_output_regular_characters = (
     Ct(
       output_regular_characters
       * (
-        P(' * ')
+        P('*')
         * output_regular_characters
       )^0
     )
     / function(accumulator)
-      return 'P("' .. table.concat(accumulator, "") .. '")'
+      return 'P"' .. table.concat(accumulator, "") .. '"'
     end
   )
   local simplified_output_parsers = Cs(
@@ -152,7 +162,8 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
 
   output_file:write('  -- luacheck: push no max line length\n')
   local produced_parsers = 0
-  for csname_type, prefix_tree in pairs(prefix_trees) do
+  for _, csname_type in ipairs(prefix_trees) do
+    local prefix_tree = prefix_trees[csname_type]
     local subparsers = {}
     depth_first_search(prefix_tree, "", function(node, path)  -- visit
       if type(node) == "string" then  -- leaf node
@@ -161,14 +172,14 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
           suffix = "wildcard"
         else
           assert(node ~= '"')
-          suffix = 'P("' .. node .. '")'
+          suffix = 'P"' .. node .. '"'
         end
         local maybe_date = dates[csname_type][path .. node]
         if maybe_date ~= nil then
-          suffix = suffix .. ' / "' .. maybe_date .. '"'
+          suffix = suffix .. '/"' .. maybe_date .. '"'
         end
         if subparsers[path] ~= nil then
-          subparsers[path] = subparsers[path] .. " + " .. suffix
+          subparsers[path] = subparsers[path] .. "+" .. suffix
         else
           subparsers[path] = suffix
         end
@@ -182,40 +193,39 @@ local function generate_l3obsolete_parsers(output_file, dates, csnames)
           prefix = "wildcard"
         else
           assert(character ~= '"')
-          prefix = 'P("' .. character .. '")'
+          prefix = 'P"' .. character .. '"'
         end
         local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
         local suffix
         if simplified_pattern ~= nil then  -- simple pattern
-          suffix = prefix .. " * " .. simplified_pattern
+          suffix = prefix .. "*" .. simplified_pattern
           local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
           if simplified_suffix ~= nil then
             suffix = simplified_suffix
           end
         else  -- complex pattern
-          suffix = prefix .. " * (" .. subparsers[path] .. ")"
+          suffix = prefix .. "*(" .. subparsers[path] .. ")"
         end
         if subparsers[parent_path] ~= nil then
-          subparsers[parent_path] = subparsers[parent_path] .. " + " .. suffix
+          subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
         else
           subparsers[parent_path] = suffix
         end
       else  -- root node
-        output_file:write('  obsolete.' .. csname_type .. '_csname = (' .. subparsers[path] .. ') * eof\n')
+        output_file:write('  M.obsolete.' .. csname_type .. '_csname = (' .. subparsers[path] .. ') * eof\n')
         produced_parsers = produced_parsers + 1
       end
     end)
   end
   output_file:write('  -- luacheck: pop\n')
   output_file:write('end\n')
-  assert(produced_parsers == num_prefix_trees)
+  assert(produced_parsers == #prefix_trees)
 end
 
 -- Extract registered module names from file "l3prefixes.csv".
 local function parse_l3prefixes()
-  local latest_date, prefixes, dates = nil, {}, {}
-  local input_filename = "l3prefixes.csv"
-  local input_pathname = assert(kpse.find_file(input_filename, "TeX system documentation") or input_filename)
+  local latest_date, latest_prefix, prefixes, dates = nil, nil, {}, {}
+  local input_pathname = string.format("%s/l3kernel/doc/l3prefixes.csv", LATEX3_PATHNAME)
   local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
   local csv_field = (
     '"' * Cs(((any - P('"')) + P('""') / '"')^0) * '"'  -- quoted field
@@ -230,7 +240,7 @@ local function parse_l3prefixes()
     if date:find("(%d%d%d%d%-%d%d%-%d%d)$") == nil then
       print(string.format('Failed to parse date out of line "%s", skipping it in determining the latest registered prefix', line))
     elseif latest_date == nil or date > latest_date then
-      latest_date = date
+      latest_date, latest_prefix = date, prefix
     end
     table.insert(prefixes, prefix)
     if date ~= nil and (dates[prefix] == nil or dates[prefix] > date) then  -- only record earliest first registered prefix for duplicates
@@ -238,7 +248,8 @@ local function parse_l3prefixes()
     end
   end
   assert(latest_date ~= nil)
-  return prefixes, dates, latest_date
+  assert(latest_prefix ~= nil)
+  return prefixes, dates, latest_date, latest_prefix
 end
 
 -- Generate an LPEG parser of registered module names from file "l3prefixes.csv".
@@ -261,24 +272,24 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
     end
   end
 
-  -- Finally, generate a parser out of the tree.
+  -- Then, generate a parser out of the tree.
   local output_regular_character = any - P('"')
-  local output_date = P(' / "') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
+  local output_date = P('/"') * R("09") * R("09") * R("09") * R("09") * P("-") * R("09") * R("09") * P("-") * R("09") * R("09") * P('"')
   local output_regular_characters = (
-    P('P("')
+    P('P"')
     * C(output_regular_character^1)
-    * P('")')
+    * P('"')
   )
   local simplified_output_regular_characters = (
     Ct(
       output_regular_characters
       * (
-        P(' * ')
+        P('*')
         * output_regular_characters
       )^0
     )
     / function(accumulator)
-      return 'P("' .. table.concat(accumulator, "") .. '")'
+      return 'P"' .. table.concat(accumulator, "") .. '"'
     end
   )
   local simplified_output_parsers = Cs(
@@ -296,13 +307,13 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
     if type(node) == "string" then  -- leaf node
       local suffix
       assert(node ~= '"')
-      suffix = 'P("' .. node .. '")'
+      suffix = 'P"' .. node .. '"'
       local maybe_date = dates[path .. node]
       if maybe_date ~= nil then
-        suffix = suffix .. ' / "' .. maybe_date .. '"'
+        suffix = suffix .. '/"' .. maybe_date .. '"'
       end
       if subparsers[path] ~= nil then
-        subparsers[path] = subparsers[path] .. " + " .. suffix
+        subparsers[path] = subparsers[path] .. "+" .. suffix
       else
         subparsers[path] = suffix
       end
@@ -313,25 +324,25 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
       local parent_path = path:sub(1, #path - 1)
       local prefix
       assert(character ~= '"')
-      prefix = 'P("' .. character .. '")'
+      prefix = 'P"' .. character .. '"'
       local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
       local suffix
       if simplified_pattern ~= nil then  -- simple pattern
-        suffix = prefix .. " * " .. simplified_pattern
+        suffix = prefix .. "*" .. simplified_pattern
         local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
         if simplified_suffix ~= nil then
           suffix = simplified_suffix
         end
       else  -- complex pattern
-        suffix = prefix .. " * (" .. subparsers[path] .. ")"
+        suffix = prefix .. "*(" .. subparsers[path] .. ")"
       end
       if subparsers[parent_path] ~= nil then
-        subparsers[parent_path] = subparsers[parent_path] .. " + " .. suffix
+        subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
       else
         subparsers[parent_path] = suffix
       end
     else  -- root node
-      output_file:write('local prefixes = (' .. subparsers[path] .. ')\n')
+      output_file:write('M.prefixes = (' .. subparsers[path] .. ')\n')
       produced_parsers = produced_parsers + 1
     end
   end)
@@ -339,36 +350,554 @@ local function generate_l3prefixes_parser(output_file, dates, prefixes)
   assert(produced_parsers == 1)
 end
 
--- Add a comment, both to an output file and to the standard output.
-local function add_comment(output_file, text)
-  print(text)
-  output_file:write(string.format("-- %s\n", text))
+-- Extract variable and function names from "l3*.dtx" files.
+local function parse_definitions()
+  -- Define an LPEG parser for variable and function name definitions.
+  local macro_definitions
+  do
+    local newline = (
+      P("\n")
+      + P("\r\n")
+      + P("\r")
+    )
+    local linechar = any - newline
+    local endline = (
+      newline
+      + eof
+    )
+
+    local space = P(" ")
+    local tab = P("\t")
+
+    local percent_sign = P("%")
+
+    local optional_commented_whitespace = (
+      space
+      + tab
+      + (newline * percent_sign)
+    )^0
+
+    local function comma_list(item_parser, ender)
+      return Ct(
+        optional_commented_whitespace
+        * ender
+        + item_parser
+        * optional_commented_whitespace
+        * (
+          P(",")
+          * optional_commented_whitespace
+          * item_parser
+          * optional_commented_whitespace
+        )^0
+        * P(",")^-1
+        * optional_commented_whitespace
+        * ender
+      )
+    end
+
+    local csname = (
+      P([[\]])
+      * C(
+        (
+          R("AZ", "az")
+          + P(":")
+          + P("_")
+        )^1
+      )
+    )
+
+    local macro_definition = Ct(
+      P([[\begin]])
+      * optional_commented_whitespace
+      * P("{")
+      * optional_commented_whitespace
+      * C(
+        P("variable")
+        + P("function")
+        + P("macro")
+      )
+      * optional_commented_whitespace
+      * P("}")
+      * optional_commented_whitespace
+      * (
+        P("[")
+        * optional_commented_whitespace
+        * comma_list(
+          (
+            Ct(
+              C(
+                P("added")
+                + P("updated")
+              )
+              * optional_commented_whitespace
+              * P("=")
+              * optional_commented_whitespace
+              * C(
+                (
+                  any
+                  - S(",]")
+                )^0
+              )
+            )
+            + C(
+              P("EXP")
+              + P("rEXP")
+              + P("TF")
+              + P("pTF")
+              + P("noTF")
+            )
+            + (
+              any
+              - S(",]")
+            )^0
+          ),
+          P("]")
+        )
+        + Cc({})
+      )
+      * optional_commented_whitespace
+      * P("{")
+      * optional_commented_whitespace
+      * comma_list(csname, P("}"))
+    )
+
+    local commented_lines = (
+      percent_sign
+      * -#(  -- Ignore lines with code examples that start with `% %` inside `\begin{verbatim}` from `l3doc.dtx`.
+        space
+        * percent_sign
+      )
+      * (
+        macro_definition
+        + linechar
+      )^0
+      * endline
+    )
+    local non_commented_line = (
+      linechar^1
+      * endline
+      + linechar^0
+      * newline
+    )
+
+    macro_definitions = Ct(
+      (
+        commented_lines
+        + non_commented_line
+      )^0
+    )
+  end
+
+  -- Collect all .dtx files from LaTeX3.
+  local function collect_dtx_files()
+    local seen_directory_pathnames, future_directory_pathnames = {}, {LATEX3_PATHNAME}
+    local input_file_pathnames = {}
+    while #future_directory_pathnames > 0 do
+      local current_directory_pathname = table.remove(future_directory_pathnames)
+      if seen_directory_pathnames[current_directory_pathname] ~= nil then
+        goto next_directory
+      end
+      seen_directory_pathnames[current_directory_pathname] = true
+      for current_file_filename in lfs.dir(current_directory_pathname) do
+        if current_file_filename == "." or current_file_filename == ".." then
+          goto next_file
+        end
+        local current_file_pathname = string.format("%s/%s", current_directory_pathname, current_file_filename)
+        if lfs.attributes(current_file_pathname, "mode") == "directory" then
+          table.insert(future_directory_pathnames, current_file_pathname)
+        elseif current_file_filename:sub(1, 2) == "l3" and current_file_pathname:sub(-4):lower() == ".dtx" then
+          table.insert(input_file_pathnames, current_file_pathname)
+        end
+        ::next_file::
+      end
+      ::next_directory::
+    end
+    table.sort(input_file_pathnames)
+    return input_file_pathnames
+  end
+
+  local parsed_dtx_files, definition_types = {}, {}
+  local latest_csname, latest_date = {}, {}
+
+  -- Interpret the options from a raw definition and record them in a new definition.
+  local function interpret_raw_options(input_pathname, definition_type, raw_options)
+    local options = {}
+
+    -- Interpret the boolean and key-value options.
+    for _, option in ipairs(raw_options) do
+      if type(option) == "string" then
+        options[option] = true
+      elseif type(option) == "table" then
+        local key, value = table.unpack(option)
+        assert(type(key) == "string")
+        assert(type(value) == "string")
+        options[key] = value
+      end
+    end
+
+    -- Determine when the definition was first added or most recently updated.
+    local definition = {
+      pathname = input_pathname,
+      type = definition_type,
+    }
+    for _, key in ipairs({"added", "updated"}) do
+      if options[key] ~= nil then
+        local _, _, date = options[key]:find("(%d%d%d%d%-%d%d%-%d%d)")
+        assert(date ~= nil, string.format('Failed to parse date out of value "%s"', options[key]))
+        definition[key] = date
+      end
+    end
+
+    -- Determine expandability.
+    if options.EXP or options.pTF then
+      assert(options.rEXP == nil)
+      definition.EXP = "full"
+    end
+    if options.rEXP then
+      assert(options.EXP == nil)
+      assert(options.pTF == nil)
+      definition.EXP = "restricted"
+    end
+
+    return options, definition
+  end
+
+  -- Interpret the control sequence names from a raw definition.
+  local function interpret_raw_csnames(options, raw_csnames)
+    -- Determine the actual defined control sequence names.
+    local csnames = {}
+    for _, raw_csname in ipairs(raw_csnames) do
+      if not (options.TF or options.pTF) or options.noTF then
+        table.insert(csnames, raw_csname)
+      end
+      if options.TF or options.pTF or options.noTF then
+        table.insert(csnames, string.format("%sTF", raw_csname))
+        table.insert(csnames, string.format("%sT", raw_csname))
+        table.insert(csnames, string.format("%sF", raw_csname))
+      end
+      if options.pTF then
+        local raw_csname_stem, argument_specifiers = raw_csname:match("([^:]*):([^:]*)")
+        assert(raw_csname_stem ~= nil)
+        assert(argument_specifiers ~= nil)
+        table.insert(csnames, string.format("%s_p:%s", raw_csname_stem, argument_specifiers))
+      end
+    end
+
+    return csnames
+  end
+
+  -- Record a definition under one or more control sequence names.
+  local function record_definition(definitions, definition, csnames, only_update_existing)
+    -- Record the control sequence names and their definitions.
+    for _, csname in ipairs(csnames) do
+      for _, key in ipairs({"added", "updated"}) do
+        if definition[key] ~= nil and (latest_date[key] == nil or definition[key] > latest_date[key]) then
+          latest_date[key] = definition[key]
+          latest_csname[key] = csname
+        end
+      end
+      if definitions[csname] ~= nil then
+        for _, key in ipairs({"added", "updated", "EXP"}) do
+          -- When a definition is repeated and the recorded values are incompatible, either log a warning or report an error,
+          -- based on whether one of the definitions originates from `\begin{macro}`, which makes the values less reliable.
+          if definitions[csname][key] ~= nil and definition[key] ~= nil and definitions[csname][key] ~= definition[key] then
+            local message =  string.format(
+              'Conflicting value of "%s" for `\\%s`: "%s" in "%s" (`\\begin{%s}`) versus "%s" in "%s" (`\\begin{%s}`)',
+              key,
+              csname,
+              definitions[csname][key],
+              get_basename(definitions[csname].pathname),
+              definitions[csname].type,
+              definition[key],
+              get_basename(definition.pathname),
+              definition.type
+            )
+            if definitions[csname].type == "macro" or definition.type == "macro" then
+              io.write(string.format("Warning: %s", message))
+              local template = '; preferring "%s" over "%s"'
+              if definitions[csname].type == "macro" and definition.type ~= "macro" then
+                print(string.format(template, definition[key], definitions[csname][key]))
+                definitions[csname][key] = definition[key]
+              else
+                print(string.format(template, definitions[csname][key], definition[key]))
+              end
+            else
+              error(message)
+            end
+          elseif definitions[csname][key] == nil and definition[key] ~= nil and not only_update_existing then
+            -- When a definition is repeated and the next definition specifies some new values, record them.
+            definitions[csname] = make_shallow_copy(definitions[csname])
+            definitions[csname][key] = definition[key]
+          end
+        end
+      elseif not only_update_existing then
+        definitions[csname] = definition
+        table.insert(definitions, csname)
+      end
+    end
+  end
+
+  for _, input_pathname in ipairs(collect_dtx_files()) do
+    local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
+    local content = assert(input_file:read("*all"))
+    assert(input_file:close())
+
+    -- For each DTX file, parse the raw definitions.
+    local raw_definitions = lpeg.match(macro_definitions, content)
+
+    -- If there are no raw definitions, skip the file.
+    if #raw_definitions == 0 then
+      goto next_file
+    end
+
+    -- Split the raw definitions by type.
+    local raw_definition_types = {}
+    for _, raw_definition in ipairs(raw_definitions) do
+      local definition_type, _, _ = table.unpack(raw_definition)
+      if raw_definition_types[definition_type] == nil then
+        raw_definition_types[definition_type] = {}
+      end
+      table.insert(raw_definition_types[definition_type], raw_definition)
+    end
+
+    -- Record the DTX file and its type-split raw definitions.
+    table.insert(parsed_dtx_files, input_pathname)
+    assert(parsed_dtx_files[input_pathname] == nil)
+    parsed_dtx_files[input_pathname] = raw_definition_types
+
+    -- First, interpret and record the variable and function raw definitions.
+    for _, definition_type in ipairs({"function", "variable"}) do
+      ---@diagnostic disable-next-line:redefined-local
+      local raw_definitions = raw_definition_types[definition_type]  -- luacheck: ignore raw_definitions
+
+      if definition_types[definition_type] == nil then
+        definition_types[definition_type] = {}
+        table.insert(definition_types, definition_type)
+      end
+      local definitions = definition_types[definition_type]
+
+      for _, raw_definition in ipairs(raw_definitions or {}) do
+        local other_definition_type, raw_options, raw_csnames = table.unpack(raw_definition)
+        assert(definition_type == other_definition_type)
+
+        local options, definition = interpret_raw_options(input_pathname, definition_type, raw_options)
+        local csnames = interpret_raw_csnames(options, raw_csnames)
+        record_definition(definitions, definition, csnames, false)
+      end
+    end
+
+    ::next_file::
+  end
+
+  for _, input_pathname in ipairs(parsed_dtx_files) do
+    local raw_definition_types = parsed_dtx_files[input_pathname]
+    assert(raw_definition_types ~= nil)
+
+    -- Next, interpret the macro raw definitions and use them to update the variable and function definitions
+    -- or report inconsistencies, if any.
+    for _, definition_type in ipairs({"macro"}) do
+      local raw_definitions = raw_definition_types[definition_type]
+      for _, raw_definition in ipairs(raw_definitions or {}) do
+        local other_definition_type, raw_options, raw_csnames = table.unpack(raw_definition)
+        assert(definition_type == other_definition_type)
+
+        local options, definition = interpret_raw_options(input_pathname, definition_type, raw_options)
+        local csnames = interpret_raw_csnames(options, raw_csnames)
+        for _, updated_definition_type in ipairs({"function", "variable"}) do
+          local updated_definitions = definition_types[updated_definition_type]
+          assert(updated_definitions ~= nil)
+          record_definition(updated_definitions, definition, csnames, true)
+        end
+      end
+    end
+  end
+
+  for _, key in ipairs({"added", "updated"}) do
+    assert(latest_date[key] ~= nil)
+    assert(latest_csname[key] ~= nil)
+  end
+  return parsed_dtx_files, definition_types, latest_date, latest_csname
+end
+
+-- Generate LPEG parsers of function and variable names defined in "l3*.dtx" files.
+local function generate_definitions_parsers(output_file, definition_types)
+  output_file:write('M.definitions = {}\n')
+  output_file:write('do\n')
+
+  -- In order to minimize the size and speed of the parsers, first construct prefix trees of the definitions.
+  local prefix_trees = {}
+  for _, definition_type in ipairs(definition_types) do
+    prefix_trees[definition_type] = {}
+    table.insert(prefix_trees, definition_type)
+    local definitions = definition_types[definition_type]
+    for _, csname in ipairs(definitions) do
+      local node = prefix_trees[definition_type]
+      for character_index = 1, #csname do
+        local character = csname:sub(character_index, character_index)
+        assert(#character == 1)
+        if character_index < #csname then  -- an intermediate node
+          if node[character] == nil then
+            node[character] = {}
+          end
+          node = node[character]
+        else  -- a leaf node
+          table.insert(node, character)
+        end
+      end
+    end
+  end
+
+  -- Then, generate parsers out of the trees.
+  local output_regular_character = any - P('"')
+  local output_capture = P("*Cc{") * (any - P("}"))^0 * P("}")
+  local output_regular_characters = (
+    P('P"')
+    * C(output_regular_character^1)
+    * P('"')
+  )
+  local simplified_output_regular_characters = (
+    Ct(
+      output_regular_characters
+      * (
+        P('*')
+        * output_regular_characters
+      )^0
+    )
+    / function(accumulator)
+      return 'P"' .. table.concat(accumulator, "") .. '"'
+    end
+  )
+  local simplified_output_parsers = Cs(
+    (
+      output_capture
+      + simplified_output_regular_characters
+    )^0
+    * eof
+  )
+
+  output_file:write('  -- luacheck: push no max line length\n')
+  local produced_parsers = 0
+  for _, definition_type in ipairs(prefix_trees) do
+    local prefix_tree = prefix_trees[definition_type]
+    local definitions = definition_types[definition_type]
+    local subparsers = {}
+    depth_first_search(prefix_tree, "", function(node, path)  -- visit
+      if type(node) == "string" then  -- leaf node
+        assert(node ~= '"')
+        local suffix_buffer = {'P"' .. node .. '"'}
+        local definition = definitions[path .. node]
+        assert(definition ~= nil)
+        local options_buffer = {}
+        for _, key in ipairs({"added", "EXP"}) do
+          local value = definition[key]
+          if value ~= nil then
+            table.insert(options_buffer, string.format('%s="%s"', key, value))
+          end
+        end
+        if #options_buffer > 0 then
+          table.insert(suffix_buffer, "*Cc{")
+          table.insert(suffix_buffer, table.concat(options_buffer, ","))
+          table.insert(suffix_buffer, "}")
+        end
+        local suffix = table.concat(suffix_buffer)
+        if subparsers[path] ~= nil then
+          subparsers[path] = subparsers[path] .. "+" .. suffix
+        else
+          subparsers[path] = suffix
+        end
+      end
+    end, function(_, path)  -- leave
+      if #path > 0 then  -- non-root node
+        local character = path:sub(#path, #path)
+        local parent_path = path:sub(1, #path - 1)
+        local prefix
+        assert(character ~= '"')
+        prefix = 'P"' .. character .. '"'
+        local simplified_pattern = lpeg.match(simplified_output_parsers, subparsers[path])
+        local suffix
+        if simplified_pattern ~= nil then  -- simple pattern
+          suffix = prefix .. "*" .. simplified_pattern
+          local simplified_suffix = lpeg.match(simplified_output_parsers, suffix)
+          if simplified_suffix ~= nil then
+            suffix = simplified_suffix
+          end
+        else  -- complex pattern
+          suffix = prefix .. "*(" .. subparsers[path] .. ")"
+        end
+        if subparsers[parent_path] ~= nil then
+          subparsers[parent_path] = subparsers[parent_path] .. "+" .. suffix
+        else
+          subparsers[parent_path] = suffix
+        end
+      else  -- root node
+        local type_selector
+        if definition_type == "function" then
+          type_selector = '["' .. definition_type .. '"]'
+        else
+          type_selector = '.' .. definition_type
+        end
+        output_file:write('  M.definitions' .. type_selector .. ' = (' .. subparsers[path] .. ') * eof\n')
+        produced_parsers = produced_parsers + 1
+      end
+    end)
+  end
+  output_file:write('  -- luacheck: pop\n')
+  output_file:write('end\n')
+  assert(produced_parsers == #prefix_trees)
 end
 
 -- Generate the file "explcheck-latex3.lua".
 local output_filename = "explcheck-latex3.lua"
 local output_file = assert(io.open(output_filename, "w"), "Could not open " .. output_filename .. " for writing")
 
+-- Add a comment, both to an output file and to the standard output.
+local function add_comment(text)
+  print(text)
+  output_file:write(string.format("-- %s\n", text))
+end
+
 ---- Generate the preamble.
-add_comment(output_file, "LPEG parsers and other information extracted from LaTeX3 data files.")
-add_comment(output_file, string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
-local csnames, l3obsolete_dates, l3obsolete_latest_date = parse_l3obsolete()
-add_comment(output_file, string.format('- "l3obsolete.txt" with the latest obsolete entry from %s', l3obsolete_latest_date))
-local prefixes, l3prefixes_dates, l3prefixes_latest_date = parse_l3prefixes()
-add_comment(output_file, string.format('- "l3prefixes.csv" with the latest registered prefix from %s', l3prefixes_latest_date))
+add_comment("LPEG parsers and other information extracted from LaTeX3 data files.")
+add_comment(string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
+local csnames, l3obsolete_dates, l3obsolete_latest_date, l3obsolete_latest_raw_csname = parse_l3obsolete()
+add_comment(
+  string.format('- "l3obsolete.txt" with the latest obsolete entry from %s: `\\%s`', l3obsolete_latest_date, l3obsolete_latest_raw_csname)
+)
+local prefixes, l3prefixes_dates, l3prefixes_latest_date, l3prefixes_latest_prefix = parse_l3prefixes()
+add_comment(
+  string.format('- "l3prefixes.csv" with the latest registered prefix from %s: "%s"', l3prefixes_latest_date, l3prefixes_latest_prefix)
+)
+local parsed_dtx_files, definition_types, latest_defined_date, latest_defined_csname = parse_definitions()
+add_comment(
+  string.format(
+    '- %s "l3*.dtx" files with %s function and %s variable %s:',
+    humanize(#parsed_dtx_files),
+    humanize(#definition_types["function"]),
+    humanize(#definition_types["variable"]),
+    pluralize("definition", #definition_types["function"] + #definition_types["variable"])
+  )
+)
+for _, key in ipairs({"added", "updated"}) do
+  add_comment(
+    string.format(
+      '  - Latest %s function or variable from %s: `\\%s`',
+      key,
+      latest_defined_date[key],
+      latest_defined_csname[key]
+    )
+  )
+end
 output_file:write("\n")
 
 ---- Generate the LPEG parsers.
 output_file:write('local lpeg = require("lpeg")\n')
-output_file:write('local P = lpeg.P\n\n')
+output_file:write('local Cc, P = lpeg.Cc, lpeg.P\n\n')
+output_file:write('local any, eof = P(1), P(-1)\n\n')
+output_file:write('local M = {}\n\n')
 generate_l3obsolete_parsers(output_file, l3obsolete_dates, csnames)
 output_file:write("\n")
 generate_l3prefixes_parser(output_file, l3prefixes_dates, prefixes)
-output_file:write([[
-
-return {
-  obsolete = obsolete,
-  prefixes = prefixes
-}
-]])
+output_file:write("\n")
+generate_definitions_parsers(output_file, definition_types)
+output_file:write("\nreturn M")
 assert(output_file:close())

@@ -1,4 +1,16 @@
 \prg_new_protected_conditional:Nnn  % warning on this line
-  \example_expandable:
+  \example_expandable_first:
   { T, F, TF }
   { \prg_return_true: }
+\prg_new_conditional:Nnn
+  \example_expandable_second:
+  { T, F, TF }
+  { \prg_return_true: }
+\prg_new_protected_conditional:Nnn  % warning on this line
+  \example_expandable_third:
+  { T, F, TF }
+  {
+    \example_expandable_second:TF
+      { \prg_return_true: }
+      { \prg_return_false: }
+  }

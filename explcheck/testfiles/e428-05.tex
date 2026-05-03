@@ -1,0 +1,27 @@
+\cs_new_protected:Nn
+  \example_foo:n
+  { bar }
+\bool_set:Nn
+  \l_tmpa_bool
+  {
+    \example_foo:n  % error on this line
+      { bar }
+  }
+\cs_set_eq:NN
+  \example_bar:n
+  \example_foo:n
+\bool_set:Nn
+  \l_tmpa_bool
+  {
+    \example_bar:n  % error on this line
+      { baz }
+  }
+\cs_generate_variant:Nn
+  \example_bar:n
+  { V }
+\bool_set:Nn
+  \l_tmpa_bool
+  {
+    \example_bar:V  % error on this line
+      \l_tmpa_tl
+  }

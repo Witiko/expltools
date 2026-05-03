@@ -53,7 +53,7 @@ local function get_parent(pathname)
   end
 end
 
--- Makes a shallow copy of a Lua table.
+-- Make a shallow copy of a Lua table.
 local function make_shallow_copy(original_table)
   assert(type(original_table) == "table")
   local copied_table = {}
@@ -262,7 +262,7 @@ local function process_files(pathnames, options)
         if substep_number == #step.substeps then
           -- If the step ended with errors for this file, skip all following steps for this file.
           if is_last_substep then
-            state.issues:close()
+state.issues:close()
           else
             state.issues:commit()
           end

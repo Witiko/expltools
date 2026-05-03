@@ -1,7 +1,10 @@
-\cs_new:Nn  % warning on this line
-  \example_unexpandable:
+\cs_new_protected:Nn
+  \example_unexpandable_first:
   {
     \tl_set:Nn
       \l_tmpa_tl
       { bar }
   }
+\cs_new:Nn  % warning on this line
+  \example_unexpandable_second:
+  { \example_unexpandable_first: }
