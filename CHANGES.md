@@ -14,6 +14,7 @@ This version of explcheck has implemented the following new features:
   [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
   1. E428 (Unexpandable or restricted-expandable boolean expression)
+  1. W429 (Defined an unexpandable function as unprotected)
   2. W502 (Unused private function)
   3. W503 (Unused private function variant)
 

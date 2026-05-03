@@ -82,7 +82,7 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
  /e428-04.tex
  /e428-05.tex
 
-### Defined an unexpandable function as unprotected {.w label=w429 .work-in-progress #defined-unexpandable-function-as-unprotected}
+### Defined an unexpandable function as unprotected {.w label=w429 #defined-unexpandable-function-as-unprotected}
 
  /w429-01.tex
  /w429-02.tex

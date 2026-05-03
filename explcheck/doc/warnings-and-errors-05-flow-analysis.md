@@ -132,7 +132,7 @@ A fully-expandable function or conditional function is defined using a creator f
      might not be fully-expandable.
   3. All calls to built-in functions within the top segment of a
      fully-expandable function's replacement text must be fully-expandable.
-  
+
   To determine the third condition, we may need to parse l3kernel .dtx files and
   distill this information in `explcheck-latex3.lua`.
 

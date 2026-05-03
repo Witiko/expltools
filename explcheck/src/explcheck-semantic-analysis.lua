@@ -286,6 +286,24 @@ local function parse_expl3_csname(csname)
   end
 end
 
+local function _is_latex3_function_fully_expandable(parser, csname)
+  local is_latex3_function, is_fully_expandable
+  local csname_properties = lpeg.match(parser, csname)
+  if csname_properties == nil then
+    is_latex3_function, is_fully_expandable = false, false
+  else
+    is_latex3_function = true
+    if type(csname_properties) == "table" and csname_properties.EXP == "full" then
+      is_fully_expandable = true
+    else
+      is_fully_expandable = false
+    end
+  end
+  assert(is_latex3_function ~= nil)
+  assert(is_fully_expandable ~= nil)
+  return is_latex3_function, is_fully_expandable
+end
+
 -- Determine the meaning of function calls, producing statements.
 local function collect_statements(states, file_number, options)
 
@@ -886,6 +904,8 @@ local function collect_statements(states, file_number, options)
                   map_back = map_back,
                   map_forward = map_forward,
                 },
+                -- The following attributes are specific to the type.
+                maybe_fully_expandable = true,  -- later refined by `determine_function_definition_expandability()`
               }
               replacement_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
               assert(results.segments[replacement_text_argument.segment_number].type == REPLACEMENT_TEXT)
@@ -1505,6 +1525,9 @@ local function analyze_group_wide_statements(states, _, options)
       -- Index file-local statements.
       function_call_variant_definition_and_indirect_definition_list = {},
       function_variant_definition_and_indirect_definition_list = {},
+      direct_function_definition_list = {},
+      unprotected_direct_function_definition_list = {},
+      unprotected_direct_function_definition_byte_range_index = {},
       non_redefined_function_and_variant_definition_list = {},
       function_and_variant_definition_list = {},
     }
@@ -1852,9 +1875,17 @@ local function analyze_group_wide_statements(states, _, options)
               table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
             end
           end
-          if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
+          if statement.subtype == FUNCTION_DEFINITION_DIRECT then
+            table.insert(results.statement_analysis.direct_function_definition_list, statement)
+            if not statement.is_protected then
+              table.insert(results.statement_analysis.unprotected_direct_function_definition_list, statement)
+              results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement] = byte_range
+            end
+          elseif statement.subtype == FUNCTION_DEFINITION_INDIRECT then
             table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
             table.insert(results.statement_analysis.function_variant_definition_and_indirect_definition_list, statement)
+          else
+            error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
           end
         -- Process a function undefinition.
         elseif statement.type == FUNCTION_UNDEFINITION then
@@ -1957,7 +1988,7 @@ local function analyze_group_wide_statements(states, _, options)
               error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
             end
           else
-            error('Unexpected statement subtype "' .. statement.subtype .. '"')
+            error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
           end
         -- Process a variable or constant use.
         elseif statement.type == VARIABLE_USE then
@@ -2095,8 +2126,41 @@ local function analyze_group_wide_statements(states, _, options)
   end
 end
 
+-- Determine which direct function definitions might be fully expandable.
+local function determine_direct_function_definition_expandability(states, file_number, _)
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  -- Check that the expandability of the function definition statements corresponds to the expandability of the corresponding
+  -- replacement text segments.
+  local any_changes = false
+  for _, statement in ipairs(results.statement_analysis.direct_function_definition_list) do
+    assert(statement.type == FUNCTION_DEFINITION)
+    assert(statement.subtype == FUNCTION_DEFINITION_DIRECT)
+    assert(statement.maybe_fully_expandable ~= nil)
+    if not statement.maybe_fully_expandable then
+      goto next_statement
+    end
+    assert(statement.maybe_fully_expandable)
+    if statement.replacement_text_argument.segment_number == nil then
+      goto next_statement
+    end
+    local segment = results.segments[statement.replacement_text_argument.segment_number]
+    assert(segment.type == REPLACEMENT_TEXT)
+    assert(segment.maybe_fully_expandable ~= nil)
+    if not segment.maybe_fully_expandable then
+      any_changes = true
+      statement.maybe_fully_expandable = false
+    end
+    ::next_statement::
+  end
+  return any_changes
+end
+
 -- Determine which function variant and indirect function definitions might be fully expandable.
-local function determine_function_definition_expandability(states, file_number, options)
+local function determine_function_variant_definition_and_indirect_definition_expandability(states, file_number, options)
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -2106,6 +2170,10 @@ local function determine_function_definition_expandability(states, file_number, 
   assert(results.statement_analysis ~= nil)
 
   local latex3_function_csname = parsers.latex3_csname("function", options, pathname)
+
+  local function is_latex3_function_fully_expandable(csname)
+    return _is_latex3_function_fully_expandable(latex3_function_csname, csname)
+  end
 
   -- First, resolve all function variant and indirect function definitions to the potential (not necessarily reaching)
   -- originating function definitions. This may be either (a) a direct function definition, (b) a function variant or indirect
@@ -2193,7 +2261,7 @@ local function determine_function_definition_expandability(states, file_number, 
     local maybe_fully_expandable = false
     for _, statement in ipairs(originating_function_and_variant_definition_index[defined_csname]) do
       if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT then
-        if statement.maybe_expandable then
+        if statement.maybe_fully_expandable then
           maybe_fully_expandable = true
           break
         end
@@ -2213,12 +2281,12 @@ local function determine_function_definition_expandability(states, file_number, 
         local base_csname = statement.base_csname.payload
 
         -- Check whether the control sequence is a standard-library function that is not fully expandable.
-        local base_csname_properties = lpeg.match(latex3_function_csname, base_csname)
-        if type(base_csname_properties) == "table" and base_csname_properties.EXP == "full" then
+        local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(base_csname)
+        if is_latex3_function and is_fully_expandable then
           maybe_fully_expandable = true
           break
         end
-        if base_csname_properties ~= nil then
+        if is_latex3_function then
           goto next_statement
         end
 
@@ -2247,10 +2315,11 @@ local function determine_function_definition_expandability(states, file_number, 
       table.insert(not_fully_expandable_function_and_variant_definition_list, statement)
     end
   end
+  local any_changes = false
   do
     local statement_number, seen_statements = 1, {}
-    while statement_number <= #function_and_variant_definition_list do
-      local statement = function_and_variant_definition_list[statement_number]
+    while statement_number <= #not_fully_expandable_function_and_variant_definition_list do
+      local statement = not_fully_expandable_function_and_variant_definition_list[statement_number]
 
       assert(statement.defined_csname ~= nil)
       assert(statement.defined_csname.type == TEXT)
@@ -2263,7 +2332,10 @@ local function determine_function_definition_expandability(states, file_number, 
       seen_statements[statement] = true
 
       -- Backpropagate the expandability.
-      statement.maybe_fully_expandable = false
+      if statement.maybe_fully_expandable then
+        any_changes = true
+        statement.maybe_fully_expandable = false
+      end
       for _, other_statement in ipairs(inverted_base_csname_index[defined_csname] or {}) do
         table.insert(not_fully_expandable_function_and_variant_definition_list, other_statement)
       end
@@ -2271,10 +2343,11 @@ local function determine_function_definition_expandability(states, file_number, 
       statement_number = statement_number + 1
     end
   end
+  return any_changes
 end
 
--- Determine which boolean expression segments might be fully expandable.
-local function determine_boolean_expression_expandability(states, file_number, options)
+-- Determine which segments of a certain type might be fully expandable.
+local function determine_segment_type_expandability(segment_type, states, file_number, options)
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -2309,10 +2382,16 @@ local function determine_boolean_expression_expandability(states, file_number, o
 
   local latex3_function_csname = parsers.latex3_csname("function", options, pathname)
 
+  local function is_latex3_function_fully_expandable(csname)
+    return _is_latex3_function_fully_expandable(latex3_function_csname, csname)
+  end
+
   -- Determine whether the boolean expression segments might be fully expandable.
-  for _, segment in ipairs(results.segment_type_index[BOOLEAN_EXPRESSION] or {}) do
+  for _, segment in ipairs(results.segment_type_index[segment_type] or {}) do
     assert(segment.calls ~= nil)
-    assert(segment.maybe_fully_expandable == true)
+    if not segment.maybe_fully_expandable then
+      goto next_segment
+    end
 
     -- Check whether a top-level control sequence might be fully expandable.
     local function check_csname(csname)
@@ -2322,8 +2401,8 @@ local function determine_boolean_expression_expandability(states, file_number, o
         return
       end
       -- Check whether the control sequence is a standard-library function that is not fully expandable.
-      local csname_properties = lpeg.match(latex3_function_csname, csname)
-      if csname_properties ~= nil and (type(csname_properties) ~= "table" or csname_properties.EXP ~= "full") then
+      local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(csname)
+      if is_latex3_function and not is_fully_expandable then
         segment.maybe_fully_expandable = false
         return
       end
@@ -2356,6 +2435,23 @@ local function determine_boolean_expression_expandability(states, file_number, o
     end
     ::next_segment::
   end
+end
+
+-- Determine which function definitions might be fully expandable.
+local function determine_function_definition_expandability(states, file_number, options)
+  -- Update the replacement text and statement expandability until fixed point.
+  local any_direct_statement_changes, any_indirect_statement_changes
+  repeat
+    determine_segment_type_expandability(REPLACEMENT_TEXT, states, file_number, options)
+    any_direct_statement_changes = determine_direct_function_definition_expandability(states, file_number, options)
+    any_indirect_statement_changes
+      = determine_function_variant_definition_and_indirect_definition_expandability(states, file_number, options)
+  until not any_direct_statement_changes and not any_indirect_statement_changes
+end
+
+-- Determine which boolean expression segments might be fully expandable.
+local function determine_boolean_expression_expandability(states, file_number, options)
+  determine_segment_type_expandability(BOOLEAN_EXPRESSION, states, file_number, options)
 end
 
 -- Report any issues.
@@ -2662,6 +2758,18 @@ local function report_issues(states, file_number, options)
       local token_range = segment.transformed_tokens.token_range
       local byte_range = token_range_to_byte_range(token_range)
       issues:add("e428", "unexpandable or restricted-expandable boolean expression", byte_range)
+    end
+  end
+
+  -- Report unexpandable functions defined as unprotected.
+  for _, statement in ipairs(results.statement_analysis.unprotected_direct_function_definition_list) do
+    assert(statement.type == FUNCTION_DEFINITION)
+    assert(statement.subtype == FUNCTION_DEFINITION_DIRECT)
+    assert(not statement.is_protected)
+    if not statement.maybe_fully_expandable then
+      local byte_range = results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement]
+      local context = format_csname(statement.defined_csname.transcript)
+      issues:add("w429", "defined an unexpandable function as unprotected", byte_range, context)
     end
   end
 end

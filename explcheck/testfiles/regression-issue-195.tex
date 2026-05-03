@@ -3,7 +3,7 @@
 \cs_new:Npn \__my_use_off:n #1 {}
 
 \cs_new_eq:NN \my_use:n \__my_use_on:n
-\cs_new:Npn \my_off:
+\cs_new_protected:Npn \my_off:
   {
     \cs_set_eq:NN \my_use:n \__my_use_off:n
   }
