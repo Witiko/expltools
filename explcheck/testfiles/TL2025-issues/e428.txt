@@ -1,0 +1,2 @@
+/usr/local/texlive/2025/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
+/usr/local/texlive/2025/texmf-dist/tex/latex/l3kernel/l3doc.cls
