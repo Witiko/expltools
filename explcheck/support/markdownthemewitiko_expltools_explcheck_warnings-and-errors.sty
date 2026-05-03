@@ -21,7 +21,7 @@
   \g__expltools_explcheck_labels_seq
 \RequirePackage
   { xcolor }
-\cs_new:Nn
+\cs_new_protected:Nn
   \__expltools_explcheck_increment_counters:
   {
     \int_gincr:N
@@ -87,7 +87,7 @@
   { __expltools_explcheck_gray }
   { gray }
   { 0.5 }
-\cs_new:Nn
+\cs_new_protected:Nn
   \__expltools_explcheck_display_heading:Nn
   {
     \bool_if:NTF
