@@ -18,6 +18,9 @@ This version of explcheck has implemented the following new features:
   2. W502 (Unused private function)
   3. W503 (Unused private function variant)
 
+  Out of these issues, warning W429 is particularly pervasive, being reported
+  for 573 package files in TeX Live 2025.
+
 - In `explcheck-latex3.lua`, add `definitions["function"]` and
   `definitions.variable` properties with LPEG parsers that accept LaTeX3
   standard-library function and variable names, respectively, and capture their
