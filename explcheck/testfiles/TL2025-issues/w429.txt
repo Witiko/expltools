@@ -143,7 +143,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/ctex/ctexbeamer.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/ctex/ctexbook.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/ctex/ctexrep.cls
-/usr/local/texlive/2025/texmf-dist/tex/latex/customenvs/customenvs-mathpictos.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/dashundergaps/dashundergaps.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/datatool/databar.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/datatool/databib.sty
@@ -504,7 +503,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/uantwerpendocs/uantwerpenreport.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/udes-genie-these/udes-genie-these.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca-ppc.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/ufrgscca/ufrgscca.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/unicode-math-input/unicode-math-input.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/unicode-math/unicode-math-luatex.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/unicode-math/unicode-math-xetex.sty
