@@ -2259,6 +2259,18 @@ local function determine_function_variant_definition_and_indirect_definition_exp
     assert(originating_function_and_variant_definition_index[defined_csname] ~= nil)
     assert(#originating_function_and_variant_definition_index[defined_csname] > 0)
     local maybe_fully_expandable = false
+
+    -- Check whether the defined control sequence is a standard-library function that is fully expandable.
+    do
+      local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(defined_csname)
+      if is_latex3_function then
+        if is_fully_expandable then
+          maybe_fully_expandable = true
+        end
+        goto skip_statement_checks
+      end
+    end
+
     for _, statement in ipairs(originating_function_and_variant_definition_index[defined_csname]) do
       if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT then
         if statement.maybe_fully_expandable then
@@ -2280,17 +2292,20 @@ local function determine_function_variant_definition_and_indirect_definition_exp
         end
         local base_csname = statement.base_csname.payload
 
-        -- Check whether the control sequence is a standard-library function that is not fully expandable.
-        local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(base_csname)
-        if is_latex3_function and is_fully_expandable then
-          maybe_fully_expandable = true
-          break
-        end
-        if is_latex3_function then
-          goto next_statement
+        -- Check whether the base control sequence is a standard-library function that is fully expandable.
+        do
+          local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(base_csname)
+          if is_latex3_function then
+            if is_fully_expandable then
+              maybe_fully_expandable = true
+              break
+            end
+            -- If it is a standard-library function, skip all other checks.
+            goto next_statement
+          end
         end
 
-        -- Check whether the arguments of the control sequence are not fully expandable.
+        -- Check whether the arguments of the base control sequence are not fully expandable.
         local _, base_argument_specifiers = parse_expl3_csname(base_csname)
         if (
           base_argument_specifiers == nil or
@@ -2302,6 +2317,8 @@ local function determine_function_variant_definition_and_indirect_definition_exp
       end
       ::next_statement::
     end
+    ::skip_statement_checks::
+
     if not maybe_fully_expandable then
       table.insert(not_fully_expandable_defined_csname_list, defined_csname)
     end
@@ -2395,14 +2412,17 @@ local function determine_segment_type_expandability(segment_type, states, file_n
 
     -- Check whether a top-level control sequence might be fully expandable.
     local function check_csname(csname)
-      -- Check whether the control sequence is a user-defined function that is not fully expandable.
-      if has_not_fully_expandable_function_definitions(csname) then
-        segment.maybe_fully_expandable = false
-        return
-      end
       -- Check whether the control sequence is a standard-library function that is not fully expandable.
       local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(csname)
-      if is_latex3_function and not is_fully_expandable then
+      if is_latex3_function then
+        if not is_fully_expandable then
+          segment.maybe_fully_expandable = false
+        end
+        -- If it is a standard-library function, skip all other checks.
+        return
+      end
+      -- Check whether the control sequence is a user-defined function that is not fully expandable.
+      if has_not_fully_expandable_function_definitions(csname) then
         segment.maybe_fully_expandable = false
         return
       end
