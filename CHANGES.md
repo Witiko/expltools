@@ -1,5 +1,16 @@
 # Changes
 
+## expltools 2026-05-XX
+
+### explcheck v0.20.1
+
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Do not report issue W429 (Defined an unexpandable function as unprotected)
+  for restricted-expandable functions. (e507747)
+
 ## expltools 2026-05-03
 
 ### explcheck v0.20.0
