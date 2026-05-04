@@ -42,8 +42,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/generic/markdown/markdown.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/markdown/markdownthemewitiko_markdown_defaults.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/namedef/namedef.sty
-/usr/local/texlive/2025/texmf-dist/tex/generic/scontents/scontents-code.tex
-/usr/local/texlive/2025/texmf-dist/tex/generic/scontents/scontents.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/termmenu/termmenu.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/texapi/texapi.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/witharrows/witharrows.sty
@@ -170,7 +168,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/elsarticle/elsarticle.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/elzcards/elzcards.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/enotez/enotez.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/enumext/enumext.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/erw-l3/erw-l3.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/etl/etl.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/exam-zh/exam-zh-chinese-english.sty
@@ -187,7 +184,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/fduthesis/fduthesis-en.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/fduthesis/fduthesis.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/figureversions/figureversions.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/fistrum/fistrum.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/fixtounicode/fixtounicode.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/floatrowbytocbasic/floatrowbytocbasic.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/flowfram/flowfram.sty
@@ -202,7 +198,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/forest-ext/forest-lib-ext.tagging-debug.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/forest-ext/forest-lib-ext.tagging.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/forest-ext/forest-lib-ext.utils-debug.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/forest-ext/forest-lib-ext.utils.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/genealogy-profiles/genealogy-profiles.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/genealogytree/gtrcore.drawing.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/genealogytree/gtrcore.options.code.tex
@@ -223,7 +218,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/hustvisual/hustvisual.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/hvfloat/hvfloat.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/indextra/indextra.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/intexgral/intexgral.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/invoice2/invoice2.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/istgame/istgame.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/jlreq/jlreq-complements.sty
@@ -283,7 +277,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/linguistix/linguistix-languages.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/linguistix/linguistix-marathi.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/linguistix/linguistix-nfss.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/lipsum/lipsum.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lisp-on-tex/lisp-mod-l3regex.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/longdivision/longdivision.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lt3graph/lt3graph.sty
@@ -408,7 +401,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/schulmathematik/schulma-klausur.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/scripture/scripture.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/sdaps/sdapsarray.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/sdaps/sdapsbase.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/sdaps/sdapsclassic.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/sdaps/sdapslayout.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/se2thesis/se2thesis.cls

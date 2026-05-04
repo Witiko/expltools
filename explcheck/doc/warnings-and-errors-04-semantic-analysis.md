@@ -83,9 +83,14 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
  /e428-05.tex
 
 ### Defined an unexpandable function as unprotected {.w label=w429 #defined-unexpandable-function-as-unprotected}
+An unexpandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 
  /w429-01.tex
  /w429-02.tex
+
+This issue is not raised for restricted-expandable functions:
+
+ /w429-03.tex
 
 ## Variables and constants
 

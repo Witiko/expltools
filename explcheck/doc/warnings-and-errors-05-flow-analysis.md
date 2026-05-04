@@ -151,14 +151,16 @@ A fully-expandable function or conditional function is defined using a creator f
 -->
 
 ### Defined an unexpandable function as unprotected {.w label=w512 .work-in-progress}
-An unexpandable or restricted-expandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
+An unexpandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 
  /w512-01.tex
  /w512-02.tex
 
 <!--
 
-  The same considerations apply as for the previous issue E508.
+  The same considerations apply as for the previous issue E508,
+  except for the fact that we care not just about full but also
+  restricted expandability.
 
 -->
 

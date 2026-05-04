@@ -286,22 +286,29 @@ local function parse_expl3_csname(csname)
   end
 end
 
-local function _is_latex3_function_fully_expandable(parser, csname)
-  local is_latex3_function, is_fully_expandable
+local function _is_latex3_function_expandable(parser, csname)
+  local is_latex3_function, is_fully_expandable, is_restricted_expandable
   local csname_properties = lpeg.match(parser, csname)
   if csname_properties == nil then
-    is_latex3_function, is_fully_expandable = false, false
+    is_latex3_function, is_fully_expandable, is_restricted_expandable = false, false, false
   else
     is_latex3_function = true
-    if type(csname_properties) == "table" and csname_properties.EXP == "full" then
-      is_fully_expandable = true
+    if type(csname_properties) == "table" then
+      if csname_properties.EXP == "full" then
+        is_fully_expandable, is_restricted_expandable = true, true
+      elseif csname_properties.EXP == "restricted" then
+        is_fully_expandable, is_restricted_expandable = false, true
+      else
+        is_fully_expandable, is_restricted_expandable = false, false
+      end
     else
-      is_fully_expandable = false
+      is_fully_expandable, is_restricted_expandable = false, false
     end
   end
   assert(is_latex3_function ~= nil)
   assert(is_fully_expandable ~= nil)
-  return is_latex3_function, is_fully_expandable
+  assert(is_restricted_expandable ~= nil)
+  return is_latex3_function, is_fully_expandable, is_restricted_expandable
 end
 
 -- Determine the meaning of function calls, producing statements.
@@ -774,12 +781,12 @@ local function collect_statements(states, file_number, options)
           for _, defined_csname_table in ipairs(defined_csnames) do  -- lua
             local effective_base_csname, defined_csname, confidence = table.unpack(defined_csname_table)
             local _, defined_argument_specifiers = parse_expl3_csname(defined_csname)
-            local maybe_fully_expandable = true
+            local maybe_expandable = true
             if (
               defined_argument_specifiers ~= nil and
               lpeg.match(parsers.x_type_argument_specifiers, defined_argument_specifiers.transcript) ~= nil
             ) then
-              maybe_fully_expandable = false
+              maybe_expandable = false
             end
             local statement = {
               type = FUNCTION_VARIANT_DEFINITION,
@@ -793,7 +800,8 @@ local function collect_statements(states, file_number, options)
               is_conditional = is_conditional,
               maybe_used = false,
               maybe_multiply_defined = false,
-              maybe_fully_expandable = maybe_fully_expandable,  -- later refined by `determine_function_definition_expandability()`
+              maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
+              maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
               call_file_numbers = nil,  -- later filled in by `determine_function_calls_for_definitions()`
             }
             table.insert(statements, statement)
@@ -906,6 +914,7 @@ local function collect_statements(states, file_number, options)
                 },
                 -- The following attributes are specific to the type.
                 maybe_fully_expandable = true,  -- later refined by `determine_function_definition_expandability()`
+                maybe_restricted_expandable = true,  -- later refined by `determine_function_definition_expandability()`
               }
               replacement_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
               assert(results.segments[replacement_text_argument.segment_number].type == REPLACEMENT_TEXT)
@@ -945,14 +954,14 @@ local function collect_statements(states, file_number, options)
             -- record function definition statements for all effectively defined csnames
             for _, effectively_defined_csname_table in ipairs(effectively_defined_csnames) do  -- lua
               local effectively_defined_csname, confidence = table.unpack(effectively_defined_csname_table)
-              local maybe_fully_expandable = not is_protected
-              if maybe_fully_expandable then
+              local maybe_expandable = not is_protected
+              if maybe_expandable then
                 local _, effectively_defined_argument_specifiers = parse_expl3_csname(effectively_defined_csname)
                 if (
                   effectively_defined_argument_specifiers ~= nil and
                   lpeg.match(parsers.x_type_argument_specifiers, effectively_defined_argument_specifiers.transcript) ~= nil
                 ) then
-                  maybe_fully_expandable = false
+                  maybe_expandable = false
                 end
               end
               local statement = {
@@ -969,7 +978,8 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = definition_token_range,
                 maybe_used = false,
                 maybe_multiply_defined = false,
-                maybe_fully_expandable = maybe_fully_expandable,  -- later refined by `determine_function_definition_expandability()`
+                maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
+                maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
@@ -1035,12 +1045,12 @@ local function collect_statements(states, file_number, options)
               local effectively_defined_csname, effective_base_csname, confidence
                 = table.unpack(effective_defined_and_base_csname_table)
               local _, effectively_defined_argument_specifiers = parse_expl3_csname(effectively_defined_csname)
-              local maybe_fully_expandable = true
+              local maybe_expandable = true
               if (
                 effectively_defined_argument_specifiers ~= nil and
                 lpeg.match(parsers.x_type_argument_specifiers, effectively_defined_argument_specifiers.transcript) ~= nil
               ) then
-                maybe_fully_expandable = false
+                maybe_expandable = false
               end
               local statement = {
                 type = FUNCTION_DEFINITION,
@@ -1056,7 +1066,8 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = token_range,
                 maybe_used = false,
                 maybe_multiply_defined = false,
-                maybe_fully_expandable = maybe_fully_expandable,  -- later refined by `determine_function_definition_expandability()`
+                maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
+                maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
@@ -1216,6 +1227,7 @@ local function collect_statements(states, file_number, options)
                 },
                 -- The following attributes are specific to the type.
                 maybe_fully_expandable = true,  -- later refined by `determine_boolean_expression_expandability()`
+                maybe_restricted_expandable = true,  -- later refined by `determine_boolean_expression_expandability()`
               }
               definition_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
             end
@@ -2126,7 +2138,7 @@ local function analyze_group_wide_statements(states, _, options)
   end
 end
 
--- Determine which direct function definitions might be fully expandable.
+-- Determine which direct function definitions might be expandable.
 local function determine_direct_function_definition_expandability(states, file_number, _)
   local state = states[file_number]
 
@@ -2140,26 +2152,29 @@ local function determine_direct_function_definition_expandability(states, file_n
     assert(statement.type == FUNCTION_DEFINITION)
     assert(statement.subtype == FUNCTION_DEFINITION_DIRECT)
     assert(statement.maybe_fully_expandable ~= nil)
-    if not statement.maybe_fully_expandable then
+    assert(statement.maybe_restricted_expandable ~= nil)
+    if not statement.maybe_fully_expandable and not statement.maybe_restricted_expandable then
       goto next_statement
     end
-    assert(statement.maybe_fully_expandable)
+    assert(statement.maybe_fully_expandable or statement.maybe_restricted_expandable)
     if statement.replacement_text_argument.segment_number == nil then
       goto next_statement
     end
     local segment = results.segments[statement.replacement_text_argument.segment_number]
     assert(segment.type == REPLACEMENT_TEXT)
-    assert(segment.maybe_fully_expandable ~= nil)
-    if not segment.maybe_fully_expandable then
-      any_changes = true
-      statement.maybe_fully_expandable = false
+    for _, expandability_type in ipairs({"maybe_fully_expandable", "maybe_restricted_expandable"}) do
+      assert(segment[expandability_type] ~= nil)
+      if statement[expandability_type] and not segment[expandability_type] then
+        any_changes = true
+        statement[expandability_type] = false
+      end
     end
     ::next_statement::
   end
   return any_changes
 end
 
--- Determine which function variant and indirect function definitions might be fully expandable.
+-- Determine which function variant and indirect function definitions might be expandable.
 local function determine_function_variant_definition_and_indirect_definition_expandability(states, file_number, options)
   assert(states.results.statement_analysis ~= nil)
 
@@ -2171,8 +2186,8 @@ local function determine_function_variant_definition_and_indirect_definition_exp
 
   local latex3_function_csname = parsers.latex3_csname("function", options, pathname)
 
-  local function is_latex3_function_fully_expandable(csname)
-    return _is_latex3_function_fully_expandable(latex3_function_csname, csname)
+  local function is_latex3_function_expandable(csname)
+    return _is_latex3_function_expandable(latex3_function_csname, csname)
   end
 
   -- First, resolve all function variant and indirect function definitions to the potential (not necessarily reaching)
@@ -2195,6 +2210,7 @@ local function determine_function_variant_definition_and_indirect_definition_exp
       local statement = function_and_variant_definition_list[statement_number]
 
       assert(statement.maybe_fully_expandable ~= nil)
+      assert(statement.maybe_restricted_expandable ~= nil)
       assert(statement.defined_csname ~= nil)
       assert(statement.defined_csname.type == TEXT)
       local defined_csname = statement.defined_csname.payload
@@ -2219,7 +2235,7 @@ local function determine_function_variant_definition_and_indirect_definition_exp
         record_originating_statement()
       elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT or
           statement.type == FUNCTION_VARIANT_DEFINITION then
-        if not statement.maybe_fully_expandable then
+        if not statement.maybe_fully_expandable and not statement.maybe_restricted_expandable then
           -- Record the function variant or indirect function definition with sufficiently known expandability.
           record_originating_statement()
           goto next_statement
@@ -2255,17 +2271,21 @@ local function determine_function_variant_definition_and_indirect_definition_exp
   -- Then, for each control sequence name defined by one or more originating function definitions, determine whether the
   -- control sequence has expandability that should be back-propagated to the function variant and indirect function definitions.
   local not_fully_expandable_defined_csname_list = {}
+  local not_restricted_expandable_defined_csname_list = {}
   for _, defined_csname in ipairs(originating_defined_csname_list) do
     assert(originating_function_and_variant_definition_index[defined_csname] ~= nil)
     assert(#originating_function_and_variant_definition_index[defined_csname] > 0)
-    local maybe_fully_expandable = false
+    local maybe_fully_expandable, maybe_restricted_expandable = false, false
 
-    -- Check whether the defined control sequence is a standard-library function that is fully expandable.
+    -- Check whether the defined control sequence is a standard-library function that is expandable.
     do
-      local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(defined_csname)
+      local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(defined_csname)
       if is_latex3_function then
         if is_fully_expandable then
           maybe_fully_expandable = true
+        end
+        if is_restricted_expandable then
+          maybe_restricted_expandable = true
         end
         goto skip_statement_checks
       end
@@ -2275,68 +2295,92 @@ local function determine_function_variant_definition_and_indirect_definition_exp
       if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT then
         if statement.maybe_fully_expandable then
           maybe_fully_expandable = true
-          break
+        end
+        if statement.maybe_restricted_expandable then
+          maybe_restricted_expandable = true
         end
       elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT or
           statement.type == FUNCTION_VARIANT_DEFINITION then
-        if not statement.maybe_expandable then
+        if not statement.maybe_expandable and not statement.restricted_expandable then
           goto next_statement
         end
+        assert(statement.maybe_expandable or statement.restricted_expandable)
 
         -- Determine the expandability of an orphaned function variant or indirect function definition based on its base control
         -- sequence name.
-        assert(statement.maybe_expandable)
         assert(statement.base_csname ~= nil)
         if statement.base_csname.type ~= TEXT then
           goto next_statement
         end
         local base_csname = statement.base_csname.payload
 
-        -- Check whether the base control sequence is a standard-library function that is fully expandable.
+        -- Check whether the base control sequence is a standard-library function that is expandable.
         do
-          local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(base_csname)
+          local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(base_csname)
           if is_latex3_function then
             if is_fully_expandable then
               maybe_fully_expandable = true
-              break
+            end
+            if is_restricted_expandable then
+              maybe_fully_expandable = true
             end
             -- If it is a standard-library function, skip all other checks.
             goto next_statement
           end
         end
 
-        -- Check whether the arguments of the base control sequence are not fully expandable.
+        -- Check whether the arguments of the base control sequence are expandable.
         local _, base_argument_specifiers = parse_expl3_csname(base_csname)
         if (
           base_argument_specifiers == nil or
           lpeg.match(parsers.x_type_argument_specifiers, base_argument_specifiers.transcript) == nil
         ) then
           maybe_fully_expandable = true
+          maybe_restricted_expandable = true
           break
         end
       end
       ::next_statement::
+      if maybe_fully_expandable and maybe_restricted_expandable then
+        break
+      end
     end
     ::skip_statement_checks::
 
     if not maybe_fully_expandable then
       table.insert(not_fully_expandable_defined_csname_list, defined_csname)
     end
+    if not maybe_restricted_expandable then
+      table.insert(not_restricted_expandable_defined_csname_list, defined_csname)
+    end
   end
 
-  -- Finally, backpropagate the expandability of the originating function definitions to all (even intermediate) function variant
-  -- and indirect function definitions.
   local not_fully_expandable_function_and_variant_definition_list = {}
+  local not_restricted_expandable_function_and_variant_definition_list = {}
   for _, defined_csname in ipairs(not_fully_expandable_defined_csname_list) do
     for _, statement in ipairs(originating_function_and_variant_definition_index[defined_csname]) do
       table.insert(not_fully_expandable_function_and_variant_definition_list, statement)
     end
   end
+  for _, defined_csname in ipairs(not_restricted_expandable_defined_csname_list) do
+    for _, statement in ipairs(originating_function_and_variant_definition_index[defined_csname]) do
+      table.insert(not_restricted_expandable_function_and_variant_definition_list, statement)
+    end
+  end
+
+  -- Finally, backpropagate the expandability of the originating function definitions to all (even intermediate) function variant
+  -- and indirect function definitions.
   local any_changes = false
+  for _, statement_list_and_expandability_type in ipairs({
+    {not_fully_expandable_function_and_variant_definition_list, "maybe_fully_expandable"},
+    {not_restricted_expandable_function_and_variant_definition_list, "maybe_restricted_expandable"},
+  })
   do
+    local statement_list, expandability_type = table.unpack(statement_list_and_expandability_type)
+    assert(type(statement_list) == "table")
     local statement_number, seen_statements = 1, {}
-    while statement_number <= #not_fully_expandable_function_and_variant_definition_list do
-      local statement = not_fully_expandable_function_and_variant_definition_list[statement_number]
+    while statement_number <= #statement_list do
+      local statement = statement_list[statement_number]
 
       assert(statement.defined_csname ~= nil)
       assert(statement.defined_csname.type == TEXT)
@@ -2349,12 +2393,12 @@ local function determine_function_variant_definition_and_indirect_definition_exp
       seen_statements[statement] = true
 
       -- Backpropagate the expandability.
-      if statement.maybe_fully_expandable then
+      if statement[expandability_type] then
         any_changes = true
-        statement.maybe_fully_expandable = false
+        statement[expandability_type] = false
       end
       for _, other_statement in ipairs(inverted_base_csname_index[defined_csname] or {}) do
-        table.insert(not_fully_expandable_function_and_variant_definition_list, other_statement)
+        table.insert(statement_list, other_statement)
       end
       ::next_statement::
       statement_number = statement_number + 1
@@ -2363,7 +2407,7 @@ local function determine_function_variant_definition_and_indirect_definition_exp
   return any_changes
 end
 
--- Determine which segments of a certain type might be fully expandable.
+-- Determine which segments of a certain type might be expandable.
 local function determine_segment_type_expandability(segment_type, states, file_number, options)
   assert(states.results.statement_analysis ~= nil)
 
@@ -2372,65 +2416,72 @@ local function determine_segment_type_expandability(segment_type, states, file_n
   local pathname = state.pathname
   local results = state.results
 
-  local might_any_function_definitions_be_fully_expandable = {}
+  local might_any_function_definitions_be_expandable = {}
 
-  -- Determine which control sequences have some function definitions that might be fully expandable.
-  local function has_not_fully_expandable_function_definitions(csname)
-    if might_any_function_definitions_be_fully_expandable[csname] == nil then
+  -- Determine which control sequences have some function definitions that might be expandable.
+  local function has_non_expandable_function_definitions(expandability_type, csname)
+    if might_any_function_definitions_be_expandable[expandability_type] == nil then
+      might_any_function_definitions_be_expandable[expandability_type] = {}
+    end
+    if might_any_function_definitions_be_expandable[expandability_type][csname] == nil then
       local function_definitions = states.results.statement_analysis.function_and_variant_definition_index[csname]
       if function_definitions == nil then
-        might_any_function_definitions_be_fully_expandable[csname] = true
+        might_any_function_definitions_be_expandable[expandability_type][csname] = true
         goto value_set
       end
       assert(function_definitions ~= nil and #function_definitions > 0)
-      might_any_function_definitions_be_fully_expandable[csname] = false
+      might_any_function_definitions_be_expandable[expandability_type][csname] = false
       for _, statement in ipairs(function_definitions) do
-        assert(statement.maybe_fully_expandable ~= nil)
-        if statement.maybe_fully_expandable then
-          might_any_function_definitions_be_fully_expandable[csname] = true
+        assert(statement[expandability_type] ~= nil)
+        if statement[expandability_type] then
+          might_any_function_definitions_be_expandable[expandability_type][csname] = true
           goto value_set
         end
       end
     end
     ::value_set::
-    assert(might_any_function_definitions_be_fully_expandable[csname] ~= nil)
-    return not might_any_function_definitions_be_fully_expandable[csname]
+    assert(might_any_function_definitions_be_expandable[expandability_type][csname] ~= nil)
+    return not might_any_function_definitions_be_expandable[expandability_type][csname]
   end
 
   local latex3_function_csname = parsers.latex3_csname("function", options, pathname)
 
-  local function is_latex3_function_fully_expandable(csname)
-    return _is_latex3_function_fully_expandable(latex3_function_csname, csname)
+  local function is_latex3_function_expandable(csname)
+    return _is_latex3_function_expandable(latex3_function_csname, csname)
   end
 
-  -- Determine whether the boolean expression segments might be fully expandable.
+  -- Determine whether the boolean expression segments might be expandable.
   for _, segment in ipairs(results.segment_type_index[segment_type] or {}) do
     assert(segment.calls ~= nil)
-    if not segment.maybe_fully_expandable then
+    if not segment.maybe_fully_expandable and not segment.maybe_restricted_expandable then
       goto next_segment
     end
 
-    -- Check whether a top-level control sequence might be fully expandable.
+    -- Check whether a top-level control sequence might be expandable.
     local function check_csname(csname)
-      -- Check whether the control sequence is a standard-library function that is not fully expandable.
-      local is_latex3_function, is_fully_expandable = is_latex3_function_fully_expandable(csname)
+      -- Check whether the control sequence is a standard-library function that is expandable.
+      local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(csname)
       if is_latex3_function then
         if not is_fully_expandable then
           segment.maybe_fully_expandable = false
         end
+        if not is_restricted_expandable then
+          segment.maybe_restricted_expandable = false
+        end
         -- If it is a standard-library function, skip all other checks.
         return
       end
-      -- Check whether the control sequence is a user-defined function that is not fully expandable.
-      if has_not_fully_expandable_function_definitions(csname) then
-        segment.maybe_fully_expandable = false
-        return
+      -- Check whether the control sequence is a user-defined function that is expandable.
+      for _, expandability_type in ipairs({"maybe_fully_expandable", "maybe_restricted_expandable"}) do
+        if has_non_expandable_function_definitions(expandability_type, csname) then
+          segment[expandability_type] = false
+        end
       end
-      -- Check whether the control sequence is a variable of a type that is not fully expandable.
+      -- Check whether the control sequence is a variable of a type that is not expandable.
       local variable_type = lpeg.match(parsers.expl3_unexpandable_variable_csname, csname)
       if variable_type ~= nil and variable_type ~= "bool" then
         segment.maybe_fully_expandable = false
-        return
+        segment.maybe_restricted_expandable = false
       end
     end
 
@@ -2449,7 +2500,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
           end
         end
       end
-      if not segment.maybe_fully_expandable then
+      if not segment.maybe_fully_expandable and not segment.maybe_restricted_expandable then
         goto next_segment
       end
     end
@@ -2457,7 +2508,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
   end
 end
 
--- Determine which function definitions might be fully expandable.
+-- Determine which function definitions might be expandable.
 local function determine_function_definition_expandability(states, file_number, options)
   -- Update the replacement text and statement expandability until fixed point.
   local any_direct_statement_changes, any_indirect_statement_changes
@@ -2469,7 +2520,7 @@ local function determine_function_definition_expandability(states, file_number, 
   until not any_direct_statement_changes and not any_indirect_statement_changes
 end
 
--- Determine which boolean expression segments might be fully expandable.
+-- Determine which boolean expression segments might be expandable.
 local function determine_boolean_expression_expandability(states, file_number, options)
   determine_segment_type_expandability(BOOLEAN_EXPRESSION, states, file_number, options)
 end
@@ -2786,7 +2837,9 @@ local function report_issues(states, file_number, options)
     assert(statement.type == FUNCTION_DEFINITION)
     assert(statement.subtype == FUNCTION_DEFINITION_DIRECT)
     assert(not statement.is_protected)
-    if not statement.maybe_fully_expandable then
+    assert(statement.maybe_fully_expandable ~= nil)
+    assert(statement.maybe_restricted_expandable ~= nil)
+    if not statement.maybe_fully_expandable and not statement.maybe_restricted_expandable then
       local byte_range = results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement]
       local context = format_csname(statement.defined_csname.transcript)
       issues:add("w429", "defined an unexpandable function as unprotected", byte_range, context)
