@@ -10,6 +10,8 @@ This version of explcheck has fixed the following problems:
 
 - Do not report issue W429 (Defined an unexpandable function as unprotected)
   for restricted-expandable functions. (e507747)
+- Fix potentially untrue assertion predicates in the flow analysis. (reported
+  by @muzimuzhi in #208, fixed in #209)
 
 ## expltools 2026-05-03
 
