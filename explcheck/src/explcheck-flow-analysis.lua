@@ -1468,8 +1468,7 @@ local function report_issues(states, main_file_number, options)
             if (
                   statement.type == FUNCTION_DEFINITION and not statement.maybe_redefinition or
                   statement.type == FUNCTION_VARIANT_DEFINITION
-                ) then
-              assert(statement.defined_csname.type == TEXT)
+                ) and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
               if any_reaching_definitions(
                     defined_csname,
@@ -1507,8 +1506,7 @@ local function report_issues(states, main_file_number, options)
             if (
                   statement.type == FUNCTION_VARIANT_DEFINITION or
                   statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
-                ) then
-              assert(statement.base_csname.type == TEXT)
+                ) and statement.base_csname.type == TEXT then
               local base_csname = statement.base_csname.payload
               if lpeg.match(expl3_well_known_csname, base_csname) == nil and
                   not any_reaching_definitions(base_csname) then
@@ -1529,8 +1527,7 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Report setting a function before definition.
-            if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition then
-              assert(statement.defined_csname.type == TEXT)
+            if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
                   not any_reaching_definitions(defined_csname) then
@@ -1545,8 +1542,7 @@ local function report_issues(states, main_file_number, options)
                   statement.is_private and
                   states.results.function_definition_in_edge_index[statement] == nil and
                   statement.call_segments ~= nil
-                ) then
-              assert(statement.defined_csname.type == TEXT)
+                ) and statement.defined_csname.type == TEXT then
               assert(#statement.call_segments > 0)
               local all_calls_reached_flow_analysis_and_are_top_level_reachable = true
               for _, call_segment in ipairs(statement.call_segments) do
