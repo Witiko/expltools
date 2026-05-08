@@ -95,6 +95,8 @@ local function process_arguments(arguments)
       .. '\t--group-files              Always group files into sets that are assumed to be used together unless "," is written\n'
       .. "\t                           between a pair of FILENAMES. See also --no-group-files.\n\n"
       .. "\t--ignored-issues ISSUES    A comma-list of issue identifiers (or just prefixes) that should not be reported.\n\n"
+      .. "\t--inline-config CONFIG     An inline TOML config. Takes precedence over on-disk config files from --config-file\n"
+      .. "\t                           and may be specified repeatedly.\n\n"
       .. '\t--make-at-letter           Tokenize "@" as a letter (catcode 11), like in LaTeX style files.\n\n'
       .. '\t--make-at-other            Tokenize "@" as an other character (catcode 12), like in plain TeX.\n\n'
       .. "\t--max-line-length N        The maximum line length before the warning S103 (Line too long) is produced.\n"
@@ -216,6 +218,15 @@ local function process_arguments(arguments)
         for issue_identifier in value:gmatch('[^,]+') do
           table.insert(options.ignored_issues, issue_identifier)
         end
+      end,
+    },
+    ["inline-config"] = {
+      value_required = true,
+      action = function(_, value)
+        if options.inline_configs == nil then
+          options.inline_configs = {}
+        end
+        table.insert(options.inline_configs, value)
       end,
     },
     ["make-at-letter"] = {

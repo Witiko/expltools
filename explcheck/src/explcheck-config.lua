@@ -3,6 +3,15 @@
 local toml = require("explcheck-toml")
 local utils = require("explcheck-utils")
 
+-- Parse TOML content with a user-defined configuration.
+local function parse_config(content)
+  local data, err = toml.parse(content)
+  if err ~= nil then
+    error(string.format('Parse error in "%s": %s', pathname, err))
+  end
+  return data
+end
+
 -- Read a TOML file with a user-defined configuration.
 local function read_config_file(pathname)
   local file = io.open(pathname, "r")
@@ -11,18 +20,14 @@ local function read_config_file(pathname)
   end
   local content = assert(file:read("*a"))
   assert(file:close())
-  local data, err = toml.parse(content)
-  if err ~= nil then
-    error(string.format('Parse error in "%s": %s', pathname, err))
-  end
-  return data
+  return parse_config(content)
 end
 
 -- Load the default configuration from the pre-installed config file `explcheck-config.toml`.
 local default_config_pathname = string.sub(debug.getinfo(1).source, 2, (#".lua" + 1) * -1) .. ".toml"
 local default_config = assert(read_config_file(default_config_pathname))
 
-local user_configs = {}
+local user_config_files, user_inline_configs = {}, {}
 
 -- Try to load user-defined configuration files.
 local function get_user_configs(options)
@@ -53,20 +58,30 @@ local function get_user_configs(options)
     must_exist = false
   end
   assert(pathnames ~= nil)
+  -- Try to read inline configurations.
+  local effective_user_configs = {}
+  local inline_configs = options ~= nil and options.inline_configs ~= nil and options.inline_configs or {}
+  for config_number = #inline_configs, 1, -1 do  -- read last-specified configurations first
+    local content = options.inline_configs[config_number]
+    if user_inline_configs[content] == nil then
+      user_inline_configs[content] = parse_config(content)
+    end
+    table.insert(effective_user_configs, user_inline_configs[content])
+  end
   -- Try to read the configuration files.
-  local effective_user_configs, effective_pathnames = {}, {}
+  local effective_pathnames = {}
   for pathname_number = #pathnames, 1, -1 do  -- read last-specified files first
     local pathname = pathnames[pathname_number]
-    if user_configs[pathname] == nil then
-      user_configs[pathname] = read_config_file(pathname)  -- only read the file from the disk once
+    if user_config_files[pathname] == nil then
+      user_config_files[pathname] = read_config_file(pathname)  -- only read the file from the disk once
     end
-    if user_configs[pathname] == nil or user_configs[pathname] == false then
+    if user_config_files[pathname] == nil or user_config_files[pathname] == false then
       if must_exist then
         error(string.format('Config file "%s" does not exist', pathname))
       end
-      user_configs[pathname] = false  -- mark the file as read, so that we don't read it again
+      user_config_files[pathname] = false  -- mark the file as read, so that we don't read it again
     else
-      table.insert(effective_user_configs, user_configs[pathname])
+      table.insert(effective_user_configs, user_config_files[pathname])
       table.insert(effective_pathnames, pathname)
     end
   end
