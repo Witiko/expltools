@@ -33,10 +33,10 @@ local user_config_files, user_inline_configs = {}, {}
 local function get_user_configs(options)
   -- Read the configuration.
   local default_pathnames, options_pathnames
-  default_pathnames = default_config.defaults["config_file"]
+  default_pathnames = default_config.defaults.config_file
   assert(default_pathnames ~= nil)
-  if options ~= nil and options["config_file"] ~= nil then
-    options_pathnames = options["config_file"]
+  if options ~= nil and options.config_file ~= nil then
+    options_pathnames = options.config_file
   end
   -- Determine the pathnames of the user-defined config files.
   local pathnames, must_exist
