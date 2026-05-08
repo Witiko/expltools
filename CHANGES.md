@@ -2,7 +2,34 @@
 
 ## expltools 2026-05-XX
 
-### explcheck v0.20.1
+### explcheck v0.21.0
+
+#### New features
+
+This version of explcheck has implemented the following new features:
+
+- Add command-line option `--inline-config`. (suggested by @muzimuzhi in #203,
+  added in #211)
+
+  With this option, you can set ad-hoc Lua options without creating a config
+  file. For example, to disable the Lua option `stop_early_when_confused`, you
+  can write `--inline-config stop_early_when_confused=false`. This option may
+  be specified repeatedly.
+
+- Support specifying Lua options at the top level of the config file.
+  (suggested by @muzimuzhi in #203, added in #211)
+
+  This allows you to omit the `[defaults]` section from your config file. For
+  example, the following is now a complete valid config file:
+
+  ``` toml
+  max_line_length = 120
+  ignored_issues = ["w100", "S"]
+  ```
+
+  This also simplifies the use of the `--inline-config` command-line option:
+  you can now write `--inline-config stop_early_when_confused=false` without
+  the previously required `defaults.` prefix.
 
 #### Fixes
 
