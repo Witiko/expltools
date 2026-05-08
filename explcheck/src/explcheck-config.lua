@@ -4,10 +4,10 @@ local toml = require("explcheck-toml")
 local utils = require("explcheck-utils")
 
 -- Parse TOML content with a user-defined configuration.
-local function parse_config(content)
+local function parse_config(content, pathname)
   local data, err = toml.parse(content)
   if err ~= nil then
-    error(string.format('Parse error in "%s": %s', pathname, err))
+    error(string.format('Parse error in "%s": %s', pathname or content, err))
   end
   return data
 end
@@ -20,7 +20,7 @@ local function read_config_file(pathname)
   end
   local content = assert(file:read("*a"))
   assert(file:close())
-  return parse_config(content)
+  return parse_config(content, pathname)
 end
 
 -- Load the default configuration from the pre-installed config file `explcheck-config.toml`.
