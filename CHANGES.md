@@ -13,8 +13,8 @@ This version of explcheck has implemented the following new features:
 
   With this option, you can set ad-hoc Lua options without creating a config
   file. For example, to disable the Lua option `stop_early_when_confused`, you
-  can write `--inline-config stop_early_when_confused=false`. This option may
-  be specified repeatedly.
+  can write `--inline-config defaults.stop_early_when_confused=false`. This
+  option may be specified repeatedly.
 
 - Support specifying Lua options at the top level of the config file.
   (suggested by @muzimuzhi in #203, added in #211)
