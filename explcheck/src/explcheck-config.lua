@@ -107,6 +107,9 @@ local function get_option(key, options, pathname)
       end
     end
     -- If the current configuration specifies the option in the defaults, use it.
+    if config[key] ~= nil then
+      return config[key]
+    end
     for _, section in ipairs({"defaults", "options"}) do  -- TODO: Remove `[options]` in v1.0.0.
       if config[section] ~= nil and config[section][key] ~= nil then
         return config[section][key]
