@@ -19,7 +19,11 @@ local new_aggregate_results = evaluation.new_aggregate_results
 local input_file_pathname_template = arg[1]
 local output_issue_file_pathname_template = arg[2]
 local output_coverage_file_pathname_template = arg[3]
-local worker_number = tonumber(arg[4])
+local force_flow_analysis = arg[4]
+local worker_number = tonumber(arg[5])
+
+assert(force_flow_analysis == "true" or force_flow_analysis == "false")
+force_flow_analysis = force_flow_analysis == "true"
 
 -- Collect pathnames.
 local input_pathnames, allow_pathname_separators = {}, {}
@@ -38,10 +42,16 @@ local input_pathname_groups = group_pathnames(input_pathnames, nil, allow_pathna
 local output_issue_file_pathname = string.format(output_issue_file_pathname_template, worker_number)
 local output_issue_file = assert(io.open(output_issue_file_pathname, "w"))
 local aggregate_evaluation_results = new_aggregate_results()
+local options = {}
+if force_flow_analysis then
+  options.fail_fast = false
+  options.stop_after = "flow analysis"
+  options.stop_early_when_confused = false
+end
 for pathname_group_number, pathname_group in ipairs(input_pathname_groups) do
   local is_ok, error_message = xpcall(function()
     -- Run all processing steps and collect issues and analysis results.
-    local states = process_files(pathname_group)
+    local states = process_files(pathname_group, options)
     assert(#states == #pathname_group)
     for pathname_number, state in ipairs(states) do
       assert(pathname_group[pathname_number] == state.pathname)
