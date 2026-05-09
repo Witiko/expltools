@@ -38,7 +38,7 @@ local function get_user_configs(options)
   -- TODO: Remove support for `config_file` in v1.0.0.
   if options ~= nil and (options.config_file ~= nil or options.config_files ~= nil) then
     if options.config_file ~= nil and options.config_files ~= nil then
-      error("Conflicting options `config_file` (deprecated) and `config_files` were specified")
+      error('Conflicting options "config_file" (deprecated) and "config_files" were both specified')
     elseif options.config_file ~= nil then
       options_pathnames = options.config_file
     else
