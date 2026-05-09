@@ -11,10 +11,14 @@ This version of explcheck has implemented the following new features:
 - Add command-line option `--inline-config`. (suggested by @muzimuzhi in #203,
   added in #211)
 
+  This option accepts a TOML string that is treated as a config file,
+  overriding any options specified in config files. The option may be specified
+  repeatedly; when the same Lua option appears in multiple TOML strings, later
+  occurrences take precedence.
+
   With this option, you can set ad-hoc Lua options without creating a config
   file. For example, to disable the Lua option `stop_early_when_confused`, you
-  can write `--inline-config defaults.stop_early_when_confused=false`. This
-  option may be specified repeatedly.
+  can write `--inline-config defaults.stop_early_when_confused=false`.
 
 - Support specifying Lua options at the top level of the config file.
   (suggested by @muzimuzhi in #203, added in #211)
