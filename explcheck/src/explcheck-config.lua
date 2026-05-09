@@ -33,10 +33,18 @@ local user_config_files, user_inline_configs = {}, {}
 local function get_user_configs(options)
   -- Read the configuration.
   local default_pathnames, options_pathnames
-  default_pathnames = default_config.defaults.config_file
+  default_pathnames = default_config.defaults.config_files
   assert(default_pathnames ~= nil)
-  if options ~= nil and options.config_file ~= nil then
-    options_pathnames = options.config_file
+  -- TODO: Remove support for `config_file` in v1.0.0.
+  if options ~= nil and (options.config_file ~= nil or options.config_files ~= nil) then
+    if options.config_file ~= nil and options.config_files ~= nil then
+      error("Conflicting options `config_file` (deprecated) and `config_files` were specified")
+    elseif options.config_file ~= nil then
+      options_pathnames = options.config_file
+    else
+      assert(options.config_files ~= nil)
+      options_pathnames = options.config_files
+    end
   end
   -- Determine the pathnames of the user-defined config files.
   local pathnames, must_exist

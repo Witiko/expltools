@@ -73,7 +73,7 @@ local function process_arguments(arguments)
     print("Run static analysis on expl3 files.\n")
     local expl3_detection_strategy = get_option("expl3_detection_strategy")
     local max_line_length = tostring(get_option("max_line_length"))
-    local config_files = table.concat(get_option("config_file"), ", ")
+    local config_files = table.concat(get_option("config_files"), ", ")
     print(
       "Options:\n\n"
       .. "\t--config-file FILENAMES    A comma-list of user config files. Defaults to FILENAMES=\"" .. config_files .. "\".\n"
@@ -159,9 +159,9 @@ local function process_arguments(arguments)
     ["config-file"] = {
       value_required = true,
       action = function(_, value)
-        options.config_file = {}
+        options.config_files = {}
         for config_file in value:gmatch('[^,]+') do
-          table.insert(options.config_file, config_file)
+          table.insert(options.config_files, config_file)
         end
       end,
     },
@@ -262,7 +262,7 @@ local function process_arguments(arguments)
     },
     ["no-config-file"] = {
       action = function()
-        options.config_file = {}
+        options.config_files = {}
       end,
     },
     ["no-group-files"] = {

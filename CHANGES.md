@@ -40,6 +40,14 @@ This version of explcheck has fixed the following problems:
 - Fix potentially untrue assertion predicates in the flow analysis. (reported
   by @muzimuzhi in #208, fixed in #209)
 
+#### Deprecations
+
+This version of explcheck has deprecated the following features and scheduled
+them for removal in v1.0.0:
+
+- Rename the Lua option `config_file` to `config_files` and deprecate
+  `config_file`. (#211)
+
 ## expltools 2026-05-03
 
 ### explcheck v0.20.0
