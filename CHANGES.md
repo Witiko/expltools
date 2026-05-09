@@ -48,6 +48,12 @@ them for removal in v1.0.0:
 - Rename the Lua option `config_file` to `config_files` and deprecate
   `config_file`. (#211)
 
+- Deprecate the command-line option `--expl3-detection-strategy`. (#211)
+
+  If you rely on this option, you may set it using `--inline-config`. For
+  example, you would replace `--expl3-detection-strategy always` with
+  `--inline-config 'expl3_detection_strategy = "always"'.
+
 ## expltools 2026-05-03
 
 ### explcheck v0.20.0

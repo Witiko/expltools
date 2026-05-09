@@ -71,7 +71,6 @@ local function process_arguments(arguments)
   local function print_usage()
     print("Usage: " .. arg[0] .. " [OPTIONS] FILENAMES\n")
     print("Run static analysis on expl3 files.\n")
-    local expl3_detection_strategy = get_option("expl3_detection_strategy")
     local max_line_length = tostring(get_option("max_line_length"))
     local config_files = table.concat(get_option("config_files"), ", ")
     print(
@@ -80,17 +79,6 @@ local function process_arguments(arguments)
       .. "\t                           See also --no-config-file.\n\n"
       .. "\t--error-format FORMAT      The Vim's quickfix errorformat used for the output with --porcelain enabled.\n"
       .. "\t                           The default format is FORMAT=\"" .. get_option("error_format") .. "\".\n\n"
-      .. "\t--expl3-detection-strategy {never|always|precision|recall|auto}\n\n"
-      .. "\t                           The strategy for detecting expl3 parts of the input files:\n\n"
-      .. '\t                           - "never": Assume that no part of the input files is in expl3.\n'
-      .. '\t                           - "always": Assume that the whole input files are in expl3.\n'
-      .. '\t                           - "precision", "recall", and "auto": Analyze standard delimiters such as \n'
-      .. '\t                             \\ExplSyntaxOn and Off. If no standard delimiters exist, assume either that:\n'
-      .. '\t                               - "precision": No part of the input file is in expl3.\n'
-      .. '\t                               - "recall": The entire input file is in expl3.\n'
-      .. '\t                               - "auto": Use context cues to determine whether no part or the whole input file\n'
-      .. "\t                                 is in expl3.\n\n"
-      .. "\t                           The default setting is --expl3-detection-strategy " .. expl3_detection_strategy .. ".\n\n"
       .. "\t--files-from FILE          Read the list of FILENAMES from FILE.\n\n"
       .. '\t--group-files              Always group files into sets that are assumed to be used together unless "," is written\n'
       .. "\t                           between a pair of FILENAMES. See also --no-group-files.\n\n"
@@ -171,6 +159,7 @@ local function process_arguments(arguments)
         options.error_format = value
       end,
     },
+    -- TODO: Remove `--expl3-detection-strategy` in v1.0.0.
     ["expl3-detection-strategy"] = {
       value_required = true,
       field_name = "expl3_detection_strategy",
