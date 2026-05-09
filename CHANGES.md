@@ -10,8 +10,21 @@ This version of explcheck has fixed the following problems:
 
 - Do not report issue W429 (Defined an unexpandable function as unprotected)
   for restricted-expandable functions. (e507747)
+
 - Fix potentially untrue assertion predicates in the flow analysis. (reported
   by @muzimuzhi in #208, fixed in #209)
+
+- Do not expect the `statements` key in all segments. (#212)
+
+  Some segment types such as `BOOLEAN_EXPRESSION` only contain `calls`, not
+  `statements`.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212)
 
 ## expltools 2026-05-03
 
