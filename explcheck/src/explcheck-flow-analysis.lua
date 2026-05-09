@@ -103,6 +103,10 @@ local function merge_statements(states, file_number, _)
   local results = state.results
 
   for _, segment in ipairs(results.segments or {}) do
+    -- Skip segment types that only contain calls, not statements.
+    if segment.statements == nil then
+      goto next_segment
+    end
     local macro_statements, previous_macro_statement = {}, nil
     for _, statement in ipairs(segment.statements) do
       if (
@@ -128,6 +132,7 @@ local function merge_statements(states, file_number, _)
     end
     assert(#macro_statements <= #segment.statements)
     segment.macro_statements = macro_statements
+    ::next_segment::
   end
 end
 
@@ -246,6 +251,11 @@ local function collect_chunks(states, file_number, _)
   local results = state.results
 
   for _, segment in ipairs(results.segments or {}) do
+    -- Skip segment types that only contain calls, not statements.
+    if segment.macro_statements == nil then
+      goto next_segment
+    end
+
     segment.chunks = {}
     local first_statement_number
 
@@ -269,6 +279,8 @@ local function collect_chunks(states, file_number, _)
       end
     end
     record_chunk(#segment.macro_statements, INCLUSIVE)
+
+    ::next_segment::
   end
 end
 
