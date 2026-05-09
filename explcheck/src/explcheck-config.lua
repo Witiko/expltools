@@ -66,8 +66,9 @@ local function get_user_configs(options)
     must_exist = false
   end
   assert(pathnames ~= nil)
-  -- Try to read inline configurations.
   local effective_user_configs = {}
+  local effective_config_pathnames_or_inline_contents = {}
+  -- Try to read inline configurations.
   local inline_configs = options ~= nil and options.inline_configs ~= nil and options.inline_configs or {}
   for config_number = #inline_configs, 1, -1 do  -- read last-specified configurations first
     local content = options.inline_configs[config_number]
@@ -75,9 +76,9 @@ local function get_user_configs(options)
       user_inline_configs[content] = parse_config(content)
     end
     table.insert(effective_user_configs, user_inline_configs[content])
+    table.insert(effective_config_pathnames_or_inline_contents, content)
   end
   -- Try to read the configuration files.
-  local effective_pathnames = {}
   for pathname_number = #pathnames, 1, -1 do  -- read last-specified files first
     local pathname = pathnames[pathname_number]
     if user_config_files[pathname] == nil then
@@ -90,10 +91,11 @@ local function get_user_configs(options)
       user_config_files[pathname] = false  -- mark the file as read, so that we don't read it again
     else
       table.insert(effective_user_configs, user_config_files[pathname])
-      table.insert(effective_pathnames, pathname)
+      table.insert(effective_config_pathnames_or_inline_contents, pathname)
     end
   end
-  return effective_user_configs, effective_pathnames
+  assert(#effective_user_configs == #effective_config_pathnames_or_inline_contents)
+  return effective_user_configs, effective_config_pathnames_or_inline_contents
 end
 
 -- Get the filename of a file.
@@ -113,10 +115,13 @@ local function get_option(key, options, pathname)
     return options[key]
   end
   -- Otherwise, try and load the user-defined configuration.
-  local configs = get_user_configs(options)
+  local configs, config_pathnames_or_inline_contents = get_user_configs(options)
   table.insert(configs, default_config)
+  table.insert(config_pathnames_or_inline_contents, default_config_pathname)
   -- Then, try the user-defined configuration first, if it exists, and then the default configuration.
-  for _, config in ipairs(configs) do
+  for config_number, config in ipairs(configs) do
+    local config_pathname_or_inline_content = config_pathnames_or_inline_contents[config_number]
+    assert(config_pathname_or_inline_content ~= nil)
     if pathname ~= nil then
       -- If a pathname is provided and the current configuration specifies the option for this filename, use it.
       local filename = get_filename(pathname)
@@ -130,13 +135,28 @@ local function get_option(key, options, pathname)
       end
     end
     -- If the current configuration specifies the option in the defaults, use it.
-    if config[key] ~= nil then
-      return config[key]
-    end
-    for _, section in ipairs({"defaults", "options"}) do  -- TODO: Remove `[options]` in v1.0.0.
-      if config[section] ~= nil and config[section][key] ~= nil then
-        return config[section][key]
+    local formatted_default_config_section_names_with_key, default_config_value = {}, nil
+    for _, section_name in ipairs({"", "defaults", "options"}) do  -- TODO: Remove `[options]` in v1.0.0.
+      local section = section_name == "" and config or config[section_name]
+      if section ~= nil and section[key] ~= nil then
+        local formatted_section_name = section_name == "" and "top level" or string.format('[%s]', section_name)
+        table.insert(formatted_default_config_section_names_with_key, formatted_section_name)
+        default_config_value = section[key]
       end
+    end
+    if #formatted_default_config_section_names_with_key > 0 then
+      if #formatted_default_config_section_names_with_key > 1 then
+        error(
+          string.format(
+            'Option "%s" was specified in several conflicting sections of "%s": %s',
+            key,
+            config_pathname_or_inline_content,
+            table.concat(formatted_default_config_section_names_with_key, ", ")
+          )
+        )
+      end
+      assert(default_config_value ~= nil)
+      return default_config_value
     end
   end
   error('Failed to get a value for option "' .. key .. '"')
