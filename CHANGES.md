@@ -26,6 +26,19 @@ integration:
 
 - Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212)
 
+#### Deprecations
+
+This version of explcheck has deprecated the following features and scheduled
+them for removal in v1.0.0:
+
+- Deprecate Lua options `max_reaching_definition_inner_loops` and
+  `max_reaching_definition_outer_loops`. (#212)
+
+  When specified, these options will continue to be respected until v1.0.0.
+  When they are not specified (and after they are removed), explcheck will
+  instead verify the number of inner and outer loops in the reaching
+  definitions algorithm against their theoretical upper bounds.
+
 ## expltools 2026-05-03
 
 ### explcheck v0.20.0

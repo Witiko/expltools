@@ -848,7 +848,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
             assert(not is_macro_statement(statement))
             if statement.type ~= FUNCTION_CALL and
-                statement.type ~= FUNCTION_DEFINITION then
+                statement.type ~= FUNCTION_DEFINITION and
+                statement.type ~= FUNCTION_VARIANT_DEFINITION then
               goto next_statement
             end
             if not is_well_behaved(statement) then
@@ -881,10 +882,12 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   local current_function_call_edges = {}
   local max_reaching_definition_inner_loops = get_option('max_reaching_definition_inner_loops', options)
   local max_reaching_definition_outer_loops = get_option('max_reaching_definition_outer_loops', options)
-  local outer_loop_number = 1
+  local num_outer_loops, max_outer_loops = 0, #function_call_list
   repeat
     -- Guard against long (infinite?) loops.
-    if outer_loop_number > max_reaching_definition_outer_loops then
+    assert(num_outer_loops <= max_outer_loops)
+    -- TODO: Remove support for `max_reaching_definition_outer_loops` in v1.0.0.
+    if max_reaching_definition_outer_loops ~= false and num_outer_loops > max_reaching_definition_outer_loops then
       error(
         string.format(
           "Reaching definitions took more than %d outer loops, try increasing the `max_reaching_definition_outer_loops` Lua option",
@@ -928,6 +931,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
     -- Index all implicit incoming and outgoing pseudo-edges as well.
     states.results.edge_indexes.implicit_in, states.results.edge_indexes.implicit_out = {}, {}
+    local num_interesting_statements, interesting_statement_index = 0, {}
     for _, state in ipairs(states) do
       -- Skip statements from files in the current file group that haven't reached the flow analysis.
       if state.results.stopped_early then
@@ -956,6 +960,13 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               }
               index_edge(states, 'implicit_in', 'to', edge)
               index_edge(states, 'implicit_out', 'from', edge)
+            end
+            if interesting_statement_index[chunk] == nil then
+              interesting_statement_index[chunk] = {}
+            end
+            if interesting_statement_index[chunk][statement_number] == nil then
+              interesting_statement_index[chunk][statement_number] = true
+              num_interesting_statements = num_interesting_statements + 1
             end
             previous_interesting_statement_number = statement_number
             edge_confidence = DEFINITELY
@@ -1009,6 +1020,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
       ::next_file::
     end
+    interesting_statement_index = nil
 
     -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
     local changed_statements_list, changed_statements_index = {}, {}
@@ -1068,10 +1080,12 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     -- Iterate over the changed statements until convergence.
-    local inner_loop_number = 1
+    local num_inner_loops, max_inner_loops = 0, num_interesting_statements * num_interesting_statements
     while #changed_statements_list > 0 do
       -- Guard against long (infinite?) loops.
-      if inner_loop_number > max_reaching_definition_inner_loops then
+      assert(num_inner_loops <= max_inner_loops)
+      -- TODO: Remove support for `max_reaching_definition_inner_loops` in v1.0.0.
+      if max_reaching_definition_inner_loops ~= false and num_inner_loops > max_reaching_definition_inner_loops then
         error(
           string.format(
             "Reaching definitions took more than %d inner loops, try increasing the `max_reaching_definition_inner_loops` Lua option",
@@ -1120,7 +1134,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         states.results.reaching_definitions.indexes[chunk][statement_number] = updated_definition_index
       end
 
-      inner_loop_number = inner_loop_number + 1
+      num_inner_loops = num_inner_loops + 1
     end
 
     -- Make a copy of the current estimation of the function call edges.
@@ -1282,7 +1296,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       ::next_function_call::
     end
 
-    outer_loop_number = outer_loop_number + 1
+    num_outer_loops = num_outer_loops + 1
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record edges.
