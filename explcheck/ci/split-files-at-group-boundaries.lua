@@ -44,9 +44,11 @@ for output_file_number = 1, num_output_files do
   table.insert(output_files, output_file)
 end
 
--- Split pathname groups.
+-- Split file groups.
 for pathname_group_number, pathname_group in ipairs(input_pathname_groups) do
-  local output_file_number = math.floor((pathname_group_number - 1) / #input_pathname_groups * num_output_files) + 1
+  -- Alternate between output files in a round-robin fashion, so all output
+  -- files contain a sample of both early and late file groups.
+  local output_file_number = (pathname_group_number - 1) % num_output_files + 1
   local output_file = output_files[output_file_number]
   for _, pathname in ipairs(pathname_group) do
     assert(output_file:write(string.format("%s\n", pathname)))
