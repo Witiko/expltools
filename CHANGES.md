@@ -41,8 +41,14 @@ This version of explcheck has fixed the following problems:
 
 - Do not report issue W429 (Defined an unexpandable function as unprotected)
   for restricted-expandable functions. (e507747)
+
 - Fix potentially untrue assertion predicates in the flow analysis. (reported
   by @muzimuzhi in #208, fixed in #209)
+
+- Do not expect the `statements` key in all segments. (#212)
+
+  Some segment types such as `BOOLEAN_EXPRESSION` only contain `calls`, not
+  `statements`.
 
 #### Deprecations
 
@@ -57,6 +63,21 @@ them for removal in v1.0.0:
   If you rely on this option, you may set it using `--inline-config`. For
   example, you would replace `--expl3-detection-strategy always` with
   `--inline-config 'expl3_detection_strategy = "always"'.
+
+- Deprecate Lua options `max_reaching_definition_inner_loops` and
+  `max_reaching_definition_outer_loops`. (#212)
+
+  When specified, these options will continue to be respected until v1.0.0.
+  When they are not specified (and after they are removed), explcheck will
+  instead verify the number of inner and outer loops in the reaching
+  definitions algorithm against their theoretical upper bounds.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212)
 
 ## expltools 2026-05-03
 
