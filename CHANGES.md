@@ -2,7 +2,38 @@
 
 ## expltools 2026-05-XX
 
-### explcheck v0.20.1
+### explcheck v0.21.0
+
+#### New features
+
+This version of explcheck has implemented the following new features:
+
+- Add command-line option `--inline-config`. (suggested by @muzimuzhi in #203,
+  added in #211)
+
+  This option accepts a TOML string that is treated as a config file,
+  overriding any options specified in config files. The option may be specified
+  repeatedly; when the same Lua option appears in multiple TOML strings, later
+  occurrences take precedence.
+
+  With this option, you can set ad-hoc Lua options without creating a config
+  file. For example, to disable the Lua option `stop_early_when_confused`, you
+  can write `--inline-config defaults.stop_early_when_confused=false`.
+
+- Support specifying Lua options at the top level of the config file.
+  (suggested by @muzimuzhi in #203, added in #211)
+
+  This allows you to omit the `[defaults]` section from your config file. For
+  example, the following is now a complete valid config file:
+
+  ``` toml
+  max_line_length = 120
+  ignored_issues = ["w100", "S"]
+  ```
+
+  This also simplifies the use of the `--inline-config` command-line option:
+  you can now write `--inline-config stop_early_when_confused=false` without
+  the previously required `defaults.` prefix.
 
 #### Fixes
 
@@ -19,17 +50,19 @@ This version of explcheck has fixed the following problems:
   Some segment types such as `BOOLEAN_EXPRESSION` only contain `calls`, not
   `statements`.
 
-#### Continuous integration
-
-This version of explcheck has made the following changes to our continuous
-integration:
-
-- Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212)
-
 #### Deprecations
 
 This version of explcheck has deprecated the following features and scheduled
 them for removal in v1.0.0:
+
+- Rename the Lua option `config_file` to `config_files` and deprecate
+  `config_file`. (#211)
+
+- Deprecate the command-line option `--expl3-detection-strategy`. (#211)
+
+  If you rely on this option, you may set it using `--inline-config`. For
+  example, you would replace `--expl3-detection-strategy always` with
+  `--inline-config 'expl3_detection_strategy = "always"'.
 
 - Deprecate Lua options `max_reaching_definition_inner_loops` and
   `max_reaching_definition_outer_loops`. (#212)
@@ -38,6 +71,13 @@ them for removal in v1.0.0:
   When they are not specified (and after they are removed), explcheck will
   instead verify the number of inner and outer loops in the reaching
   definitions algorithm against their theoretical upper bounds.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration:
+
+- Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212)
 
 ## expltools 2026-05-03
 
