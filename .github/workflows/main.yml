@@ -198,12 +198,20 @@ jobs:
           - lua5.4
           #- lua5.5  # Disabled because support for Lua 5.5 has not yet been added to the Debian package `lua-lpeg` as of March 2025.
           - luajit
+        force-flow-analysis:
+          - true
+          - false
         # Only test LuaTeX with historic TeX Live releases.
         exclude:
           - release: TL2025
+          - force-flow-analysis: true
         include:
           - release: TL2025
             interpreter: luatex
+            force-flow-analysis: false
+          - release: latest
+            interpreter: luajit
+            force-flow-analysis: ${{ github.ref == 'refs/heads/main' }}  # Only force long-running flow analysis for all package files on branch `main`.
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
@@ -251,7 +259,7 @@ jobs:
       - name: Install GNU Parallel
         run: apt -qy install --no-install-recommends parallel
       - name: Run explcheck
-        timeout-minutes: 5
+        timeout-minutes: ${{ matrix.force-flow-analysis && 360 || 5 }}
         env:
           LUA_PATH: explcheck/src/?.lua
         run: |
@@ -261,7 +269,22 @@ jobs:
           find /usr/local/texlive/ -type f -iregex '.*\.\(tex\|cls\|opt\|sty\)$' -print 1> unsorted-files.txt
 
           # Sort files, so that files from the same directory that can be grouped by explcheck are listed together.
-          cat unsorted-files.txt | perl -pe 'print tr{/}{}, "\t"' | LC_ALL=C sort -k1,1n -k2 | cut -f2- > files.txt
+          # Furthermore, sort the groups by increasing total file size. This allows any assertion errors to be reported early on, especially when `force-flow-analysis` is enabled.
+          perl -e '
+            chomp(my @files = <>);
+
+            my (%groups, %group_size);
+            for my $file (@files) {
+              (my $group = $file) =~ s{/[^/]*$}{};
+              push @{ $groups{$group} }, $file;
+              $group_size{$group} += -s $file;
+            }
+
+            print "$_\n"
+              for map { sort @{ $groups{$_} } }
+                  sort { $group_size{$a} <=> $group_size{$b} || $a cmp $b }
+                  keys %groups;
+          ' unsorted-files.txt > files.txt
 
           # Split the sorted files into N chunks, where N is ca the available number of CPUs, making sure that files
           # from the same directory that can be grouped by explcheck are kept together.
@@ -270,7 +293,7 @@ jobs:
 
           # Process the sorted chunks with explcheck in parallel, collecting issues and code coverage.
           parallel --line-buffer --jobs $NPROC --halt now,fail=1 -- \
-            ${{ matrix.interpreter }} explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d {} \
+            ${{ matrix.interpreter }} explcheck/ci/collect-explcheck-issues-and-code-coverage.lua files-%02d.txt issues-%02d.txt COVERAGE-%02d ${{ matrix.force-flow-analysis }} {} \
             ::: $(seq 1 $NPROC)
 
           # Merge the issues and code coverage collected from the sorted chunks.
@@ -289,10 +312,10 @@ jobs:
         if: matrix.release != 'latest'
         run: |
           mkdir -p explcheck/testfiles/${{ matrix.release }}-issues/  # Create an empty directory with baselines if it doesn't exist.
-          git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/
+          git diff --no-index --color=always explcheck/testfiles/${{ matrix.release }}-issues/ issues/ ${{ matrix.force-flow-analysis && '|| true  # Do not fail when `force-flow-analysis` is enabled.' || '' }}
       - name: Check if the configuration is minimal
         timeout-minutes: 5
-        if: matrix.release == 'latest'
+        if: matrix.release == 'latest' && matrix.force-flow-analysis == false
         env:
           LUA_PATH: explcheck/src/?.lua
         run: |

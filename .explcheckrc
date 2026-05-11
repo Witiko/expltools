@@ -268,9 +268,6 @@ ignored_issues = ["e304"]
 [package.els-cas-templates]
 ignored_issues = ["e304", "e408"]
 
-[package.genealogytree]
-ignored_issues = ["e304"]
-
 [package.handoutwithnotes]
 ignored_issues = ["e304"]
 
