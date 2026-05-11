@@ -44,7 +44,6 @@ local output_issue_file = assert(io.open(output_issue_file_pathname, "w"))
 local aggregate_evaluation_results = new_aggregate_results()
 local options = {}
 if force_flow_analysis then
-  options.fail_fast = false
   options.stop_after = "flow analysis"
   options.stop_early_when_confused = false
 end
