@@ -199,7 +199,7 @@ jobs:
           #- lua5.5  # Disabled because support for Lua 5.5 has not yet been added to the Debian package `lua-lpeg` as of March 2025.
           - luajit
         force-flow-analysis:
-          - true # ${{ github.ref == 'refs/heads/main' }}  # TODO: Only force the long-running flow analysis for all package files on branch `main`.
+          - true
           - false
         # Only test LuaTeX with historic TeX Live releases.
         exclude:
@@ -211,7 +211,7 @@ jobs:
             force-flow-analysis: false
           - release: latest
             interpreter: luajit
-            force-flow-analysis: true
+            force-flow-analysis: ${{ github.ref == 'refs/heads/main' }}  # Only force long-running flow analysis for all package files on branch `main`.
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
@@ -259,7 +259,7 @@ jobs:
       - name: Install GNU Parallel
         run: apt -qy install --no-install-recommends parallel
       - name: Run explcheck
-        timeout-minutes: ${{ matrix.force-flow-analysis && 360 || 5 }}  # TODO: Update the 6 hours to a more sensible figure after the CI has succeeded for the first time.
+        timeout-minutes: ${{ matrix.force-flow-analysis && 360 || 5 }}
         env:
           LUA_PATH: explcheck/src/?.lua
         run: |
