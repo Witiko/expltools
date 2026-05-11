@@ -78,6 +78,7 @@ This version of explcheck has made the following changes to our continuous
 integration:
 
 - Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212)
+- Cancel previous CI from the same branch or pull request. (cae310d)
 
 ## expltools 2026-05-03
 
