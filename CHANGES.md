@@ -79,11 +79,12 @@ them for removal in v1.0.0:
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
-integration:
+integration (CI):
 
 - Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212,
   975f91d, 59be8c3)
-- Cancel previous CI from the same branch or pull request. (cae310d)
+- Cancel previous CI run from the same branch or pull request. (cae310d)
+- Do not run the CI when tags are pushed. (d88b2f1)
 
 ## expltools 2026-05-03
 
