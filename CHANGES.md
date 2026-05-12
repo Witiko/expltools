@@ -35,6 +35,18 @@ This version of explcheck has implemented the following new features:
   you can now write `--inline-config stop_early_when_confused=false` without
   the previously required `defaults.` prefix.
 
+- Change the semantics of the Lua options
+  `max_reaching_definition_inner_loops` and
+  `max_reaching_definition_outer_loops` to perform a partial reaching
+  definition analysis when the limits are exceeded. (#212, 975f91d)
+
+  Previously, exceeding either limit would cause explcheck to abort the
+  analysis. Now, processing only aborts when the number of reaching definition
+  loops exceeds the theoretical upper bounds, which indicates a bug. By
+  contrast, when the limits specified by these options are exceeded, explcheck
+  now continues with a partial analysis. This may lead to false positive issues
+  reported by the flow analysis, but can also greatly improve performance.
+
 #### Fixes
 
 This version of explcheck has fixed the following problems:
@@ -64,20 +76,13 @@ them for removal in v1.0.0:
   example, you would replace `--expl3-detection-strategy always` with
   `--inline-config 'expl3_detection_strategy = "always"'.
 
-- Deprecate Lua options `max_reaching_definition_inner_loops` and
-  `max_reaching_definition_outer_loops`. (#212)
-
-  When specified, these options will continue to be respected until v1.0.0.
-  When they are not specified (and after they are removed), explcheck will
-  instead verify the number of inner and outer loops in the reaching
-  definitions algorithm against their theoretical upper bounds.
-
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
 integration:
 
-- Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212)
+- Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212,
+  975f91d, 59be8c3)
 - Cancel previous CI from the same branch or pull request. (cae310d)
 
 ## expltools 2026-05-03
