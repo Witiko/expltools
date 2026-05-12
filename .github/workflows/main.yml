@@ -214,7 +214,7 @@ jobs:
             force-flow-analysis: false
           - release: latest
             interpreter: luajit
-            force-flow-analysis: ${{ github.ref == 'refs/heads/main' }}  # Only force long-running flow analysis for all package files on branch `main`.
+            force-flow-analysis: true
     container:
       image: texlive/texlive:${{ matrix.release == 'latest' && 'latest-doc' || format('{0}-historic-doc', matrix.release) }}
     steps:
@@ -262,7 +262,7 @@ jobs:
       - name: Install GNU Parallel
         run: apt -qy install --no-install-recommends parallel
       - name: Run explcheck
-        timeout-minutes: ${{ matrix.force-flow-analysis && 360 || 5 }}
+        timeout-minutes: ${{ matrix.force-flow-analysis && 10 || 5 }}
         env:
           LUA_PATH: explcheck/src/?.lua
         run: |
