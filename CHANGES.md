@@ -74,7 +74,7 @@ them for removal in v1.0.0:
 
   If you rely on this option, you may set it using `--inline-config`. For
   example, you would replace `--expl3-detection-strategy always` with
-  `--inline-config 'expl3_detection_strategy = "always"'.
+  `--inline-config 'expl3_detection_strategy = "always"'`.
 
 #### Continuous integration
 
