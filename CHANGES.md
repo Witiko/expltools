@@ -1,5 +1,17 @@
 # Changes
 
+## expltools 2026-05-XX
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration (CI):
+
+- In the CI, force flow analysis for TeX Live 2025 rather than the latest TeX
+  Live, so that we can compare the diff against our 2025 baselines. (ea03ec0)
+
+### explcheck v0.22.0
+
 ## expltools 2026-05-12
 
 ### explcheck v0.21.0
