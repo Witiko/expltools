@@ -216,7 +216,7 @@ jobs:
           - release: TL2025
             interpreter: luatex
             force-flow-analysis: false
-          - release: latest
+          - release: TL2025
             interpreter: luajit
             force-flow-analysis: true
     container:
