@@ -1,6 +1,8 @@
 name: Build and release
 on:
   push:
+    tags-ignore:
+      - '**'
   pull_request:
   workflow_dispatch:
   schedule:
