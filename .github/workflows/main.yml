@@ -32,6 +32,7 @@ jobs:
           packages: |
             l3kernel-dev
       - name: Check that LaTeX3 is up-to-date
+        id: check-latex3
         run: |
           set -e
           cd third-party/latex3
@@ -45,7 +46,7 @@ jobs:
             printf 'Submodule "third-party/latex3" (%s) is up-to-date with the latest TeX Live.\n' "$CURRENT_RELEASE"
           fi
       - name: Check that lua-toml is up-to-date
-        if: success() || steps.luacheck.outcome == 'failure'  # Check lua-toml even if checking latex3 failed.
+        if: success() || steps.check-latex3.outcome == 'failure'  # Check lua-toml even if checking latex3 failed.
         run: |
           set -e
           cd third-party/lua-toml
