@@ -84,7 +84,7 @@ integration (CI):
 - Run the flow analysis on the whole TeX Live in the CI. (#208, #210, #212,
   975f91d, 59be8c3)
 - Cancel previous CI run from the same branch or pull request. (cae310d)
-- Do not run the CI when tags are pushed. (d88b2f1)
+- Do not run the CI when tags are pushed. (d88b2f1, 8c7a960)
 
 ## expltools 2026-05-03
 
