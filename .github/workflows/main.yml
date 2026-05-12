@@ -1,6 +1,8 @@
 name: Build and release
 on:
   push:
+    branches:
+      - '**'
     tags-ignore:
       - '**'
   pull_request:
