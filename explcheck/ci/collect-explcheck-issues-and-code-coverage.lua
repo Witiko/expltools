@@ -44,6 +44,11 @@ local output_issue_file = assert(io.open(output_issue_file_pathname, "w"))
 local aggregate_evaluation_results = new_aggregate_results()
 local options = {}
 if force_flow_analysis then
+  -- Force every file to be analyzed with the flow analysis but only run a small number of cycles of the reaching definitions
+  -- algorithm, so that the processing doesn't take potentially hours with a large number of packages.
+  options.fail_fast = false
+  options.max_reaching_definition_inner_loops = 10000
+  options.max_reaching_definition_outer_loops = 5
   options.stop_after = "flow analysis"
   options.stop_early_when_confused = false
 end

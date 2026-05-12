@@ -880,20 +880,16 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   -- Determine edges from function calls to function definitions, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
-  local max_reaching_definition_inner_loops = get_option('max_reaching_definition_inner_loops', options)
-  local max_reaching_definition_outer_loops = get_option('max_reaching_definition_outer_loops', options)
-  local num_outer_loops, max_outer_loops = 0, #function_call_list
+  local max_inner_loops = get_option('max_reaching_definition_inner_loops', options)
+  local max_outer_loops = get_option('max_reaching_definition_outer_loops', options)
+  local num_outer_loops, max_theoretical_outer_loops = 0, #function_call_list
   repeat
-    -- Guard against long (infinite?) loops.
-    assert(num_outer_loops <= max_outer_loops)
-    -- TODO: Remove support for `max_reaching_definition_outer_loops` in v1.0.0.
-    if max_reaching_definition_outer_loops ~= false and num_outer_loops > max_reaching_definition_outer_loops then
-      error(
-        string.format(
-          "Reaching definitions took more than %d outer loops, try increasing the `max_reaching_definition_outer_loops` Lua option",
-          max_reaching_definition_outer_loops
-        )
-      )
+    -- Guard against infinite loops.
+    assert(num_outer_loops <= max_theoretical_outer_loops)
+
+    -- Guard against too many loops, making the processing unbearably slow.
+    if max_outer_loops ~= false and num_outer_loops > max_outer_loops then
+      break
     end
 
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
@@ -1080,18 +1076,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     -- Iterate over the changed statements until convergence.
-    local num_inner_loops, max_inner_loops = 0, num_interesting_statements * num_interesting_statements
+    local num_inner_loops, max_theoretical_inner_loops = 0, num_interesting_statements * num_interesting_statements
     while #changed_statements_list > 0 do
-      -- Guard against long (infinite?) loops.
-      assert(num_inner_loops <= max_inner_loops)
-      -- TODO: Remove support for `max_reaching_definition_inner_loops` in v1.0.0.
-      if max_reaching_definition_inner_loops ~= false and num_inner_loops > max_reaching_definition_inner_loops then
-        error(
-          string.format(
-            "Reaching definitions took more than %d inner loops, try increasing the `max_reaching_definition_inner_loops` Lua option",
-            max_reaching_definition_inner_loops
-          )
-        )
+      -- Guard against infinite loops.
+      assert(num_inner_loops <= max_theoretical_inner_loops)
+
+      -- Guard against too many loops, making the processing unbearably slow.
+      if max_inner_loops ~= false and num_inner_loops > max_inner_loops then
+        break
       end
 
       -- Pick a statement from the stack of changed statements.
