@@ -111,45 +111,6 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
 This check is a stronger version of <#unexpandable-or-restricted-expandable-boolean-expression> and the issue should only be emitted if <#unexpandable-or-restricted-expandable-boolean-expression> has not previously been emitted for this function.
 
-### Defined an expandable function as protected {.w label=w511 .work-in-progress}
-A fully-expandable function or conditional function is defined using a creator function `\cs_new_protected:*` or `\prg_new_protected_conditional:*`. [@latexteam2024style, Section 4]
-
- /w511-01.tex
- /w511-02.tex
-
-<!--
-
-  We can't really report this issue at this moment at all, similar to the
-  previous issue E508.
-
-  Here's what we'll need to do before we can report this issue:
-
-  First, in the semantic analysis, we'll need to determine which user-defined
-  functions are definitely fully-expandable, ignoring nested function calls:
-
-  1. A function that is defined as protected is definitely not fully expandable.
-  2. A function that contains any statements of type `OTHER_TOKENS_COMPLEX`
-     might not be fully-expandable.
-  3. All calls to built-in functions within the top segment of a
-     fully-expandable function's replacement text must be fully-expandable.
-
-  To determine the third condition, we may need to parse l3kernel .dtx files and
-  distill this information in `explcheck-latex3.lua`.
-
-  Then, in the flow analysis, we'll need to determine which user-defined
-  functions are definitely fully-expandable: A function is definitely
-  fully-expandable if all of the following conditions apply:
-
-  1. It is definitely fully-expandable, ignoring nested function calls.
-  2. All functions from nested calls are either built-in or user-defined.
-  3. All user-defined functions they call are definitely fully-expandable.
-
-  To determine the third condition, we should be able to use a "backwards may"
-  data-flow analysis, similar to the expandability analysis that we'll need for
-  the previous issue E508.
-
--->
-
 ### Defined an unexpandable function as unprotected {.w label=w512 .work-in-progress}
 An unexpandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 

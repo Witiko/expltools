@@ -2,6 +2,17 @@
 
 ## expltools 2026-05-XX
 
+### explcheck v0.21.1
+
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Remove planned issue W511 (Defined an expandable function as protected), since
+  it doesn't actually constitute an issue: there are good reasons to protect a
+  function from expansion, even if it is otherwise expandable. (#213)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
@@ -9,6 +20,8 @@ integration (CI):
 
 - In the CI, force flow analysis for TeX Live 2025 rather than the latest TeX
   Live, so that we can compare the diff against our 2025 baselines. (ea03ec0)
+- In the CI, check that the `lua-toml` submodule is up-to-date even if checking
+  the `latex3` submodule failed. (340f6bc)
 
 ### explcheck v0.22.0
 
