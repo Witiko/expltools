@@ -239,7 +239,7 @@ local expl3_function_csname = (
   * #(eof + -letter)
 )
 
-local any_type = (
+local any_type = C(
   letter^1  -- type
   * #(
     eof
@@ -264,10 +264,12 @@ local any_expl3_variable_or_constant_csname = (
 )
 
 local expl3like_material = (
-  expl3_catcodes[0] * (
+  expl3_catcodes[0]
+  * (
     expl3_function_csname
     + any_expl3_variable_or_constant_csname
   )
+  / 0
 )
 
 local expl3_expandable_variable_or_constant_type = (
@@ -983,6 +985,7 @@ local expl3_message_use = (
 
 return {
   any = any,
+  any_expl3_variable_or_constant_csname = any_expl3_variable_or_constant_csname,
   argument_specifiers = argument_specifiers,
   commented_lines = commented_lines,
   compatible_argument_specifiers = compatible_argument_specifiers,

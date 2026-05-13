@@ -30,6 +30,7 @@ local transform_replacement_text_tokens = syntactic_analysis.transform_replaceme
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
+local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
 local segment_types = {
   BOOLEAN_EXPRESSION = "boolean expression",
@@ -686,7 +687,31 @@ local function collect_statements(states, file_number, options)
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
       local token_range = call.token_range
 
-      if call.type == CALL then  -- a function call
+      if call.type == STANDALONE_VARIABLE then  -- a standalone variable or constant
+
+        local variable_type = call.variable_type
+        local used_csname_argument = {
+          analyzed = true,
+          specifier = "N",
+          token_range = token_range,
+        }
+        local used_csname = extract_csname_from_argument(used_csname_argument)
+        assert(used_csname ~= nil)
+        local confidence = DEFINITELY
+        local statement = {
+          type = VARIABLE_USE,
+          call_range = call_range,
+          confidence = confidence,
+          -- The following attributes are specific to the type.
+          used_csname = used_csname,
+          used_csname_argument = used_csname_argument,
+          variable_type = variable_type,
+          use_token_range = token_range,
+        }
+        table.insert(statements, statement)
+        goto continue
+
+      elseif call.type == CALL then  -- a function call
 
         -- Ignore error S204 (Missing stylistic whitespaces) in Lua code.
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
@@ -2025,7 +2050,7 @@ local function analyze_group_wide_statements(states, _, options)
               * lpeg.Cc(true)
             )
           else
-            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
+            error('Unexpected csname type "' .. statement.used_csname.type .. '"')
           end
         -- Process a message definition.
         elseif statement.type == MESSAGE_DEFINITION then
@@ -2489,7 +2514,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
     local map_forward = segment.transformed_tokens.map_forward
 
     for _, call in ipairs(segment.calls) do
-      if call.type == CALL then
+      if call.type == CALL or call.type == STANDALONE_VARIABLE then
         -- Check function calls.
         check_csname(call.csname)
       elseif call.type == OTHER_TOKENS then
@@ -2540,6 +2565,7 @@ local function report_issues(states, file_number, options)
   --- Report issues apparent from the collected information.
   local expl3_well_known_csname = parsers.expl3_well_known_csname(options, pathname)
   local expl3_well_known_message_name = parsers.expl3_well_known_message_name(options, pathname)
+  local latex3_variable_csname = parsers.latex3_csname("variable", options, pathname)
 
   ---- Report unused private functions.
   for _, defined_private_function_text in ipairs(results.statement_analysis.defined_private_function_texts) do
@@ -2681,6 +2707,7 @@ local function report_issues(states, file_number, options)
             lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
             and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
             and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
+            and lpeg.match(latex3_variable_csname, variable_csname) == nil
           ) then
         issues:add('s413', 'malformed variable or constant name', byte_range, format_csname(variable_csname))
       end

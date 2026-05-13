@@ -31,10 +31,12 @@ local lpeg = require("lpeg")
 local call_types = {
   CALL = "expl3 call",
   OTHER_TOKENS = "block of other tokens",
+  STANDALONE_VARIABLE = "standalone variable or constant",
 }
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
+local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
 local segment_types = {
   PART = "expl3 part",
@@ -393,6 +395,18 @@ local function get_calls(results, part_number, segment, issues, content)
       local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
       ::retry_control_sequence::
       local csname_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
+      local variable_type = lpeg.match(parsers.any_expl3_variable_or_constant_csname, csname)
+      if variable_type ~= nil then  -- a standalone variable or constant, record it
+        table.insert(calls, {
+          type = STANDALONE_VARIABLE,
+          token_range = csname_token_range,
+          -- The following attributes are specific to the type.
+          csname = csname,
+          variable_type = variable_type,
+        })
+        token_number = next_token_number
+        goto continue
+      end
       local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
       if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
         local arguments = {}
@@ -666,6 +680,7 @@ local function get_calls(results, part_number, segment, issues, content)
         table.insert(calls, {
           type = CALL,
           token_range = next_token_range,
+          -- The following attributes are specific to the type.
           csname = csname,
           csname_token_range = csname_token_range,
           arguments = arguments,
