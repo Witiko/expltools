@@ -1241,6 +1241,7 @@ local function collect_statements(states, file_number, options)
             }
             -- For boolean variables, extract the definition text into a new segment and analyze its calls.
             if variable_type == "bool" then
+              definition_text_argument.analyzed = true
               local nested_segment = {
                 type = BOOLEAN_EXPRESSION,
                 location = segment.location,
@@ -1474,9 +1475,7 @@ local function collect_statements(states, file_number, options)
   local segment_number = 1
   while segment_number <= #results.segments do
     local segment = results.segments[segment_number]
-    if segment.type ~= BOOLEAN_EXPRESSION then  -- skip some segment types, where we don't need full semantic analysis
-      segment.statements = get_statements(segment)  -- may produce new segments in `results.segments`
-    end
+    segment.statements = get_statements(segment)  -- may produce new segments in `results.segments`
     segment_number = segment_number + 1
   end
 end
