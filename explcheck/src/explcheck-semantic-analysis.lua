@@ -2478,7 +2478,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
         end
       end
       -- Check whether the control sequence is a variable of a type that is not expandable.
-      local variable_type = lpeg.match(parsers.expl3_unexpandable_variable_csname, csname)
+      local variable_type = lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, csname)
       if variable_type ~= nil and variable_type ~= "bool" then
         segment.maybe_fully_expandable = false
         segment.maybe_restricted_expandable = false
