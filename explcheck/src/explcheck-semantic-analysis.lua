@@ -2522,7 +2522,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
 
     for _, call in ipairs(segment.calls) do
       if call.type == CALL or call.type == STANDALONE_VARIABLE then
-        -- Check function calls.
+        -- Check function calls and standalone variables.
         check_csname(call.csname)
       elseif call.type == OTHER_TOKENS then
         -- Check control sequence tokens in unrecognized calls.
