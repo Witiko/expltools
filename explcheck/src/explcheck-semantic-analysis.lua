@@ -707,6 +707,7 @@ local function collect_statements(states, file_number, options)
           used_csname_argument = used_csname_argument,
           variable_type = variable_type,
           use_token_range = token_range,
+          is_standalone = true,
         }
         table.insert(statements, statement)
         goto continue
@@ -1321,6 +1322,7 @@ local function collect_statements(states, file_number, options)
             used_csname_argument = used_csname_argument,
             variable_type = variable_type,
             use_token_range = use_token_range,
+            is_standalone = false,
           }
           table.insert(statements, statement)
           goto continue
@@ -1645,7 +1647,7 @@ local function analyze_group_wide_statements(states, _, options)
               if argument.specifier == "v" then
                 -- Record control sequence name usage in v-type arguments.
                 local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
-                table.insert(results.statement_analysis.used_variable_csname_texts, {csname.payload, used_csname_byte_range})
+                table.insert(results.statement_analysis.used_variable_csname_texts, {csname.payload, false, used_csname_byte_range})
               end
             elseif csname.type == PATTERN then
               states.results.statement_analysis.maybe_used_csname_pattern = (
@@ -1665,7 +1667,7 @@ local function analyze_group_wide_statements(states, _, options)
               states.results.statement_analysis.maybe_used_csname_texts[token.payload] = true
               if argument.specifier == "V" then
                 -- Record control sequence name usage in V-type arguments.
-                table.insert(results.statement_analysis.used_variable_csname_texts, {token.payload, token.byte_range})
+                table.insert(results.statement_analysis.used_variable_csname_texts, {token.payload, false, token.byte_range})
               end
             end
           end
@@ -2013,7 +2015,10 @@ local function analyze_group_wide_statements(states, _, options)
                 results.statement_analysis.declared_defined_and_used_variable_csname_texts,
                 {statement.variable_type, statement.base_csname.payload, base_csname_byte_range}
               )
-              table.insert(results.statement_analysis.used_variable_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
+              table.insert(
+                results.statement_analysis.used_variable_csname_texts,
+                {statement.base_csname.payload, false, base_csname_byte_range}
+              )
               states.results.statement_analysis.maybe_used_variable_csname_texts[statement.base_csname.payload] = true
             elseif statement.base_csname.type == PATTERN then
               states.results.statement_analysis.maybe_used_variable_csname_pattern = (
@@ -2041,7 +2046,10 @@ local function analyze_group_wide_statements(states, _, options)
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
               {statement.variable_type, statement.used_csname.payload, used_csname_byte_range}
             )
-            table.insert(results.statement_analysis.used_variable_csname_texts, {statement.used_csname.payload, used_csname_byte_range})
+            table.insert(
+              results.statement_analysis.used_variable_csname_texts,
+              {statement.used_csname.payload, statement.is_standalone, used_csname_byte_range}
+            )
             states.results.statement_analysis.maybe_used_variable_csname_texts[statement.used_csname.payload] = true
           elseif statement.used_csname.type == PATTERN then
             states.results.statement_analysis.maybe_used_variable_csname_pattern = (
@@ -2744,9 +2752,10 @@ local function report_issues(states, file_number, options)
 
   ---- Report using undefined variables or constants.
   for _, used_variable_csname_text in ipairs(results.statement_analysis.used_variable_csname_texts) do
-    local variable_csname, byte_range = table.unpack(used_variable_csname_text)
+    local variable_csname, is_standalone, byte_range = table.unpack(used_variable_csname_text)
     if (
-          lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+          not is_standalone  -- do not check standalone variable or constant control sequences, which may originate from misunderstood calls
+          and lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
           and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
           and not states.results.statement_analysis.maybe_declared_variable_csname_texts[variable_csname]
