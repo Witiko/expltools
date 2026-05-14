@@ -29,7 +29,6 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/l3syntax-changes.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/l3term-glossary.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/source3.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/abspos/demo.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/annee-scolaire/annee-scolaire-eng.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/annee-scolaire/annee-scolaire-fra.tex
@@ -119,7 +118,6 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3syntax-changes.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3term-glossary.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/source3.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/lastpage/lastpage-example.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/latex-via-exemplos/latex-via-exemplos.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/litetable/litetable-zh-cn.tex

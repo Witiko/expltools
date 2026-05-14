@@ -1,7 +1,6 @@
 /usr/local/texlive/2025/texmf-dist/doc/generic/texapi/texapi-doc.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/l3news02.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/l3styleguide.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/chemmacros/chemmacros-manual.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/datatool/datatool-user-examples/datatool-user-example007.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/datatool/datatool-user-examples/datatool-user-example083.tex
@@ -13,7 +12,6 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/hobby/hobby.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3news02.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/prettytok/prettytok-test.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/scaletextbullet/beerydoc.cls
 /usr/local/texlive/2025/texmf-dist/doc/latex/xstacks/xstacks.tex

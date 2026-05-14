@@ -1,10 +1,8 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/l3styleguide.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/atableau/atableau.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/expose-expl3-dunkerque-2019/codes/kaprekar-def.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/kanbun/kanbun.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/pstool/pstool.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/saveenv/saveenv.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/tex-overview/tex-overview-aux.tex
