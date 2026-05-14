@@ -247,6 +247,7 @@ local any_type = C(
       any
       - letter
       - underscore
+      - colon
     )
   )
 )
