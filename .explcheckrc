@@ -549,3 +549,6 @@ ignored_issues = ["e505", "w502"]
 
 [package.novel]
 ignored_issues = ["e506"]
+
+[filename."source3body.tex"]
+expl3_detection_strategy = "never"
