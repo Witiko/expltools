@@ -13,7 +13,17 @@ This version of explcheck has implemented the following new features:
 
   Previously, standalone variable or constant control sequences were considered
   other unrecognized tokens. This has improved [code coverage][] by 33,294
-  expl3 tokens (~0.004% of all expl3 tokens) on TeX Live 2025.
+  expl3 tokens (~0.4% of all expl3 tokens) on TeX Live 2025.
+
+- Perform semantic analysis on boolean expression segments. (#213)
+
+  Previously, only calls were extracted from boolean expression segments using
+  the syntactic analysis. This has improved [code coverage][] by 296 expl3
+  tokens (~0.003% of all expl3 tokens).
+
+  The effect is small, because we currently only extract boolean expressions
+  from boolean variable and constant definitions, not calls like `\bool_if:nTF`
+  and others.
 
 #### Warnings and errors
 
@@ -270,7 +280,7 @@ This version of explcheck has fixed the following problems:
 
   More generally, this change also adds support for constant definitions in the
   form `\⟨type⟩_const_from_⟨base_type⟩:*`. This improves [code coverage][] by
-  37,759 expl3 tokens (~0.004% of all expl3 tokens) on TeX Live 2026.
+  37,759 expl3 tokens (~0.4% of all expl3 tokens) on TeX Live 2026.
 
 - Correctly differentiate between direct and indirect variable and constant
   definitions in the form `\⟨type⟩_(set|gset|const)_from_⟨base_type⟩:*`. (#198)
