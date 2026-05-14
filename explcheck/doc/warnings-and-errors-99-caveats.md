@@ -66,11 +66,11 @@ The warnings and errors in this documents do not cover the complete expl3 langua
     - Boolean expressions
       [@latexteam2024interfaces, Section 9.3]^[We already
       support boolean expressions in variable definitions
-      but not elsewhere such as calls like `\bool_if:nTF`
-      [@latexteam2024interfaces, Section 9.2] and elsewhere.
-      Furthermore, we don't currently have a special routine
-      for boolean expressions, they are are parsed like
-      any other regular code segment.]
+      but not elsewhere such as in calls like `\bool_if:nTF`
+      [@latexteam2024interfaces, Section 9.2]. Furthermore,
+      we don't currently have a special routine for boolean
+      expressions, they are parsed like any other regular
+      code segment.]
     - Integer expressions and bases
       [@latexteam2024interfaces, sections 21.1 and 21.8]
     - Dimension, skip, and muskip expressions
