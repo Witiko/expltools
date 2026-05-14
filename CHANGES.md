@@ -2,7 +2,18 @@
 
 ## expltools 2026-05-XX
 
-### explcheck v0.21.1
+### explcheck v0.22.0
+
+#### New features
+
+This version of explcheck has implemented the following new features:
+
+- In the semantic analysis, add call type for standalone variable or constant
+  control sequences. (#213)
+
+  Previously, standalone variable or constant control sequences were considered
+  other unrecognized tokens. This has improved [code coverage][] by 33,294
+  expl3 tokens (~0.004% of all expl3 tokens) on TeX Live 2025.
 
 #### Warnings and errors
 
