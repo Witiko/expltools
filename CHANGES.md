@@ -44,6 +44,13 @@ integration (CI):
 - In the CI, check that the `lua-toml` submodule is up-to-date even if checking
   the `latex3` submodule failed. (340f6bc)
 
+#### Dependencies
+
+This version of explcheck has made the following changes to third-party Git
+submodules and other dependencies:
+
+- Update the `latex3` submodule from 2026-04-28-dev to 2026-05-15-dev. (85b126a)
+
 ### explcheck v0.22.0
 
 ## expltools 2026-05-12
