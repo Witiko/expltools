@@ -6,7 +6,6 @@
 /usr/local/texlive/2025/texmf-dist/doc/fonts/garamond-math/Garamond-Math.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/l3news.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/l3term-glossary.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex-dev/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/codehigh/codehigh.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/concepts/with.sty
 /usr/local/texlive/2025/texmf-dist/doc/latex/datatool/datatool-user-examples/datatool-user-example093.tex
@@ -20,7 +19,6 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/functional/functional.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3news.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3term-glossary.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/source3body.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/pseudo/doc/pseudo.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/pstool/pstool.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/saveenv/saveenv.tex

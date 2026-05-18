@@ -239,7 +239,7 @@ local expl3_function_csname = (
   * #(eof + -letter)
 )
 
-local any_type = (
+local any_type = C(
   letter^1  -- type
   * #(
     eof
@@ -247,6 +247,7 @@ local any_type = (
       any
       - letter
       - underscore
+      - colon
     )
   )
 )
@@ -264,10 +265,12 @@ local any_expl3_variable_or_constant_csname = (
 )
 
 local expl3like_material = (
-  expl3_catcodes[0] * (
+  expl3_catcodes[0]
+  * (
     expl3_function_csname
     + any_expl3_variable_or_constant_csname
   )
+  / 0
 )
 
 local expl3_expandable_variable_or_constant_type = (
@@ -304,7 +307,7 @@ local expl3_variable_or_constant_type = (
   + expl3_unexpandable_variable_or_constant_type
 )
 
-local expl3_unexpandable_variable_csname = (
+local expl3_unexpandable_variable_or_constant_csname = (
   (
     -#(expl3_unexpandable_variable_or_constant_type * eof)
     * (any - underscore)^0
@@ -983,6 +986,7 @@ local expl3_message_use = (
 
 return {
   any = any,
+  any_expl3_variable_or_constant_csname = any_expl3_variable_or_constant_csname,
   argument_specifiers = argument_specifiers,
   commented_lines = commented_lines,
   compatible_argument_specifiers = compatible_argument_specifiers,
@@ -1009,7 +1013,7 @@ return {
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
   expl3_scratch_variable_csname = expl3_scratch_variable_csname,
   expl3_function_undefinition_csname = expl3_function_undefinition_csname,
-  expl3_unexpandable_variable_csname = expl3_unexpandable_variable_csname,
+  expl3_unexpandable_variable_or_constant_csname = expl3_unexpandable_variable_or_constant_csname,
   expl3_variable_declaration_csname = expl3_variable_declaration_csname,
   expl3_variable_definition_csname = expl3_variable_definition_csname,
   expl3_variable_or_constant_csname = expl3_variable_or_constant_csname,

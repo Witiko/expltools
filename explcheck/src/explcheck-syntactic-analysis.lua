@@ -31,10 +31,12 @@ local lpeg = require("lpeg")
 local call_types = {
   CALL = "expl3 call",
   OTHER_TOKENS = "block of other tokens",
+  STANDALONE_VARIABLE = "standalone variable or constant",
 }
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
+local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
 local segment_types = {
   PART = "expl3 part",
@@ -393,15 +395,30 @@ local function get_calls(results, part_number, segment, issues, content)
       local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
       ::retry_control_sequence::
       local csname_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
+      local variable_type = lpeg.match(parsers.any_expl3_variable_or_constant_csname, csname)
+      if variable_type ~= nil then  -- a standalone variable or constant, record it
+        table.insert(calls, {
+          type = STANDALONE_VARIABLE,
+          token_range = csname_token_range,
+          -- The following attributes are specific to the type.
+          csname = csname,
+          variable_type = variable_type,
+        })
+        token_number = next_token_number
+        goto continue
+      end
       local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
       if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
         local arguments = {}
 
         local function record_argument(argument)
+          if argument.analyzed == nil then
+            argument.analyzed = false  -- later refined by the semantic and flow analyses
+          end
           if argument.specifier == "V" then
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
-                  lpeg.match(parsers.expl3_unexpandable_variable_csname, argument_token.payload) ~= nil then
+                  lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, argument_token.payload) ~= nil then
                 issues:add(
                   't305',
                   'expanding an unexpandable variable or constant',
@@ -412,7 +429,7 @@ local function get_calls(results, part_number, segment, issues, content)
             end
           elseif argument.specifier == "v" then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
-            if argument_text ~= nil and lpeg.match(parsers.expl3_unexpandable_variable_csname, argument_text) ~= nil then
+            if argument_text ~= nil and lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, argument_text) ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
               issues:add(
                 't305',
@@ -480,7 +497,6 @@ local function get_calls(results, part_number, segment, issues, content)
                 )
                 num_parameters = count_parameters_in_parameter_text(next_token_range)
                 argument = {
-                  analyzed = false,
                   specifier = argument_specifier,
                   token_range = next_token_range,
                   -- The following attributes are specific to the "TeX parameter" argument specifier.
@@ -531,7 +547,6 @@ local function get_calls(results, part_number, segment, issues, content)
                   context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
                   issues:add('w303', 'braced N-type function call argument', next_token.byte_range, context)
                   argument = {
-                    analyzed = false,
                     specifier = argument_specifier,
                     token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE, #tokens),
                     -- The following attributes are specific to a balanced text argument.
@@ -583,7 +598,6 @@ local function get_calls(results, part_number, segment, issues, content)
               -- an N-type argument, record it
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               argument = {
-                analyzed = false,
                 specifier = argument_specifier,
                 token_range = next_token_range,
               }
@@ -606,7 +620,6 @@ local function get_calls(results, part_number, segment, issues, content)
                 goto skip_other_token
               else  -- a balanced text, record it
                 argument = {
-                  analyzed = false,
                   specifier = argument_specifier,
                   token_range = new_range(next_grouping.start + 1, next_grouping.stop - 1, INCLUSIVE + MAYBE_EMPTY, #tokens),
                   -- The following attributes are specific to a balanced text argument.
@@ -653,7 +666,6 @@ local function get_calls(results, part_number, segment, issues, content)
               issues:add('w302', 'unbraced n-type function call argument', next_token.byte_range, format_token(next_token, content))
               next_token_range = new_range(next_token_number, next_token_number, INCLUSIVE, #transformed_tokens, map_back, #tokens)
               argument = {
-                analyzed = false,
                 specifier = argument_specifier,
                 token_range = next_token_range,
               }
@@ -668,6 +680,7 @@ local function get_calls(results, part_number, segment, issues, content)
         table.insert(calls, {
           type = CALL,
           token_range = next_token_range,
+          -- The following attributes are specific to the type.
           csname = csname,
           csname_token_range = csname_token_range,
           arguments = arguments,

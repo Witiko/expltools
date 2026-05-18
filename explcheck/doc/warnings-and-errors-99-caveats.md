@@ -56,15 +56,21 @@ The warnings and errors in this documents do not cover the complete expl3 langua
       `\coffin_typeset:Nnnnn` outside dimension or
       floating point expressions
       [@latexteam2024interfaces, Section 36.4]
-    - Lonely variables of other types that may or may not
-      have accessor functions
+    - Standalone variables of other unexpandable types
+      [@latexteam2024interfaces, Section 1]
 - Validation of literal expressions:
     - Comparison expressions in functions
       `\*_compare(_p:n|:nT?F?)`
     - Regular expressions and replacement text
       [@latexteam2024interfaces, sections 8.1 and 8.2]
     - Boolean expressions
-      [@latexteam2024interfaces, Section 9.3]
+      [@latexteam2024interfaces, Section 9.3]^[We already
+      support boolean expressions in variable definitions
+      but not elsewhere such as in calls like `\bool_if:nTF`
+      [@latexteam2024interfaces, Section 9.2]. Furthermore,
+      we don't currently have a special routine for boolean
+      expressions, they are parsed like any other regular
+      code segment.]
     - Integer expressions and bases
       [@latexteam2024interfaces, sections 21.1 and 21.8]
     - Dimension, skip, and muskip expressions

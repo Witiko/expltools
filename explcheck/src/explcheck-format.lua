@@ -46,6 +46,7 @@ local function pluralize(singular, count)
   if count == 1 then
     return singular
   else
+    -- Find prepositions to correctly transform phrases like "bow of outlaw from Sherwood".
     local of_index = singular:find(" of ")
     local from_index = singular:find(" from ")
     local preposition_index
@@ -70,7 +71,10 @@ local function pluralize(singular, count)
     else
       plural = singular .. "s"
     end
-    return plural .. rest
+    plural = plural .. rest
+    -- If the phrase ends with a conjunction of nouns, transform the other noun into plural as well.
+    plural = plural:gsub("%f[%w](%w+) or (%w+)$", "%1s or %2")
+    return plural
   end
 end
 

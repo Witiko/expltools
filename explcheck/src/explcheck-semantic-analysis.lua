@@ -30,6 +30,7 @@ local transform_replacement_text_tokens = syntactic_analysis.transform_replaceme
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
+local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
 local segment_types = {
   BOOLEAN_EXPRESSION = "boolean expression",
@@ -686,7 +687,32 @@ local function collect_statements(states, file_number, options)
       local call_range = new_range(call_number, call_number, INCLUSIVE, #calls)
       local token_range = call.token_range
 
-      if call.type == CALL then  -- a function call
+      if call.type == STANDALONE_VARIABLE then  -- a standalone variable or constant
+
+        local variable_type = call.variable_type
+        local used_csname_argument = {
+          analyzed = true,
+          specifier = "N",
+          token_range = token_range,
+        }
+        local used_csname = extract_csname_from_argument(used_csname_argument)
+        assert(used_csname ~= nil)
+        local confidence = DEFINITELY
+        local statement = {
+          type = VARIABLE_USE,
+          call_range = call_range,
+          confidence = confidence,
+          -- The following attributes are specific to the type.
+          used_csname = used_csname,
+          used_csname_argument = used_csname_argument,
+          variable_type = variable_type,
+          use_token_range = token_range,
+          is_standalone = true,
+        }
+        table.insert(statements, statement)
+        goto continue
+
+      elseif call.type == CALL then  -- a function call
 
         -- Ignore error S204 (Missing stylistic whitespaces) in Lua code.
         for _, arguments_number in ipairs(lpeg.match(parsers.expl3_function_call_with_lua_code_argument_csname, call.csname)) do
@@ -1215,6 +1241,7 @@ local function collect_statements(states, file_number, options)
             }
             -- For boolean variables, extract the definition text into a new segment and analyze its calls.
             if variable_type == "bool" then
+              definition_text_argument.analyzed = true
               local nested_segment = {
                 type = BOOLEAN_EXPRESSION,
                 location = segment.location,
@@ -1296,6 +1323,7 @@ local function collect_statements(states, file_number, options)
             used_csname_argument = used_csname_argument,
             variable_type = variable_type,
             use_token_range = use_token_range,
+            is_standalone = false,
           }
           table.insert(statements, statement)
           goto continue
@@ -1447,9 +1475,7 @@ local function collect_statements(states, file_number, options)
   local segment_number = 1
   while segment_number <= #results.segments do
     local segment = results.segments[segment_number]
-    if segment.type ~= BOOLEAN_EXPRESSION then  -- skip some segment types, where we don't need full semantic analysis
-      segment.statements = get_statements(segment)  -- may produce new segments in `results.segments`
-    end
+    segment.statements = get_statements(segment)  -- may produce new segments in `results.segments`
     segment_number = segment_number + 1
   end
 end
@@ -1620,7 +1646,7 @@ local function analyze_group_wide_statements(states, _, options)
               if argument.specifier == "v" then
                 -- Record control sequence name usage in v-type arguments.
                 local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
-                table.insert(results.statement_analysis.used_variable_csname_texts, {csname.payload, used_csname_byte_range})
+                table.insert(results.statement_analysis.used_variable_csname_texts, {csname.payload, false, used_csname_byte_range})
               end
             elseif csname.type == PATTERN then
               states.results.statement_analysis.maybe_used_csname_pattern = (
@@ -1640,7 +1666,7 @@ local function analyze_group_wide_statements(states, _, options)
               states.results.statement_analysis.maybe_used_csname_texts[token.payload] = true
               if argument.specifier == "V" then
                 -- Record control sequence name usage in V-type arguments.
-                table.insert(results.statement_analysis.used_variable_csname_texts, {token.payload, token.byte_range})
+                table.insert(results.statement_analysis.used_variable_csname_texts, {token.payload, false, token.byte_range})
               end
             end
           end
@@ -1988,7 +2014,10 @@ local function analyze_group_wide_statements(states, _, options)
                 results.statement_analysis.declared_defined_and_used_variable_csname_texts,
                 {statement.variable_type, statement.base_csname.payload, base_csname_byte_range}
               )
-              table.insert(results.statement_analysis.used_variable_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
+              table.insert(
+                results.statement_analysis.used_variable_csname_texts,
+                {statement.base_csname.payload, false, base_csname_byte_range}
+              )
               states.results.statement_analysis.maybe_used_variable_csname_texts[statement.base_csname.payload] = true
             elseif statement.base_csname.type == PATTERN then
               states.results.statement_analysis.maybe_used_variable_csname_pattern = (
@@ -2016,7 +2045,10 @@ local function analyze_group_wide_statements(states, _, options)
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
               {statement.variable_type, statement.used_csname.payload, used_csname_byte_range}
             )
-            table.insert(results.statement_analysis.used_variable_csname_texts, {statement.used_csname.payload, used_csname_byte_range})
+            table.insert(
+              results.statement_analysis.used_variable_csname_texts,
+              {statement.used_csname.payload, statement.is_standalone, used_csname_byte_range}
+            )
             states.results.statement_analysis.maybe_used_variable_csname_texts[statement.used_csname.payload] = true
           elseif statement.used_csname.type == PATTERN then
             states.results.statement_analysis.maybe_used_variable_csname_pattern = (
@@ -2025,7 +2057,7 @@ local function analyze_group_wide_statements(states, _, options)
               * lpeg.Cc(true)
             )
           else
-            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
+            error('Unexpected csname type "' .. statement.used_csname.type .. '"')
           end
         -- Process a message definition.
         elseif statement.type == MESSAGE_DEFINITION then
@@ -2478,7 +2510,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
         end
       end
       -- Check whether the control sequence is a variable of a type that is not expandable.
-      local variable_type = lpeg.match(parsers.expl3_unexpandable_variable_csname, csname)
+      local variable_type = lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, csname)
       if variable_type ~= nil and variable_type ~= "bool" then
         segment.maybe_fully_expandable = false
         segment.maybe_restricted_expandable = false
@@ -2489,8 +2521,8 @@ local function determine_segment_type_expandability(segment_type, states, file_n
     local map_forward = segment.transformed_tokens.map_forward
 
     for _, call in ipairs(segment.calls) do
-      if call.type == CALL then
-        -- Check function calls.
+      if call.type == CALL or call.type == STANDALONE_VARIABLE then
+        -- Check function calls and standalone variables.
         check_csname(call.csname)
       elseif call.type == OTHER_TOKENS then
         -- Check control sequence tokens in unrecognized calls.
@@ -2540,6 +2572,7 @@ local function report_issues(states, file_number, options)
   --- Report issues apparent from the collected information.
   local expl3_well_known_csname = parsers.expl3_well_known_csname(options, pathname)
   local expl3_well_known_message_name = parsers.expl3_well_known_message_name(options, pathname)
+  local latex3_variable_csname = parsers.latex3_csname("variable", options, pathname)
 
   ---- Report unused private functions.
   for _, defined_private_function_text in ipairs(results.statement_analysis.defined_private_function_texts) do
@@ -2681,6 +2714,7 @@ local function report_issues(states, file_number, options)
             lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
             and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
             and lpeg.match(parsers.expl3_variable_or_constant_csname, variable_csname) == nil
+            and lpeg.match(latex3_variable_csname, variable_csname) == nil
           ) then
         issues:add('s413', 'malformed variable or constant name', byte_range, format_csname(variable_csname))
       end
@@ -2717,9 +2751,10 @@ local function report_issues(states, file_number, options)
 
   ---- Report using undefined variables or constants.
   for _, used_variable_csname_text in ipairs(results.statement_analysis.used_variable_csname_texts) do
-    local variable_csname, byte_range = table.unpack(used_variable_csname_text)
+    local variable_csname, is_standalone, byte_range = table.unpack(used_variable_csname_text)
     if (
-          lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
+          not is_standalone  -- do not check standalone variable or constant control sequences, which may originate from misunderstood calls
+          and lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
           and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
           and not states.results.statement_analysis.maybe_declared_variable_csname_texts[variable_csname]

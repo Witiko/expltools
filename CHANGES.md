@@ -2,6 +2,38 @@
 
 ## expltools 2026-05-XX
 
+### explcheck v0.22.0
+
+#### New features
+
+This version of explcheck has implemented the following new features:
+
+- In the semantic analysis, add a call type for standalone variable or constant
+  control sequences. (#213, #215)
+
+  Previously, standalone variable or constant control sequences were considered
+  other unrecognized tokens. This has improved [code coverage][] by 33,294
+  expl3 tokens (~0.4% of all expl3 tokens) on TeX Live 2025.
+
+- Perform semantic analysis on boolean expression segments. (#213, #215)
+
+  Previously, only calls were extracted from boolean expression segments using
+  the syntactic analysis. This has improved [code coverage][] by 296 expl3
+  tokens (~0.003% of all expl3 tokens).
+
+  The effect is small, because we currently only extract boolean expressions
+  from boolean variable and constant definitions, not calls like `\bool_if:nTF`
+  and others.
+
+#### Warnings and errors
+
+This version of explcheck has made the following changes to the document titled
+[_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+- Remove planned issue W511 (Defined an expandable function as protected), since
+  it doesn't actually constitute an issue: there are good reasons to protect a
+  function from expansion, even if it is otherwise expandable. (#213)
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
@@ -9,6 +41,8 @@ integration (CI):
 
 - In the CI, force flow analysis for TeX Live 2025 rather than the latest TeX
   Live, so that we can compare the diff against our 2025 baselines. (ea03ec0)
+- In the CI, check that the `lua-toml` submodule is up-to-date even if checking
+  the `latex3` submodule failed. (340f6bc)
 
 ### explcheck v0.22.0
 
@@ -246,7 +280,7 @@ This version of explcheck has fixed the following problems:
 
   More generally, this change also adds support for constant definitions in the
   form `\⟨type⟩_const_from_⟨base_type⟩:*`. This improves [code coverage][] by
-  37,759 expl3 tokens (~0.004% of all expl3 tokens) on TeX Live 2026.
+  37,759 expl3 tokens (~0.4% of all expl3 tokens) on TeX Live 2026.
 
 - Correctly differentiate between direct and indirect variable and constant
   definitions in the form `\⟨type⟩_(set|gset|const)_from_⟨base_type⟩:*`. (#198)
