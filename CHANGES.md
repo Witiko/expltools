@@ -8,14 +8,14 @@
 
 This version of explcheck has implemented the following new features:
 
-- In the semantic analysis, add call type for standalone variable or constant
-  control sequences. (#213)
+- In the semantic analysis, add a call type for standalone variable or constant
+  control sequences. (#213, #215)
 
   Previously, standalone variable or constant control sequences were considered
   other unrecognized tokens. This has improved [code coverage][] by 33,294
   expl3 tokens (~0.4% of all expl3 tokens) on TeX Live 2025.
 
-- Perform semantic analysis on boolean expression segments. (#213)
+- Perform semantic analysis on boolean expression segments. (#213, #215)
 
   Previously, only calls were extracted from boolean expression segments using
   the syntactic analysis. This has improved [code coverage][] by 296 expl3
