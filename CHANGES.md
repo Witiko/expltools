@@ -25,6 +25,16 @@ This version of explcheck has implemented the following new features:
   from boolean variable and constant definitions, not calls like `\bool_if:nTF`
   and others.
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Do not report issue W415 (Unused variable or constant) for defined box
+  variables. (reported by @dcpurton in #214, fixed in #216)
+
+  Defining box variables can have useful side effects even if the variable
+  isn't used elsewhere.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
