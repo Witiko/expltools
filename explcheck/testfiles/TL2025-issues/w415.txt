@@ -235,5 +235,4 @@
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/xduts/xduugtp.cls
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/xepersian-hm/xepersian-hm.sty
-/usr/local/texlive/2025/texmf-dist/tex/xelatex/xltxtra/xltxtra.sty
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/zitie/zitie.sty
