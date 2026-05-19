@@ -1,0 +1,14 @@
+\ProvidesExplPackage{test}{2026-05-18}{1.0}{Test Package (DCP)}
+\box_new:N \l_dcp_test_box
+\cs_new_protected:Nn \dcp_test_function:
+  {
+    \vbox_set:Nn \l_dcp_test_box
+      {
+        \hbox:n { First ~ Line }
+        \hbox:n { Second ~ Line }
+        \par
+        \box_set_to_last:N \l_tmpa_box
+        \dim_gset:Nn \g_tmpa_dim { \box_wd:N \l_tmpa_box }
+      }
+    \dim_use:N \g_tmpa_dim
+  }
