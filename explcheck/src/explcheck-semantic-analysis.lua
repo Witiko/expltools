@@ -2002,6 +2002,10 @@ local function analyze_group_wide_statements(states, _, options)
                 results.statement_analysis.declared_variable_csname_texts,
                 {statement.defined_csname.payload, defined_csname_byte_range}
               )
+            elseif statement.variable_type == "box" or statement.variable_type == "vbox" or statement.variable_type == "hbox" then
+              -- Defining box variables can have useful side effects even if the variable isn't used elsewhere.
+              -- Therefore, consider defined box variables to be used for the purpose of issue reporting.
+              states.results.statement_analysis.maybe_used_variable_csname_texts[statement.defined_csname.payload] = true
             end
           end
           -- Record control sequence name usage and definitions.
