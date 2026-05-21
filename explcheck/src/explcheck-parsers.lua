@@ -514,11 +514,13 @@ local expl3_function_with_boolean_expression_argument_csname = (
     + P("lazy_and:nn") * Cc({1, 2})
     + P("lazy_or:nn") * Cc({1, 2})
     + P("log:n") * Cc({1})
+    + P("show:n") * Cc({1})
     + P("not_p:n") * Cc({1})
     + P("to_str:n") * Cc({1})
     + P("until_do:n") * Cc({1})
     + P("while_do:n") * Cc({1})
   )
+  + P("debug_assert:nn") * Cc({2})
   + Cc({})
 )
 
