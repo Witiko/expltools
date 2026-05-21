@@ -15,7 +15,7 @@ local segment_types = syntactic_analysis.segment_types
 local segment_subtypes = syntactic_analysis.segment_subtypes
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 
-local csname_types = semantic_analysis.csname_types
+local name_types = semantic_analysis.name_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
 
@@ -25,7 +25,7 @@ local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
 local F_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.F_TYPE_ARGUMENTS
 
-local TEXT = csname_types.TEXT
+local TEXT = name_types.TEXT
 
 local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
