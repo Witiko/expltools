@@ -242,7 +242,7 @@ A variable or a constant is declared and perhaps defined but unused.
 
 This check is a stronger version of <#unused-variable-or-constant> and the issue should only be emitted if <#unused-variable-or-constant> has not previously been emitted for this variable or constant.
 
-### Setting an undeclared variable {.e}
+### Setting an undeclared variable {.w}
 A variable is set before it has been declared.
 
 ``` tex
