@@ -1,0 +1,6 @@
+/usr/local/texlive/2025/texmf-dist/tex/generic/scontents/scontents-code.tex
+/usr/local/texlive/2025/texmf-dist/tex/latex/cdcmd/cdcmd.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/lt3graph/lt3graph.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/pegmatch/pegmatch.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/siunitx/siunitx-v2.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/tikzfxgraph/tikzfxgraph.sty
