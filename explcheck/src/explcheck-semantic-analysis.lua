@@ -1164,7 +1164,7 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
             declared_csname_argument = declared_csname_argument,
-            maybe_multiply_declared = false,  -- TODO: later filled in by `determine_maybe_multiply_declared_variables()`
+            maybe_multiply_declared = false,
             maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
             variable_type = variable_type,
           }
@@ -1527,6 +1527,7 @@ local function analyze_group_wide_statements(states, _, options)
     function_and_variant_definition_and_undefinition_index = {},
     function_and_variant_definition_index = {},
     non_redefined_function_and_variant_definition_index = {},
+    variable_declaration_index = {},
   }
 
   -- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
@@ -1573,6 +1574,7 @@ local function analyze_group_wide_statements(states, _, options)
       unprotected_direct_function_definition_byte_range_index = {},
       non_redefined_function_and_variant_definition_and_undefinition_list = {},
       function_and_variant_definition_list = {},
+      variable_declaration_list = {},
     }
     for _, segment in ipairs(results.segments or {}) do
       assert(file_number == segment.location.file_number)
@@ -1952,16 +1954,19 @@ local function analyze_group_wide_statements(states, _, options)
             {statement.variable_type, statement.declared_csname.transcript, byte_range}
           )
           if statement.declared_csname.type == TEXT then
+            local csname = statement.declared_csname.payload
             local declared_csname_byte_range = token_range_to_byte_range(statement.declared_csname_argument.token_range)
             table.insert(
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.declared_csname.payload, declared_csname_byte_range}
+              {statement.variable_type, csname, declared_csname_byte_range}
             )
-            table.insert(
-              results.statement_analysis.declared_variable_csname_texts,
-              {statement.declared_csname.payload, declared_csname_byte_range}
-            )
-            states.results.statement_analysis.maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
+            table.insert(results.statement_analysis.declared_variable_csname_texts, {csname, declared_csname_byte_range})
+            states.results.statement_analysis.maybe_declared_variable_csname_texts[csname] = true
+            if states.results.statement_analysis.variable_declaration_index[csname] == nil then
+              states.results.statement_analysis.variable_declaration_index[csname] = {}
+            end
+            table.insert(states.results.statement_analysis.variable_declaration_index[csname], statement)
+            table.insert(results.statement_analysis.variable_declaration_list, statement)
           elseif statement.declared_csname.type == PATTERN then
             states.results.statement_analysis.maybe_declared_variable_csname_pattern = (
               states.results.statement_analysis.maybe_declared_variable_csname_pattern
@@ -2995,7 +3000,28 @@ seen_statements[statement] = true
   end
 end
 
--- Determine which function definitions might be multiply defined.
+-- Determine which variables might be multiply declared.
+local function determine_maybe_multiply_declared_variables(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  -- For each variable declaration, check if other declarations exist.
+  for _, statement in ipairs(results.statement_analysis.variable_declaration_list) do
+    assert(statement.type == VARIABLE_DECLARATION)
+    assert(statement.declared_csname.type == TEXT)
+    local other_statements = states.results.statement_analysis.variable_declaration_index[statement.declared_csname.payload]
+    assert(other_statements ~= nil)
+    if #other_statements > 1 then
+      statement.maybe_multiply_declared = true
+    end
+  end
+end
+
+-- Determine which functions might be multiply defined.
 local function determine_maybe_multiply_defined_functions(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
 
@@ -3045,6 +3071,7 @@ local substeps = {
   determine_boolean_expression_expandability,
   report_issues,
   determine_function_calls_for_definitions,
+  determine_maybe_multiply_declared_variables,
   determine_maybe_multiply_defined_functions,
   determine_maybe_used_functions_and_variables,
   cleanup,
