@@ -925,6 +925,7 @@ local expl3_variable_use_csname = Ct(
     + P("open")
     + P("show")
     + P("use")
+    + P("log")
   )
   * P(":")
 )
