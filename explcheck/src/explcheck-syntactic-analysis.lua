@@ -39,10 +39,12 @@ local OTHER_TOKENS = call_types.OTHER_TOKENS
 local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
 local segment_types = {
+  BOOLEAN_EXPRESSION = "boolean expression",
   PART = "expl3 part",
   TF_TYPE_ARGUMENTS = "T- or F-type argument",
 }
 
+local BOOLEAN_EXPRESSION = segment_types.BOOLEAN_EXPRESSION
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
@@ -396,6 +398,10 @@ local function get_calls(results, part_number, segment, issues, content)
       ::retry_control_sequence::
       local csname_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
       local variable_type = lpeg.match(parsers.any_expl3_variable_or_constant_csname, csname)
+      local boolean_expression_argument_numbers_index = {}
+      for _, argument_number in ipairs(lpeg.match(parsers.expl3_function_with_boolean_expression_argument_csname, csname)) do
+        boolean_expression_argument_numbers_index[argument_number] = true
+      end
       if variable_type ~= nil then  -- a standalone variable or constant, record it
         table.insert(calls, {
           type = STANDALONE_VARIABLE,
@@ -412,10 +418,44 @@ local function get_calls(results, part_number, segment, issues, content)
         local arguments = {}
 
         local function record_argument(argument)
+          local argument_number = #arguments + 1
           if argument.analyzed == nil then
             argument.analyzed = false  -- later refined by the semantic and flow analyses
           end
-          if argument.specifier == "V" then
+          if argument.specifier == "n" then
+            if boolean_expression_argument_numbers_index[argument_number] then
+              argument.analyzed = true
+              local nested_segment = {
+                type = BOOLEAN_EXPRESSION,
+                location = segment.location,
+                nesting_depth = segment.nesting_depth + 1,
+                transformed_tokens = {
+                  tokens = transformed_tokens,
+                  token_range = argument.token_range,
+                  map_back = map_back,
+                  map_forward = map_forward,
+                },
+                -- The following attributes are specific to the type.
+                maybe_fully_expandable = true,  -- later refined by the semantic analysis
+                maybe_restricted_expandable = true,  -- later refined by the semantic analysis
+              }
+              argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
+            end
+          elseif argument.specifier == "T" or argument.specifier == "F" then
+            local nested_segment = {
+              type = TF_TYPE_ARGUMENTS,
+              subtype = argument.specifier == "T" and T_TYPE_ARGUMENTS or F_TYPE_ARGUMENTS,
+              location = segment.location,
+              nesting_depth = segment.nesting_depth + 1,
+              transformed_tokens = {
+                tokens = transformed_tokens,
+                token_range = argument.token_range,
+                map_back = map_back,
+                map_forward = map_forward,
+              },
+            }
+            argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
+          elseif argument.specifier == "V" then
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
                   lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, argument_token.payload) ~= nil then
@@ -625,21 +665,6 @@ local function get_calls(results, part_number, segment, issues, content)
                   -- The following attributes are specific to a balanced text argument.
                   outer_token_range = new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens),
                 }
-                if argument_specifier == "T" or argument_specifier == "F" then
-                  local nested_segment = {
-                    type = TF_TYPE_ARGUMENTS,
-                    subtype = argument_specifier == "T" and T_TYPE_ARGUMENTS or F_TYPE_ARGUMENTS,
-                    location = segment.location,
-                    nesting_depth = segment.nesting_depth + 1,
-                    transformed_tokens = {
-                      tokens = transformed_tokens,
-                      token_range = argument.token_range,
-                      map_back = map_back,
-                      map_forward = map_forward,
-                    },
-                  }
-                  argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
-                end
                 record_argument(argument)
                 next_token_number = map_forward(next_grouping.stop)
               end
