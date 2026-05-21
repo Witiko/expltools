@@ -825,8 +825,8 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               is_private = is_function_private(base_csname),
               is_conditional = is_conditional,
-              maybe_used = false,
-              maybe_multiply_defined = false,
+              maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+              maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
               maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
               maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
               call_file_numbers = nil,  -- later filled in by `determine_function_calls_for_definitions()`
@@ -1003,8 +1003,8 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = definition_token_range,
-                maybe_used = false,
-                maybe_multiply_defined = false,
+                maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+                maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
                 maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
@@ -1091,8 +1091,8 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = token_range,
-                maybe_used = false,
-                maybe_multiply_defined = false,
+                maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+                maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
                 maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
@@ -1130,7 +1130,7 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             undefined_csname = undefined_csname,
             undefined_csname_argument = undefined_csname_argument,
-            maybe_used = false,
+            maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
           }
           table.insert(statements, statement)
           goto continue
@@ -1164,6 +1164,8 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
             declared_csname_argument = declared_csname_argument,
+            maybe_multiply_declared = false,  -- TODO: later filled in by `determine_maybe_multiply_declared_variables()`
+            maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
             variable_type = variable_type,
           }
           table.insert(statements, statement)
@@ -1237,6 +1239,7 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
               definition_token_range = definition_token_range,
+              maybe_used = false,  -- TODO: later filled in by `determine_maybe_used_functions_and_variables()`
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
@@ -1280,6 +1283,7 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
               definition_token_range = token_range,
+              maybe_used = false,  -- TODO: later filled in by `determine_maybe_used_functions_and_variables()`
               -- The following attributes are specific to the subtype.
               base_csname = base_csname,
               base_csname_argument = base_csname_argument,
@@ -1522,7 +1526,7 @@ local function analyze_group_wide_statements(states, _, options)
     -- Index group-wide statements.
     function_and_variant_definition_and_undefinition_index = {},
     function_and_variant_definition_index = {},
-    non_redefined_function_and_variant_definition_and_undefinition_index = {},
+    non_redefined_function_and_variant_definition_index = {},
   }
 
   -- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
@@ -1567,7 +1571,7 @@ local function analyze_group_wide_statements(states, _, options)
       direct_function_definition_list = {},
       unprotected_direct_function_definition_list = {},
       unprotected_direct_function_definition_byte_range_index = {},
-      non_redefined_function_and_variant_definition_list = {},
+      non_redefined_function_and_variant_definition_and_undefinition_list = {},
       function_and_variant_definition_list = {},
     }
     for _, segment in ipairs(results.segments or {}) do
@@ -1839,12 +1843,12 @@ local function analyze_group_wide_statements(states, _, options)
             end
             table.insert(index[csname], statement)
             local non_redefined_index
-              = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
+              = states.results.statement_analysis.non_redefined_function_and_variant_definition_index
             if non_redefined_index[csname] == nil then
               non_redefined_index[csname] = {}
             end
             table.insert(non_redefined_index[csname], statement)
-            table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
+            table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_list, statement)
           end
           table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
           table.insert(results.statement_analysis.function_variant_definition_and_indirect_definition_list, statement)
@@ -1906,12 +1910,12 @@ local function analyze_group_wide_statements(states, _, options)
             table.insert(index[csname], statement)
             if not statement.maybe_redefined then
               local non_redefined_index
-                = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
+                = states.results.statement_analysis.non_redefined_function_and_variant_definition_index
               if non_redefined_index[csname] == nil then
                 non_redefined_index[csname] = {}
               end
               table.insert(non_redefined_index[csname], statement)
-              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
+              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_list, statement)
             end
           end
           if statement.subtype == FUNCTION_DEFINITION_DIRECT then
@@ -1937,7 +1941,7 @@ local function analyze_group_wide_statements(states, _, options)
             end
             table.insert(index[csname], statement)
             if not statement.maybe_redefined then
-              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
+              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_list, statement)
             end
           end
         -- Process a variable declaration.
@@ -2906,7 +2910,7 @@ end
 
 -- Determine which function (variant) (un)definitions might actually affect any function calls in the current file group.
 -- This information is used to exclude definitely unused (un)definitions from future analyses to improve performance.
-local function determine_maybe_used_function_definitions(states, file_number, _)
+local function determine_maybe_used_functions_and_variables(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -2992,7 +2996,7 @@ seen_statements[statement] = true
 end
 
 -- Determine which function definitions might be multiply defined.
-local function determine_maybe_multiply_defined_function_definitions(states, file_number, _)
+local function determine_maybe_multiply_defined_functions(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -3001,7 +3005,7 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
   assert(results.statement_analysis ~= nil)
 
   -- For each non-redefining function definition, check if other non-redefining definitions exist.
-  for _, statement in ipairs(results.statement_analysis.non_redefined_function_and_variant_definition_list) do
+  for _, statement in ipairs(results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_list) do
     local defined_or_undefined_csname
     if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
       defined_or_undefined_csname = statement.defined_csname
@@ -3012,7 +3016,7 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
     end
     assert(defined_or_undefined_csname ~= nil)
     assert(defined_or_undefined_csname.type == TEXT)
-    local non_redefined_index = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
+    local non_redefined_index = states.results.statement_analysis.non_redefined_function_and_variant_definition_index
     local other_statements = non_redefined_index[defined_or_undefined_csname.payload]
     if other_statements ~= nil and #other_statements > 1 then
       statement.maybe_multiply_defined = true
@@ -3041,8 +3045,8 @@ local substeps = {
   determine_boolean_expression_expandability,
   report_issues,
   determine_function_calls_for_definitions,
-  determine_maybe_multiply_defined_function_definitions,
-  determine_maybe_used_function_definitions,
+  determine_maybe_multiply_defined_functions,
+  determine_maybe_used_functions_and_variables,
   cleanup,
 }
 
