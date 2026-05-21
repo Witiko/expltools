@@ -314,6 +314,19 @@ A variable or constant is declared multiple times.
   { bar }
 ```
 
+``` tex
+\bool_if:NTF
+  \c_true_bool
+  {
+    \tl_new:N
+      \g_example_tl
+  }
+  {
+    \tl_new:N
+      \g_example_tl
+  }
+```
+
 ## Messages
 
 ### Unused message {.w}
