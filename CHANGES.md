@@ -17,13 +17,8 @@ This version of explcheck has implemented the following new features:
 
 - Perform semantic analysis on boolean expression segments. (#213, #215)
 
-  Previously, only calls were extracted from boolean expression segments using
-  the syntactic analysis. This has improved [code coverage][] by 296 expl3
-  tokens (~0.003% of all expl3 tokens).
-
-  The effect is small, because we currently only extract boolean expressions
-  from boolean variable and constant definitions, not calls like `\bool_if:nTF`
-  and others.
+- Detect boolean expression segments in calls to control sequences like
+  `\bool_if:nTF`. (#215, #217)
 
 #### Fixes
 
@@ -34,6 +29,8 @@ This version of explcheck has fixed the following problems:
 
   Defining box variables can have useful side effects even if the variable
   isn't used elsewhere.
+
+- In the semantic analysis, consider `\⟨type⟩_log:*` a variable use. (#217)
 
 #### Warnings and errors
 

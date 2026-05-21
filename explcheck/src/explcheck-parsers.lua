@@ -503,6 +503,35 @@ local expl3like_csname = (
   + expl3like_function_csname
 )
 
+local expl3_function_with_boolean_expression_argument_csname = (
+  P("bool")
+  * underscore
+  * (
+    P("do_until:n") * Cc({1})
+    + P("do_while:n") * Cc({1})
+    + P("if:n") * Cc({1})
+    + P("if_p:n") * Cc({1})
+    + P("lazy_all:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
+    + P("lazy_all_p:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
+    + P("lazy_and:nn") * Cc({1, 2})
+    + P("lazy_and_p:nn") * Cc({1, 2})
+    + P("lazy_any:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
+    + P("lazy_any_p:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
+    + P("lazy_or:nn") * Cc({1, 2})
+    + P("lazy_or_p:nn") * Cc({1, 2})
+    + P("lazy_xor:nn") * Cc({1, 2})
+    + P("lazy_xor_p:nn") * Cc({1, 2})
+    + P("log:n") * Cc({1})
+    + P("show:n") * Cc({1})
+    + P("not_p:n") * Cc({1})
+    + P("to_str:n") * Cc({1})
+    + P("until_do:n") * Cc({1})
+    + P("while_do:n") * Cc({1})
+  )
+  + P("debug_assert:nn") * Cc({2})
+  + Cc({})
+)
+
 ---- Comments
 local commented_line_letter = (
   linechar
@@ -925,6 +954,7 @@ local expl3_variable_use_csname = Ct(
     + P("open")
     + P("show")
     + P("use")
+    + P("log")
   )
   * P(":")
 )
@@ -1008,6 +1038,7 @@ return {
   expl3_function_csname = expl3_function_csname,
   expl3_function_definition_csname = expl3_function_definition_csname,
   expl3_function_variant_definition_csname = expl3_function_variant_definition_csname,
+  expl3_function_with_boolean_expression_argument_csname = expl3_function_with_boolean_expression_argument_csname,
   expl3_message_definition = expl3_message_definition,
   expl3_message_use = expl3_message_use,
   expl3_quark_or_scan_mark_csname = expl3_quark_or_scan_mark_csname,
