@@ -97,6 +97,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/tagpdf/tagpdf.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/temporal-logic/temporal-logic.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/termsim/termsim.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/texnegar/texnegar-xetex-kashida.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzcalendarnotes/tikzcalendarnotes.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/timechart/timechart.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/topiclongtable/topiclongtable.sty
@@ -123,4 +124,5 @@
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/xduts/xduugtp.cls
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/xecjk/xeCJK.sty
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/xecjk/xunicode-addon.sty
+/usr/local/texlive/2025/texmf-dist/tex/xelatex/xepersian-hm/xepersian-hm-kashida.tex
 /usr/local/texlive/2025/texmf-dist/tex/xelatex/zitie/zitie.sty
