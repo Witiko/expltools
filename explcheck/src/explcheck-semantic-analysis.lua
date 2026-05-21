@@ -1239,7 +1239,7 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
               definition_token_range = definition_token_range,
-              maybe_used = false,  -- TODO: later filled in by `determine_maybe_used_functions_and_variables()`
+              maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
@@ -1283,7 +1283,7 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
               definition_token_range = token_range,
-              maybe_used = false,  -- TODO: later filled in by `determine_maybe_used_functions_and_variables()`
+              maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
               -- The following attributes are specific to the subtype.
               base_csname = base_csname,
               base_csname_argument = base_csname_argument,
@@ -1524,7 +1524,7 @@ local function analyze_group_wide_statements(states, _, options)
     maybe_used_message_name_pattern = parsers.fail,
 
     -- Index group-wide statements.
-    function_and_variant_definition_and_undefinition_index = {},
+    function_variant_and_variable_declaration_definition_and_undefinition_index = {},
     function_and_variant_definition_index = {},
     non_redefined_function_and_variant_definition_index = {},
     variable_declaration_index = {},
@@ -1567,7 +1567,7 @@ local function analyze_group_wide_statements(states, _, options)
       used_message_nums_text_arguments = {},
 
       -- Index file-local statements.
-      function_call_variant_definition_and_indirect_definition_list = {},
+      function_call_variant_definition_indirect_definition_and_variable_use_list = {},
       function_variant_definition_and_indirect_definition_list = {},
       direct_function_definition_list = {},
       unprotected_direct_function_definition_list = {},
@@ -1833,7 +1833,7 @@ local function analyze_group_wide_statements(states, _, options)
           -- Index the function variant definition.
           if statement.defined_csname.type == TEXT then
             table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
-            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
+            local index = states.results.statement_analysis.function_variant_and_variable_declaration_definition_and_undefinition_index
             local csname = statement.defined_csname.payload
             if index[csname] == nil then
               index[csname] = {}
@@ -1852,7 +1852,7 @@ local function analyze_group_wide_statements(states, _, options)
             table.insert(non_redefined_index[csname], statement)
             table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_list, statement)
           end
-          table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
+          table.insert(results.statement_analysis.function_call_variant_definition_indirect_definition_and_variable_use_list, statement)
           table.insert(results.statement_analysis.function_variant_definition_and_indirect_definition_list, statement)
         -- Process a function definition.
         elseif statement.type == FUNCTION_DEFINITION then
@@ -1899,7 +1899,7 @@ local function analyze_group_wide_statements(states, _, options)
           -- Index the function definition.
           if statement.defined_csname.type == TEXT then
             table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
-            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
+            local index = states.results.statement_analysis.function_variant_and_variable_declaration_definition_and_undefinition_index
             local csname = statement.defined_csname.payload
             if index[csname] == nil then
               index[csname] = {}
@@ -1927,7 +1927,7 @@ local function analyze_group_wide_statements(states, _, options)
               results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement] = byte_range
             end
           elseif statement.subtype == FUNCTION_DEFINITION_INDIRECT then
-            table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
+            table.insert(results.statement_analysis.function_call_variant_definition_indirect_definition_and_variable_use_list, statement)
             table.insert(results.statement_analysis.function_variant_definition_and_indirect_definition_list, statement)
           else
             error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
@@ -1936,7 +1936,7 @@ local function analyze_group_wide_statements(states, _, options)
         elseif statement.type == FUNCTION_UNDEFINITION then
           -- Index the function undefinition.
           if statement.undefined_csname.type == TEXT then
-            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
+            local index = states.results.statement_analysis.function_variant_and_variable_declaration_definition_and_undefinition_index
             local csname = statement.undefined_csname.payload
             if index[csname] == nil then
               index[csname] = {}
@@ -1954,7 +1954,12 @@ local function analyze_group_wide_statements(states, _, options)
             {statement.variable_type, statement.declared_csname.transcript, byte_range}
           )
           if statement.declared_csname.type == TEXT then
+            local index = states.results.statement_analysis.function_variant_and_variable_declaration_definition_and_undefinition_index
             local csname = statement.declared_csname.payload
+            if index[csname] == nil then
+              index[csname] = {}
+            end
+            table.insert(index[csname], statement)
             local declared_csname_byte_range = token_range_to_byte_range(statement.declared_csname_argument.token_range)
             table.insert(
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
@@ -1998,24 +2003,30 @@ local function analyze_group_wide_statements(states, _, options)
             end
           end
           if statement.defined_csname.type == TEXT then
+            local index = states.results.statement_analysis.function_variant_and_variable_declaration_definition_and_undefinition_index
+            local csname = statement.defined_csname.payload
+            if index[csname] == nil then
+              index[csname] = {}
+            end
+            table.insert(index[csname], statement)
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.defined_csname.payload, defined_csname_byte_range})
+              {statement.variable_type, csname, defined_csname_byte_range})
             table.insert(
               results.statement_analysis.defined_variable_csname_texts,
-              {statement.defined_csname.payload, defined_csname_byte_range}
+              {csname, defined_csname_byte_range}
             )
             if statement.is_constant then
-              states.results.statement_analysis.maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
+              states.results.statement_analysis.maybe_declared_variable_csname_texts[csname] = true
               table.insert(
                 results.statement_analysis.declared_variable_csname_texts,
-                {statement.defined_csname.payload, defined_csname_byte_range}
+                {csname, defined_csname_byte_range}
               )
             elseif statement.variable_type == "box" or statement.variable_type == "vbox" or statement.variable_type == "hbox" then
               -- Defining box variables can have useful side effects even if the variable isn't used elsewhere.
               -- Therefore, consider defined box variables to be used for the purpose of issue reporting.
-              states.results.statement_analysis.maybe_used_variable_csname_texts[statement.defined_csname.payload] = true
+              states.results.statement_analysis.maybe_used_variable_csname_texts[csname] = true
             end
           end
           -- Record control sequence name usage and definitions.
@@ -2045,6 +2056,10 @@ local function analyze_group_wide_statements(states, _, options)
           else
             error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
           end
+          -- Index the variable or constant definition.
+          if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
+            table.insert(results.statement_analysis.function_call_variant_definition_indirect_definition_and_variable_use_list, statement)
+          end
         -- Process a variable or constant use.
         elseif statement.type == VARIABLE_USE then
           -- Record variable names.
@@ -2073,6 +2088,8 @@ local function analyze_group_wide_statements(states, _, options)
           else
             error('Unexpected csname type "' .. statement.used_csname.type .. '"')
           end
+          -- Index the variable or constant use.
+          table.insert(results.statement_analysis.function_call_variant_definition_indirect_definition_and_variable_use_list, statement)
         -- Process a message definition.
         elseif statement.type == MESSAGE_DEFINITION then
           -- Record message names.
@@ -2688,7 +2705,7 @@ local function report_issues(states, file_number, options)
         end
       end
       -- Index the function call.
-      table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
+      table.insert(results.statement_analysis.function_call_variant_definition_indirect_definition_and_variable_use_list, statement)
     end
   end
 
@@ -2913,8 +2930,9 @@ local function determine_function_calls_for_definitions(states, file_number, _)
   end
 end
 
--- Determine which function (variant) (un)definitions might actually affect any function calls in the current file group.
--- This information is used to exclude definitely unused (un)definitions from future analyses to improve performance.
+-- Determine which function (variant) (un)definitions and variable/constant declarations/definitions might actually affect any
+-- function calls in the current file group. This information is used to exclude definitely unused declaratations/(un)definitions
+-- from future analyses to improve performance.
 local function determine_maybe_used_functions_and_variables(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
 
@@ -2924,16 +2942,19 @@ local function determine_maybe_used_functions_and_variables(states, file_number,
   assert(results.statement_analysis ~= nil)
 
   -- For each function call, first collect all relevant (potentially but not necessarily reaching) definitions to a temporary list.
-  local function_and_variant_definitions_and_undefinition_list = {}
+  local function_variant_and_variable_declarations_definitions_and_undefinition_list = {}
   local seen_used_csnames = {}
-  for _, statement in ipairs(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list) do
+  for _, statement in ipairs(results.statement_analysis.function_call_variant_definition_indirect_definition_and_variable_use_list) do
     local used_csname
-    if statement.type == FUNCTION_CALL then
+    if statement.type == FUNCTION_CALL or statement.type == VARIABLE_USE then
       used_csname = statement.used_csname
     elseif statement.type == FUNCTION_VARIANT_DEFINITION then
       used_csname = statement.base_csname
     elseif statement.type == FUNCTION_DEFINITION then
       assert(statement.subtype == FUNCTION_DEFINITION_INDIRECT)
+      used_csname = statement.base_csname
+    elseif statement.type == VARIABLE_DEFINITION then
+      assert(statement.subtype == VARIABLE_DEFINITION_INDIRECT)
       used_csname = statement.base_csname
     else
       error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
@@ -2947,13 +2968,14 @@ local function determine_maybe_used_functions_and_variables(states, file_number,
       goto next_statement
     end
     seen_used_csnames[used_csname.payload] = true
-    local other_statements = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[used_csname.payload]
+    local other_statements
+      = states.results.statement_analysis.function_variant_and_variable_declaration_definition_and_undefinition_index[used_csname.payload]
     for _, other_statement in ipairs(other_statements or {}) do
       -- Do not repeatedly check the same definitions.
       if other_statement.maybe_used then
         goto next_other_statement
       end
-      table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+      table.insert(function_variant_and_variable_declarations_definitions_and_undefinition_list, other_statement)
       ::next_other_statement::
     end
     ::next_statement::
@@ -2963,33 +2985,37 @@ local function determine_maybe_used_functions_and_variables(states, file_number,
   -- if any, and mark all intermediate function variant and indirect function definitions as well as all final direct function
   -- definitions and undefinitions as potentially used by some function calls.
   local statement_number, seen_statements = 1, {}
-  while statement_number <= #function_and_variant_definitions_and_undefinition_list do
-    local statement = function_and_variant_definitions_and_undefinition_list[statement_number]
+  while statement_number <= #function_variant_and_variable_declarations_definitions_and_undefinition_list do
+    local statement = function_variant_and_variable_declarations_definitions_and_undefinition_list[statement_number]
     -- Detect any loops within the graph.
     if seen_statements[statement] ~= nil then
       goto next_statement
     end
-seen_statements[statement] = true
+    seen_statements[statement] = true
     -- Mark the statement as potentially used by some function calls.
     statement.maybe_used = true
     if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT
-        or statement.type == FUNCTION_UNDEFINITION then
-      -- Take no further action for direct function definitions and function undefinitions.
+        or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT
+        or statement.type == FUNCTION_UNDEFINITION
+        or statement.type == VARIABLE_DECLARATION then
+      -- Take no further action for direct function/variable definitions, function undefinitions, and variable declarations.
       goto next_statement
     elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+        or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
         or statement.type == FUNCTION_VARIANT_DEFINITION then
-      -- Resolve the indirect function definitions and function variant definitions.
+      -- Resolve the indirect function/variant definitions and function variant definitions.
       if statement.base_csname.type ~= TEXT then
         goto next_statement
       end
       local base_csname = statement.base_csname.payload
-      local other_statements = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[base_csname]
+      local other_statements
+        = states.results.statement_analysis.function_variant_and_variable_declaration_definition_and_undefinition_index[base_csname]
       for _, other_statement in ipairs(other_statements or {}) do
         -- Do not repeatedly check the same definitions.
         if other_statement.maybe_used then
           goto next_other_statement
         end
-        table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+        table.insert(function_variant_and_variable_declarations_definitions_and_undefinition_list, other_statement)
         ::next_other_statement::
       end
     else
