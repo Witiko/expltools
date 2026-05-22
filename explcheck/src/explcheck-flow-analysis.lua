@@ -31,9 +31,13 @@ local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_UNDEFINITION = statement_types.FUNCTION_UNDEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
+local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
+local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDIRECT
+local VARIABLE_DEFINITION_DIRECT = statement_subtypes.VARIABLE_DEFINITION.DIRECT
+local VARIABLE_DEFINITION_INDIRECT = statement_subtypes.VARIABLE_DEFINITION.INDIRECT
 
 local OTHER_TOKENS = statement_types.OTHER_TOKENS
 local OTHER_TOKENS_COMPLEX = statement_subtypes.OTHER_TOKENS.COMPLEX
@@ -52,10 +56,10 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local lpeg = require("lpeg")
 
 local macro_statement_types = {
-  FUNCTION_DEFINITIONS = "block of function (variant) (un)definitions",
+  FUNCTION_AND_VARIABLE_DEFINITIONS = "block of function/variant/variable/constant declarations/(un)definitions",
 }
 
-local FUNCTION_DEFINITIONS = macro_statement_types.FUNCTION_DEFINITIONS
+local FUNCTION_AND_VARIABLE_DEFINITIONS = macro_statement_types.FUNCTION_AND_VARIABLE_DEFINITIONS
 
 local edge_categories = {
   STATIC = "static",
@@ -112,12 +116,14 @@ local function merge_statements(states, file_number, _)
       if (
             statement.type == FUNCTION_DEFINITION or
             statement.type == FUNCTION_UNDEFINITION or
-            statement.type == FUNCTION_VARIANT_DEFINITION
+            statement.type == FUNCTION_VARIANT_DEFINITION or
+            statement.type == VARIABLE_DECLARATION or
+            statement.type == VARIABLE_DEFINITION
           ) then
         if previous_macro_statement == nil
-            or previous_macro_statement.type ~= FUNCTION_DEFINITIONS then
+            or previous_macro_statement.type ~= FUNCTION_AND_VARIABLE_DEFINITIONS then
           local macro_statement = {
-            type = FUNCTION_DEFINITIONS,
+            type = FUNCTION_AND_VARIABLE_DEFINITIONS,
             -- The following attributes are specific to the type.
             statements = {},
           }
@@ -549,6 +555,10 @@ local function is_well_behaved(statement)
     result = statement.undefined_csname.type == TEXT and (statement.maybe_used or statement.maybe_multiply_defined)
   elseif statement.type == FUNCTION_VARIANT_DEFINITION then
     result = statement.defined_csname.type == TEXT and (statement.maybe_used or statement.maybe_multiply_defined)
+  elseif statement.type == VARIABLE_DECLARATION then
+    result = statement.declared_csname.type == TEXT and (statement.maybe_multiply_declared or statement.maybe_used)
+  elseif statement.type == VARIABLE_DEFINITION then
+    result = statement.defined_csname.type == TEXT and statement.maybe_used
   else
     error('Unexpected statement type "' .. statement.type .. '"')
   end
@@ -581,7 +591,9 @@ local function _is_interesting(states, chunk, macro_statement_number)
     if (
           statement.type == FUNCTION_DEFINITION or
           statement.type == FUNCTION_UNDEFINITION or
-          statement.type == FUNCTION_VARIANT_DEFINITION
+          statement.type == FUNCTION_VARIANT_DEFINITION or
+          statement.type == VARIABLE_DECLARATION or
+          statement.type == VARIABLE_DEFINITION
         )
         and is_well_behaved(statement) then
       any_well_behaved_statements = true
@@ -665,7 +677,7 @@ local function get_current_definitions(
   local invalidated_statement_index = {}
   if macro_statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
     local macro_statement = get_statement(states, chunk, macro_statement_number)
-    if macro_statement.type ~= FUNCTION_DEFINITIONS then
+    if macro_statement.type ~= FUNCTION_AND_VARIABLE_DEFINITIONS then
       goto next_macro_statement
     end
     for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
@@ -675,32 +687,45 @@ local function get_current_definitions(
       end
       if statement.type ~= FUNCTION_DEFINITION and
           statement.type ~= FUNCTION_UNDEFINITION and
-          statement.type ~= FUNCTION_VARIANT_DEFINITION then
+          statement.type ~= FUNCTION_VARIANT_DEFINITION and
+          statement.type ~= VARIABLE_DECLARATION and
+          statement.type ~= VARIABLE_DEFINITION then
         goto next_statement
       end
       if not is_well_behaved(statement) then
         goto next_statement
       end
-      local defined_or_undefined_csname
-      if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
-        -- Record function and function variant definitions.
-        assert(statement.defined_csname.type == TEXT)
-        defined_or_undefined_csname = statement.defined_csname.payload
+      local declared_defined_or_undefined_csname
+      if statement.type == FUNCTION_DEFINITION
+        or statement.type == FUNCTION_VARIANT_DEFINITION
+        or statement.type == VARIABLE_DECLARATION
+        or statement.type == VARIABLE_DEFINITION
+      then
+        -- Record function, function variant, and constant/variable declarations/definitions.
+        if statement.type == VARIABLE_DECLARATION then
+          declared_defined_or_undefined_csname = statement.declared_csname
+        else
+          declared_defined_or_undefined_csname = statement.defined_csname
+        end
+        assert(declared_defined_or_undefined_csname.type == TEXT)
         local definition = {
-          csname = defined_or_undefined_csname,
+          csname = declared_defined_or_undefined_csname.payload,
           confidence = statement.confidence,
           chunk = chunk,
           macro_statement_number = macro_statement_number,
           statement_number = is_macro_statement(macro_statement) and statement_number or nil,
         }
-        assert(definition.confidence >= MAYBE, "Function definitions shouldn't have confidences less than MAYBE")
+        assert(
+          definition.confidence >= MAYBE,
+          "Function, function variant and constant/variable declarations/definitions shouldn't have confidences less than MAYBE"
+        )
         table.insert(current_definition_list, definition)
         if current_definition_index[definition.csname] == nil then
           current_definition_index[definition.csname] = {}
         end
         table.insert(current_definition_index[definition.csname], #current_definition_list)
       elseif statement.type == FUNCTION_UNDEFINITION then
-        defined_or_undefined_csname = statement.undefined_csname.payload
+        declared_defined_or_undefined_csname = statement.undefined_csname
       else
         error('Unexpected statement type "' .. statement.type .. '"')
       end
@@ -711,16 +736,23 @@ local function get_current_definitions(
               {current_definition_list, current_definition_index},
             }) do
           local definition_list, definition_index = table.unpack(definition_list_and_index)
-          for _, incoming_definition_number in ipairs(definition_index[defined_or_undefined_csname] or {}) do
+          for _, incoming_definition_number in ipairs(definition_index[declared_defined_or_undefined_csname.payload] or {}) do
             local incoming_definition = definition_list[incoming_definition_number]
-            assert(incoming_definition.csname == defined_or_undefined_csname)
+            assert(incoming_definition.csname == declared_defined_or_undefined_csname.payload)
             local incoming_statement = get_statement(
               states,
               incoming_definition.chunk,
               incoming_definition.macro_statement_number,
               incoming_definition.statement_number
             )
-            assert(incoming_statement.defined_csname.payload == defined_or_undefined_csname)
+            local incoming_declared_or_defined_csname
+            if incoming_statement.type == VARIABLE_DECLARATION then
+              incoming_declared_or_defined_csname = incoming_statement.declared_csname
+            else
+              incoming_declared_or_defined_csname = incoming_statement.defined_csname
+            end
+            assert(incoming_declared_or_defined_csname.type == TEXT)
+            assert(incoming_declared_or_defined_csname.payload == declared_defined_or_undefined_csname.payload)
             if incoming_statement ~= statement and not invalidated_statement_index[incoming_statement] then
               invalidated_statement_index[incoming_statement] = true
             end
@@ -841,7 +873,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       for _, chunk in ipairs(segment.chunks or {}) do
         for statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
           if macro_statement.type ~= FUNCTION_CALL and
-              macro_statement.type ~= FUNCTION_DEFINITIONS then
+              macro_statement.type ~= FUNCTION_AND_VARIABLE_DEFINITIONS then
             goto next_macro_statement
           end
           local any_well_behaved_statements = false
@@ -865,7 +897,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           end
           if macro_statement.type == FUNCTION_CALL then
             table.insert(function_call_list, {chunk, statement_number})
-          elseif macro_statement.type == FUNCTION_DEFINITIONS then
+          elseif macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS then
             table.insert(function_definition_list, {chunk, statement_number})
           else
             error('Unexpected statement type "' .. macro_statement.type .. '"')
@@ -1156,10 +1188,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         table.insert(reaching_function_and_variant_definition_list, definition)
       end
 
-      -- Then, resolve all function variant and indirect function definition calls to the originating direct function definitions,
-      -- if any.
+      -- Then, resolve all function variant and indirect function/variable definitions to the originating direct function/variable
+      -- declarations/definitions, if any.
       local reaching_definition_number, seen_reaching_statements = 1, {}
-      local reaching_function_definition_list = {}
+      local reaching_definition_list = {}
       while reaching_definition_number <= #reaching_function_and_variant_definition_list do
         local definition = reaching_function_and_variant_definition_list[reaching_definition_number]
         local chunk, macro_statement_number, statement_number
@@ -1171,10 +1203,13 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           goto next_reaching_statement
         end
         seen_reaching_statements[statement] = true
-        if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT then
-          -- Simply record the direct function definitions.
-          table.insert(reaching_function_definition_list, definition)
+        if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT
+            or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT
+            or statement.type == VARIABLE_DECLARATION then
+          -- Simply record the direct function/variable declarations/definitions.
+          table.insert(reaching_definition_list, definition)
         elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+            or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
             or statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the indirect function definitions and function variant definitions.
           if states.results.reaching_definitions.lists[chunk] ~= nil and
@@ -1209,7 +1244,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
 
       -- Draw the function call edges.
-      for _, function_definition in ipairs(reaching_function_definition_list) do
+      for _, function_definition in ipairs(reaching_definition_list) do
         local function_definition_statement = get_statement(
           states,
           function_definition.chunk,
@@ -1239,7 +1274,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Determine the edge confidence.
         local edge_confidence
-        if #reaching_function_definition_list > 1 then
+        if #reaching_definition_list > 1 then
           -- If there are multiple definitions for this function call, then it's uncertain which one will be used.
           edge_confidence = MAYBE
         else
@@ -1409,7 +1444,7 @@ local function report_issues(states, main_file_number, options)
           goto next_macro_statement
         end
         -- Report issues with function (variant) (un)definitions.
-        if macro_statement.type == FUNCTION_DEFINITIONS then
+        if macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS then
           for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
             assert(not is_macro_statement(statement))
             if statement.confidence ~= DEFINITELY then
