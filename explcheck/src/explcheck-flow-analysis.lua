@@ -58,7 +58,7 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local lpeg = require("lpeg")
 
 local macro_statement_types = {
-  FUNCTION_AND_VARIABLE_DEFINITIONS = "block of csname declarations and (un)definitions",
+  FUNCTION_AND_VARIABLE_DEFINITIONS = "block of csname (un)definitions",
 }
 
 local FUNCTION_AND_VARIABLE_DEFINITIONS = macro_statement_types.FUNCTION_AND_VARIABLE_DEFINITIONS
@@ -106,12 +106,12 @@ local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
 local reaching_definition_types = {
-  REACHING_DECLARATIONS = "variable/constant declarations",
-  REACHING_DEFINITIONS = "function/variant/variable/constant definitions",
+  REACHING_DECLARATION = "reaching csname declaration",
+  REACHING_DEFINITION = "reaching csname definition",
 }
 
-local REACHING_DECLARATIONS = reaching_definition_types.REACHING_DECLARATIONS
-local REACHING_DEFINITIONS = reaching_definition_types.REACHING_DEFINITIONS
+local REACHING_DECLARATION = reaching_definition_types.REACHING_DECLARATION
+local REACHING_DEFINITION = reaching_definition_types.REACHING_DEFINITION
 
 -- Merge selected statements into macro-statements, a more useful form for the following analyses.
 -- In the following, we will refer to statements and macro-statements interchangeably.
@@ -131,7 +131,6 @@ local function merge_statements(states, file_number, _)
             statement.type == FUNCTION_DEFINITION or
             statement.type == FUNCTION_UNDEFINITION or
             statement.type == FUNCTION_VARIANT_DEFINITION or
-            statement.type == VARIABLE_DECLARATION or
             statement.type == VARIABLE_DEFINITION
           ) then
         if previous_macro_statement == nil
@@ -594,25 +593,28 @@ local function _is_interesting(reaching_definition_type, states, chunk, macro_st
   end
   -- Well-behaved statements are interesting.
   local macro_statement = get_statement(states, chunk, macro_statement_number)
-  if reaching_definition_type == REACHING_DEFINITIONS
-      and (macro_statement.type == FUNCTION_CALL or macro_statement.type == VARIABLE_USE)
-      and is_well_behaved(macro_statement) then
-    return true
+  if reaching_definition_type == REACHING_DECLARATION then
+    if macro_statement.type == VARIABLE_DECLARATION and is_well_behaved(macro_statement) then
+      return true
+    end
+  elseif reaching_definition_type == REACHING_DEFINITION then
+    if (macro_statement.type == FUNCTION_CALL or macro_statement.type == VARIABLE_USE) and is_well_behaved(macro_statement) then
+      return true
+    end
   end
   -- Macro-statements containing at least one interesting statement are interesting.
   local any_well_behaved_statements = false
   for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
     assert(not is_macro_statement(statement))
-    if reaching_definition_type == REACHING_DECLARATIONS then
+    if reaching_definition_type == REACHING_DECLARATION then
       if (
-            statement.type == VARIABLE_DECLARATION or
-            statement.type == VARIABLE_DEFINITION or
-            statement.type == FUNCTION_UNDEFINITION
+            statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT or
+            statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT
           ) and is_well_behaved(statement) then
         any_well_behaved_statements = true
         goto skip_remaining_statements
       end
-    elseif reaching_definition_type == REACHING_DEFINITIONS then
+    elseif reaching_definition_type == REACHING_DEFINITION then
       if (
             statement.type == FUNCTION_DEFINITION or
             statement.type == FUNCTION_UNDEFINITION or
@@ -698,7 +700,7 @@ local function get_incoming_reaching_definitions(reaching_definition_type, state
 end
 
 -- Determine the declarations and definitions from the current statement.
-local function get_current_reaching(
+local function get_current_reaching_definitions(
   reaching_definition_type,
   states,
   chunk,
@@ -709,105 +711,142 @@ local function get_current_reaching(
 )
   local current_definition_list, current_definition_index = {}, {}
   local invalidated_statement_index = {}
-  if macro_statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
-    local macro_statement = get_statement(states, chunk, macro_statement_number)
-    if macro_statement.type ~= FUNCTION_AND_VARIABLE_DEFINITIONS then
-      goto next_macro_statement
+
+  -- Add a reaching definition to the current definition list and index.
+  local function add_definition(definition)
+    assert(definition.confidence >= MAYBE)
+    table.insert(current_definition_list, definition)
+    if current_definition_index[definition.csname] == nil then
+      current_definition_index[definition.csname] = {}
     end
-    for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
-      assert(not is_macro_statement(statement))
-      if max_statement_number ~= nil and statement_number > max_statement_number then
-        break
-      end
-      if reaching_definition_type == REACHING_DECLARATIONS then
-        if statement.type ~= VARIABLE_DECLARATION and
-            statement.type ~= FUNCTION_UNDEFINITION then
-          goto next_statement
-        end
-      elseif reaching_definition_type == REACHING_DEFINITIONS then
-        if statement.type ~= FUNCTION_DEFINITION and
-            statement.type ~= FUNCTION_UNDEFINITION and
-            statement.type ~= FUNCTION_VARIANT_DEFINITION and
-            statement.type ~= VARIABLE_DEFINITION then
-          goto next_statement
-        end
-      else
-        error('Unexpected reaching definition type "' .. reaching_definition_type .. '"')
-      end
-      if not is_well_behaved(statement) then
-        goto next_statement
-      end
-      local declared_defined_or_undefined_csname
-      if statement.type == FUNCTION_DEFINITION
-        or statement.type == FUNCTION_VARIANT_DEFINITION
-        or statement.type == VARIABLE_DECLARATION
-        or statement.type == VARIABLE_DEFINITION
-      then
-        -- Record function, function variant, and constant/variable declarations/definitions.
-        if statement.type == VARIABLE_DECLARATION then
-          assert(reaching_definition_type == REACHING_DECLARATIONS)
-          declared_defined_or_undefined_csname = statement.declared_csname
-        else
-          assert(reaching_definition_type == REACHING_DEFINITIONS)
-          declared_defined_or_undefined_csname = statement.defined_csname
-        end
-        assert(declared_defined_or_undefined_csname.type == TEXT)
-        local definition = {
-          csname = declared_defined_or_undefined_csname.payload,
-          confidence = statement.confidence,
-          chunk = chunk,
-          macro_statement_number = macro_statement_number,
-          statement_number = is_macro_statement(macro_statement) and statement_number or nil,
-        }
-        assert(definition.confidence >= MAYBE)
-        table.insert(current_definition_list, definition)
-        if current_definition_index[definition.csname] == nil then
-          current_definition_index[definition.csname] = {}
-        end
-        table.insert(current_definition_index[definition.csname], #current_definition_list)
-      elseif statement.type == FUNCTION_UNDEFINITION then
-        declared_defined_or_undefined_csname = statement.undefined_csname
-      else
-        error('Unexpected statement type "' .. statement.type .. '"')
-      end
-      if statement.confidence == DEFINITELY then
-        -- Invalidate definitions of the same control sequence names from before the current statement.
-        for _, definition_list_and_index in ipairs({
-              {incoming_definition_list, incoming_definition_index},
-              {current_definition_list, current_definition_index},
-            }) do
-          local definition_list, definition_index = table.unpack(definition_list_and_index)
-          for _, incoming_definition_number in ipairs(definition_index[declared_defined_or_undefined_csname.payload] or {}) do
-            local incoming_definition = definition_list[incoming_definition_number]
-            assert(incoming_definition.csname == declared_defined_or_undefined_csname.payload)
-            local incoming_statement = get_statement(
-              states,
-              incoming_definition.chunk,
-              incoming_definition.macro_statement_number,
-              incoming_definition.statement_number
-            )
-            local incoming_declared_or_defined_csname
-            if incoming_statement.type == VARIABLE_DECLARATION then
-              incoming_declared_or_defined_csname = incoming_statement.declared_csname
-            else
-              incoming_declared_or_defined_csname = incoming_statement.defined_csname
-            end
-            assert(incoming_declared_or_defined_csname.type == TEXT)
-            assert(incoming_declared_or_defined_csname.payload == declared_defined_or_undefined_csname.payload)
-            if incoming_statement ~= statement and not invalidated_statement_index[incoming_statement] then
-              invalidated_statement_index[incoming_statement] = true
-            end
+    table.insert(current_definition_index[definition.csname], #current_definition_list)
+  end
+
+  -- Invalidate definitions of the same control sequence names from before the current statement.
+  local function invalidate_previous_definitions(statement, csname)
+    if statement.confidence == DEFINITELY then
+      for _, definition_list_and_index in ipairs({
+            {incoming_definition_list, incoming_definition_index},
+            {current_definition_list, current_definition_index},
+          }) do
+        local definition_list, definition_index = table.unpack(definition_list_and_index)
+        for _, incoming_definition_number in ipairs(definition_index[csname] or {}) do
+          local incoming_definition = definition_list[incoming_definition_number]
+          assert(incoming_definition.csname == csname)
+          local incoming_statement = get_statement(
+            states,
+            incoming_definition.chunk,
+            incoming_definition.macro_statement_number,
+            incoming_definition.statement_number
+          )
+          if incoming_statement ~= statement and not invalidated_statement_index[incoming_statement] then
+            invalidated_statement_index[incoming_statement] = true
           end
         end
       end
-      -- If we previously invalidated a definition that originates from the current statement but reached us from before the
-      -- current statement due to a cycle in the flow-graph, undo the invalidation.
-      invalidated_statement_index[statement] = false
-      ::next_statement::
     end
-    ::next_macro_statement::
+    -- If we previously invalidated a definition that originates from the current statement but reached us from before the
+    -- current statement due to a cycle in the flow-graph, undo the invalidation.
+    invalidated_statement_index[statement] = false
   end
+
+  if macro_statement_number <= chunk.statement_range:stop() then
+    local macro_statement = get_statement(states, chunk, macro_statement_number)
+    if reaching_definition_type == REACHING_DECLARATION and macro_statement.type == VARIABLE_DECLARATION
+        and is_well_behaved(macro_statement) then
+      local declared_csname = macro_statement.declared_csname
+      assert(declared_csname.type == TEXT)
+      local declaration = {
+        csname = declared_csname.payload,
+        confidence = macro_statement.confidence,
+        chunk = chunk,
+        macro_statement_number = macro_statement_number,
+      }
+      add_definition(declaration)
+      invalidate_previous_definitions(macro_statement, declared_csname.payload)
+    end
+    if reaching_definition_type == REACHING_DEFINITION and macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS then
+      assert(is_macro_statement(macro_statement))
+      for statement_number, statement in ipairs(macro_statement.statements) do
+        assert(not is_macro_statement(statement))
+        if max_statement_number ~= nil and statement_number > max_statement_number then
+          break
+        end
+        if not is_well_behaved(statement) then
+          goto next_statement
+        end
+        if statement.type == FUNCTION_DEFINITION
+          or statement.type == FUNCTION_VARIANT_DEFINITION
+          or statement.type == VARIABLE_DEFINITION
+        then
+          local defined_csname = statement.defined_csname
+          assert(defined_csname.type == TEXT)
+          local definition = {
+            csname = defined_csname.payload,
+            confidence = statement.confidence,
+            chunk = chunk,
+            macro_statement_number = macro_statement_number,
+            statement_number = statement_number,
+          }
+          add_definition(definition)
+          invalidate_previous_definitions(statement, defined_csname.payload)
+        elseif statement.type == FUNCTION_UNDEFINITION then
+          local undefined_csname = statement.undefined_csname
+          assert(undefined_csname.type == TEXT)
+          invalidate_previous_definitions(statement, undefined_csname.payload)
+        else
+          error('Unexpected statement type "' .. statement.type .. '"')
+        end
+        ::next_statement::
+      end
+    end
+  end
+
   return current_definition_list, current_definition_index, invalidated_statement_index
+end
+
+-- Iterate over reaching definitions for a given control sequence name that reach or originate from the current statement.
+local function _iterate_reaching_definitions(reaching_definition_type, states, chunk, macro_statement_number, statement_number, csname)
+  local incoming_definition_list, incoming_definition_index
+    = get_incoming_reaching_definitions(reaching_definition_type, states, chunk, macro_statement_number)
+  local current_definition_list, current_definition_index, invalidated_statement_index
+    = get_current_reaching_definitions(
+      reaching_definition_type,
+      states,
+      chunk,
+      macro_statement_number,
+      incoming_definition_list,
+      incoming_definition_index,
+      statement_number - 1
+    )
+
+  local definition_lists = {incoming_definition_list, current_definition_list}
+  local definition_indexes = {incoming_definition_index[csname] or {}, current_definition_index[csname] or {}}
+  local current_definition_list_number, current_definition_number = 1, 1
+
+  return function()
+    while true do
+      if current_definition_list_number > #definition_lists then
+        return nil
+      end
+      local definition_list = definition_lists[current_definition_list_number]
+      local definition_index = definition_indexes[current_definition_list_number]
+      if current_definition_number > #definition_index then
+        current_definition_list_number = current_definition_list_number + 1
+        current_definition_number = 1
+        goto continue
+      end
+      local definition_number = definition_index[current_definition_number]
+      current_definition_number = current_definition_number + 1
+      local definition = definition_list[definition_number]
+      local other_statement
+        = get_statement(states, definition.chunk, definition.macro_statement_number, definition.statement_number)
+      if not invalidated_statement_index[other_statement] then
+        return definition
+      end
+      ::continue::
+    end
+  end
 end
 
 -- Determine the reaching definitions after the current statement.
@@ -923,22 +962,20 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         for statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
           if macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
             table.insert(function_call_list, {chunk, statement_number})
+          elseif macro_statement.type == VARIABLE_DECLARATION and is_well_behaved(macro_statement) then
+            table.insert(variable_declaration_list, {chunk, statement_number})
           elseif macro_statement.type == VARIABLE_USE and is_well_behaved(macro_statement) then
             table.insert(variable_use_list, {chunk, statement_number})
           elseif macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS then
-            local any_well_behaved_csname_definitions, any_well_behaved_variable_declarations = false, false
+            local any_well_behaved_csname_definitions = false
             for _, statement in ipairs(macro_statement.statements) do
               if not is_well_behaved(statement) then
                 goto next_statement
               end
               if statement.type == FUNCTION_DEFINITION or
-                  statement.type == VARIABLE_DEFINITION or
-                  statement.type == FUNCTION_VARIANT_DEFINITION then
+                  statement.type == FUNCTION_VARIANT_DEFINITION or
+                  statement.type == VARIABLE_DEFINITION then
                 any_well_behaved_csname_definitions = true
-              elseif statement.type == VARIABLE_DECLARATION then
-                any_well_behaved_variable_declarations = true
-              end
-              if any_well_behaved_csname_definitions and any_well_behaved_variable_declarations then
                 goto skip_remaining_statements
               end
               ::next_statement::
@@ -946,9 +983,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             ::skip_remaining_statements::
             if any_well_behaved_csname_definitions then
               table.insert(csname_definition_list, {chunk, statement_number})
-            end
-            if any_well_behaved_variable_declarations then
-              table.insert(variable_declaration_list, {chunk, statement_number})
             end
           end
         end
@@ -1171,9 +1205,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
       -- Record the initial changed statements based on the current type of reaching definitions.
       local initial_changed_statements
-      if reaching_definition_type == REACHING_DEFINITIONS then
+      if reaching_definition_type == REACHING_DEFINITION then
         initial_changed_statements = csname_definition_list
-      elseif reaching_definition_type == REACHING_DECLARATIONS then
+      elseif reaching_definition_type == REACHING_DECLARATION then
         initial_changed_statements = variable_declaration_list
       else
         error('Unexpected reaching definition type "' .. reaching_definition_type .. '"')
@@ -1203,7 +1237,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Determine the definitions and undefinitions from the current statement.
         local current_definition_list, _, invalidated_statement_index
-          = get_current_reaching(
+          = get_current_reaching_definitions(
               reaching_definition_type,
               states,
               chunk,
@@ -1265,8 +1299,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     -- Update the current estimation of the function call and variable use edges.
-    local reaching_definitions = states.results.reaching_definitions[REACHING_DEFINITIONS]
+    local reaching_definitions = states.results.reaching_definitions[REACHING_DEFINITION]
     current_function_call_edges, current_variable_use_edges = {}, {}
+    states.results.csname_declaration_in_edge_index = {}
     states.results.csname_definition_in_edge_index = {}
     states.results.elided_csname_use_out_edge_index = {}
     for _, edge_types_statement_list_and_current_edges in ipairs({
@@ -1295,13 +1330,27 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
 
         -- Then, resolve all function variant and indirect function/variable definitions to the originating direct function/variable
-        -- declarations/definitions, if any.
+        -- definitions, if any.
         local reaching_definition_number, seen_reaching_statements = 1, {}
         local reaching_definition_list = {}
         while reaching_definition_number <= #intermediate_reaching_definition_list do
           local definition = intermediate_reaching_definition_list[reaching_definition_number]
           local chunk, macro_statement_number, statement_number
             = definition.chunk, definition.macro_statement_number, definition.statement_number
+          print(format_statement(chunk, macro_statement_number, statement_number))
+
+          -- Iterate over reaching definitions for a given control sequence name that reach or originate from the current statement.
+          local function iterate_reaching_definitions(reaching_definition_type, csname)
+            return _iterate_reaching_definitions(
+              reaching_definition_type,
+              states,
+              chunk,
+              macro_statement_number,
+              statement_number,
+              csname
+            )
+          end
+
           local statement = get_statement(states, chunk, macro_statement_number, statement_number)
           assert(is_well_behaved(statement))
           -- Detect any loops within the graph.
@@ -1313,23 +1362,37 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT then
             -- Simply record the direct function/variable definitions.
             table.insert(reaching_definition_list, definition)
+            -- If there are declarations that reach these definitions, index those declarations.
+            assert(statement.defined_csname.type == TEXT)
+            local defined_csname = statement.defined_csname.payload
+            for declaration in iterate_reaching_definitions(REACHING_DECLARATION, defined_csname) do
+              assert(declaration.csname == defined_csname)
+              local other_chunk, other_macro_statement_number, other_statement_number
+                = declaration.chunk, declaration.macro_statement_number, declaration.statement_number
+              local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
+              assert(is_well_behaved(other_statement))
+              states.results.csname_declaration_in_edge_index[other_statement] = true
+            end
           elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
               or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
               or statement.type == FUNCTION_VARIANT_DEFINITION then
-            -- Resolve the indirect function definitions and function variant definitions.
+            -- Resolve the indirect function/variable definitions and function variant definitions.
             if reaching_definitions.lists[chunk] ~= nil and
                 reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
-              local other_reaching_definition_index = reaching_definitions.indexes[chunk][macro_statement_number]
-              local base_csname = statement.base_csname.payload
               -- Elide calls to indirect function/variable definitions and index those definitions.
               states.results.elided_csname_use_out_edge_index[csname_use_statement] = true
               states.results.csname_definition_in_edge_index[statement] = true
+              local other_reaching_definition_index = reaching_definitions.indexes[chunk][macro_statement_number]
+              if statement.base_csname.type ~= TEXT then
+                goto next_reaching_statement
+              end
+              local base_csname = statement.base_csname.payload
               for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
+                assert(other_definition.csname == base_csname)
                 local other_chunk, other_macro_statement_number, other_statement_number
                   = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
                 local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
                 assert(is_well_behaved(other_statement))
-                assert(other_definition.csname == base_csname)
                 -- Weaken the base function/variant definition confidence.
                 local combined_definition
                 if definition.confidence < other_definition.confidence then
@@ -1342,7 +1405,11 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               end
             end
           else
-            error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+            local message = 'Unexpected statement type "' .. statement.type .. '"'
+            if statement.subtype ~= nil then
+              message = message .. ' and subtype "' .. statement.subtype .. '"'
+            end
+            error(message)
           end
           ::next_reaching_statement::
           reaching_definition_number = reaching_definition_number + 1
@@ -1449,7 +1516,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   )
 
   -- Record edges.
-  local edge_indexes = states.results.edge_indexes[REACHING_DEFINITIONS]
+  local edge_indexes = states.results.edge_indexes[REACHING_DEFINITION]
   for _, current_edges_and_edge_index_name in ipairs({
     {current_function_call_edges, "function_call_out"},
     {current_variable_use_edges, "variable_use_out"},
@@ -1464,7 +1531,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         results.edges[DYNAMIC] = {}
       end
       table.insert(results.edges[DYNAMIC], edge)
-      _index_edge(REACHING_DEFINITIONS, edge_index_name, 'from', edge)
+      _index_edge(REACHING_DEFINITION, edge_index_name, 'from', edge)
     end
   end
 end
@@ -1570,12 +1637,12 @@ local function report_issues(states, main_file_number, options)
       local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
       for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
         -- Skip uninteresting macro statements that would have been skipped during the analysis.
-        if not _is_interesting(REACHING_DECLARATIONS, states, chunk, macro_statement_number)
-            and not _is_interesting(REACHING_DEFINITIONS, states, chunk, macro_statement_number) then
+        if not _is_interesting(REACHING_DECLARATION, states, chunk, macro_statement_number)
+            and not _is_interesting(REACHING_DEFINITION, states, chunk, macro_statement_number) then
           goto next_macro_statement
         end
         -- Report issues with function (variant) (un)definitions.
-        if macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS then
+        if macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS or macro_statement.type == VARIABLE_DECLARATION then
           for statement_number, statement in ipairs(macro_statement.statements or {macro_statement}) do
             assert(not is_macro_statement(statement))
             if statement.confidence ~= DEFINITELY then
@@ -1590,52 +1657,21 @@ local function report_issues(states, main_file_number, options)
               return byte_range
             end
 
-            -- Get definitions for a given control sequence name that reach the current statement.
-            local function get_reaching(reaching_definition_type, csname)
-              local incoming_definition_list, incoming_definition_index
-                = get_incoming_reaching_definitions(reaching_definition_type, states, chunk, macro_statement_number)
-              local current_definition_list, current_definition_index, invalidated_statement_index = get_current_reaching(
+            -- Iterate over reaching definitions for a given control sequence name that reach or originate from the current statement.
+            local function iterate_reaching_definitions(reaching_definition_type, csname)
+              return _iterate_reaching_definitions(
                 reaching_definition_type,
                 states,
                 chunk,
                 macro_statement_number,
-                incoming_definition_list,
-                incoming_definition_index,
-                statement_number - 1
+                statement_number,
+                csname
               )
-
-              local definition_lists = {incoming_definition_list, current_definition_list}
-              local definition_indexes = {incoming_definition_index[csname] or {}, current_definition_index[csname] or {}}
-              local current_definition_list_number, current_definition_number = 1, 1
-
-              return function()
-                while true do
-                  if current_definition_list_number > #definition_lists then
-                    return nil
-                  end
-                  local definition_list = definition_lists[current_definition_list_number]
-                  local definition_index = definition_indexes[current_definition_list_number]
-                  if current_definition_number > #definition_index then
-                    current_definition_list_number = current_definition_list_number + 1
-                    current_definition_number = 1
-                    goto continue
-                  end
-                  local definition_number = definition_index[current_definition_number]
-                  current_definition_number = current_definition_number + 1
-                  local definition = definition_list[definition_number]
-                  local other_statement
-                    = get_statement(states, definition.chunk, definition.macro_statement_number, definition.statement_number)
-                  if not invalidated_statement_index[other_statement] then
-                    return definition
-                  end
-                  ::continue::
-                end
-              end
             end
 
             -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
             local function any_reaching(reaching_definition_type, csname, check_definition)
-              for definition in get_reaching(reaching_definition_type, csname) do
+              for definition in iterate_reaching_definitions(reaching_definition_type, csname) do
                 assert(definition.csname == csname)
                 if check_definition ~= nil then
                   local other_statement = get_statement(
@@ -1662,7 +1698,7 @@ local function report_issues(states, main_file_number, options)
                 ) and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
               if any_reaching(
-                    REACHING_DEFINITIONS,
+                    REACHING_DEFINITION,
                     defined_csname,
                     function(definition, other_statement)
                       return definition.confidence == DEFINITELY and
@@ -1701,7 +1737,7 @@ local function report_issues(states, main_file_number, options)
                 ) and statement.base_csname.type == TEXT then
               local base_csname = statement.base_csname.payload
               if lpeg.match(expl3_well_known_csname, base_csname) == nil and
-                  not any_reaching(REACHING_DEFINITIONS, base_csname) then
+                  not any_reaching(REACHING_DEFINITION, base_csname) then
                 local formatted_csname = format_csname(base_csname)
                 local byte_range = get_byte_range()
 
@@ -1722,7 +1758,7 @@ local function report_issues(states, main_file_number, options)
             if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
-                  not any_reaching(REACHING_DEFINITIONS, defined_csname) then
+                  not any_reaching(REACHING_DEFINITION, defined_csname) then
                 local formatted_csname = format_csname(defined_csname)
                 local byte_range = get_byte_range()
                 issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
@@ -1730,12 +1766,11 @@ local function report_issues(states, main_file_number, options)
             end
 
             if (
-                  (
-                    (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
-                      and statement.is_private and statement.call_segments ~= nil or
-                    statement.type == VARIABLE_DECLARATION and statement.use_segments ~= nil
-                  ) and
-                  states.results.csname_definition_in_edge_index[statement] == nil
+                  (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
+                    and statement.is_private and statement.call_segments ~= nil
+                    and states.results.csname_definition_in_edge_index[statement] == nil or
+                  statement.type == VARIABLE_DECLARATION and statement.use_segments ~= nil
+                    and states.results.csname_declaration_in_edge_index[statement] == nil
                 ) then
               local call_or_use_segments, defined_or_declared_csname
               if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
@@ -1821,7 +1856,7 @@ local function report_issues(states, main_file_number, options)
             end
           end
           if all_definitions_reached_flow_analysis then
-            local edge_indexes = states.results.edge_indexes[REACHING_DEFINITIONS]
+            local edge_indexes = states.results.edge_indexes[REACHING_DEFINITION]
             if edge_indexes.function_call_out[chunk] == nil or edge_indexes.function_call_out[chunk][statement_number] == nil then
               if states.results.elided_csname_use_out_edge_index[statement] == nil then
                 local formatted_csname = format_csname(statement.used_csname.payload)
@@ -1846,6 +1881,7 @@ local function cleanup(states, _, _)
   states.results.drew_dynamic_edges = nil
   states.results.drew_static_edges = nil
   states.results.edge_indexes = nil
+  states.results.csname_declaration_in_edge_index = nil
   states.results.csname_definition_in_edge_index = nil
   states.results.elided_csname_use_out_edge_index = nil
   states.results.reaching_definitions = nil
