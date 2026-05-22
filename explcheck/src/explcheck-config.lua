@@ -33,7 +33,7 @@ local user_config_files, user_inline_configs = {}, {}
 local function get_user_configs(options)
   -- Read the configuration.
   local default_pathnames, options_pathnames
-  default_pathnames = default_config.defaults.config_files
+  default_pathnames = default_config.config_files
   assert(default_pathnames ~= nil)
   -- TODO: Remove support for `config_file` in v1.0.0.
   if options ~= nil and (options.config_file ~= nil or options.config_files ~= nil) then
