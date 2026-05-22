@@ -1167,6 +1167,7 @@ local function collect_statements(states, file_number, options)
             maybe_multiply_declared = false,  -- later filled in by `determine_maybe_multiply_declared_variables()`
             maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
             variable_type = variable_type,
+            use_segments = nil,  -- later filled in by `determine_variable_uses_for_declarations()`
           }
           table.insert(statements, statement)
           goto continue
@@ -1238,6 +1239,7 @@ local function collect_statements(states, file_number, options)
                 maybe_multiply_declared = false,  -- later filled in by `determine_maybe_multiply_declared_variables()`
                 maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
                 variable_type = variable_type,
+                use_segments = nil,  -- later filled in by `determine_variable_uses_for_declarations()`
               }
               table.insert(statements, statement)
             end
@@ -1699,9 +1701,13 @@ local function analyze_group_wide_statements(states, _, options)
     -- `maybe.defined_csname`).
     maybe_defined_csname_texts_anywhere = {},
 
-    -- Index of segments that potentially call each given csname, plus a parallel list for ordered iteration.
+    -- Index of segments that potentially call each given function csname, plus a parallel list for ordered iteration.
     called_functions_anywhere_segments_index = {},
     called_functions_anywhere_segments_list = {},
+
+    -- Index of segments that potentially use each given variable csname, plus a parallel list for ordered iteration.
+    used_variables_anywhere_segments_index = {},
+    used_variables_anywhere_segments_list = {},
 
     -- Per-message-name min/max number of text parameters across all definitions.
     defined_message_nums_text_parameters = {},
@@ -2074,15 +2080,24 @@ local function analyze_group_wide_statements(states, _, options)
           )
           record_maybe_name(maybe.used_variable_csname, statement.used_csname)
           if statement.used_csname.type == TEXT then
+            local used_csname = statement.used_csname.payload
             local used_csname_byte_range = token_range_to_byte_range(statement.used_csname_argument.token_range)
             table.insert(
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.used_csname.payload, used_csname_byte_range}
+              {statement.variable_type, used_csname, used_csname_byte_range}
             )
             table.insert(
               results.statement_analysis.used_variable_csname_texts,
-              {statement.used_csname.payload, statement.is_standalone, used_csname_byte_range}
+              {used_csname, statement.is_standalone, used_csname_byte_range}
             )
+            if states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname] == nil then
+              states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname] = {}
+              states.results.statement_analysis.used_variables_anywhere_segments_list[used_csname] = {}
+            end
+            if states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname][segment] == nil then
+              states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname][segment] = true
+              table.insert(states.results.statement_analysis.used_variables_anywhere_segments_list[used_csname], segment)
+            end
           end
         -- Process a message definition.
         elseif statement.type == MESSAGE_DEFINITION then
@@ -2901,6 +2916,23 @@ local function determine_function_calls_for_definitions(states, file_number, _)
   end
 end
 
+-- Determine and record the potential variable uses for all variable declarations.
+local function determine_variable_uses_for_declarations(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  for _, statement in ipairs(results.statement_analysis.statement_lists.VARIABLE_DECLARATION) do
+    assert(statement.type == VARIABLE_DECLARATION)
+    assert(statement.declared_csname.type == TEXT)
+    local declared_csname = statement.declared_csname.payload
+    statement.use_segments = states.results.statement_analysis.used_variables_anywhere_segments_list[declared_csname]
+  end
+end
+
 -- Determine which function (variant) (un)definitions and variable/constant declarations/definitions might actually affect any
 -- function calls in the current file group. This information is used to exclude definitely unused declaratations/(un)definitions
 -- from future analyses to improve performance.
@@ -3067,6 +3099,7 @@ local substeps = {
   determine_boolean_expression_expandability,
   report_issues,
   determine_function_calls_for_definitions,
+  determine_variable_uses_for_declarations,
   determine_maybe_multiply_declared_variables,
   determine_maybe_multiply_defined_functions,
   determine_maybe_used_functions_and_variables,

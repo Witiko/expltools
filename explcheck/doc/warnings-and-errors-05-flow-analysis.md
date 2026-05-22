@@ -223,22 +223,10 @@ An argument that contains `\par` tokens may reach a function with the "nopar" re
 
 ## Variables and constants
 
-### Unused variable or constant {.w}
+### Unused variable or constant {.w label=w517}
 A variable or a constant is declared and perhaps defined but unused.
 
-``` tex
-\tl_new:N  % warning on this line
-  \g_defined_but_unreachable_tl
-\tl_gset:Nn
-  \g_defined_but_unreachable_tl
-  { foo }
-\cs_new:Nn
-  \__module_baz:
-  {
-    \tl_use:N
-      \g_defined_but_unreachable_tl
-  }
-```
+ /w517.tex
 
 This check is a stronger version of <#unused-variable-or-constant> and the issue should only be emitted if <#unused-variable-or-constant> has not previously been emitted for this variable or constant.
 

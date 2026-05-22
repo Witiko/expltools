@@ -1570,7 +1570,8 @@ local function report_issues(states, main_file_number, options)
       local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
       for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
         -- Skip uninteresting macro statements that would have been skipped during the analysis.
-        if not _is_interesting(REACHING_DEFINITIONS, states, chunk, macro_statement_number) then
+        if not _is_interesting(REACHING_DECLARATIONS, states, chunk, macro_statement_number)
+            and not _is_interesting(REACHING_DEFINITIONS, states, chunk, macro_statement_number) then
           goto next_macro_statement
         end
         -- Report issues with function (variant) (un)definitions.
@@ -1729,28 +1730,41 @@ local function report_issues(states, main_file_number, options)
             end
 
             if (
-                  (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and
-                  statement.is_private and
-                  states.results.csname_definition_in_edge_index[statement] == nil and
-                  statement.call_segments ~= nil
-                ) and statement.defined_csname.type == TEXT then
-              assert(#statement.call_segments > 0)
-              local all_calls_reached_flow_analysis_and_are_top_level_reachable = true
-              for _, call_segment in ipairs(statement.call_segments) do
+                  (
+                    (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
+                      and statement.is_private and statement.call_segments ~= nil or
+                    statement.type == VARIABLE_DECLARATION and statement.use_segments ~= nil
+                  ) and
+                  states.results.csname_definition_in_edge_index[statement] == nil
+                ) then
+              local call_or_use_segments, defined_or_declared_csname
+              if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
+                call_or_use_segments = statement.call_segments
+                defined_or_declared_csname = statement.defined_csname
+              else
+                assert(statement.type == VARIABLE_DECLARATION)
+                call_or_use_segments = statement.use_segments
+                defined_or_declared_csname = statement.declared_csname
+              end
+              assert(#call_or_use_segments > 0)
+              assert(defined_or_declared_csname.type == TEXT)
+              local all_calls_or_use_reached_flow_analysis_and_are_top_level_reachable = true
+              for _, call_or_use_segment in ipairs(call_or_use_segments) do
                 if (
-                      -- Only consider function (variant) definition statements with calls reachable from top-level code.
-                      -- Otherwise, the calls are part of either dead code or library functions and we can't accurately determine
-                      -- their reaching definitions.
-                      call_segment.min_reaching_nesting_depth > 1 or
-                      -- Do not consider function (variant) definition statements with calls in files that did not reach the flow analysis.
-                      states[call_segment.location.file_number].results.stopped_early
+                      -- Only consider function (variant) definitions / variable declarations with calls/uses reachable from
+                      -- top-level code. Otherwise, the calls/uses are part of either dead code or library functions and we can't
+                      -- accurately determine their reaching definitions.
+                      call_or_use_segment.min_reaching_nesting_depth > 1 or
+                      -- Do not consider function (variant) definitions / variable declarations calls/uses in files that did not
+                      -- reach the flow analysis.
+                      states[call_or_use_segment.location.file_number].results.stopped_early
                     ) then
-                  all_calls_reached_flow_analysis_and_are_top_level_reachable = false
+                  all_calls_or_use_reached_flow_analysis_and_are_top_level_reachable = false
                   break
                 end
               end
-              if all_calls_reached_flow_analysis_and_are_top_level_reachable then
-                local formatted_csname = format_csname(statement.defined_csname.payload)
+              if all_calls_or_use_reached_flow_analysis_and_are_top_level_reachable then
+                local formatted_csname = format_csname(defined_or_declared_csname.payload)
                 local byte_range = get_byte_range()
 
                 -- Report unused private function definitions.
@@ -1759,6 +1773,9 @@ local function report_issues(states, main_file_number, options)
                 -- Report unused private function variant definitions.
                 elseif statement.type == FUNCTION_VARIANT_DEFINITION then
                   issues:add("w503", "unused private function variant", byte_range, formatted_csname)
+                -- Report unused variable or constant declarations.
+                elseif statement.type == VARIABLE_DECLARATION then
+                  issues:add("w517", "unused variable or constant", byte_range, formatted_csname)
                 else
                   error('Unexpected statement type "' .. statement.type .. '"')
                 end
