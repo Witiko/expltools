@@ -1337,7 +1337,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           local definition = intermediate_reaching_definition_list[reaching_definition_number]
           local chunk, macro_statement_number, statement_number
             = definition.chunk, definition.macro_statement_number, definition.statement_number
-          print(format_statement(chunk, macro_statement_number, statement_number))
 
           -- Iterate over reaching definitions for a given control sequence name that reach or originate from the current statement.
           local function iterate_reaching_definitions(reaching_definition_type, csname)
