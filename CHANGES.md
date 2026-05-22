@@ -48,6 +48,22 @@ This version of explcheck has made the following changes to the document titled
   it doesn't actually constitute an issue: there are good reasons to protect a
   function from expansion, even if it is otherwise expandable. (#213)
 
+#### Housekeeping
+
+This version of explcheck has completed the following housekeeping tasks:
+
+- Reduce repetition in the function `analyze_group_wide_statements()` from
+  `explcheck-semantic-analysis.lua` by introducing two new mechanisms:
+  maybe-trackers and statement category lists and indices. (#217)
+
+- Emit both `VARIABLE_DECLARATION` and `VARIABLE_DEFINITION` statements for
+  constant definitions like `\tl_const:Nn`. (#217)
+
+  Previously, only a `VARIABLE_DEFINITION` statement would have been produced,
+  reqiring special-casing for issues like W415 (Unused variable or constant),
+  W416 (Setting an undeclared variable), and W419 (Using an undeclared variable
+  or constant).
+
 #### Continuous integration
 
 This version of explcheck has made the following changes to our continuous
@@ -57,14 +73,6 @@ integration (CI):
   Live, so that we can compare the diff against our 2025 baselines. (ea03ec0)
 - In the CI, check that the `lua-toml` submodule is up-to-date even if checking
   the `latex3` submodule failed. (340f6bc)
-
-#### Housekeeping
-
-This version of explcheck has completed the following housekeeping tasks:
-
-- Reduce repetition in the function `analyze_group_wide_statements()` from
-  `explcheck-semantic-analysis.lua` by introducing two new mechanisms:
-  maybe-trackers and statement category lists and indices. (#217)
 
 #### Dependencies
 
