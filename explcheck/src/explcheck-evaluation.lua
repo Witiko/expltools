@@ -120,6 +120,9 @@ local function count_statements(analysis_results)
       end
       local seen_call_numbers = {}
       for _, statement in ipairs(segment.statements) do
+        if seen_call_numbers[statement.type] == nil then
+          seen_call_numbers[statement.type] = {}
+        end
         if num_statements[statement.type] == nil then
           assert(num_statement_tokens[statement.type] == nil)
           assert(num_statement_calls[statement.type] == nil)
@@ -128,8 +131,8 @@ local function count_statements(analysis_results)
           num_statement_calls[statement.type] = 0
         end
         for call_number, call in statement.call_range:enumerate(segment.calls) do
-          if seen_call_numbers[call_number] == nil then
-            seen_call_numbers[call_number] = true
+          if seen_call_numbers[statement.type][call_number] == nil then
+            seen_call_numbers[statement.type][call_number] = true
             num_statement_tokens[statement.type] = num_statement_tokens[statement.type] + #call.token_range
             num_statement_calls[statement.type] = num_statement_calls[statement.type] + 1
           end

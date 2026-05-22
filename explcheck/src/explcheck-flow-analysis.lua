@@ -31,8 +31,10 @@ local FUNCTION_CALL = statement_types.FUNCTION_CALL
 local FUNCTION_DEFINITION = statement_types.FUNCTION_DEFINITION
 local FUNCTION_UNDEFINITION = statement_types.FUNCTION_UNDEFINITION
 local FUNCTION_VARIANT_DEFINITION = statement_types.FUNCTION_VARIANT_DEFINITION
+
 local VARIABLE_DECLARATION = statement_types.VARIABLE_DECLARATION
 local VARIABLE_DEFINITION = statement_types.VARIABLE_DEFINITION
+local VARIABLE_USE = statement_types.VARIABLE_USE
 
 local FUNCTION_DEFINITION_DIRECT = statement_subtypes.FUNCTION_DEFINITION.DIRECT
 local FUNCTION_DEFINITION_INDIRECT = statement_subtypes.FUNCTION_DEFINITION.INDIRECT
@@ -56,7 +58,7 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local lpeg = require("lpeg")
 
 local macro_statement_types = {
-  FUNCTION_AND_VARIABLE_DEFINITIONS = "block of function/variant/variable/constant declarations/(un)definitions",
+  FUNCTION_AND_VARIABLE_DEFINITIONS = "block of csname declarations and (un)definitions",
 }
 
 local FUNCTION_AND_VARIABLE_DEFINITIONS = macro_statement_types.FUNCTION_AND_VARIABLE_DEFINITIONS
@@ -79,6 +81,8 @@ local edge_types = {
   TF_BRANCH_RETURN = string.format("return from %s", TF_BRANCH),
   FUNCTION_CALL = FUNCTION_CALL,
   FUNCTION_CALL_RETURN = string.format("%s return", FUNCTION_CALL),
+  VARIABLE_USE = VARIABLE_USE,
+  VARIABLE_USE_RETURN = string.format("%s return", VARIABLE_USE),
 }
 
 local NEXT_CHUNK = edge_types.NEXT_CHUNK
@@ -88,6 +92,8 @@ assert(TF_BRANCH == edge_types.TF_BRANCH)
 local TF_BRANCH_RETURN = edge_types.TF_BRANCH_RETURN
 assert(FUNCTION_CALL == edge_types.FUNCTION_CALL)
 local FUNCTION_CALL_RETURN = edge_types.FUNCTION_CALL_RETURN
+assert(VARIABLE_USE == edge_types.VARIABLE_USE)
+local VARIABLE_USE_RETURN = edge_types.VARIABLE_USE_RETURN
 
 local edge_subtypes = {
   TF_BRANCH = {
@@ -425,8 +431,6 @@ local function draw_file_local_static_edges(states, file_number, _)
                   subtype = edge_subtype,
                 }
                 -- The following attributes are specific to the type.
-                branch_edge.return_edge = return_edge
-                return_edge.branch_edge = branch_edge
                 table.insert(results.edges[STATIC], branch_edge)
                 table.insert(results.edges[STATIC], return_edge)
               end
@@ -566,7 +570,9 @@ local function is_well_behaved(statement)
   elseif statement.type == VARIABLE_DECLARATION then
     result = statement.declared_csname.type == TEXT and (statement.maybe_multiply_declared or statement.maybe_used)
   elseif statement.type == VARIABLE_DEFINITION then
-    result = statement.defined_csname.type == TEXT and (statement.maybe_used)
+    result = statement.defined_csname.type == TEXT and statement.maybe_used
+  elseif statement.type == VARIABLE_USE then
+    result = statement.used_csname.type == TEXT
   else
     error('Unexpected statement type "' .. statement.type .. '"')
   end
@@ -588,7 +594,9 @@ local function _is_interesting(reaching_definition_type, states, chunk, macro_st
   end
   -- Well-behaved statements are interesting.
   local macro_statement = get_statement(states, chunk, macro_statement_number)
-  if reaching_definition_type == REACHING_DEFINITIONS and macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
+  if reaching_definition_type == REACHING_DEFINITIONS
+      and (macro_statement.type == FUNCTION_CALL or macro_statement.type == VARIABLE_USE)
+      and is_well_behaved(macro_statement) then
     return true
   end
   -- Macro-statements containing at least one interesting statement are interesting.
@@ -903,8 +911,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     return __index_edge(reaching_definition_type, states, edge_index_name, index_key, edge)
   end
 
-  -- Collect a list of well-behaved function definition/call and variable declaration statements.
-  local function_call_list, function_definition_list, variable_declaration_list = {}, {}, {}
+  -- Collect a list of well-behaved csname definitions/uses and variable declarations.
+  local function_call_list, csname_definition_list, variable_declaration_list, variable_use_list = {}, {}, {}, {}
   for _, state in ipairs(states) do
     -- Skip statements from files in the current file group that haven't reached the flow analysis.
     if states.results.stopped_early then
@@ -913,46 +921,36 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     for _, segment in ipairs(state.results.segments or {}) do
       for _, chunk in ipairs(segment.chunks or {}) do
         for statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
-          if macro_statement.type ~= FUNCTION_CALL and
-              macro_statement.type ~= FUNCTION_AND_VARIABLE_DEFINITIONS then
-            goto next_macro_statement
-          end
-          local any_well_behaved_function_definitions, any_well_behaved_variable_declarations = false, false
-          for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
-            assert(not is_macro_statement(statement))
-            if statement.type ~= FUNCTION_CALL and
-                statement.type ~= FUNCTION_DEFINITION and
-                statement.type ~= FUNCTION_VARIANT_DEFINITION and
-                statement.type ~= VARIABLE_DECLARATION then
-              goto next_statement
-            end
-            if not is_well_behaved(statement) then
-              goto next_statement
-            end
-            if statement.type == FUNCTION_DEFINITION or
-                statement.type == FUNCTION_VARIANT_DEFINITION then
-              any_well_behaved_function_definitions = true
-            end
-            if statement.type == VARIABLE_DECLARATION then
-              any_well_behaved_variable_declarations = true
-            end
-            goto skip_remaining_statements
-            ::next_statement::
-          end
-          ::skip_remaining_statements::
-          if macro_statement.type == FUNCTION_CALL then
+          if macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
             table.insert(function_call_list, {chunk, statement_number})
+          elseif macro_statement.type == VARIABLE_USE and is_well_behaved(macro_statement) then
+            table.insert(variable_use_list, {chunk, statement_number})
           elseif macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS then
-            if any_well_behaved_function_definitions then
-              table.insert(function_definition_list, {chunk, statement_number})
+            local any_well_behaved_csname_definitions, any_well_behaved_variable_declarations = false, false
+            for _, statement in ipairs(macro_statement.statements) do
+              if not is_well_behaved(statement) then
+                goto next_statement
+              end
+              if statement.type == FUNCTION_DEFINITION or
+                  statement.type == VARIABLE_DEFINITION or
+                  statement.type == FUNCTION_VARIANT_DEFINITION then
+                any_well_behaved_csname_definitions = true
+              elseif statement.type == VARIABLE_DECLARATION then
+                any_well_behaved_variable_declarations = true
+              end
+              if any_well_behaved_csname_definitions and any_well_behaved_variable_declarations then
+                goto skip_remaining_statements
+              end
+              ::next_statement::
+            end
+            ::skip_remaining_statements::
+            if any_well_behaved_csname_definitions then
+              table.insert(csname_definition_list, {chunk, statement_number})
             end
             if any_well_behaved_variable_declarations then
               table.insert(variable_declaration_list, {chunk, statement_number})
             end
-          else
-            error('Unexpected statement type "' .. macro_statement.type .. '"')
           end
-          ::next_macro_statement::
         end
       end
     end
@@ -968,11 +966,11 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
   -- Determine edges from function calls and variable uses to function/variable definitions, as discussed in
   -- <https://witiko.github.io/Expl3-Linter-11.5/>.
-  local previous_function_call_edges
-  local current_function_call_edges = {}
+  local previous_function_call_edges, previous_variable_use_edges
+  local current_function_call_edges, current_variable_use_edges = {}, {}
   local max_inner_loops = get_option('max_reaching_definition_inner_loops', options)
   local max_outer_loops = get_option('max_reaching_definition_outer_loops', options)
-  local num_outer_loops, max_theoretical_outer_loops = 0, #function_call_list
+  local num_outer_loops, max_theoretical_outer_loops = 0, #function_call_list + #variable_use_list
   repeat
     -- Guard against infinite loops.
     assert(num_outer_loops <= max_theoretical_outer_loops)
@@ -1001,7 +999,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       states.results.edge_indexes[reaching_definition_type] = {}
       local edge_indexes = states.results.edge_indexes[reaching_definition_type]
       edge_indexes.explicit_in, edge_indexes.explicit_out = {}, {}
-      local edge_lists = {current_function_call_edges}
+      local edge_lists = {current_function_call_edges, current_variable_use_edges}
       for _, state in ipairs(states) do
         local edge_category_list = {}
         for edge_category, _ in pairs(state.results.edges or {}) do
@@ -1084,10 +1082,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 local has_t_branch, has_f_branch = false, false
                 if edge_indexes.explicit_out[chunk] ~= nil and edge_indexes.explicit_out[chunk][statement_number] ~= nil then
                   for _, edge in ipairs(edge_indexes.explicit_out[chunk][statement_number]) do
-                    -- For fully-resolved function calls, cancel the implicit pseudo-edge towards the next interesting statement;
-                    -- instead, the reaching definitions will be routed through the replacement text of the function, at whose end
-                    -- we'll return to the (interesting) statement following the function call.
-                    if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
+                    -- For fully-resolved function calls and variable uses, cancel the implicit pseudo-edge towards the next
+                    -- interesting statement; instead, the reaching definitions will be routed through the replacement/definition text
+                    -- of the function/variable, at whose end we'll return to the (interesting) statement following the function call.
+                    if (edge.type == FUNCTION_CALL or edge.type == VARIABLE_USE) and edge.confidence == DEFINITELY then
                       previous_interesting_statement_number = nil
                       goto next_statement
                     end
@@ -1174,7 +1172,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       -- Record the initial changed statements based on the current type of reaching definitions.
       local initial_changed_statements
       if reaching_definition_type == REACHING_DEFINITIONS then
-        initial_changed_statements = function_definition_list
+        initial_changed_statements = csname_definition_list
       elseif reaching_definition_type == REACHING_DECLARATIONS then
         initial_changed_statements = variable_declaration_list
       else
@@ -1254,181 +1252,220 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       end
     end
 
-    -- Make a copy of the current estimation of the function call edges.
-    previous_function_call_edges = {}
-    for _, edge in ipairs(current_function_call_edges) do
-      table.insert(previous_function_call_edges, edge)
+    -- Make a copy of the current estimation of the function call and variable use edges.
+    previous_function_call_edges, previous_variable_use_edges = {}, {}
+    for _, previous_and_current_edges in ipairs({
+      {previous_function_call_edges, current_function_call_edges},
+      {previous_variable_use_edges, current_variable_use_edges},
+    }) do
+      local previous_edges, current_edges = table.unpack(previous_and_current_edges)
+      for _, edge in ipairs(current_edges) do
+        table.insert(previous_edges, edge)
+      end
     end
 
-    -- Update the current estimation of the function call edges.
+    -- Update the current estimation of the function call and variable use edges.
     local reaching_definitions = states.results.reaching_definitions[REACHING_DEFINITIONS]
-    current_function_call_edges = {}
-    states.results.function_definition_in_edge_index = {}
-    states.results.elided_function_call_out_edge_index = {}
-    for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
-      -- For each function call, first copy relevant reaching definitions to a temporary list.
-      local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
-      if reaching_definitions.indexes[function_call_chunk] == nil or
-          reaching_definitions.indexes[function_call_chunk][function_call_statement_number] == nil then
-        goto next_function_call
-      end
-      local function_call_statement = get_statement(states, function_call_chunk, function_call_statement_number)
-      assert(is_well_behaved(function_call_statement))
-      local reaching_function_and_variant_definition_list = {}
-      local reaching_definition_index = reaching_definitions.indexes[function_call_chunk][function_call_statement_number]
-      local used_csname = function_call_statement.used_csname.payload
-      for _, definition in ipairs(reaching_definition_index[used_csname] or {}) do
-        assert(definition.csname == used_csname)
-        table.insert(reaching_function_and_variant_definition_list, definition)
-      end
-
-      -- Then, resolve all function variant and indirect function/variable definitions to the originating direct function/variable
-      -- declarations/definitions, if any.
-      local reaching_definition_number, seen_reaching_statements = 1, {}
-      local reaching_definition_list = {}
-      while reaching_definition_number <= #reaching_function_and_variant_definition_list do
-        local definition = reaching_function_and_variant_definition_list[reaching_definition_number]
-        local chunk, macro_statement_number, statement_number
-          = definition.chunk, definition.macro_statement_number, definition.statement_number
-        local statement = get_statement(states, chunk, macro_statement_number, statement_number)
-        assert(is_well_behaved(statement))
-        -- Detect any loops within the graph.
-        if seen_reaching_statements[statement] ~= nil then
-          goto next_reaching_statement
+    current_function_call_edges, current_variable_use_edges = {}, {}
+    states.results.csname_definition_in_edge_index = {}
+    states.results.elided_csname_use_out_edge_index = {}
+    for _, edge_types_statement_list_and_current_edges in ipairs({
+      {FUNCTION_CALL, FUNCTION_CALL_RETURN, function_call_list, current_function_call_edges},
+      {VARIABLE_USE, VARIABLE_USE_RETURN, variable_use_list, current_variable_use_edges},
+    }) do
+      local outgoing_edge_type, incoming_edge_type, statement_list, current_edges
+        = table.unpack(edge_types_statement_list_and_current_edges)
+      assert(type(statement_list) == "table")
+      assert(type(current_edges) == "table")
+      for _, csname_use_chunk_and_statement_number in ipairs(statement_list) do
+        -- For each function call and variable use, first copy relevant reaching definitions to a temporary list.
+        local csname_use_chunk, csname_use_statement_number = table.unpack(csname_use_chunk_and_statement_number)
+        if reaching_definitions.indexes[csname_use_chunk] == nil or
+            reaching_definitions.indexes[csname_use_chunk][csname_use_statement_number] == nil then
+          goto next_csname_use
         end
-        seen_reaching_statements[statement] = true
-        if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT
-            or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT then
-          -- Simply record the direct function/variable definitions.
-          table.insert(reaching_definition_list, definition)
-        elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
-            or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
-            or statement.type == FUNCTION_VARIANT_DEFINITION then
-          -- Resolve the indirect function definitions and function variant definitions.
-          if reaching_definitions.lists[chunk] ~= nil and
-              reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
-            local other_reaching_definition_index = reaching_definitions.indexes[chunk][macro_statement_number]
-            local base_csname = statement.base_csname.payload
-            -- Elide calls to indirect function definitions and index those definitions.
-            states.results.elided_function_call_out_edge_index[function_call_statement] = true
-            states.results.function_definition_in_edge_index[statement] = true
-            for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
-              local other_chunk, other_macro_statement_number, other_statement_number
-                = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
-              local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
-              assert(is_well_behaved(other_statement))
-              assert(other_definition.csname == base_csname)
-              -- Weaken the base function definition confidence with the function variant definition confidence.
-              local combined_definition
-              if definition.confidence < other_definition.confidence then
-                combined_definition = make_shallow_copy(other_definition)
-                combined_definition.confidence = definition.confidence
-              else
-                combined_definition = other_definition
-              end
-              table.insert(reaching_function_and_variant_definition_list, combined_definition)
-            end
+        local csname_use_statement = get_statement(states, csname_use_chunk, csname_use_statement_number)
+        assert(is_well_behaved(csname_use_statement))
+        local intermediate_reaching_definition_list = {}
+        local reaching_definition_index = reaching_definitions.indexes[csname_use_chunk][csname_use_statement_number]
+        local used_csname = csname_use_statement.used_csname.payload
+        for _, definition in ipairs(reaching_definition_index[used_csname] or {}) do
+          assert(definition.csname == used_csname)
+          table.insert(intermediate_reaching_definition_list, definition)
+        end
+
+        -- Then, resolve all function variant and indirect function/variable definitions to the originating direct function/variable
+        -- declarations/definitions, if any.
+        local reaching_definition_number, seen_reaching_statements = 1, {}
+        local reaching_definition_list = {}
+        while reaching_definition_number <= #intermediate_reaching_definition_list do
+          local definition = intermediate_reaching_definition_list[reaching_definition_number]
+          local chunk, macro_statement_number, statement_number
+            = definition.chunk, definition.macro_statement_number, definition.statement_number
+          local statement = get_statement(states, chunk, macro_statement_number, statement_number)
+          assert(is_well_behaved(statement))
+          -- Detect any loops within the graph.
+          if seen_reaching_statements[statement] ~= nil then
+            goto next_reaching_statement
           end
-        else
-          error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+          seen_reaching_statements[statement] = true
+          if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT
+              or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT then
+            -- Simply record the direct function/variable definitions.
+            table.insert(reaching_definition_list, definition)
+          elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+              or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
+              or statement.type == FUNCTION_VARIANT_DEFINITION then
+            -- Resolve the indirect function definitions and function variant definitions.
+            if reaching_definitions.lists[chunk] ~= nil and
+                reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
+              local other_reaching_definition_index = reaching_definitions.indexes[chunk][macro_statement_number]
+              local base_csname = statement.base_csname.payload
+              -- Elide calls to indirect function/variable definitions and index those definitions.
+              states.results.elided_csname_use_out_edge_index[csname_use_statement] = true
+              states.results.csname_definition_in_edge_index[statement] = true
+              for _, other_definition in ipairs(other_reaching_definition_index[base_csname] or {}) do
+                local other_chunk, other_macro_statement_number, other_statement_number
+                  = other_definition.chunk, other_definition.macro_statement_number, other_definition.statement_number
+                local other_statement = get_statement(states, other_chunk, other_macro_statement_number, other_statement_number)
+                assert(is_well_behaved(other_statement))
+                assert(other_definition.csname == base_csname)
+                -- Weaken the base function/variant definition confidence.
+                local combined_definition
+                if definition.confidence < other_definition.confidence then
+                  combined_definition = make_shallow_copy(other_definition)
+                  combined_definition.confidence = definition.confidence
+                else
+                  combined_definition = other_definition
+                end
+                table.insert(intermediate_reaching_definition_list, combined_definition)
+              end
+            end
+          else
+            error('Unexpected statement type and "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+          end
+          ::next_reaching_statement::
+          reaching_definition_number = reaching_definition_number + 1
         end
-        ::next_reaching_statement::
-        reaching_definition_number = reaching_definition_number + 1
+
+        -- Draw the function call and variable use edges.
+        for _, csname_definition in ipairs(reaching_definition_list) do
+          local csname_definition_statement = get_statement(
+            states,
+            csname_definition.chunk,
+            csname_definition.macro_statement_number,
+            csname_definition.statement_number
+          )
+          assert(is_well_behaved(csname_definition_statement))
+
+          -- Index the definitions used in the function calls / variable uses.
+          states.results.csname_definition_in_edge_index[csname_definition_statement] = true
+
+          -- Determine the segment of the function/varuable definition replacement/definition text.
+          local results = states[csname_definition.chunk.segment.location.file_number].results
+          local to_segment_number
+          if csname_definition_statement.type == FUNCTION_DEFINITION then
+            assert(csname_definition_statement.subtype == FUNCTION_DEFINITION_DIRECT)
+            to_segment_number = csname_definition_statement.replacement_text_argument.segment_number
+          elseif csname_definition_statement.type == VARIABLE_DEFINITION then
+            assert(csname_definition_statement.subtype == VARIABLE_DEFINITION_DIRECT)
+            to_segment_number = csname_definition_statement.definition_text_argument.segment_number
+          else
+            error(
+              string.format(
+                'Unexpected statement type "%s" and subtype "%s"',
+                csname_definition_statement.type,
+                csname_definition_statement.subtype
+              )
+            )
+          end
+          if to_segment_number == nil then
+            states.results.elided_csname_use_out_edge_index[csname_use_statement] = true
+            goto next_csname_definition
+          end
+          local to_segment = results.segments[to_segment_number]
+
+          -- Elide calls to function/variable definitions with empty replacement/definition texts.
+          if to_segment.chunks == nil or #to_segment.chunks == 0 then
+            states.results.elided_csname_use_out_edge_index[csname_use_statement] = true
+            goto next_csname_definition
+          end
+
+          -- Determine the edge confidence.
+          local edge_confidence
+          if #reaching_definition_list > 1 then
+            -- If there are multiple definitions for this function call, then it's uncertain which one will be used.
+            edge_confidence = MAYBE
+          else
+            -- Otherwise, use the minimum of the function/variable definition statement confidence and the edge confidences along
+            -- the maximum-confidence path from the function/variable definition statement to the function call / variable use
+            -- statement.
+            edge_confidence = csname_definition.confidence
+          end
+          assert(edge_confidence >= MAYBE)
+
+          -- Draw the edges.
+          local use_edge_to_chunk = to_segment.chunks[1]
+          local use_edge_to_statement_number = use_edge_to_chunk.statement_range:start()
+          local use_edge = {
+            type = outgoing_edge_type,
+            from = {
+              chunk = csname_use_chunk,
+              statement_number = csname_use_statement_number,
+            },
+            to = {
+              chunk = use_edge_to_chunk,
+              statement_number = use_edge_to_statement_number,
+            },
+            confidence = edge_confidence,
+          }
+          local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
+          local return_edge_from_statement_number = return_edge_from_chunk.statement_range:stop() + 1
+          local return_edge = {
+            type = incoming_edge_type,
+            from = {
+              chunk = return_edge_from_chunk,
+              statement_number = return_edge_from_statement_number,
+            },
+            to = {
+              chunk = csname_use_chunk,
+              statement_number = csname_use_statement_number + 1,
+            },
+            confidence = edge_confidence,
+          }
+          -- The following attributes are specific to the edge types.
+          table.insert(current_edges, use_edge)
+          table.insert(current_edges, return_edge)
+          ::next_csname_definition::
+        end
+        ::next_csname_use::
       end
-
-      -- Draw the function call edges.
-      for _, function_definition in ipairs(reaching_definition_list) do
-        local function_definition_statement = get_statement(
-          states,
-          function_definition.chunk,
-          function_definition.macro_statement_number,
-          function_definition.statement_number
-        )
-        assert(is_well_behaved(function_definition_statement))
-        assert(function_definition_statement.subtype == FUNCTION_DEFINITION_DIRECT)
-        assert(function_definition_statement.type == FUNCTION_DEFINITION)
-
-        -- Determine the segment of the function definition replacement text.
-        local results = states[function_definition.chunk.segment.location.file_number].results
-        local to_segment_number = function_definition_statement.replacement_text_argument.segment_number
-        if to_segment_number == nil then
-          goto next_function_definition
-        end
-        local to_segment = results.segments[to_segment_number]
-
-        -- Index the definitions used in the function calls.
-        states.results.function_definition_in_edge_index[function_definition_statement] = true
-
-        -- Elide calls to function definitions with empty replacement texts.
-        if to_segment.chunks == nil or #to_segment.chunks == 0 then
-          states.results.elided_function_call_out_edge_index[function_call_statement] = true
-          goto next_function_definition
-        end
-
-        -- Determine the edge confidence.
-        local edge_confidence
-        if #reaching_definition_list > 1 then
-          -- If there are multiple definitions for this function call, then it's uncertain which one will be used.
-          edge_confidence = MAYBE
-        else
-          -- Otherwise, use the minimum of the function definition statement confidence and the edge confidences along
-          -- the maximum-confidence path from the function definition statement to the function call statement.
-          edge_confidence = function_definition.confidence
-        end
-        assert(edge_confidence >= MAYBE)
-
-        -- Draw the edges.
-        local call_edge_to_chunk = to_segment.chunks[1]
-        local call_edge_to_statement_number = call_edge_to_chunk.statement_range:start()
-        local call_edge = {
-          type = FUNCTION_CALL,
-          from = {
-            chunk = function_call_chunk,
-            statement_number = function_call_statement_number,
-          },
-          to = {
-            chunk = call_edge_to_chunk,
-            statement_number = call_edge_to_statement_number,
-          },
-          confidence = edge_confidence,
-        }
-        local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
-        local return_edge_from_statement_number = return_edge_from_chunk.statement_range:stop() + 1
-        local return_edge = {
-          type = FUNCTION_CALL_RETURN,
-          from = {
-            chunk = return_edge_from_chunk,
-            statement_number = return_edge_from_statement_number,
-          },
-          to = {
-            chunk = function_call_chunk,
-            statement_number = function_call_statement_number + 1,
-          },
-          confidence = edge_confidence,
-        }
-        -- The following attributes are specific to the edge types.
-        call_edge.return_edge = return_edge
-        return_edge.call_edge = call_edge
-        table.insert(current_function_call_edges, call_edge)
-        table.insert(current_function_call_edges, return_edge)
-        ::next_function_definition::
-      end
-      ::next_function_call::
     end
 
     num_outer_loops = num_outer_loops + 1
-  until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
+  until not (
+    any_edges_changed(previous_function_call_edges, current_function_call_edges)
+    or any_edges_changed(previous_variable_use_edges, current_variable_use_edges)
+  )
 
   -- Record edges.
-  states.results.edge_indexes[REACHING_DEFINITIONS].function_call_out = {}
-  for _, edge in ipairs(current_function_call_edges) do
-    local results = states[edge.from.chunk.segment.location.file_number].results
-    assert(results.edges ~= nil)
-    if results.edges[DYNAMIC] == nil then
-      results.edges[DYNAMIC] = {}
+  local edge_indexes = states.results.edge_indexes[REACHING_DEFINITIONS]
+  for _, current_edges_and_edge_index_name in ipairs({
+    {current_function_call_edges, "function_call_out"},
+    {current_variable_use_edges, "variable_use_out"},
+  }) do
+    local current_edges, edge_index_name = table.unpack(current_edges_and_edge_index_name)
+    assert(type(current_edges) == "table")
+    edge_indexes[edge_index_name] = {}
+    for _, edge in ipairs(current_edges) do
+      local results = states[edge.from.chunk.segment.location.file_number].results
+      assert(results.edges ~= nil)
+      if results.edges[DYNAMIC] == nil then
+        results.edges[DYNAMIC] = {}
+      end
+      table.insert(results.edges[DYNAMIC], edge)
+      _index_edge(REACHING_DEFINITIONS, edge_index_name, 'from', edge)
     end
-    table.insert(results.edges[DYNAMIC], edge)
-    _index_edge(REACHING_DEFINITIONS, 'function_call_out', 'from', edge)
   end
 end
 
@@ -1694,7 +1731,7 @@ local function report_issues(states, main_file_number, options)
             if (
                   (statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION) and
                   statement.is_private and
-                  states.results.function_definition_in_edge_index[statement] == nil and
+                  states.results.csname_definition_in_edge_index[statement] == nil and
                   statement.call_segments ~= nil
                 ) and statement.defined_csname.type == TEXT then
               assert(#statement.call_segments > 0)
@@ -1769,7 +1806,7 @@ local function report_issues(states, main_file_number, options)
           if all_definitions_reached_flow_analysis then
             local edge_indexes = states.results.edge_indexes[REACHING_DEFINITIONS]
             if edge_indexes.function_call_out[chunk] == nil or edge_indexes.function_call_out[chunk][statement_number] == nil then
-              if states.results.elided_function_call_out_edge_index[statement] == nil then
+              if states.results.elided_csname_use_out_edge_index[statement] == nil then
                 local formatted_csname = format_csname(statement.used_csname.payload)
                 local byte_range = get_byte_range()
                 issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
@@ -1792,8 +1829,8 @@ local function cleanup(states, _, _)
   states.results.drew_dynamic_edges = nil
   states.results.drew_static_edges = nil
   states.results.edge_indexes = nil
-  states.results.function_definition_in_edge_index = nil
-  states.results.elided_function_call_out_edge_index = nil
+  states.results.csname_definition_in_edge_index = nil
+  states.results.elided_csname_use_out_edge_index = nil
   states.results.reaching_definitions = nil
 end
 

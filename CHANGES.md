@@ -20,6 +20,16 @@ This version of explcheck has implemented the following new features:
 - Detect boolean expression segments in calls to control sequences like
   `\bool_if:nTF`. (#215, #217)
 
+- Emit both `VARIABLE_DECLARATION` and `VARIABLE_DEFINITION` statements for
+  constant definitions like `\tl_const:Nn`. (#217)
+
+  Previously, only a `VARIABLE_DEFINITION` statement would have been produced,
+  reqiring special-casing for issues like W415 (Unused variable or constant),
+  W416 (Setting an undeclared variable), and W419 (Using an undeclared variable
+  or constant).
+
+- In flow analysis, draw `VARIABLE_USE` and `VARIABLE_USE_RETURN` edges. (#217)
+
 #### Fixes
 
 This version of explcheck has fixed the following problems:
@@ -55,14 +65,6 @@ This version of explcheck has completed the following housekeeping tasks:
 - Reduce repetition in the function `analyze_group_wide_statements()` from
   `explcheck-semantic-analysis.lua` by introducing two new mechanisms:
   maybe-trackers and statement category lists and indices. (#217)
-
-- Emit both `VARIABLE_DECLARATION` and `VARIABLE_DEFINITION` statements for
-  constant definitions like `\tl_const:Nn`. (#217)
-
-  Previously, only a `VARIABLE_DEFINITION` statement would have been produced,
-  reqiring special-casing for issues like W415 (Unused variable or constant),
-  W416 (Setting an undeclared variable), and W419 (Using an undeclared variable
-  or constant).
 
 #### Continuous integration
 
