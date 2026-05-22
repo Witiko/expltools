@@ -769,26 +769,26 @@ local function print_results(state, options, evaluation_results, is_last_file)
       assert(num_well_understood_tokens ~= nil)
       if num_well_understood_tokens == 0 then
         io.write(string.format("\n%s- No well-understood expl3 %s", line_indent, pluralize("token")))
-        goto skip_remaining_additional_information
-      end
-      io.write(
-        string.format(
-          "\n%s- %s well-understood expl3 %s ",
-          line_indent,
-          titlecase(humanize(num_well_understood_tokens)),
-          pluralize("token", num_well_understood_tokens)
-        )
-      )
-      if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
-        io.write("(all expl3 tokens and bytes)")
       else
         io.write(
           string.format(
-            "(%s of expl3 tokens, ~%s of total bytes)",
-            format_ratio(num_well_understood_tokens, num_tokens),
-            format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+            "\n%s- %s well-understood expl3 %s ",
+            line_indent,
+            titlecase(humanize(num_well_understood_tokens)),
+            pluralize("token", num_well_understood_tokens)
           )
         )
+        if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
+          io.write("(all expl3 tokens and bytes)")
+        else
+          io.write(
+            string.format(
+              "(%s of expl3 tokens, ~%s of total bytes)",
+              format_ratio(num_well_understood_tokens, num_tokens),
+              format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+            )
+          )
+        end
       end
       -- Evaluate the evalution results of the flow analysis.
       if evaluation_results.num_macro_statements == nil then
