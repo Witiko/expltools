@@ -609,6 +609,7 @@ end
 
 -- Determine the reaching definitions from before the current statement.
 local function get_incoming_definitions(states, chunk, macro_statement_number)
+  local reaching_definitions = states.results.reaching.definitions
   local incoming_definition_list, incoming_definition_index = {}, {}
   do
     local original_incoming_definition_list, original_incoming_definition_index = {}, {}
@@ -617,11 +618,10 @@ local function get_incoming_definitions(states, chunk, macro_statement_number)
     for _, in_edge_index in ipairs({states.results.edge_indexes.explicit_in, states.results.edge_indexes.implicit_in}) do
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][macro_statement_number] ~= nil then
         for _, edge in ipairs(in_edge_index[chunk][macro_statement_number]) do
-          if states.results.reaching_definitions.lists[edge.from.chunk] ~= nil and
-              states.results.reaching_definitions.lists[edge.from.chunk][edge.from.statement_number] ~= nil then
+          if reaching_definitions.lists[edge.from.chunk] ~= nil and
+              reaching_definitions.lists[edge.from.chunk][edge.from.statement_number] ~= nil then
             in_degree = in_degree + 1
-            local reaching_definition_list
-              = states.results.reaching_definitions.lists[edge.from.chunk][edge.from.statement_number]
+            local reaching_definition_list = reaching_definitions.lists[edge.from.chunk][edge.from.statement_number]
             for _, definition in ipairs(reaching_definition_list) do
               -- Record the different incoming definitions together with the corresponding edge confidences.
               if original_incoming_definition_index[definition] == nil then
@@ -811,14 +811,16 @@ end
 
 -- Determine whether the reaching definitions after the current statement have changed.
 local function have_reaching_definitions_changed(states, chunk, statement_number, updated_definition_list, current_reaching_statement_index)
+  local reaching_definitions = states.results.reaching.definitions
+
   -- Determine the previous set of definitions, if any.
-  if states.results.reaching_definitions.lists[chunk] == nil then
+  if reaching_definitions.lists[chunk] == nil then
     return true
   end
-  if states.results.reaching_definitions.lists[chunk][statement_number] == nil then
+  if reaching_definitions.lists[chunk][statement_number] == nil then
     return true
   end
-  local previous_definition_list = states.results.reaching_definitions.lists[chunk][statement_number]
+  local previous_definition_list = reaching_definitions.lists[chunk][statement_number]
   assert(previous_definition_list ~= nil)
   assert(#previous_definition_list <= #updated_definition_list)
 
@@ -909,7 +911,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     ::next_file::
   end
 
-  -- Determine edges from function calls to function definitions, as discussed in <https://witiko.github.io/Expl3-Linter-11.5/>.
+  -- Determine edges from function calls and variable uses to function/varuabke definitions, as discussed in
+  -- <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
   local max_inner_loops = get_option('max_reaching_definition_inner_loops', options)
@@ -927,10 +930,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
     --
     -- First of, we will track the reaching definitions themselves.
-    states.results.reaching_definitions = {
-      lists = {},
-      indexes = {},
+    states.results.reaching = {
+      -- TODO: Track variable declarations separately.
+      definitions = {
+        lists = {},
+        indexes = {},
+      },
     }
+    local reaching_definitions = states.results.reaching.definitions
 
     -- Index all explicit "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
     states.results.edge_indexes = {
@@ -1144,18 +1151,18 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
 
         -- Update the reaching definitions.
-        if states.results.reaching_definitions.lists[chunk] == nil then
-          assert(states.results.reaching_definitions.indexes[chunk] == nil)
-          states.results.reaching_definitions.lists[chunk] = {}
-          states.results.reaching_definitions.indexes[chunk] = {}
+        if reaching_definitions.lists[chunk] == nil then
+          assert(reaching_definitions.indexes[chunk] == nil)
+          reaching_definitions.lists[chunk] = {}
+          reaching_definitions.indexes[chunk] = {}
         end
-        if states.results.reaching_definitions.lists[chunk][statement_number] == nil then
-          assert(states.results.reaching_definitions.indexes[chunk][statement_number] == nil)
-          states.results.reaching_definitions.lists[chunk][statement_number] = {}
-          states.results.reaching_definitions.indexes[chunk][statement_number] = {}
+        if reaching_definitions.lists[chunk][statement_number] == nil then
+          assert(reaching_definitions.indexes[chunk][statement_number] == nil)
+          reaching_definitions.lists[chunk][statement_number] = {}
+          reaching_definitions.indexes[chunk][statement_number] = {}
         end
-        states.results.reaching_definitions.lists[chunk][statement_number] = updated_definition_list
-        states.results.reaching_definitions.indexes[chunk][statement_number] = updated_definition_index
+        reaching_definitions.lists[chunk][statement_number] = updated_definition_list
+        reaching_definitions.indexes[chunk][statement_number] = updated_definition_index
       end
 
       num_inner_loops = num_inner_loops + 1
@@ -1174,14 +1181,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     for _, function_call_chunk_and_statement_number in ipairs(function_call_list) do
       -- For each function call, first copy relevant reaching definitions to a temporary list.
       local function_call_chunk, function_call_statement_number = table.unpack(function_call_chunk_and_statement_number)
-      if states.results.reaching_definitions.indexes[function_call_chunk] == nil or
-          states.results.reaching_definitions.indexes[function_call_chunk][function_call_statement_number] == nil then
+      if reaching_definitions.indexes[function_call_chunk] == nil or
+          reaching_definitions.indexes[function_call_chunk][function_call_statement_number] == nil then
         goto next_function_call
       end
       local function_call_statement = get_statement(states, function_call_chunk, function_call_statement_number)
       assert(is_well_behaved(function_call_statement))
       local reaching_function_and_variant_definition_list = {}
-      local reaching_definition_index = states.results.reaching_definitions.indexes[function_call_chunk][function_call_statement_number]
+      local reaching_definition_index = reaching_definitions.indexes[function_call_chunk][function_call_statement_number]
       local used_csname = function_call_statement.used_csname.payload
       for _, definition in ipairs(reaching_definition_index[used_csname] or {}) do
         assert(definition.csname == used_csname)
@@ -1212,9 +1219,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
             or statement.type == FUNCTION_VARIANT_DEFINITION then
           -- Resolve the indirect function definitions and function variant definitions.
-          if states.results.reaching_definitions.lists[chunk] ~= nil and
-              states.results.reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
-            local other_reaching_definition_index = states.results.reaching_definitions.indexes[chunk][macro_statement_number]
+          if reaching_definitions.lists[chunk] ~= nil and
+              reaching_definitions.lists[chunk][macro_statement_number] ~= nil then
+            local other_reaching_definition_index = reaching_definitions.indexes[chunk][macro_statement_number]
             local base_csname = statement.base_csname.payload
             -- Elide calls to indirect function definitions and index those definitions.
             states.results.elided_function_call_out_edge_index[function_call_statement] = true
@@ -1693,7 +1700,7 @@ local function cleanup(states, _, _)
   states.results.edge_indexes = nil
   states.results.function_definition_in_edge_index = nil
   states.results.elided_function_call_out_edge_index = nil
-  states.results.reaching_definitions = nil
+  states.results.reaching = nil
 end
 
 local substeps = {
