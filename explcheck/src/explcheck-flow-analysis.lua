@@ -99,6 +99,14 @@ local edge_subtypes = {
 local T_BRANCH = edge_subtypes.TF_BRANCH.T_BRANCH
 local F_BRANCH = edge_subtypes.TF_BRANCH.F_BRANCH
 
+local reaching_definition_types = {
+  REACHING_DECLARATIONS = "variable/constant declarations",
+  REACHING_DEFINITIONS = "function/variant/variable/constant definitions",
+}
+
+local REACHING_DECLARATIONS = reaching_definition_types.REACHING_DECLARATIONS
+local REACHING_DEFINITIONS = reaching_definition_types.REACHING_DEFINITIONS
+
 -- Merge selected statements into macro-statements, a more useful form for the following analyses.
 -- In the following, we will refer to statements and macro-statements interchangeably.
 local function merge_statements(states, file_number, _)
@@ -529,10 +537,10 @@ local function any_edges_changed(first_edges, second_edges)
 end
 
 -- Index an edge in an edge index.
-local function index_edge(states, edge_index_name, index_key, edge)
+local function __index_edge(reaching_definition_type, states, edge_index_name, index_key, edge)
   assert(not states[edge.from.chunk.segment.location.file_number].results.stopped_early)
   assert(not states[edge.to.chunk.segment.location.file_number].results.stopped_early)
-  local edge_index = states.results.edge_indexes[edge_index_name]
+  local edge_index = states.results.edge_indexes[reaching_definition_type][edge_index_name]
   local chunk, statement_number = edge[index_key].chunk, edge[index_key].statement_number
   if edge_index[chunk] == nil then
     edge_index[chunk] = {}
@@ -558,7 +566,7 @@ local function is_well_behaved(statement)
   elseif statement.type == VARIABLE_DECLARATION then
     result = statement.declared_csname.type == TEXT and (statement.maybe_multiply_declared or statement.maybe_used)
   elseif statement.type == VARIABLE_DEFINITION then
-    result = statement.defined_csname.type == TEXT and statement.maybe_used
+    result = statement.defined_csname.type == TEXT and (statement.maybe_used)
   else
     error('Unexpected statement type "' .. statement.type .. '"')
   end
@@ -567,37 +575,47 @@ end
 
 -- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
 -- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
-local function _is_interesting(states, chunk, macro_statement_number)
+local function _is_interesting(reaching_definition_type, states, chunk, macro_statement_number)
   -- Chunk boundaries are interesting.
   if macro_statement_number == chunk.statement_range:start() or macro_statement_number == chunk.statement_range:stop() + 1 then
     return true
   end
   -- (Pseudo-)statements with incoming or outgoing explicit edges are interesting.
-  if states.results.edge_indexes.explicit_in[chunk] ~= nil and
-        states.results.edge_indexes.explicit_in[chunk][macro_statement_number] ~= nil or
-      states.results.edge_indexes.explicit_out[chunk] ~= nil and
-        states.results.edge_indexes.explicit_out[chunk][macro_statement_number] ~= nil then
+  local edge_indexes = states.results.edge_indexes[reaching_definition_type]
+  if edge_indexes.explicit_in[chunk] ~= nil and edge_indexes.explicit_in[chunk][macro_statement_number] ~= nil or
+      edge_indexes.explicit_out[chunk] ~= nil and edge_indexes.explicit_out[chunk][macro_statement_number] ~= nil then
     return true
   end
   -- Well-behaved statements are interesting.
   local macro_statement = get_statement(states, chunk, macro_statement_number)
-  if macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
+  if reaching_definition_type == REACHING_DEFINITIONS and macro_statement.type == FUNCTION_CALL and is_well_behaved(macro_statement) then
     return true
   end
   -- Macro-statements containing at least one interesting statement are interesting.
   local any_well_behaved_statements = false
   for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
     assert(not is_macro_statement(statement))
-    if (
-          statement.type == FUNCTION_DEFINITION or
-          statement.type == FUNCTION_UNDEFINITION or
-          statement.type == FUNCTION_VARIANT_DEFINITION or
-          statement.type == VARIABLE_DECLARATION or
-          statement.type == VARIABLE_DEFINITION
-        )
-        and is_well_behaved(statement) then
-      any_well_behaved_statements = true
-      goto skip_remaining_statements
+    if reaching_definition_type == REACHING_DECLARATIONS then
+      if (
+            statement.type == VARIABLE_DECLARATION or
+            statement.type == VARIABLE_DEFINITION or
+            statement.type == FUNCTION_UNDEFINITION
+          ) and is_well_behaved(statement) then
+        any_well_behaved_statements = true
+        goto skip_remaining_statements
+      end
+    elseif reaching_definition_type == REACHING_DEFINITIONS then
+      if (
+            statement.type == FUNCTION_DEFINITION or
+            statement.type == FUNCTION_UNDEFINITION or
+            statement.type == FUNCTION_VARIANT_DEFINITION or
+            statement.type == VARIABLE_DEFINITION
+          ) and is_well_behaved(statement) then
+        any_well_behaved_statements = true
+        goto skip_remaining_statements
+      end
+    else
+      error('Unexpected reaching definition type "' .. reaching_definition_type .. '"')
     end
   end
   ::skip_remaining_statements::
@@ -608,14 +626,15 @@ local function _is_interesting(states, chunk, macro_statement_number)
 end
 
 -- Determine the reaching definitions from before the current statement.
-local function get_incoming_definitions(states, chunk, macro_statement_number)
-  local reaching_definitions = states.results.reaching.definitions
+local function get_incoming_reaching_definitions(reaching_definition_type, states, chunk, macro_statement_number)
+  local reaching_definitions = states.results.reaching_definitions[reaching_definition_type]
   local incoming_definition_list, incoming_definition_index = {}, {}
   do
     local original_incoming_definition_list, original_incoming_definition_index = {}, {}
     local original_incoming_definition_edge_confidence_lists = {}
     local in_degree = 0
-    for _, in_edge_index in ipairs({states.results.edge_indexes.explicit_in, states.results.edge_indexes.implicit_in}) do
+    local edge_indexes = states.results.edge_indexes[reaching_definition_type]
+    for _, in_edge_index in ipairs({edge_indexes.explicit_in, edge_indexes.implicit_in}) do
       if in_edge_index[chunk] ~= nil and in_edge_index[chunk][macro_statement_number] ~= nil then
         for _, edge in ipairs(in_edge_index[chunk][macro_statement_number]) do
           if reaching_definitions.lists[edge.from.chunk] ~= nil and
@@ -651,7 +670,7 @@ local function get_incoming_definitions(states, chunk, macro_statement_number)
         -- Otherwise, always use the combined edge confidence of `MAYBE`, regardless of the actual edge confidences.
         combined_edge_confidence = MAYBE
       end
-      assert(combined_edge_confidence >= MAYBE, "Edges shouldn't have confidences less than MAYBE")
+      assert(combined_edge_confidence >= MAYBE)
       -- Weaken the definition confidence with the combined edge confidence.
       local updated_definition
       if combined_edge_confidence < definition.confidence then
@@ -670,9 +689,16 @@ local function get_incoming_definitions(states, chunk, macro_statement_number)
   return incoming_definition_list, incoming_definition_index
 end
 
--- Determine the definitions and undefinitions from the current statement.
-local function get_current_definitions(
-    states, chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, max_statement_number)
+-- Determine the declarations and definitions from the current statement.
+local function get_current_reaching(
+  reaching_definition_type,
+  states,
+  chunk,
+  macro_statement_number,
+  incoming_definition_list,
+  incoming_definition_index,
+  max_statement_number
+)
   local current_definition_list, current_definition_index = {}, {}
   local invalidated_statement_index = {}
   if macro_statement_number <= chunk.statement_range:stop() then  -- Unless this is a pseudo-statement "after" a chunk.
@@ -685,12 +711,20 @@ local function get_current_definitions(
       if max_statement_number ~= nil and statement_number > max_statement_number then
         break
       end
-      if statement.type ~= FUNCTION_DEFINITION and
-          statement.type ~= FUNCTION_UNDEFINITION and
-          statement.type ~= FUNCTION_VARIANT_DEFINITION and
-          statement.type ~= VARIABLE_DECLARATION and
-          statement.type ~= VARIABLE_DEFINITION then
-        goto next_statement
+      if reaching_definition_type == REACHING_DECLARATIONS then
+        if statement.type ~= VARIABLE_DECLARATION and
+            statement.type ~= FUNCTION_UNDEFINITION then
+          goto next_statement
+        end
+      elseif reaching_definition_type == REACHING_DEFINITIONS then
+        if statement.type ~= FUNCTION_DEFINITION and
+            statement.type ~= FUNCTION_UNDEFINITION and
+            statement.type ~= FUNCTION_VARIANT_DEFINITION and
+            statement.type ~= VARIABLE_DEFINITION then
+          goto next_statement
+        end
+      else
+        error('Unexpected reaching definition type "' .. reaching_definition_type .. '"')
       end
       if not is_well_behaved(statement) then
         goto next_statement
@@ -703,8 +737,10 @@ local function get_current_definitions(
       then
         -- Record function, function variant, and constant/variable declarations/definitions.
         if statement.type == VARIABLE_DECLARATION then
+          assert(reaching_definition_type == REACHING_DECLARATIONS)
           declared_defined_or_undefined_csname = statement.declared_csname
         else
+          assert(reaching_definition_type == REACHING_DEFINITIONS)
           declared_defined_or_undefined_csname = statement.defined_csname
         end
         assert(declared_defined_or_undefined_csname.type == TEXT)
@@ -715,10 +751,7 @@ local function get_current_definitions(
           macro_statement_number = macro_statement_number,
           statement_number = is_macro_statement(macro_statement) and statement_number or nil,
         }
-        assert(
-          definition.confidence >= MAYBE,
-          "Function, function variant and constant/variable declarations/definitions shouldn't have confidences less than MAYBE"
-        )
+        assert(definition.confidence >= MAYBE)
         table.insert(current_definition_list, definition)
         if current_definition_index[definition.csname] == nil then
           current_definition_index[definition.csname] = {}
@@ -770,7 +803,7 @@ local function get_current_definitions(
 end
 
 -- Determine the reaching definitions after the current statement.
-local function get_outgoing_definitions(states, incoming_definition_list, current_definition_list, invalidated_statement_index)
+local function get_outgoing_reaching_definitions(states, incoming_definition_list, current_definition_list, invalidated_statement_index)
   local updated_definition_list, updated_definition_index = {}, {}
   local current_reaching_statement_index = {}
   for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
@@ -810,8 +843,15 @@ local function get_outgoing_definitions(states, incoming_definition_list, curren
 end
 
 -- Determine whether the reaching definitions after the current statement have changed.
-local function have_reaching_definitions_changed(states, chunk, statement_number, updated_definition_list, current_reaching_statement_index)
-  local reaching_definitions = states.results.reaching.definitions
+local function have_reaching_changed(
+  reaching_definition_type,
+  states,
+  chunk,
+  statement_number,
+  updated_definition_list,
+  current_reaching_statement_index
+)
+  local reaching_definitions = states.results.reaching_definitions[reaching_definition_type]
 
   -- Determine the previous set of definitions, if any.
   if reaching_definitions.lists[chunk] == nil then
@@ -858,14 +898,13 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   end
   states.results.drew_dynamic_edges = true
 
-  -- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
-  -- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
-  local function is_interesting(chunk, macro_statement_number)
-    return _is_interesting(states, chunk, macro_statement_number)
+  -- Index an edge in an edge index.
+  local function _index_edge(reaching_definition_type, edge_index_name, index_key, edge)
+    return __index_edge(reaching_definition_type, states, edge_index_name, index_key, edge)
   end
 
-  -- Collect a list of well-behaved function definition and call statements.
-  local function_call_list, function_definition_list = {}, {}
+  -- Collect a list of well-behaved function definition/call and variable declaration statements.
+  local function_call_list, function_definition_list, variable_declaration_list = {}, {}, {}
   for _, state in ipairs(states) do
     -- Skip statements from files in the current file group that haven't reached the flow analysis.
     if states.results.stopped_early then
@@ -878,29 +917,38 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               macro_statement.type ~= FUNCTION_AND_VARIABLE_DEFINITIONS then
             goto next_macro_statement
           end
-          local any_well_behaved_statements = false
+          local any_well_behaved_function_definitions, any_well_behaved_variable_declarations = false, false
           for _, statement in ipairs(macro_statement.statements or {macro_statement}) do
             assert(not is_macro_statement(statement))
             if statement.type ~= FUNCTION_CALL and
                 statement.type ~= FUNCTION_DEFINITION and
-                statement.type ~= FUNCTION_VARIANT_DEFINITION then
+                statement.type ~= FUNCTION_VARIANT_DEFINITION and
+                statement.type ~= VARIABLE_DECLARATION then
               goto next_statement
             end
             if not is_well_behaved(statement) then
               goto next_statement
             end
-            any_well_behaved_statements = true
+            if statement.type == FUNCTION_DEFINITION or
+                statement.type == FUNCTION_VARIANT_DEFINITION then
+              any_well_behaved_function_definitions = true
+            end
+            if statement.type == VARIABLE_DECLARATION then
+              any_well_behaved_variable_declarations = true
+            end
             goto skip_remaining_statements
             ::next_statement::
           end
           ::skip_remaining_statements::
-          if not any_well_behaved_statements then
-            goto next_macro_statement
-          end
           if macro_statement.type == FUNCTION_CALL then
             table.insert(function_call_list, {chunk, statement_number})
           elseif macro_statement.type == FUNCTION_AND_VARIABLE_DEFINITIONS then
-            table.insert(function_definition_list, {chunk, statement_number})
+            if any_well_behaved_function_definitions then
+              table.insert(function_definition_list, {chunk, statement_number})
+            end
+            if any_well_behaved_variable_declarations then
+              table.insert(variable_declaration_list, {chunk, statement_number})
+            end
           else
             error('Unexpected statement type "' .. macro_statement.type .. '"')
           end
@@ -911,7 +959,14 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     ::next_file::
   end
 
-  -- Determine edges from function calls and variable uses to function/varuabke definitions, as discussed in
+  -- Run reaching definitions multiple types for different definition types.
+  local reaching_definition_type_list = {}
+  for _, reaching_definition_type in pairs(reaching_definition_types) do
+    table.insert(reaching_definition_type_list, reaching_definition_type)
+  end
+  table.sort(reaching_definition_type_list)
+
+  -- Determine edges from function calls and variable uses to function/variable definitions, as discussed in
   -- <https://witiko.github.io/Expl3-Linter-11.5/>.
   local previous_function_call_edges
   local current_function_call_edges = {}
@@ -928,244 +983,275 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     -- Run reaching definitions, see <https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm>.
-    --
-    -- First of, we will track the reaching definitions themselves.
-    states.results.reaching = {
-      -- TODO: Track variable declarations separately.
-      definitions = {
+    states.results.reaching_definitions, states.results.edge_indexes = {}, {}
+    for _, reaching_definition_type in ipairs(reaching_definition_type_list) do
+      -- First of, we will track the reaching definitions themselves.
+      states.results.reaching_definitions[reaching_definition_type] = {
         lists = {},
         indexes = {},
-      },
-    }
-    local reaching_definitions = states.results.reaching.definitions
+      }
+      local reaching_definitions = states.results.reaching_definitions[reaching_definition_type]
 
-    -- Index all explicit "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
-    states.results.edge_indexes = {
-      explicit_in = {},
-      explicit_out = {},
-    }
-    local edge_lists = {current_function_call_edges}
-    for _, state in ipairs(states) do
-      local edge_category_list = {}
-      for edge_category, _ in pairs(state.results.edges or {}) do
-        table.insert(edge_category_list, edge_category)
+      -- Index an edge in an edge index.
+      local function index_edge(edge_index_name, index_key, edge)
+        return _index_edge(reaching_definition_type, edge_index_name, index_key, edge)
       end
-      table.sort(edge_category_list)
-      for _, edge_category in ipairs(edge_category_list) do
-        local edges = state.results.edges[edge_category]
-        assert(edges ~= nil)
-        table.insert(edge_lists, edges)
+
+      -- Index all explicit "static" and currently estimated "dynamic" incoming and outgoing edges for each statement.
+      states.results.edge_indexes[reaching_definition_type] = {}
+      local edge_indexes = states.results.edge_indexes[reaching_definition_type]
+      edge_indexes.explicit_in, edge_indexes.explicit_out = {}, {}
+      local edge_lists = {current_function_call_edges}
+      for _, state in ipairs(states) do
+        local edge_category_list = {}
+        for edge_category, _ in pairs(state.results.edges or {}) do
+          table.insert(edge_category_list, edge_category)
+        end
+        table.sort(edge_category_list)
+        for _, edge_category in ipairs(edge_category_list) do
+          local edges = state.results.edges[edge_category]
+          assert(edges ~= nil)
+          table.insert(edge_lists, edges)
+        end
       end
-    end
-    for _, edges in ipairs(edge_lists) do
-      for _, edge in ipairs(edges) do
-        index_edge(states, 'explicit_in', 'to', edge)
-        index_edge(states, 'explicit_out', 'from', edge)
+      for _, edges in ipairs(edge_lists) do
+        for _, edge in ipairs(edges) do
+          index_edge('explicit_in', 'to', edge)
+          index_edge('explicit_out', 'from', edge)
+        end
       end
-    end
 
-    -- Index all implicit incoming and outgoing pseudo-edges as well.
-    states.results.edge_indexes.implicit_in, states.results.edge_indexes.implicit_out = {}, {}
-    local num_interesting_statements, interesting_statement_index = 0, {}
-    for _, state in ipairs(states) do
-      -- Skip statements from files in the current file group that haven't reached the flow analysis.
-      if state.results.stopped_early then
-        goto next_file
+      -- Check whether a statement is "interesting". A statement is interesting if it has the potential to consume or affect
+      -- the reaching definitions other than just passing along the definitions from the previous statement in the chunk.
+      local function is_interesting(chunk, macro_statement_number)
+        return _is_interesting(reaching_definition_type, states, chunk, macro_statement_number)
       end
-      for _, segment in ipairs(state.results.segments or {}) do
-        for _, chunk in ipairs(segment.chunks or {}) do
-          local previous_interesting_statement_number
-          local edge_confidence = DEFINITELY
 
-          -- Add an implicit pseudo-edge between pairs of successive interesting statements.
-          local function record_interesting_statement(statement_number)
-            assert(is_interesting(chunk, statement_number))
-            if previous_interesting_statement_number ~= nil then
-              local edge = {
-                type = NEXT_INTERESTING_STATEMENT,
-                from = {
-                  chunk = chunk,
-                  statement_number = previous_interesting_statement_number,
-                },
-                to = {
-                  chunk = chunk,
-                  statement_number = statement_number,
-                },
-                confidence = edge_confidence,
-              }
-              index_edge(states, 'implicit_in', 'to', edge)
-              index_edge(states, 'implicit_out', 'from', edge)
-            end
-            if interesting_statement_index[chunk] == nil then
-              interesting_statement_index[chunk] = {}
-            end
-            if interesting_statement_index[chunk][statement_number] == nil then
-              interesting_statement_index[chunk][statement_number] = true
-              num_interesting_statements = num_interesting_statements + 1
-            end
-            previous_interesting_statement_number = statement_number
-            edge_confidence = DEFINITELY
-          end
+      -- Index all implicit incoming and outgoing pseudo-edges as well.
+      edge_indexes.implicit_in, edge_indexes.implicit_out = {}, {}
+      local num_interesting_statements, interesting_statement_index = 0, {}
+      for _, state in ipairs(states) do
+        -- Skip statements from files in the current file group that haven't reached the flow analysis.
+        if state.results.stopped_early then
+          goto next_file
+        end
+        for _, segment in ipairs(state.results.segments or {}) do
+          for _, chunk in ipairs(segment.chunks or {}) do
+            local previous_interesting_statement_number
+            local edge_confidence = DEFINITELY
 
-          for statement_number, statement in chunk.statement_range:enumerate(segment.macro_statements) do
-            if is_interesting(chunk, statement_number) then
-              record_interesting_statement(statement_number)
-
-              -- For potential function calls, reduce the confidence of the implicit pseudo-edge towards the next interesting
-              -- statement, since we'll maybe not take that pseudo-edge and make the function call instead.
-              if statement.type == FUNCTION_CALL then
-                edge_confidence = MAYBE
-                goto next_statement
+            -- Add an implicit pseudo-edge between pairs of successive interesting statements.
+            local function record_interesting_statement(statement_number)
+              assert(is_interesting(chunk, statement_number))
+              if previous_interesting_statement_number ~= nil then
+                local edge = {
+                  type = NEXT_INTERESTING_STATEMENT,
+                  from = {
+                    chunk = chunk,
+                    statement_number = previous_interesting_statement_number,
+                  },
+                  to = {
+                    chunk = chunk,
+                    statement_number = statement_number,
+                  },
+                  confidence = edge_confidence,
+                }
+                index_edge('implicit_in', 'to', edge)
+                index_edge('implicit_out', 'from', edge)
               end
+              if interesting_statement_index[chunk] == nil then
+                interesting_statement_index[chunk] = {}
+              end
+              if interesting_statement_index[chunk][statement_number] == nil then
+                interesting_statement_index[chunk][statement_number] = true
+                num_interesting_statements = num_interesting_statements + 1
+              end
+              previous_interesting_statement_number = statement_number
+              edge_confidence = DEFINITELY
+            end
 
-              local has_t_branch, has_f_branch = false, false
-              if states.results.edge_indexes.explicit_out[chunk] ~= nil and
-                  states.results.edge_indexes.explicit_out[chunk][statement_number] ~= nil then
-                for _, edge in ipairs(states.results.edge_indexes.explicit_out[chunk][statement_number]) do
-                  -- For fully-resolved function calls, cancel the implicit pseudo-edge towards the next interesting statement;
-                  -- instead, the reaching definitions will be routed through the replacement text of the function, at whose end
-                  -- we'll return to the (interesting) statement following the function call.
-                  if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
-                    previous_interesting_statement_number = nil
-                    goto next_statement
-                  end
-                  -- For outgoing T- and F-branches of conditional functions, the behavior depends on whether both branches
-                  -- are present. If the conditional function has a function call edge, we use the previously described behavior.
-                  if edge.type == TF_BRANCH then
-                    if edge.subtype == T_BRANCH then
-                      has_t_branch = true
-                    else
-                      assert(edge.subtype == F_BRANCH)
-                      has_f_branch = true
+            for statement_number, statement in chunk.statement_range:enumerate(segment.macro_statements) do
+              if is_interesting(chunk, statement_number) then
+                record_interesting_statement(statement_number)
+
+                -- For potential function calls, reduce the confidence of the implicit pseudo-edge towards the next interesting
+                -- statement, since we'll maybe not take that pseudo-edge and make the function call instead.
+                if statement.type == FUNCTION_CALL then
+                  edge_confidence = MAYBE
+                  goto next_statement
+                end
+
+                local has_t_branch, has_f_branch = false, false
+                if edge_indexes.explicit_out[chunk] ~= nil and edge_indexes.explicit_out[chunk][statement_number] ~= nil then
+                  for _, edge in ipairs(edge_indexes.explicit_out[chunk][statement_number]) do
+                    -- For fully-resolved function calls, cancel the implicit pseudo-edge towards the next interesting statement;
+                    -- instead, the reaching definitions will be routed through the replacement text of the function, at whose end
+                    -- we'll return to the (interesting) statement following the function call.
+                    if edge.type == FUNCTION_CALL and edge.confidence == DEFINITELY then
+                      previous_interesting_statement_number = nil
+                      goto next_statement
+                    end
+                    -- For outgoing T- and F-branches of conditional functions, the behavior depends on whether both branches
+                    -- are present. If the conditional function has a function call edge, we use the previously described behavior.
+                    if edge.type == TF_BRANCH then
+                      if edge.subtype == T_BRANCH then
+                        has_t_branch = true
+                      else
+                        assert(edge.subtype == F_BRANCH)
+                        has_f_branch = true
+                      end
                     end
                   end
-                end
-                -- If the conditional function has no function call edge and has both a T- and an F-branch, cancel the implicit
-                -- pseudo-edge towards the next interesting statement; instead, the reaching definitions will be routed through
-                -- the branches, at whose end we'll return to the (interesting) statement following the conditional function call.
-                if has_t_branch and has_f_branch then
-                  previous_interesting_statement_number = nil
+                  -- If the conditional function has no function call edge and has both a T- and an F-branch, cancel the implicit
+                  -- pseudo-edge towards the next interesting statement; instead, the reaching definitions will be routed through
+                  -- the branches, at whose end we'll return to the (interesting) statement following the conditional function call.
+                  if has_t_branch and has_f_branch then
+                    previous_interesting_statement_number = nil
+                  end
                 end
               end
+              ::next_statement::
             end
-            ::next_statement::
-          end
-          record_interesting_statement(chunk.statement_range:stop() + 1)
-        end
-      end
-      ::next_file::
-    end
-    interesting_statement_index = nil
-
-    -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
-    local changed_statements_list, changed_statements_index = {}, {}
-
-    -- Add a changed statement on the top of the stack.
-    local function add_changed_statement(chunk, statement_number)
-      -- Get the stack of statements for the given chunk, inserting it if it doesn't exist.
-      local chunk_statements
-      if changed_statements_index[chunk] == nil then
-        chunk_statements = {
-          chunk = chunk,
-          statement_numbers_list = {},
-          statement_numbers_index = {},
-        }
-        table.insert(changed_statements_list, chunk_statements)
-        changed_statements_index[chunk] = #changed_statements_list
-      else
-        chunk_statements = changed_statements_list[changed_statements_index[chunk]]
-      end
-
-      -- Insert the statement to the stack if it isn't there already.
-      local statement_numbers_list = chunk_statements.statement_numbers_list
-      local statement_numbers_index = chunk_statements.statement_numbers_index
-      if statement_numbers_index[statement_number] == nil then
-        table.insert(statement_numbers_list, statement_number)
-        statement_numbers_index[statement_number] = #statement_numbers_list
-      end
-    end
-
-    -- Pop a changed statement off the top of stack.
-    local function pop_changed_statement()
-      -- Pick a statement from the stack of changed statements.
-      local chunk_statements = changed_statements_list[#changed_statements_list]
-      local chunk = chunk_statements.chunk
-      local statement_numbers_list = chunk_statements.statement_numbers_list
-      local statement_numbers_index = chunk_statements.statement_numbers_index
-      assert(#statement_numbers_list > 0)
-      local statement_number = statement_numbers_list[#statement_numbers_list]
-
-      -- Remove the statement from the stack.
-      if #statement_numbers_list > 1 then
-        -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
-        table.remove(statement_numbers_list)
-        statement_numbers_index[statement_number] = nil
-      else
-        -- Otherwise, remove the chunk from the stack as well.
-        table.remove(changed_statements_list)
-        changed_statements_index[chunk] = nil
-      end
-
-      return chunk, statement_number
-    end
-
-    for _, chunk_and_statement_number in ipairs(function_definition_list) do
-      local chunk, statement_number = table.unpack(chunk_and_statement_number)
-      add_changed_statement(chunk, statement_number)
-    end
-
-    -- Iterate over the changed statements until convergence.
-    local num_inner_loops, max_theoretical_inner_loops = 0, num_interesting_statements * num_interesting_statements
-    while #changed_statements_list > 0 do
-      -- Guard against infinite loops.
-      assert(num_inner_loops <= max_theoretical_inner_loops)
-
-      -- Guard against too many loops, making the processing unbearably slow.
-      if max_inner_loops ~= false and num_inner_loops > max_inner_loops then
-        break
-      end
-
-      -- Pick a statement from the stack of changed statements.
-      local chunk, statement_number = pop_changed_statement()
-
-      -- Determine the reaching definitions from before the current statement.
-      local incoming_definition_list, incoming_definition_index = get_incoming_definitions(states, chunk, statement_number)
-
-      -- Determine the definitions and undefinitions from the current statement.
-      local current_definition_list, _, invalidated_statement_index
-        = get_current_definitions(states, chunk, statement_number, incoming_definition_list, incoming_definition_index)
-
-      -- Determine the reaching definitions after the current statement.
-      local updated_definition_list, updated_definition_index, current_reaching_statement_index
-        = get_outgoing_definitions(states, incoming_definition_list, current_definition_list, invalidated_statement_index)
-
-      -- Update the stack of changed statements.
-      if have_reaching_definitions_changed(states, chunk, statement_number, updated_definition_list, current_reaching_statement_index) then
-        -- Insert the successive statements into the stack of changed statements.
-        for _, out_edge_index in ipairs({states.results.edge_indexes.explicit_out, states.results.edge_indexes.implicit_out}) do
-          if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
-            for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
-              add_changed_statement(edge.to.chunk, edge.to.statement_number)
-            end
+            record_interesting_statement(chunk.statement_range:stop() + 1)
           end
         end
+        ::next_file::
+      end
+      interesting_statement_index = nil
 
-        -- Update the reaching definitions.
-        if reaching_definitions.lists[chunk] == nil then
-          assert(reaching_definitions.indexes[chunk] == nil)
-          reaching_definitions.lists[chunk] = {}
-          reaching_definitions.indexes[chunk] = {}
+      -- Initialize a stack of changed statements to all well-behaved function (variant) definitions.
+      local changed_statements_list, changed_statements_index = {}, {}
+
+      -- Add a changed statement on the top of the stack.
+      local function add_changed_statement(chunk, statement_number)
+        -- Get the stack of statements for the given chunk, inserting it if it doesn't exist.
+        local chunk_statements
+        if changed_statements_index[chunk] == nil then
+          chunk_statements = {
+            chunk = chunk,
+            statement_numbers_list = {},
+            statement_numbers_index = {},
+          }
+          table.insert(changed_statements_list, chunk_statements)
+          changed_statements_index[chunk] = #changed_statements_list
+        else
+          chunk_statements = changed_statements_list[changed_statements_index[chunk]]
         end
-        if reaching_definitions.lists[chunk][statement_number] == nil then
-          assert(reaching_definitions.indexes[chunk][statement_number] == nil)
-          reaching_definitions.lists[chunk][statement_number] = {}
-          reaching_definitions.indexes[chunk][statement_number] = {}
+
+        -- Insert the statement to the stack if it isn't there already.
+        local statement_numbers_list = chunk_statements.statement_numbers_list
+        local statement_numbers_index = chunk_statements.statement_numbers_index
+        if statement_numbers_index[statement_number] == nil then
+          table.insert(statement_numbers_list, statement_number)
+          statement_numbers_index[statement_number] = #statement_numbers_list
         end
-        reaching_definitions.lists[chunk][statement_number] = updated_definition_list
-        reaching_definitions.indexes[chunk][statement_number] = updated_definition_index
       end
 
-      num_inner_loops = num_inner_loops + 1
+      -- Pop a changed statement off the top of stack.
+      local function pop_changed_statement()
+        -- Pick a statement from the stack of changed statements.
+        local chunk_statements = changed_statements_list[#changed_statements_list]
+        local chunk = chunk_statements.chunk
+        local statement_numbers_list = chunk_statements.statement_numbers_list
+        local statement_numbers_index = chunk_statements.statement_numbers_index
+        assert(#statement_numbers_list > 0)
+        local statement_number = statement_numbers_list[#statement_numbers_list]
+
+        -- Remove the statement from the stack.
+        if #statement_numbers_list > 1 then
+          -- If there are remaining statements from the top chunk of the stack, keep the chunk at the stack.
+          table.remove(statement_numbers_list)
+          statement_numbers_index[statement_number] = nil
+        else
+          -- Otherwise, remove the chunk from the stack as well.
+          table.remove(changed_statements_list)
+          changed_statements_index[chunk] = nil
+        end
+
+        return chunk, statement_number
+      end
+
+      -- Record the initial changed statements based on the current type of reaching definitions.
+      local initial_changed_statements
+      if reaching_definition_type == REACHING_DEFINITIONS then
+        initial_changed_statements = function_definition_list
+      elseif reaching_definition_type == REACHING_DECLARATIONS then
+        initial_changed_statements = variable_declaration_list
+      else
+        error('Unexpected reaching definition type "' .. reaching_definition_type .. '"')
+      end
+      for _, chunk_and_statement_number in ipairs(initial_changed_statements) do
+        local chunk, statement_number = table.unpack(chunk_and_statement_number)
+        add_changed_statement(chunk, statement_number)
+      end
+
+      -- Iterate over the changed statements until convergence.
+      local num_inner_loops, max_theoretical_inner_loops = 0, num_interesting_statements * num_interesting_statements
+      while #changed_statements_list > 0 do
+        -- Guard against infinite loops.
+        assert(num_inner_loops <= max_theoretical_inner_loops)
+
+        -- Guard against too many loops, making the processing unbearably slow.
+        if max_inner_loops ~= false and num_inner_loops > max_inner_loops then
+          break
+        end
+
+        -- Pick a statement from the stack of changed statements.
+        local chunk, statement_number = pop_changed_statement()
+
+        -- Determine the reaching definitions from before the current statement.
+        local incoming_definition_list, incoming_definition_index
+          = get_incoming_reaching_definitions(reaching_definition_type, states, chunk, statement_number)
+
+        -- Determine the definitions and undefinitions from the current statement.
+        local current_definition_list, _, invalidated_statement_index
+          = get_current_reaching(
+              reaching_definition_type,
+              states,
+              chunk,
+              statement_number,
+              incoming_definition_list,
+              incoming_definition_index
+            )
+
+        -- Determine the reaching definitions after the current statement.
+        local updated_definition_list, updated_definition_index, current_reaching_statement_index
+          = get_outgoing_reaching_definitions(
+              states,
+              incoming_definition_list,
+              current_definition_list,
+              invalidated_statement_index
+            )
+
+        -- Update the stack of changed statements.
+        if have_reaching_changed(
+            reaching_definition_type, states, chunk, statement_number, updated_definition_list, current_reaching_statement_index) then
+          -- Insert the successive statements into the stack of changed statements.
+          for _, out_edge_index in ipairs({edge_indexes.explicit_out, edge_indexes.implicit_out}) do
+            if out_edge_index[chunk] ~= nil and out_edge_index[chunk][statement_number] ~= nil then
+              for _, edge in ipairs(out_edge_index[chunk][statement_number]) do
+                add_changed_statement(edge.to.chunk, edge.to.statement_number)
+              end
+            end
+          end
+
+          -- Update the reaching definitions.
+          if reaching_definitions.lists[chunk] == nil then
+            assert(reaching_definitions.indexes[chunk] == nil)
+            reaching_definitions.lists[chunk] = {}
+            reaching_definitions.indexes[chunk] = {}
+          end
+          if reaching_definitions.lists[chunk][statement_number] == nil then
+            assert(reaching_definitions.indexes[chunk][statement_number] == nil)
+            reaching_definitions.lists[chunk][statement_number] = {}
+            reaching_definitions.indexes[chunk][statement_number] = {}
+          end
+          reaching_definitions.lists[chunk][statement_number] = updated_definition_list
+          reaching_definitions.indexes[chunk][statement_number] = updated_definition_index
+        end
+
+        num_inner_loops = num_inner_loops + 1
+      end
     end
 
     -- Make a copy of the current estimation of the function call edges.
@@ -1175,6 +1261,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     end
 
     -- Update the current estimation of the function call edges.
+    local reaching_definitions = states.results.reaching_definitions[REACHING_DEFINITIONS]
     current_function_call_edges = {}
     states.results.function_definition_in_edge_index = {}
     states.results.elided_function_call_out_edge_index = {}
@@ -1211,9 +1298,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         end
         seen_reaching_statements[statement] = true
         if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT
-            or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT
-            or statement.type == VARIABLE_DECLARATION then
-          -- Simply record the direct function/variable declarations/definitions.
+            or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT then
+          -- Simply record the direct function/variable definitions.
           table.insert(reaching_definition_list, definition)
         elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
             or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
@@ -1289,7 +1375,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           -- the maximum-confidence path from the function definition statement to the function call statement.
           edge_confidence = function_definition.confidence
         end
-        assert(edge_confidence >= MAYBE, "Function call edges shouldn't have confidences less than MAYBE")
+        assert(edge_confidence >= MAYBE)
 
         -- Draw the edges.
         local call_edge_to_chunk = to_segment.chunks[1]
@@ -1334,7 +1420,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   until not any_edges_changed(previous_function_call_edges, current_function_call_edges)
 
   -- Record edges.
-  states.results.edge_indexes.function_call_out = {}
+  states.results.edge_indexes[REACHING_DEFINITIONS].function_call_out = {}
   for _, edge in ipairs(current_function_call_edges) do
     local results = states[edge.from.chunk.segment.location.file_number].results
     assert(results.edges ~= nil)
@@ -1342,7 +1428,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       results.edges[DYNAMIC] = {}
     end
     table.insert(results.edges[DYNAMIC], edge)
-    index_edge(states, 'function_call_out', 'from', edge)
+    _index_edge(REACHING_DEFINITIONS, 'function_call_out', 'from', edge)
   end
 end
 
@@ -1447,7 +1533,7 @@ local function report_issues(states, main_file_number, options)
       local call_range_to_token_range = get_call_range_to_token_range(chunk.segment.calls, #tokens)
       for macro_statement_number, macro_statement in chunk.statement_range:enumerate(segment.macro_statements) do
         -- Skip uninteresting macro statements that would have been skipped during the analysis.
-        if not _is_interesting(states, chunk, macro_statement_number) then
+        if not _is_interesting(REACHING_DEFINITIONS, states, chunk, macro_statement_number) then
           goto next_macro_statement
         end
         -- Report issues with function (variant) (un)definitions.
@@ -1467,11 +1553,18 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Get definitions for a given control sequence name that reach the current statement.
-            local function get_reaching_definitions(csname)
+            local function get_reaching(reaching_definition_type, csname)
               local incoming_definition_list, incoming_definition_index
-                = get_incoming_definitions(states, chunk, macro_statement_number)
-              local current_definition_list, current_definition_index, invalidated_statement_index = get_current_definitions(
-                states, chunk, macro_statement_number, incoming_definition_list, incoming_definition_index, statement_number - 1)
+                = get_incoming_reaching_definitions(reaching_definition_type, states, chunk, macro_statement_number)
+              local current_definition_list, current_definition_index, invalidated_statement_index = get_current_reaching(
+                reaching_definition_type,
+                states,
+                chunk,
+                macro_statement_number,
+                incoming_definition_list,
+                incoming_definition_index,
+                statement_number - 1
+              )
 
               local definition_lists = {incoming_definition_list, current_definition_list}
               local definition_indexes = {incoming_definition_index[csname] or {}, current_definition_index[csname] or {}}
@@ -1503,8 +1596,8 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Determine whether there are any definite definitions for a given control sequence name that reach the current statement.
-            local function any_reaching_definitions(csname, check_definition)
-              for definition in get_reaching_definitions(csname) do
+            local function any_reaching(reaching_definition_type, csname, check_definition)
+              for definition in get_reaching(reaching_definition_type, csname) do
                 assert(definition.csname == csname)
                 if check_definition ~= nil then
                   local other_statement = get_statement(
@@ -1530,7 +1623,8 @@ local function report_issues(states, main_file_number, options)
                   statement.type == FUNCTION_VARIANT_DEFINITION
                 ) and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
-              if any_reaching_definitions(
+              if any_reaching(
+                    REACHING_DEFINITIONS,
                     defined_csname,
                     function(definition, other_statement)
                       return definition.confidence == DEFINITELY and
@@ -1569,7 +1663,7 @@ local function report_issues(states, main_file_number, options)
                 ) and statement.base_csname.type == TEXT then
               local base_csname = statement.base_csname.payload
               if lpeg.match(expl3_well_known_csname, base_csname) == nil and
-                  not any_reaching_definitions(base_csname) then
+                  not any_reaching(REACHING_DEFINITIONS, base_csname) then
                 local formatted_csname = format_csname(base_csname)
                 local byte_range = get_byte_range()
 
@@ -1590,7 +1684,7 @@ local function report_issues(states, main_file_number, options)
             if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
-                  not any_reaching_definitions(defined_csname) then
+                  not any_reaching(REACHING_DEFINITIONS, defined_csname) then
                 local formatted_csname = format_csname(defined_csname)
                 local byte_range = get_byte_range()
                 issues:add("w507", "setting a function before definition", byte_range, formatted_csname)
@@ -1673,15 +1767,15 @@ local function report_issues(states, main_file_number, options)
             end
           end
           if all_definitions_reached_flow_analysis then
-            if states.results.edge_indexes.function_call_out[chunk] == nil or
-                states.results.edge_indexes.function_call_out[chunk][statement_number] == nil then
+            local edge_indexes = states.results.edge_indexes[REACHING_DEFINITIONS]
+            if edge_indexes.function_call_out[chunk] == nil or edge_indexes.function_call_out[chunk][statement_number] == nil then
               if states.results.elided_function_call_out_edge_index[statement] == nil then
                 local formatted_csname = format_csname(statement.used_csname.payload)
                 local byte_range = get_byte_range()
                 issues:add("e505", "calling an undefined function", byte_range, formatted_csname)
               end
             else
-              assert(#states.results.edge_indexes.function_call_out[chunk][statement_number] > 0)
+              assert(#edge_indexes.function_call_out[chunk][statement_number] > 0)
             end
           end
         end
@@ -1700,7 +1794,7 @@ local function cleanup(states, _, _)
   states.results.edge_indexes = nil
   states.results.function_definition_in_edge_index = nil
   states.results.elided_function_call_out_edge_index = nil
-  states.results.reaching = nil
+  states.results.reaching_definitions = nil
 end
 
 local substeps = {
