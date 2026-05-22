@@ -32,6 +32,13 @@ This version of explcheck has fixed the following problems:
 
 - In the semantic analysis, consider `\⟨type⟩_log:*` a variable use. (#217)
 
+- Reduce false positive detections of issues E408 (Calling an undefined
+  function), E411 (Indirect function definition from an undefined function),
+  and W416 (Setting an undeclared variable). (#217)
+
+  This was achieved by using pattern-based matching for only partially
+  understood variable declarations and function definitions.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
@@ -50,6 +57,14 @@ integration (CI):
   Live, so that we can compare the diff against our 2025 baselines. (ea03ec0)
 - In the CI, check that the `lua-toml` submodule is up-to-date even if checking
   the `latex3` submodule failed. (340f6bc)
+
+#### Housekeeping
+
+This version of explcheck has completed the following housekeeping tasks:
+
+- Reduce repetition in the function `analyze_group_wide_statements()` from
+  `explcheck-semantic-analysis.lua` by introducing two new mechanisms:
+  maybe-trackers and statement category lists and indices. (#217)
 
 #### Dependencies
 
