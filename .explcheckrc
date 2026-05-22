@@ -436,9 +436,6 @@ imported_prefixes = ["parserange"]
 [package.xcntperchap]
 imported_prefixes = ["xassoccnt"]
 
-[package.longdivision]
-ignored_issues = ["e411"]
-
 [package.timechart]
 ignored_issues = ["e201", "e304", "e411"]
 
