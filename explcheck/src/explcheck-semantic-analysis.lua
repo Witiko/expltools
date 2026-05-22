@@ -1164,7 +1164,7 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
             declared_csname_argument = declared_csname_argument,
-            maybe_multiply_declared = false,
+            maybe_multiply_declared = false,  -- later filled in by `determine_maybe_multiply_declared_variables()`
             maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
             variable_type = variable_type,
           }
@@ -1212,7 +1212,6 @@ local function collect_statements(states, file_number, options)
             end
           end
           local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
-          local statement
           if is_direct then
             -- determine the definition text
             local definition_text_argument = call.arguments[2]
@@ -1227,7 +1226,22 @@ local function collect_statements(states, file_number, options)
             -- determine the token range of the definition excluding the definition text
             local definition_text_token_range = definition_text_argument.outer_token_range or definition_text_argument.token_range
             local definition_token_range = new_range(token_range:start(), definition_text_token_range:start(), EXCLUSIVE, #tokens)
-            statement = {
+            -- For constants, also consider the definition a declaration.
+            if is_constant then
+              local statement = {
+                type = VARIABLE_DECLARATION,
+                call_range = call_range,
+                confidence = confidence,
+                -- The following attributes are specific to the type.
+                declared_csname = defined_csname,
+                declared_csname_argument = defined_csname_argument,
+                maybe_multiply_declared = false,  -- later filled in by `determine_maybe_multiply_declared_variables()`
+                maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+                variable_type = variable_type,
+              }
+              table.insert(statements, statement)
+            end
+            local statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
               confidence = confidence,
@@ -1243,6 +1257,7 @@ local function collect_statements(states, file_number, options)
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
+            table.insert(statements, statement)
             -- For boolean variables, extract the definition text into a new segment and analyze its calls.
             if variable_type == "bool" then
               definition_text_argument.analyzed = true
@@ -1271,7 +1286,7 @@ local function collect_statements(states, file_number, options)
               goto other_statement
             end
             base_csname_argument.analyzed = true
-            statement = {
+            local statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
               confidence = confidence,
@@ -1289,8 +1304,8 @@ local function collect_statements(states, file_number, options)
               base_csname_argument = base_csname_argument,
               base_variable_type = base_variable_type,
             }
+            table.insert(statements, statement)
           end
-          table.insert(statements, statement)
           goto continue
         end
 
@@ -1850,10 +1865,6 @@ local function analyze_group_wide_statements(states, _, options)
                   end
                   local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
                   if variable_definition ~= nil then
-                    local _, is_constant = table.unpack(variable_definition)
-                    if is_constant then
-                      record_maybe_text_name(maybe.declared_variable_csname, next_token.payload)
-                    end
                     record_maybe_text_name(maybe.defined_csname, next_token.payload)
                     states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
                   end
@@ -2008,22 +2019,15 @@ local function analyze_group_wide_statements(states, _, options)
         elseif statement.type == VARIABLE_DEFINITION then
           -- Record variable names.
           local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
-          if statement.is_constant then
+          table.insert(
+            results.statement_analysis.defined_variable_csname_transcripts,
+            {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
+          )
+          if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
             table.insert(
-              results.statement_analysis.declared_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
+              results.statement_analysis.defined_variable_base_csname_transcripts,
+              {statement.base_variable_type, statement.base_csname.transcript, definition_byte_range}
             )
-          else
-            table.insert(
-              results.statement_analysis.defined_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
-            )
-            if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
-              table.insert(
-                results.statement_analysis.defined_variable_base_csname_transcripts,
-                {statement.base_variable_type, statement.base_csname.transcript, definition_byte_range}
-              )
-            end
           end
           if statement.defined_csname.type == TEXT then
             local csname = statement.defined_csname.payload
@@ -2035,16 +2039,8 @@ local function analyze_group_wide_statements(states, _, options)
               results.statement_analysis.defined_variable_csname_texts,
               {csname, defined_csname_byte_range}
             )
-            if statement.is_constant then
-              table.insert(
-                results.statement_analysis.declared_variable_csname_texts,
-                {csname, defined_csname_byte_range}
-              )
-            end
           end
-          if statement.is_constant then
-            record_maybe_name(maybe.declared_variable_csname, statement.defined_csname)
-          elseif statement.variable_type == "box" or statement.variable_type == "vbox" or statement.variable_type == "hbox" then
+          if statement.variable_type == "box" or statement.variable_type == "vbox" or statement.variable_type == "hbox" then
             -- Defining box variables can have useful side effects even if the variable isn't used elsewhere.
             -- Therefore, consider defined box variables to be used for the purpose of issue reporting.
             record_maybe_name(maybe.used_variable_csname, statement.defined_csname)
