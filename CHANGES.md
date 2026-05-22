@@ -8,6 +8,13 @@
 
 This version of explcheck has implemented the following new features:
 
+- Add more support for flow analysis. (#218)
+
+  This adds support for the following issues from the document titled
+  [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+  1. W517 (Unused variable or constant)
+
 - In the semantic analysis, add a call type for standalone variable or constant
   control sequences. (#213, #215)
 
@@ -21,14 +28,14 @@ This version of explcheck has implemented the following new features:
   `\bool_if:nTF`. (#215, #217)
 
 - Emit both `VARIABLE_DECLARATION` and `VARIABLE_DEFINITION` statements for
-  constant definitions like `\tl_const:Nn`. (#217)
+  constant definitions like `\tl_const:Nn`. (#218)
 
   Previously, only a `VARIABLE_DEFINITION` statement would have been produced,
   reqiring special-casing for issues like W415 (Unused variable or constant),
   W416 (Setting an undeclared variable), and W419 (Using an undeclared variable
   or constant).
 
-- In flow analysis, draw `VARIABLE_USE` and `VARIABLE_USE_RETURN` edges. (#217)
+- In flow analysis, draw `VARIABLE_USE` and `VARIABLE_USE_RETURN` edges. (#218)
 
 #### Fixes
 
@@ -44,7 +51,7 @@ This version of explcheck has fixed the following problems:
 
 - Reduce false positive detections of issues E408 (Calling an undefined
   function), E411 (Indirect function definition from an undefined function),
-  and W416 (Setting an undeclared variable). (#217)
+  and W416 (Setting an undeclared variable). (#218)
 
   This was achieved by using pattern-based matching for only partially
   understood variable declarations and function definitions.
