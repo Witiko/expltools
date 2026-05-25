@@ -14,6 +14,7 @@ local DEFINITELY = statement_confidences.DEFINITELY
 local NONE = statement_confidences.NONE
 
 local FileEvaluationResults = {}
+local GroupEvaluationResults = {}
 local AggregateEvaluationResults = {}
 
 -- Count the number of all expl3 bytes in analysis results.
@@ -356,6 +357,27 @@ function FileEvaluationResults.new(cls, state)
   return self
 end
 
+-- Create a new evaluation results for the analysis results of a file group.
+function GroupEvaluationResults.new(cls, states)
+  local analysis_results = states.results
+  -- Instantiate the class.
+  local self = {}
+  setmetatable(self, cls)
+  cls.__index = cls
+  -- Evaluate the results of the flow analysis.
+  local num_inner_loops = analysis_results.num_inner_loops or {}
+  local num_inner_loops_total = 0
+  for _, num_loops in pairs(num_inner_loops) do
+    num_inner_loops_total = num_inner_loops_total + num_loops
+  end
+  local num_outer_loops = analysis_results.num_outer_loops or 0
+  -- Initialize the class.
+  self.num_inner_loops = num_inner_loops
+  self.num_inner_loops_total = num_inner_loops_total
+  self.num_outer_loops = num_outer_loops
+  return self
+end
+
 -- Create an aggregate evaluation results.
 function AggregateEvaluationResults.new(cls)
   -- Instantiate the class.
@@ -389,38 +411,44 @@ function AggregateEvaluationResults.new(cls)
   self.num_edges = {}
   self.num_edges_total = 0
   self.num_failed_fast = 0
+  self.num_inner_loops = {}
+  self.num_inner_loops_total = 0
+  self.num_outer_loops = 0
   return self
 end
 
--- Add evaluation results of an individual file to the aggregate.
-function AggregateEvaluationResults:add(evaluation_results)
-  local function aggregate_table(self_table, evaluation_result_table)
-    for key, value in pairs(evaluation_result_table) do
-      if type(value) == "number" then  -- a sum of numeric values
-        if self_table[key] == nil then
-          self_table[key] = 0
-        end
-        self_table[key] = self_table[key] + value
-      elseif type(value) == "boolean" then  -- a count of files with a certain property
-        local count_key = string.format("num_%s", key)
-        if self_table[count_key] == nil then
-          self_table[count_key] = 0
-        end
-        if value then
-          self_table[count_key] = self_table[count_key] + 1
-        end
-      elseif type(value) == "table" then  -- a table of nested values
-        if self_table[key] == nil then
-          self_table[key] = {}
-        end
-        aggregate_table(self_table[key], value)
-      else
-        error('Unexpected field type "' .. type(value) .. '"')
+-- Update aggregate evaluation results with per-file or group-wide evaluation results.
+local function aggregate_table(self_table, evaluation_result_table)
+  for key, value in pairs(evaluation_result_table) do
+    if type(value) == "number" then  -- a sum of numeric values
+      if self_table[key] == nil then
+        self_table[key] = 0
       end
+      self_table[key] = self_table[key] + value
+    elseif type(value) == "boolean" then  -- a count of files with a certain property
+      local count_key = string.format("num_%s", key)
+      if self_table[count_key] == nil then
+        self_table[count_key] = 0
+      end
+      if value then
+        self_table[count_key] = self_table[count_key] + 1
+      end
+    elseif type(value) == "table" then  -- a table of nested values
+      if self_table[key] == nil then
+        self_table[key] = {}
+      end
+      aggregate_table(self_table[key], value)
+    else
+      error('Unexpected field type "' .. type(value) .. '"')
     end
   end
+end
 
-  self.num_files = self.num_files + 1
+-- Add per-file or group-wide evaluation results to the aggregate.
+function AggregateEvaluationResults:add(evaluation_results)
+  if getmetatable(evaluation_results) == FileEvaluationResults then
+    self.num_files = self.num_files + 1
+  end
   aggregate_table(self, evaluation_results)
 end
 
@@ -431,6 +459,9 @@ return {
   count_well_understood_tokens = count_well_understood_tokens,
   new_file_results = function(...)
     return FileEvaluationResults:new(...)
+  end,
+  new_group_results = function(...)
+    return GroupEvaluationResults:new(...)
   end,
   new_aggregate_results = function()
     return AggregateEvaluationResults:new()

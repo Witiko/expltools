@@ -598,7 +598,10 @@ local function _is_interesting(reaching_definition_type, states, chunk, macro_st
       return true
     end
   elseif reaching_definition_type == REACHING_DEFINITION then
-    if (macro_statement.type == FUNCTION_CALL or macro_statement.type == VARIABLE_USE) and is_well_behaved(macro_statement) then
+    if (
+          macro_statement.type == FUNCTION_CALL or
+          macro_statement.type == VARIABLE_USE
+        ) and is_well_behaved(macro_statement) then
       return true
     end
   end
@@ -1004,7 +1007,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   local current_function_call_edges, current_variable_use_edges = {}, {}
   local max_inner_loops = get_option('max_reaching_definition_inner_loops', options)
   local max_outer_loops = get_option('max_reaching_definition_outer_loops', options)
-  local num_outer_loops, max_theoretical_outer_loops = 0, #function_call_list + #variable_use_list
+  local num_outer_loops = 0
+  states.results.num_inner_loops = {}
+  local max_theoretical_outer_loops = #function_call_list + #variable_use_list
   repeat
     -- Guard against infinite loops.
     assert(num_outer_loops <= max_theoretical_outer_loops)
@@ -1284,6 +1289,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         num_inner_loops = num_inner_loops + 1
       end
+      states.results.num_inner_loops[reaching_definition_type] = num_inner_loops
     end
 
     -- Make a copy of the current estimation of the function call and variable use edges.
@@ -1513,6 +1519,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
     any_edges_changed(previous_function_call_edges, current_function_call_edges)
     or any_edges_changed(previous_variable_use_edges, current_variable_use_edges)
   )
+  states.results.num_outer_loops = num_outer_loops
 
   -- Record edges.
   local edge_indexes = states.results.edge_indexes[REACHING_DEFINITION]

@@ -34,7 +34,9 @@ local function pairs_sorted_by_descending_values(obj)
   return function()
     i = i + 1
     if i <= #items then
-      return table.unpack(items[i])
+      local key, value = table.unpack(items[i])
+      local is_last = i == #items
+      return key, value, is_last
     else
       return nil
     end
@@ -227,6 +229,8 @@ local function print_summary(options, evaluation_results)
     return
   end
 
+  local line_indent = (" "):rep(4)
+
   if evaluation_results.num_failed_fast > 0 then
     io.write("\n\nSome files were not fully processed due to errors.")
     io.write("\nFix the errors and rerun the analysis to see additional issues.")
@@ -328,6 +332,9 @@ local function print_summary(options, evaluation_results)
     local num_macro_statements_total = evaluation_results.num_macro_statements_total
     local num_chunks = evaluation_results.num_chunks
     local num_edges_total = evaluation_results.num_edges_total
+    local num_inner_loops = evaluation_results.num_inner_loops
+    local num_inner_loops_total = evaluation_results.num_inner_loops_total
+    local num_outer_loops = evaluation_results.num_outer_loops
     if num_macro_statements_total == 0 or num_chunks == 0 then
       goto skip_to_code_coverage
     end
@@ -346,12 +353,37 @@ local function print_summary(options, evaluation_results)
     end
     io.write(
       string.format(
-        ", %s %s between the %s",
+        ", %s %s between the %s\n%s- %s reaching definition inner %s",
         humanize(num_edges_total),
         pluralize("edge", num_edges_total),
-        pluralize("chunk", num_chunks)
+        pluralize("chunk", num_chunks),
+        line_indent,
+        titlecase(humanize(num_inner_loops_total)),
+        pluralize("loop", num_inner_loops_total)
       )
     )
+    if num_outer_loops > 1 then
+      io.write(
+        string.format(
+          " over %s outer %s",
+          humanize(num_outer_loops),
+          pluralize("loop", num_outer_loops)
+        )
+      )
+    end
+    io.write(":")
+    for reaching_definition_type, num_loops in pairs_sorted_by_descending_values(num_inner_loops) do
+      io.write(
+        string.format(
+          "\n%s%s- %s %s inner %s",
+          line_indent,
+          line_indent,
+          titlecase(humanize(num_loops)),
+          reaching_definition_type,
+          pluralize("loop", num_loops)
+        )
+      )
+    end
     -- Evaluate code coverage.
     ::skip_to_code_coverage::
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens

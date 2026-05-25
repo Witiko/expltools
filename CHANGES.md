@@ -37,6 +37,9 @@ This version of explcheck has implemented the following new features:
 
 - In flow analysis, draw `VARIABLE_USE` and `VARIABLE_USE_RETURN` edges. (#218)
 
+- Include the number of reaching definition loops in verbose command-line
+  output. (#218)
+
 #### Fixes
 
 This version of explcheck has fixed the following problems:
