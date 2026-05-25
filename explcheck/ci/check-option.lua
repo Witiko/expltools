@@ -91,7 +91,7 @@ assert(option_value ~= nil)
 local option_key_location, updated_option_value
 if type(option_value) == 'string' or type(option_value) == 'number' or type(option_value) == 'boolean' then
   assert(table_index == 0)
-  updated_option_value = default_config.defaults[option_key]
+  updated_option_value = default_config[option_key]
   assert(updated_option_value ~= nil)
   option_key_location = string.format('Option "%s" in %s', option_key, options_location)
 else

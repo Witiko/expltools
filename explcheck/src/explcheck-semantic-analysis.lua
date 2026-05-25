@@ -106,13 +106,13 @@ local DEFINITELY = statement_confidences.DEFINITELY
 local MAYBE = statement_confidences.MAYBE
 local NONE = statement_confidences.NONE
 
-local csname_types = {
-  TEXT = "direct text representation of a control sequence name or its part, usually paired with confidence DEFINITELY",
-  PATTERN = "a PEG pattern that recognizes different control sequences or their parts, usually paired with confidence MAYBE"
+local name_types = {
+  TEXT = "direct text representation of a control sequence / message name or its part, usually paired with confidence DEFINITELY",
+  PATTERN = "a PEG pattern that recognizes different control sequence / message names or their parts, usually paired with confidence MAYBE"
 }
 
-local TEXT = csname_types.TEXT
-local PATTERN = csname_types.PATTERN
+local TEXT = name_types.TEXT
+local PATTERN = name_types.PATTERN
 
 -- Determine whether an expl3 type is a subtype of another type.
 local function is_subtype(subtype, supertype)
@@ -825,8 +825,8 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               is_private = is_function_private(base_csname),
               is_conditional = is_conditional,
-              maybe_used = false,
-              maybe_multiply_defined = false,
+              maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+              maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
               maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
               maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
               call_file_numbers = nil,  -- later filled in by `determine_function_calls_for_definitions()`
@@ -1003,8 +1003,8 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = definition_token_range,
-                maybe_used = false,
-                maybe_multiply_defined = false,
+                maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+                maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
                 maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
@@ -1091,8 +1091,8 @@ local function collect_statements(states, file_number, options)
                 defined_csname = effectively_defined_csname,
                 defined_csname_argument = defined_csname_argument,
                 definition_token_range = token_range,
-                maybe_used = false,
-                maybe_multiply_defined = false,
+                maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+                maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
                 maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
@@ -1130,7 +1130,7 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             undefined_csname = undefined_csname,
             undefined_csname_argument = undefined_csname_argument,
-            maybe_used = false,
+            maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
           }
           table.insert(statements, statement)
           goto continue
@@ -1164,7 +1164,10 @@ local function collect_statements(states, file_number, options)
             -- The following attributes are specific to the type.
             declared_csname = declared_csname,
             declared_csname_argument = declared_csname_argument,
+            maybe_multiply_declared = false,  -- later filled in by `determine_maybe_multiply_declared_variables()`
+            maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
             variable_type = variable_type,
+            use_segments = nil,  -- later filled in by `determine_variable_uses_for_declarations()`
           }
           table.insert(statements, statement)
           goto continue
@@ -1210,7 +1213,6 @@ local function collect_statements(states, file_number, options)
             end
           end
           local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
-          local statement
           if is_direct then
             -- determine the definition text
             local definition_text_argument = call.arguments[2]
@@ -1225,7 +1227,23 @@ local function collect_statements(states, file_number, options)
             -- determine the token range of the definition excluding the definition text
             local definition_text_token_range = definition_text_argument.outer_token_range or definition_text_argument.token_range
             local definition_token_range = new_range(token_range:start(), definition_text_token_range:start(), EXCLUSIVE, #tokens)
-            statement = {
+            -- For constants, also consider the definition a declaration.
+            if is_constant then
+              local statement = {
+                type = VARIABLE_DECLARATION,
+                call_range = call_range,
+                confidence = confidence,
+                -- The following attributes are specific to the type.
+                declared_csname = defined_csname,
+                declared_csname_argument = defined_csname_argument,
+                maybe_multiply_declared = false,  -- later filled in by `determine_maybe_multiply_declared_variables()`
+                maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
+                variable_type = variable_type,
+                use_segments = nil,  -- later filled in by `determine_variable_uses_for_declarations()`
+              }
+              table.insert(statements, statement)
+            end
+            local statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
               confidence = confidence,
@@ -1237,9 +1255,11 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
               definition_token_range = definition_token_range,
+              maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
               -- The following attributes are specific to the subtype.
               definition_text_argument = definition_text_argument,
             }
+            table.insert(statements, statement)
             -- For boolean variables, extract the definition text into a new segment and analyze its calls.
             if variable_type == "bool" then
               definition_text_argument.analyzed = true
@@ -1268,7 +1288,7 @@ local function collect_statements(states, file_number, options)
               goto other_statement
             end
             base_csname_argument.analyzed = true
-            statement = {
+            local statement = {
               type = VARIABLE_DEFINITION,
               call_range = call_range,
               confidence = confidence,
@@ -1280,13 +1300,14 @@ local function collect_statements(states, file_number, options)
               defined_csname = defined_csname,
               defined_csname_argument = defined_csname_argument,
               definition_token_range = token_range,
+              maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
               -- The following attributes are specific to the subtype.
               base_csname = base_csname,
               base_csname_argument = base_csname_argument,
               base_variable_type = base_variable_type,
             }
+            table.insert(statements, statement)
           end
-          table.insert(statements, statement)
           goto continue
         end
 
@@ -1488,48 +1509,221 @@ local function analyze_group_wide_statements(states, _, options)
   if states.results.statement_analysis ~= nil then
     return
   end
+
+  -- For each statement category, a predicate selecting member statements, an optional name extractor for the name-keyed
+  -- index, and flags controlling whether the category maintains a per-file list and/or a group-wide name-keyed index.
+  local statement_category_specifications = {
+    FUNCTION_AND_VARIANT_DEFINITION = {
+      match = function(statement)
+        return statement.type == FUNCTION_DEFINITION
+          or statement.type == FUNCTION_VARIANT_DEFINITION
+      end,
+      get_name = function(statement)
+        return statement.defined_csname
+      end,
+      has_list = true,
+      has_index = true,
+    },
+    NON_REDEFINING_DEFINITION_OR_UNDEFINITION = {
+      match = function(statement)
+        return not statement.maybe_redefined and (
+          statement.type == FUNCTION_DEFINITION
+          or statement.type == FUNCTION_VARIANT_DEFINITION
+          or statement.type == FUNCTION_UNDEFINITION
+        )
+      end,
+      get_name = function(statement)
+        if statement.type == FUNCTION_UNDEFINITION then
+          return statement.undefined_csname
+        else
+          return statement.defined_csname
+        end
+      end,
+      has_list = true,
+      has_index = true,
+    },
+    DIRECT_FUNCTION_DEFINITION = {
+      match = function(statement)
+        return statement.type == FUNCTION_DEFINITION
+          and statement.subtype == FUNCTION_DEFINITION_DIRECT
+      end,
+      has_list = true,
+    },
+    UNPROTECTED_DIRECT_FUNCTION_DEFINITION = {
+      match = function(statement)
+        return statement.type == FUNCTION_DEFINITION
+          and statement.subtype == FUNCTION_DEFINITION_DIRECT
+          and not statement.is_protected
+      end,
+      has_list = true,
+    },
+    FUNCTION_VARIANT_OR_INDIRECT_DEFINITION = {
+      match = function(statement)
+        return statement.type == FUNCTION_VARIANT_DEFINITION
+          or statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+      end,
+      has_list = true,
+    },
+    CALL_OR_INDIRECT_DEFINITION_OR_VARIABLE_USE = {
+      match = function(statement)
+        return statement.type == FUNCTION_CALL
+          or statement.type == FUNCTION_VARIANT_DEFINITION
+          or statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+          or statement.type == VARIABLE_USE
+          or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
+      end,
+      has_list = true,
+    },
+    VARIABLE_DECLARATION = {
+      match = function(statement)
+        return statement.type == VARIABLE_DECLARATION
+      end,
+      get_name = function(statement)
+        return statement.declared_csname
+      end,
+      has_list = true,
+      has_index = true,
+    },
+    DECLARATION_DEFINITION_AND_UNDEFINITION = {
+      match = function(statement)
+        return statement.type == FUNCTION_DEFINITION
+          or statement.type == FUNCTION_VARIANT_DEFINITION
+          or statement.type == FUNCTION_UNDEFINITION
+          or statement.type == VARIABLE_DECLARATION
+          or statement.type == VARIABLE_DEFINITION
+      end,
+      get_name = function(statement)
+        if statement.type == FUNCTION_UNDEFINITION then
+          return statement.undefined_csname
+        elseif statement.type == VARIABLE_DECLARATION then
+          return statement.declared_csname
+        else
+          return statement.defined_csname
+        end
+      end,
+      has_index = true,
+    },
+  }
+
+  -- Initialize empty statement lists for each statement category that maintains a list.
+  local function new_statement_category_statement_lists()
+    local statement_lists = {}
+    for category, specification in pairs(statement_category_specifications) do
+      if specification.has_list then
+        statement_lists[category] = {}
+      end
+    end
+    return statement_lists
+  end
+
+  -- Initialize empty text name indices for each statement category that maintains an index.
+  local function new_statement_category_text_name_indexes()
+    local text_name_indexes = {}
+    for category, specification in pairs(statement_category_specifications) do
+      if specification.has_index then
+        text_name_indexes[category] = {}
+      end
+    end
+    return text_name_indexes
+  end
+
+  -- For each category that matches the statement, append it to the per-file list (if the category has one) and
+  -- to the group-wide name-keyed index (if the category has one).
+  local function record_statement(statement_lists, text_name_indexes, statement)
+    for category, specification in pairs(statement_category_specifications) do
+      if specification.match(statement) then
+        if specification.has_index then
+          local index = text_name_indexes[category]
+          assert(specification.get_name ~= nil)
+          local name = specification.get_name(statement)
+          -- For categories with an index, inclusion in both the list and the index requires the name to be of type TEXT,
+          -- since downstream consumers index by `name.payload`.
+          if name.type ~= TEXT then
+            goto next_category
+          end
+          if index[name.payload] == nil then
+            index[name.payload] = {}
+          end
+          table.insert(index[name.payload], statement)
+        end
+        if specification.has_list then
+          table.insert(statement_lists[category], statement)
+        end
+        ::next_category::
+      end
+    end
+  end
+
+  -- A "maybe-tracker" records the occurrence of names as either a definite text or a probabilistic PEG pattern.
+  local function new_maybe_name_tracker()
+    return {
+      texts = {},
+      pattern = parsers.fail,
+    }
+  end
+
+  -- Record an occurrence of a name in a maybe-tracker.
+  local function record_maybe_name(tracker, name)
+    if name.type == TEXT then
+      tracker.texts[name.payload] = true
+    elseif name.type == PATTERN then
+      tracker.pattern = tracker.pattern + #(name.payload * parsers.eof) * lpeg.Cc(true)
+    else
+      error('Unexpected name type "' .. name.type .. '"')
+    end
+  end
+
+  -- Record an occurrence of a text name in a maybe-tracker.
+  local function record_maybe_text_name(tracker, text_name)
+    record_maybe_name(tracker, {type = TEXT, payload = text_name, transcript = text_name})
+  end
+
   states.results.statement_analysis = {
-    -- Collect group-wide information about symbols that were definitely defined.
+    -- Per-category csname-keyed group-wide indices.
+    text_name_indexes = new_statement_category_text_name_indexes(),
+
+    -- Maybe-trackers for control sequence, variable, and message names that might be defined, declared, or used.
+    maybe = {
+      used_csname = new_maybe_name_tracker(),
+      defined_csname = new_maybe_name_tracker(),
+      declared_variable_csname = new_maybe_name_tracker(),
+      used_variable_csname = new_maybe_name_tracker(),
+      defined_message_name = new_maybe_name_tracker(),
+      used_message_name = new_maybe_name_tracker(),
+      defined_private_function_variant = new_maybe_name_tracker(),
+    },
+
+    -- Set of csnames definitely defined somewhere in the file group, with a side-index of the file numbers.
     defined_csname_texts_anywhere = {},
     defined_csname_texts_anywhere_file_numbers = {},
 
+    -- Set of csnames maybe defined somewhere in the file group; populated only from argument scanning (looser than
+    -- `maybe.defined_csname`).
+    maybe_defined_csname_texts_anywhere = {},
+
+    -- Index of segments that potentially call each given function csname, plus a parallel list for ordered iteration.
     called_functions_anywhere_segments_index = {},
     called_functions_anywhere_segments_list = {},
 
+    -- Index of segments that potentially use each given variable csname, plus a parallel list for ordered iteration.
+    used_variables_anywhere_segments_index = {},
+    used_variables_anywhere_segments_list = {},
+
+    -- Per-message-name min/max number of text parameters across all definitions.
     defined_message_nums_text_parameters = {},
-
-    -- Collect group-wide information about symbols that may have been defined.
-    maybe_defined_private_function_variant_pattern = parsers.fail,
-
-    maybe_defined_csname_texts = {},
-    maybe_defined_csname_texts_anywhere = {},
-    maybe_defined_csname_pattern = parsers.fail,
-
-    maybe_used_csname_texts = {},
-    maybe_used_csname_pattern = parsers.fail,
-
-    maybe_declared_variable_csname_texts = {},
-    maybe_declared_variable_csname_pattern = parsers.fail,
-    maybe_used_variable_csname_texts = {},
-    maybe_used_variable_csname_pattern = parsers.fail,
-
-    maybe_defined_message_name_texts = {},
-    maybe_defined_message_name_pattern = parsers.fail,
-
-    maybe_used_message_name_texts = {},
-    maybe_used_message_name_pattern = parsers.fail,
-
-    -- Index group-wide statements.
-    function_and_variant_definition_and_undefinition_index = {},
-    function_and_variant_definition_index = {},
-    non_redefined_function_and_variant_definition_and_undefinition_index = {},
   }
 
   -- Collect all segments of top-level and nested tokens, calls, and statements from all files within the group.
   for file_number, state in ipairs(states) do
     local results = state.results
     results.statement_analysis = {
-      -- Collect file-local information about symbols that were definitely defined.
+      -- Per-category per-file lists.
+      statement_lists = new_statement_category_statement_lists(),
+
+      -- Auxiliary statement-keyed side-index for unprotected direct function definitions.
+      unprotected_direct_function_definition_byte_range_index = {},
+
+      -- File-local event lists with payload-specific tuples.
       defined_csname_texts = {},
 
       defined_private_function_texts = {},
@@ -1560,16 +1754,8 @@ local function analyze_group_wide_statements(states, _, options)
 
       used_message_name_texts = {},
       used_message_nums_text_arguments = {},
-
-      -- Index file-local statements.
-      function_call_variant_definition_and_indirect_definition_list = {},
-      function_variant_definition_and_indirect_definition_list = {},
-      direct_function_definition_list = {},
-      unprotected_direct_function_definition_list = {},
-      unprotected_direct_function_definition_byte_range_index = {},
-      non_redefined_function_and_variant_definition_list = {},
-      function_and_variant_definition_list = {},
     }
+    local maybe = states.results.statement_analysis.maybe
     for _, segment in ipairs(results.segments or {}) do
       assert(file_number == segment.location.file_number)
 
@@ -1642,21 +1828,11 @@ local function analyze_group_wide_statements(states, _, options)
         if argument.specifier == "c" or argument.specifier == "v" then
           local csname = extract_name_from_tokens(argument.token_range)
           if csname ~= nil then
-            if csname.type == TEXT then
-              states.results.statement_analysis.maybe_used_csname_texts[csname.payload] = true
-              if argument.specifier == "v" then
-                -- Record control sequence name usage in v-type arguments.
-                local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
-                table.insert(results.statement_analysis.used_variable_csname_texts, {csname.payload, false, used_csname_byte_range})
-              end
-            elseif csname.type == PATTERN then
-              states.results.statement_analysis.maybe_used_csname_pattern = (
-                states.results.statement_analysis.maybe_used_csname_pattern
-                + #(csname.payload * parsers.eof)
-                * lpeg.Cc(true)
-              )
-            else
-              error('Unexpected csname type "' .. csname.type .. '"')
+            record_maybe_name(maybe.used_csname, csname)
+            if csname.type == TEXT and argument.specifier == "v" then
+              -- Record control sequence name usage in v-type arguments.
+              local used_csname_byte_range = token_range_to_byte_range(argument.token_range)
+              table.insert(results.statement_analysis.used_variable_csname_texts, {csname.payload, false, used_csname_byte_range})
             end
           end
         end
@@ -1664,7 +1840,7 @@ local function analyze_group_wide_statements(states, _, options)
         if lpeg.match(parsers.N_or_n_type_argument_specifier, argument.specifier) ~= nil then
           for _, token in argument.token_range:enumerate(transformed_tokens, map_forward) do
             if token.type == CONTROL_SEQUENCE then
-              states.results.statement_analysis.maybe_used_csname_texts[token.payload] = true
+              record_maybe_text_name(maybe.used_csname, token.payload)
               if argument.specifier == "V" then
                 -- Record control sequence name usage in V-type arguments.
                 table.insert(results.statement_analysis.used_variable_csname_texts, {token.payload, false, token.byte_range})
@@ -1684,22 +1860,18 @@ local function analyze_group_wide_statements(states, _, options)
                 if next_token.type == CONTROL_SEQUENCE then
                   -- Record potential function definitions.
                   if lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil then
-                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
+                    record_maybe_text_name(maybe.defined_csname, next_token.payload)
                     states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
                   end
                   -- Record potential variable declarations and definitions.
                   if lpeg.match(parsers.expl3_variable_declaration_csname, token.payload) ~= nil then
-                    states.results.statement_analysis.maybe_declared_variable_csname_texts[next_token.payload] = true
-                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
+                    record_maybe_text_name(maybe.declared_variable_csname, next_token.payload)
+                    record_maybe_text_name(maybe.defined_csname, next_token.payload)
                     states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
                   end
                   local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
                   if variable_definition ~= nil then
-                    local _, is_constant = table.unpack(variable_definition)
-                    if is_constant then
-                      states.results.statement_analysis.maybe_declared_variable_csname_texts[next_token.payload] = true
-                    end
-                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
+                    record_maybe_text_name(maybe.defined_csname, next_token.payload)
                     states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
                   end
                 -- Record message name definitions and uses.
@@ -1736,33 +1908,11 @@ local function analyze_group_wide_statements(states, _, options)
                             local message_name = extract_name_from_tokens(message_name_token_range)
                             if module_name ~= nil and message_name ~= nil then
                               local combined_name = combine_module_and_message_names(module_name, message_name)
-                              -- Record potential message definitions.
                               if message_definition ~= nil then
-                                if combined_name.type == TEXT then
-                                  states.results.statement_analysis.maybe_defined_message_name_texts[combined_name.payload] = true
-                                elseif combined_name.type == PATTERN then
-                                  states.results.statement_analysis.maybe_defined_message_name_pattern = (
-                                    states.results.statement_analysis.maybe_defined_message_name_pattern
-                                    + #(combined_name.payload * parsers.eof)
-                                    * lpeg.Cc(true)
-                                  )
-                                else
-                                  error('Unexpected message name type "' .. combined_name.type .. '"')
-                                end
+                                record_maybe_name(maybe.defined_message_name, combined_name)
                               end
-                              -- Record potential message uses.
                               if message_use ~= nil then
-                                if combined_name.type == TEXT then
-                                  states.results.statement_analysis.maybe_used_message_name_texts[combined_name.payload] = true
-                                elseif combined_name.type == PATTERN then
-                                  states.results.statement_analysis.maybe_used_message_name_pattern = (
-                                    states.results.statement_analysis.maybe_used_message_name_pattern
-                                    + #(combined_name.payload * parsers.eof)
-                                    * lpeg.Cc(true)
-                                  )
-                                else
-                                  error('Unexpected message name type "' .. combined_name.type .. '"')
-                                end
+                                record_maybe_name(maybe.used_message_name, combined_name)
                               end
                             end
                           end
@@ -1783,163 +1933,77 @@ local function analyze_group_wide_statements(states, _, options)
         -- Process a function variant definition.
         if statement.type == FUNCTION_VARIANT_DEFINITION then
           local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
-          -- Record base control sequence names of variants, both as control sequence name usage and separately.
+          -- Record base control sequence names of variants as control sequence name usage.
+          record_maybe_name(maybe.used_csname, statement.base_csname)
           if statement.base_csname.type == TEXT then
             table.insert(results.statement_analysis.variant_base_csname_texts, {statement.base_csname.payload, base_csname_byte_range})
-            states.results.statement_analysis.maybe_used_csname_texts[statement.base_csname.payload] = true
-          elseif statement.base_csname.type == PATTERN then
-            states.results.statement_analysis.maybe_used_csname_pattern = (
-              states.results.statement_analysis.maybe_used_csname_pattern
-              + #(statement.base_csname.payload * parsers.eof)
-              * lpeg.Cc(true)
-            )
-          else
-            error('Unexpected csname type "' .. statement.base_csname.type .. '"')
           end
           -- Record control sequence name definitions.
+          record_maybe_name(maybe.defined_csname, statement.defined_csname)
           if statement.defined_csname.type == TEXT then
             table.insert(results.statement_analysis.defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
             if statement.confidence == DEFINITELY then
-              states.results.statement_analysis.defined_csname_texts_anywhere[statement.defined_csname.payload] = true
-              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
-                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+              local defined_csname = statement.defined_csname.payload
+              states.results.statement_analysis.defined_csname_texts_anywhere[defined_csname] = true
+              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] == nil then
+                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] = {}
               end
-              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number]
-                = true
+              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname][file_number] = true
             end
-            states.results.statement_analysis.maybe_defined_csname_texts[statement.defined_csname.payload] = true
-          elseif statement.defined_csname.type == PATTERN then
-            states.results.statement_analysis.maybe_defined_csname_pattern = (
-              states.results.statement_analysis.maybe_defined_csname_pattern
-              + #(statement.defined_csname.payload * parsers.eof)
-              * lpeg.Cc(true)
-            )
-          else
-            error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
+            -- Record private function variant definitions.
+            if statement.is_private then
+              record_maybe_name(maybe.defined_private_function_variant, statement.defined_csname)
+              table.insert(results.statement_analysis.defined_private_function_variant_byte_ranges, byte_range)
+              table.insert(results.statement_analysis.defined_private_function_variant_csnames, statement.defined_csname)
+              local private_function_variant_number = #results.statement_analysis.defined_private_function_variant_byte_ranges
+              table.insert(results.statement_analysis.defined_private_function_variant_texts, private_function_variant_number)
+            end
           end
-          -- Record private function variant definitions.
-          if statement.defined_csname.type == TEXT and statement.is_private then
-            table.insert(results.statement_analysis.defined_private_function_variant_byte_ranges, byte_range)
-            table.insert(results.statement_analysis.defined_private_function_variant_csnames, statement.defined_csname)
-            local private_function_variant_number = #results.statement_analysis.defined_private_function_variant_byte_ranges
-            table.insert(results.statement_analysis.defined_private_function_variant_texts, private_function_variant_number)
-          end
-          -- Index the function variant definition.
-          if statement.defined_csname.type == TEXT then
-            table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
-            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
-            local csname = statement.defined_csname.payload
-            if index[csname] == nil then
-              index[csname] = {}
-            end
-            table.insert(index[csname], statement)
-            index = states.results.statement_analysis.function_and_variant_definition_index
-            if index[csname] == nil then
-              index[csname] = {}
-            end
-            table.insert(index[csname], statement)
-            local non_redefined_index
-              = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
-            if non_redefined_index[csname] == nil then
-              non_redefined_index[csname] = {}
-            end
-            table.insert(non_redefined_index[csname], statement)
-            table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
-          end
-          table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
-          table.insert(results.statement_analysis.function_variant_definition_and_indirect_definition_list, statement)
         -- Process a function definition.
         elseif statement.type == FUNCTION_DEFINITION then
           -- Record the base control sequences used in indirect function definitions.
           if statement.subtype == FUNCTION_DEFINITION_INDIRECT then
+            record_maybe_name(maybe.used_csname, statement.base_csname)
             if statement.base_csname.type == TEXT then
-              states.results.statement_analysis.maybe_used_csname_texts[statement.base_csname.payload] = true
               table.insert(results.statement_analysis.indirect_definition_base_csname_texts, {statement.base_csname.payload, byte_range})
-            elseif statement.base_csname.type == PATTERN then
-              states.results.statement_analysis.maybe_used_csname_pattern = (
-                states.results.statement_analysis.maybe_used_csname_pattern
-                + #(statement.base_csname.payload * parsers.eof)
-                * lpeg.Cc(true)
-              )
-            else
-              error('Unexpected csname type "' .. statement.base_csname.type .. '"')
             end
           end
           -- Record control sequence name usage and definitions.
+          record_maybe_name(maybe.defined_csname, statement.defined_csname)
           if statement.defined_csname.type == TEXT then
+            local defined_csname = statement.defined_csname.payload
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
-            table.insert(results.statement_analysis.defined_csname_texts, {statement.defined_csname.payload, defined_csname_byte_range})
+            table.insert(results.statement_analysis.defined_csname_texts, {defined_csname, defined_csname_byte_range})
             if statement.confidence == DEFINITELY then
-              states.results.statement_analysis.defined_csname_texts_anywhere[statement.defined_csname.payload] = true
-              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] == nil then
-                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload] = {}
+              states.results.statement_analysis.defined_csname_texts_anywhere[defined_csname] = true
+              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] == nil then
+                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] = {}
               end
-              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[statement.defined_csname.payload][file_number]
-                = true
+              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname][file_number] = true
             end
-            states.results.statement_analysis.maybe_defined_csname_texts[statement.defined_csname.payload] = true
+            -- Record private function definition.
+            if statement.is_private then
+              local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
+              table.insert(
+                results.statement_analysis.defined_private_function_texts,
+                {defined_csname, definition_byte_range}
+              )
+            end
           end
+          -- Record the byte range for unprotected direct function definitions.
+          if statement.subtype == FUNCTION_DEFINITION_DIRECT and not statement.is_protected then
+            results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement] = byte_range
+          end
+          -- Process the replacement text of a direct function definition that doesn't have a corresponding segment.
           if statement.subtype == FUNCTION_DEFINITION_DIRECT and statement.replacement_text_argument.segment_number == nil then
             process_argument_tokens(statement.replacement_text_argument)
           end
-          -- Record private function definition.
-          if statement.defined_csname.type == TEXT and statement.is_private then
-            local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
-            table.insert(
-              results.statement_analysis.defined_private_function_texts,
-              {statement.defined_csname.payload, definition_byte_range}
-            )
-          end
-          -- Index the function definition.
-          if statement.defined_csname.type == TEXT then
-            table.insert(results.statement_analysis.function_and_variant_definition_list, statement)
-            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
-            local csname = statement.defined_csname.payload
-            if index[csname] == nil then
-              index[csname] = {}
-            end
-            table.insert(index[csname], statement)
-            index = states.results.statement_analysis.function_and_variant_definition_index
-            if index[csname] == nil then
-              index[csname] = {}
-            end
-            table.insert(index[csname], statement)
-            if not statement.maybe_redefined then
-              local non_redefined_index
-                = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
-              if non_redefined_index[csname] == nil then
-                non_redefined_index[csname] = {}
-              end
-              table.insert(non_redefined_index[csname], statement)
-              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
-            end
-          end
-          if statement.subtype == FUNCTION_DEFINITION_DIRECT then
-            table.insert(results.statement_analysis.direct_function_definition_list, statement)
-            if not statement.is_protected then
-              table.insert(results.statement_analysis.unprotected_direct_function_definition_list, statement)
-              results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement] = byte_range
-            end
-          elseif statement.subtype == FUNCTION_DEFINITION_INDIRECT then
-            table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
-            table.insert(results.statement_analysis.function_variant_definition_and_indirect_definition_list, statement)
-          else
+          if statement.subtype ~= FUNCTION_DEFINITION_DIRECT and statement.subtype ~= FUNCTION_DEFINITION_INDIRECT then
             error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
           end
         -- Process a function undefinition.
         elseif statement.type == FUNCTION_UNDEFINITION then
-          -- Index the function undefinition.
-          if statement.undefined_csname.type == TEXT then
-            local index = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index
-            local csname = statement.undefined_csname.payload
-            if index[csname] == nil then
-              index[csname] = {}
-            end
-            table.insert(index[csname], statement)
-            if not statement.maybe_redefined then
-              table.insert(results.statement_analysis.non_redefined_function_and_variant_definition_list, statement)
-            end
-          end
+          -- All bookkeeping for function undefinitions is handled via the per-category indices in `record_statement()`.
         -- Process a variable declaration.
         elseif statement.type == VARIABLE_DECLARATION then
           -- Record variable names.
@@ -1947,72 +2011,51 @@ local function analyze_group_wide_statements(states, _, options)
             results.statement_analysis.declared_variable_csname_transcripts,
             {statement.variable_type, statement.declared_csname.transcript, byte_range}
           )
+          record_maybe_name(maybe.declared_variable_csname, statement.declared_csname)
           if statement.declared_csname.type == TEXT then
+            local csname = statement.declared_csname.payload
             local declared_csname_byte_range = token_range_to_byte_range(statement.declared_csname_argument.token_range)
             table.insert(
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.declared_csname.payload, declared_csname_byte_range}
+              {statement.variable_type, csname, declared_csname_byte_range}
             )
-            table.insert(
-              results.statement_analysis.declared_variable_csname_texts,
-              {statement.declared_csname.payload, declared_csname_byte_range}
-            )
-            states.results.statement_analysis.maybe_declared_variable_csname_texts[statement.declared_csname.payload] = true
-          elseif statement.declared_csname.type == PATTERN then
-            states.results.statement_analysis.maybe_declared_variable_csname_pattern = (
-              states.results.statement_analysis.maybe_declared_variable_csname_pattern
-              + #(statement.declared_csname.payload * parsers.eof)
-              * lpeg.Cc(true)
-            )
-          else
-            error('Unexpected csname type "' .. statement.base_csname.type .. '"')
+            table.insert(results.statement_analysis.declared_variable_csname_texts, {csname, declared_csname_byte_range})
           end
         -- Process a variable or constant definition.
         elseif statement.type == VARIABLE_DEFINITION then
           -- Record variable names.
           local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
-          if statement.is_constant then
+          table.insert(
+            results.statement_analysis.defined_variable_csname_transcripts,
+            {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
+          )
+          if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
             table.insert(
-              results.statement_analysis.declared_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
+              results.statement_analysis.defined_variable_base_csname_transcripts,
+              {statement.base_variable_type, statement.base_csname.transcript, definition_byte_range}
             )
-          else
-            table.insert(
-              results.statement_analysis.defined_variable_csname_transcripts,
-              {statement.variable_type, statement.defined_csname.transcript, definition_byte_range}
-            )
-            if statement.subtype == VARIABLE_DEFINITION_INDIRECT then
-              table.insert(
-                results.statement_analysis.defined_variable_base_csname_transcripts,
-                {statement.base_variable_type, statement.base_csname.transcript, definition_byte_range}
-              )
-            end
           end
           if statement.defined_csname.type == TEXT then
+            local csname = statement.defined_csname.payload
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.defined_csname.payload, defined_csname_byte_range})
+              {statement.variable_type, csname, defined_csname_byte_range})
             table.insert(
               results.statement_analysis.defined_variable_csname_texts,
-              {statement.defined_csname.payload, defined_csname_byte_range}
+              {csname, defined_csname_byte_range}
             )
-            if statement.is_constant then
-              states.results.statement_analysis.maybe_declared_variable_csname_texts[statement.defined_csname.payload] = true
-              table.insert(
-                results.statement_analysis.declared_variable_csname_texts,
-                {statement.defined_csname.payload, defined_csname_byte_range}
-              )
-            elseif statement.variable_type == "box" or statement.variable_type == "vbox" or statement.variable_type == "hbox" then
-              -- Defining box variables can have useful side effects even if the variable isn't used elsewhere.
-              -- Therefore, consider defined box variables to be used for the purpose of issue reporting.
-              states.results.statement_analysis.maybe_used_variable_csname_texts[statement.defined_csname.payload] = true
-            end
+          end
+          if statement.variable_type == "box" or statement.variable_type == "vbox" or statement.variable_type == "hbox" then
+            -- Defining box variables can have useful side effects even if the variable isn't used elsewhere.
+            -- Therefore, consider defined box variables to be used for the purpose of issue reporting.
+            record_maybe_name(maybe.used_variable_csname, statement.defined_csname)
           end
           -- Record control sequence name usage and definitions.
           if statement.subtype == VARIABLE_DEFINITION_DIRECT then
             process_argument_tokens(statement.definition_text_argument)
           elseif statement.subtype == VARIABLE_DEFINITION_INDIRECT then
+            record_maybe_name(maybe.used_variable_csname, statement.base_csname)
             if statement.base_csname.type == TEXT then
               local base_csname_byte_range = token_range_to_byte_range(statement.base_csname_argument.token_range)
               table.insert(
@@ -2023,15 +2066,6 @@ local function analyze_group_wide_statements(states, _, options)
                 results.statement_analysis.used_variable_csname_texts,
                 {statement.base_csname.payload, false, base_csname_byte_range}
               )
-              states.results.statement_analysis.maybe_used_variable_csname_texts[statement.base_csname.payload] = true
-            elseif statement.base_csname.type == PATTERN then
-              states.results.statement_analysis.maybe_used_variable_csname_pattern = (
-                states.results.statement_analysis.maybe_used_variable_csname_pattern
-                + #(statement.base_csname.payload * parsers.eof)
-                * lpeg.Cc(true)
-              )
-            else
-              error('Unexpected csname type "' .. statement.defined_csname.type .. '"')
             end
           else
             error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
@@ -2044,59 +2078,45 @@ local function analyze_group_wide_statements(states, _, options)
             results.statement_analysis.used_variable_csname_transcripts,
             {statement.variable_type, statement.used_csname.transcript, use_byte_range}
           )
+          record_maybe_name(maybe.used_variable_csname, statement.used_csname)
           if statement.used_csname.type == TEXT then
+            local used_csname = statement.used_csname.payload
             local used_csname_byte_range = token_range_to_byte_range(statement.used_csname_argument.token_range)
             table.insert(
               results.statement_analysis.declared_defined_and_used_variable_csname_texts,
-              {statement.variable_type, statement.used_csname.payload, used_csname_byte_range}
+              {statement.variable_type, used_csname, used_csname_byte_range}
             )
             table.insert(
               results.statement_analysis.used_variable_csname_texts,
-              {statement.used_csname.payload, statement.is_standalone, used_csname_byte_range}
+              {used_csname, statement.is_standalone, used_csname_byte_range}
             )
-            states.results.statement_analysis.maybe_used_variable_csname_texts[statement.used_csname.payload] = true
-          elseif statement.used_csname.type == PATTERN then
-            states.results.statement_analysis.maybe_used_variable_csname_pattern = (
-              states.results.statement_analysis.maybe_used_variable_csname_pattern
-              + #(statement.used_csname.payload * parsers.eof)
-              * lpeg.Cc(true)
-            )
-          else
-            error('Unexpected csname type "' .. statement.used_csname.type .. '"')
+            if states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname] == nil then
+              states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname] = {}
+              states.results.statement_analysis.used_variables_anywhere_segments_list[used_csname] = {}
+            end
+            if states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname][segment] == nil then
+              states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname][segment] = true
+              table.insert(states.results.statement_analysis.used_variables_anywhere_segments_list[used_csname], segment)
+            end
           end
         -- Process a message definition.
         elseif statement.type == MESSAGE_DEFINITION then
           -- Record message names.
           local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
+          record_maybe_name(maybe.defined_message_name, message_name)
           if message_name.type == TEXT then
-            states.results.statement_analysis.maybe_defined_message_name_texts[message_name.payload] = true
             local definition_byte_range = token_range_to_byte_range(statement.definition_token_range)
             table.insert(results.statement_analysis.defined_message_name_texts, {message_name.payload, definition_byte_range})
-          elseif message_name.type == PATTERN then
-            states.results.statement_analysis.maybe_defined_message_name_pattern = (
-              states.results.statement_analysis.maybe_defined_message_name_pattern
-              + #(message_name.payload * parsers.eof)
-              * lpeg.Cc(true)
-            )
-          else
-            error('Unexpected message name type "' .. message_name.type .. '"')
-          end
-          -- Record numbers of text parameters.
-          if message_name.type == TEXT then
-            if states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload] == nil then
-              states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload] = {
+            -- Record numbers of text parameters.
+            local message_nums = states.results.statement_analysis.defined_message_nums_text_parameters
+            if message_nums[message_name.payload] == nil then
+              message_nums[message_name.payload] = {
                 min = statement.num_text_parameters,
                 max = statement.num_text_parameters,
               }
             else
-              states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].min = math.min(
-                states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].min,
-                statement.num_text_parameters
-              )
-              states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].max = math.max(
-                states.results.statement_analysis.defined_message_nums_text_parameters[message_name.payload].max,
-                statement.num_text_parameters
-              )
+              message_nums[message_name.payload].min = math.min(message_nums[message_name.payload].min, statement.num_text_parameters)
+              message_nums[message_name.payload].max = math.max(message_nums[message_name.payload].max, statement.num_text_parameters)
             end
           end
           -- Record control sequence name usage and definitions.
@@ -2108,21 +2128,11 @@ local function analyze_group_wide_statements(states, _, options)
         elseif statement.type == MESSAGE_USE then
           -- Record message names.
           local message_name = combine_module_and_message_names(statement.module_name, statement.message_name)
+          record_maybe_name(maybe.used_message_name, message_name)
           if message_name.type == TEXT then
-            states.results.statement_analysis.maybe_used_message_name_texts[message_name.payload] = true
             local use_byte_range = token_range_to_byte_range(statement.use_token_range)
             table.insert(results.statement_analysis.used_message_name_texts, {message_name.payload, use_byte_range})
-          elseif message_name.type == PATTERN then
-            states.results.statement_analysis.maybe_used_message_name_pattern = (
-              states.results.statement_analysis.maybe_used_message_name_pattern
-              + #(message_name.payload * parsers.eof)
-              * lpeg.Cc(true)
-            )
-          else
-            error('Unexpected message name type "' .. message_name.type .. '"')
-          end
-          -- Record numbers of text parameters.
-          if message_name.type == TEXT then
+            -- Record numbers of text parameters.
             table.insert(
               results.statement_analysis.used_message_nums_text_arguments,
               {message_name.payload, #statement.text_arguments, byte_range}
@@ -2144,7 +2154,7 @@ local function analyze_group_wide_statements(states, _, options)
               states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname][segment] = true
               table.insert(states.results.statement_analysis.called_functions_anywhere_segments_list[call.csname], segment)
             end
-            states.results.statement_analysis.maybe_used_csname_texts[call.csname] = true
+            record_maybe_text_name(maybe.used_csname, call.csname)
             local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
             table.insert(results.statement_analysis.called_functions_and_variants, {segment, statement, call.csname, csname_byte_range})
             for _, argument in ipairs(call.arguments) do
@@ -2156,12 +2166,14 @@ local function analyze_group_wide_statements(states, _, options)
           -- Record control sequence name usage by scanning all control sequence tokens.
           for _, token in token_range:enumerate(transformed_tokens, map_forward) do
             if token.type == CONTROL_SEQUENCE then
-              states.results.statement_analysis.maybe_used_csname_texts[token.payload] = true
+              record_maybe_text_name(maybe.used_csname, token.payload)
             end
           end
         else
           error('Unexpected statement type "' .. statement.type .. '"')
         end
+        -- Record the statement into all matching group-wide categories.
+        record_statement(results.statement_analysis.statement_lists, states.results.statement_analysis.text_name_indexes, statement)
         -- Record control sequence name usage and definitions in unanalyzed arguments.
         for _, call in statement.call_range:enumerate(segment.calls) do
           for _, argument in ipairs(call.arguments or {}) do
@@ -2185,7 +2197,7 @@ local function determine_direct_function_definition_expandability(states, file_n
   -- Check that the expandability of the function definition statements corresponds to the expandability of the corresponding
   -- replacement text segments.
   local any_changes = false
-  for _, statement in ipairs(results.statement_analysis.direct_function_definition_list) do
+  for _, statement in ipairs(results.statement_analysis.statement_lists.DIRECT_FUNCTION_DEFINITION) do
     assert(statement.type == FUNCTION_DEFINITION)
     assert(statement.subtype == FUNCTION_DEFINITION_DIRECT)
     assert(statement.maybe_fully_expandable ~= nil)
@@ -2232,7 +2244,7 @@ local function determine_function_variant_definition_and_indirect_definition_exp
   -- function definition with sufficiently known expandability, or (c) an orphaned function variant or indirect function
   -- definition with no known definitions for its base control sequence name.
   local function_and_variant_definition_list = {}
-  for _, statement in ipairs(results.statement_analysis.function_variant_definition_and_indirect_definition_list) do
+  for _, statement in ipairs(results.statement_analysis.statement_lists.FUNCTION_VARIANT_OR_INDIRECT_DEFINITION) do
     assert(statement.defined_csname ~= nil)
     if statement.defined_csname.type == TEXT then
       table.insert(function_and_variant_definition_list, statement)
@@ -2281,7 +2293,8 @@ local function determine_function_variant_definition_and_indirect_definition_exp
           goto next_statement
         end
         local base_csname = statement.base_csname.payload
-        local other_statements = states.results.statement_analysis.function_and_variant_definition_index[base_csname]
+        local other_statements
+          = states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION[base_csname]
         if other_statements == nil then
           -- Record the orphaned function variant or indirect function definition with no known definitions for its
           -- base control sequence name.
@@ -2461,7 +2474,8 @@ local function determine_segment_type_expandability(segment_type, states, file_n
       might_any_function_definitions_be_expandable[expandability_type] = {}
     end
     if might_any_function_definitions_be_expandable[expandability_type][csname] == nil then
-      local function_definitions = states.results.statement_analysis.function_and_variant_definition_index[csname]
+      local function_definitions
+        = states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION[csname]
       if function_definitions == nil then
         might_any_function_definitions_be_expandable[expandability_type][csname] = true
         goto value_set
@@ -2573,6 +2587,15 @@ local function report_issues(states, file_number, options)
   local results = state.results
   assert(results.statement_analysis ~= nil)
   local issues = state.issues
+  local maybe = states.results.statement_analysis.maybe
+
+  -- Check whether a text name has been recorded in a maybe-tracker, either as a text or as a pattern match.
+  local function matches_maybe_text_name(tracker, text_name)
+    if tracker.texts[text_name] then
+      return true
+    end
+    return lpeg.match(tracker.pattern, text_name) ~= nil
+  end
 
   --- Report issues apparent from the collected information.
   local expl3_well_known_csname = parsers.expl3_well_known_csname(options, pathname)
@@ -2583,8 +2606,7 @@ local function report_issues(states, file_number, options)
   for _, defined_private_function_text in ipairs(results.statement_analysis.defined_private_function_texts) do
     local defined_csname, byte_range = table.unpack(defined_private_function_text)
     if lpeg.match(expl3_well_known_csname, defined_csname) == nil
-        and not states.results.statement_analysis.maybe_used_csname_texts[defined_csname]
-        and lpeg.match(states.results.statement_analysis.maybe_used_csname_pattern, defined_csname) == nil then
+        and not matches_maybe_text_name(maybe.used_csname, defined_csname) then
       issues:add('w401', 'unused private function', byte_range, format_csname(defined_csname))
     end
   end
@@ -2597,20 +2619,18 @@ local function report_issues(states, file_number, options)
   for _, private_function_variant_number in ipairs(results.statement_analysis.defined_private_function_variant_texts) do
     local csname = results.statement_analysis.defined_private_function_variant_csnames[private_function_variant_number]
     assert(csname.type == TEXT)
-    if states.results.statement_analysis.maybe_used_csname_texts[csname.payload]
-        or lpeg.match(states.results.statement_analysis.maybe_used_csname_pattern, csname.payload) ~= nil then
+    if matches_maybe_text_name(maybe.used_csname, csname.payload) then
       used_private_function_variants[private_function_variant_number] = true
     end
   end
-  for maybe_used_csname, _ in pairs(states.results.statement_analysis.maybe_used_csname_texts) do
-    -- NOTE: Although we might want to also test whether "maybe_defined_private_function_variant_pattern" and
-    -- "maybe_used_csname_pattern" overlap, intersection is undecideable for parsing expression languages (PELs). In
+  for maybe_used_csname, _ in pairs(maybe.used_csname.texts) do
+    -- NOTE: Although we might want to also test whether `maybe.defined_private_function_variant.pattern` and
+    -- `maybe.used_csname.pattern` overlap, intersection is undecideable for parsing expression languages (PELs). In
     -- theory, we could use regular expressions instead of PEG patterns, since intersection is decideable for regular
     -- languages. In practice, there are no Lua libraries that would implement the required algorithms. Therefore, it
     -- seems more practical to just accept that low-confidence function variant definitions and function uses don't
     -- interact, not just because the technical difficulty but also because the combined confidence is just too low.
-    local private_function_variant_number
-      = lpeg.match(states.results.statement_analysis.maybe_defined_private_function_variant_pattern, maybe_used_csname)
+    local private_function_variant_number = lpeg.match(maybe.defined_private_function_variant.pattern, maybe_used_csname)
     if private_function_variant_number ~= nil then
       local csname = results.statement_analysis.defined_private_function_variant_csnames[private_function_variant_number]
       assert(csname.type == PATTERN)
@@ -2629,8 +2649,7 @@ local function report_issues(states, file_number, options)
   for _, variant_base_csname_text in ipairs(results.statement_analysis.variant_base_csname_texts) do
     local base_csname, byte_range = table.unpack(variant_base_csname_text)
     if lpeg.match(expl3_well_known_csname, base_csname) == nil
-        and not states.results.statement_analysis.maybe_defined_csname_texts[base_csname]
-        and lpeg.match(states.results.statement_analysis.maybe_defined_csname_pattern, base_csname) == nil then
+        and not matches_maybe_text_name(maybe.defined_csname, base_csname) then
       issues:add('e405', 'function variant for an undefined function', byte_range, format_csname(base_csname))
     end
   end
@@ -2640,8 +2659,7 @@ local function report_issues(states, file_number, options)
     local segment, statement, csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_csname, csname) == nil
-        and not states.results.statement_analysis.maybe_defined_csname_texts[csname]
-        and lpeg.match(states.results.statement_analysis.maybe_defined_csname_pattern, csname) == nil then
+        and not matches_maybe_text_name(maybe.defined_csname, csname) then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
     elseif states.results.statement_analysis.defined_csname_texts_anywhere[csname]
         or states.results.statement_analysis.maybe_defined_csname_texts_anywhere[csname] then
@@ -2679,7 +2697,10 @@ local function report_issues(states, file_number, options)
         end
       end
       -- Index the function call.
-      table.insert(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list, statement)
+      table.insert(
+        results.statement_analysis.statement_lists.CALL_OR_INDIRECT_DEFINITION_OR_VARIABLE_USE,
+        statement
+      )
     end
   end
 
@@ -2688,8 +2709,7 @@ local function report_issues(states, file_number, options)
     local csname, byte_range = table.unpack(indirect_definition_base_csname_text)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_csname, csname) == nil
-        and not states.results.statement_analysis.maybe_defined_csname_texts[csname]
-        and lpeg.match(states.results.statement_analysis.maybe_defined_csname_pattern, csname) == nil then
+        and not matches_maybe_text_name(maybe.defined_csname, csname) then
       issues:add('e411', 'indirect function definition from an undefined function', byte_range, format_csname(csname))
     end
   end
@@ -2731,10 +2751,8 @@ local function report_issues(states, file_number, options)
     local variable_csname, byte_range = table.unpack(declared_variable_csname_text)
     if (
           lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
-          and not states.results.statement_analysis.maybe_used_variable_csname_texts[variable_csname]
-          and lpeg.match(states.results.statement_analysis.maybe_used_variable_csname_pattern, variable_csname) == nil
-          and not states.results.statement_analysis.maybe_used_csname_texts[variable_csname]
-          and lpeg.match(states.results.statement_analysis.maybe_used_csname_pattern, variable_csname) == nil
+          and not matches_maybe_text_name(maybe.used_variable_csname, variable_csname)
+          and not matches_maybe_text_name(maybe.used_csname, variable_csname)
         ) then
       issues:add('w415', 'unused variable or constant', byte_range, format_csname(variable_csname))
     end
@@ -2747,8 +2765,7 @@ local function report_issues(states, file_number, options)
           lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
           and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
-          and not states.results.statement_analysis.maybe_declared_variable_csname_texts[variable_csname]
-          and lpeg.match(states.results.statement_analysis.maybe_declared_variable_csname_pattern, variable_csname) == nil
+          and not matches_maybe_text_name(maybe.declared_variable_csname, variable_csname)
         ) then
       issues:add('w416', 'setting an undeclared variable', byte_range, format_csname(variable_csname))
     end
@@ -2762,8 +2779,7 @@ local function report_issues(states, file_number, options)
           and lpeg.match(parsers.expl3like_csname, variable_csname) ~= nil
           and lpeg.match(expl3_well_known_csname, variable_csname) == nil
           and lpeg.match(parsers.expl3_scratch_variable_csname, variable_csname) == nil
-          and not states.results.statement_analysis.maybe_declared_variable_csname_texts[variable_csname]
-          and lpeg.match(states.results.statement_analysis.maybe_declared_variable_csname_pattern, variable_csname) == nil
+          and not matches_maybe_text_name(maybe.declared_variable_csname, variable_csname)
         ) then
       issues:add('w419', 'using an undeclared variable or constant', byte_range, format_csname(variable_csname))
     end
@@ -2823,10 +2839,7 @@ local function report_issues(states, file_number, options)
   -- Report unused messages.
   for _, defined_message_name_text in ipairs(results.statement_analysis.defined_message_name_texts) do
     local message_name_text, byte_range = table.unpack(defined_message_name_text)
-    if (
-          not states.results.statement_analysis.maybe_used_message_name_texts[message_name_text]
-          and lpeg.match(states.results.statement_analysis.maybe_used_message_name_pattern, message_name_text) == nil
-        ) then
+    if not matches_maybe_text_name(maybe.used_message_name, message_name_text) then
       issues:add('w423', 'unused message', byte_range, message_name_text)
     end
   end
@@ -2836,8 +2849,7 @@ local function report_issues(states, file_number, options)
     local message_name_text, byte_range = table.unpack(used_message_name_text)
     if (
           lpeg.match(expl3_well_known_message_name, message_name_text) == nil
-          and not states.results.statement_analysis.maybe_defined_message_name_texts[message_name_text]
-          and lpeg.match(states.results.statement_analysis.maybe_defined_message_name_pattern, message_name_text) == nil
+          and not matches_maybe_text_name(maybe.defined_message_name, message_name_text)
         ) then
       issues:add('e424', 'using an undefined message', byte_range, message_name_text)
     end
@@ -2873,7 +2885,7 @@ local function report_issues(states, file_number, options)
   end
 
   -- Report unexpandable functions defined as unprotected.
-  for _, statement in ipairs(results.statement_analysis.unprotected_direct_function_definition_list) do
+  for _, statement in ipairs(results.statement_analysis.statement_lists.UNPROTECTED_DIRECT_FUNCTION_DEFINITION) do
     assert(statement.type == FUNCTION_DEFINITION)
     assert(statement.subtype == FUNCTION_DEFINITION_DIRECT)
     assert(not statement.is_protected)
@@ -2896,7 +2908,7 @@ local function determine_function_calls_for_definitions(states, file_number, _)
   local results = state.results
   assert(results.statement_analysis ~= nil)
 
-  for _, statement in ipairs(results.statement_analysis.function_and_variant_definition_list) do
+  for _, statement in ipairs(results.statement_analysis.statement_lists.FUNCTION_AND_VARIANT_DEFINITION) do
     assert(statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
     assert(statement.defined_csname.type == TEXT)
     local defined_csname = statement.defined_csname.payload
@@ -2904,9 +2916,8 @@ local function determine_function_calls_for_definitions(states, file_number, _)
   end
 end
 
--- Determine which function (variant) (un)definitions might actually affect any function calls in the current file group.
--- This information is used to exclude definitely unused (un)definitions from future analyses to improve performance.
-local function determine_maybe_used_function_definitions(states, file_number, _)
+-- Determine and record the potential variable uses for all variable declarations.
+local function determine_variable_uses_for_declarations(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -2914,17 +2925,41 @@ local function determine_maybe_used_function_definitions(states, file_number, _)
   local results = state.results
   assert(results.statement_analysis ~= nil)
 
-  -- For each function call, first collect all relevant (potentially but not necessarily reaching) definitions to a temporary list.
-  local function_and_variant_definitions_and_undefinition_list = {}
+  for _, statement in ipairs(results.statement_analysis.statement_lists.VARIABLE_DECLARATION) do
+    assert(statement.type == VARIABLE_DECLARATION)
+    assert(statement.declared_csname.type == TEXT)
+    local declared_csname = statement.declared_csname.payload
+    statement.use_segments = states.results.statement_analysis.used_variables_anywhere_segments_list[declared_csname]
+  end
+end
+
+-- Determine which function (variant) (un)definitions and variable/constant declarations/definitions might actually affect any
+-- function calls in the current file group. This information is used to exclude definitely unused declaratations/(un)definitions
+-- from future analyses to improve performance.
+local function determine_maybe_used_functions_and_variables(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  -- For each function/variable use, first collect all relevant (potentially but not necessarily reaching) definitions to a temporary list.
+  local declaration_definition_and_undefinition_index
+    = states.results.statement_analysis.text_name_indexes.DECLARATION_DEFINITION_AND_UNDEFINITION
+  local declaration_definition_and_undefinition_list = {}
   local seen_used_csnames = {}
-  for _, statement in ipairs(results.statement_analysis.function_call_variant_definition_and_indirect_definition_list) do
+  for _, statement in ipairs(results.statement_analysis.statement_lists.CALL_OR_INDIRECT_DEFINITION_OR_VARIABLE_USE) do
     local used_csname
-    if statement.type == FUNCTION_CALL then
+    if statement.type == FUNCTION_CALL or statement.type == VARIABLE_USE then
       used_csname = statement.used_csname
     elseif statement.type == FUNCTION_VARIANT_DEFINITION then
       used_csname = statement.base_csname
     elseif statement.type == FUNCTION_DEFINITION then
       assert(statement.subtype == FUNCTION_DEFINITION_INDIRECT)
+      used_csname = statement.base_csname
+    elseif statement.type == VARIABLE_DEFINITION then
+      assert(statement.subtype == VARIABLE_DEFINITION_INDIRECT)
       used_csname = statement.base_csname
     else
       error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
@@ -2938,13 +2973,12 @@ local function determine_maybe_used_function_definitions(states, file_number, _)
       goto next_statement
     end
     seen_used_csnames[used_csname.payload] = true
-    local other_statements = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[used_csname.payload]
-    for _, other_statement in ipairs(other_statements or {}) do
+    for _, other_statement in ipairs(declaration_definition_and_undefinition_index[used_csname.payload] or {}) do
       -- Do not repeatedly check the same definitions.
       if other_statement.maybe_used then
         goto next_other_statement
       end
-      table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+      table.insert(declaration_definition_and_undefinition_list, other_statement)
       ::next_other_statement::
     end
     ::next_statement::
@@ -2954,33 +2988,34 @@ local function determine_maybe_used_function_definitions(states, file_number, _)
   -- if any, and mark all intermediate function variant and indirect function definitions as well as all final direct function
   -- definitions and undefinitions as potentially used by some function calls.
   local statement_number, seen_statements = 1, {}
-  while statement_number <= #function_and_variant_definitions_and_undefinition_list do
-    local statement = function_and_variant_definitions_and_undefinition_list[statement_number]
+  while statement_number <= #declaration_definition_and_undefinition_list do
+    local statement = declaration_definition_and_undefinition_list[statement_number]
     -- Detect any loops within the graph.
     if seen_statements[statement] ~= nil then
       goto next_statement
     end
-seen_statements[statement] = true
+    seen_statements[statement] = true
     -- Mark the statement as potentially used by some function calls.
     statement.maybe_used = true
     if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT
-        or statement.type == FUNCTION_UNDEFINITION then
-      -- Take no further action for direct function definitions and function undefinitions.
+        or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_DIRECT
+        or statement.type == FUNCTION_UNDEFINITION
+        or statement.type == VARIABLE_DECLARATION then
+      -- Take no further action for direct function/variable definitions, function undefinitions, and variable declarations.
       goto next_statement
     elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+        or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
         or statement.type == FUNCTION_VARIANT_DEFINITION then
-      -- Resolve the indirect function definitions and function variant definitions.
+      -- Resolve the indirect function/variant definitions and function variant definitions.
       if statement.base_csname.type ~= TEXT then
         goto next_statement
       end
-      local base_csname = statement.base_csname.payload
-      local other_statements = states.results.statement_analysis.function_and_variant_definition_and_undefinition_index[base_csname]
-      for _, other_statement in ipairs(other_statements or {}) do
+      for _, other_statement in ipairs(declaration_definition_and_undefinition_index[statement.base_csname.payload] or {}) do
         -- Do not repeatedly check the same definitions.
         if other_statement.maybe_used then
           goto next_other_statement
         end
-        table.insert(function_and_variant_definitions_and_undefinition_list, other_statement)
+        table.insert(declaration_definition_and_undefinition_list, other_statement)
         ::next_other_statement::
       end
     else
@@ -2991,8 +3026,30 @@ seen_statements[statement] = true
   end
 end
 
--- Determine which function definitions might be multiply defined.
-local function determine_maybe_multiply_defined_function_definitions(states, file_number, _)
+-- Determine which variables might be multiply declared.
+local function determine_maybe_multiply_declared_variables(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  -- For each variable declaration, check if other declarations exist.
+  local variable_declaration_index = states.results.statement_analysis.text_name_indexes.VARIABLE_DECLARATION
+  for _, statement in ipairs(results.statement_analysis.statement_lists.VARIABLE_DECLARATION) do
+    assert(statement.type == VARIABLE_DECLARATION)
+    assert(statement.declared_csname.type == TEXT)
+    local other_statements = variable_declaration_index[statement.declared_csname.payload]
+    assert(other_statements ~= nil)
+    if #other_statements > 1 then
+      statement.maybe_multiply_declared = true
+    end
+  end
+end
+
+-- Determine which functions might be multiply defined.
+local function determine_maybe_multiply_defined_functions(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -3001,7 +3058,9 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
   assert(results.statement_analysis ~= nil)
 
   -- For each non-redefining function definition, check if other non-redefining definitions exist.
-  for _, statement in ipairs(results.statement_analysis.non_redefined_function_and_variant_definition_list) do
+  local non_redefining_index
+    = states.results.statement_analysis.text_name_indexes.NON_REDEFINING_DEFINITION_OR_UNDEFINITION
+  for _, statement in ipairs(results.statement_analysis.statement_lists.NON_REDEFINING_DEFINITION_OR_UNDEFINITION) do
     local defined_or_undefined_csname
     if statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION then
       defined_or_undefined_csname = statement.defined_csname
@@ -3012,8 +3071,7 @@ local function determine_maybe_multiply_defined_function_definitions(states, fil
     end
     assert(defined_or_undefined_csname ~= nil)
     assert(defined_or_undefined_csname.type == TEXT)
-    local non_redefined_index = states.results.statement_analysis.non_redefined_function_and_variant_definition_and_undefinition_index
-    local other_statements = non_redefined_index[defined_or_undefined_csname.payload]
+    local other_statements = non_redefining_index[defined_or_undefined_csname.payload]
     if other_statements ~= nil and #other_statements > 1 then
       statement.maybe_multiply_defined = true
     end
@@ -3041,15 +3099,17 @@ local substeps = {
   determine_boolean_expression_expandability,
   report_issues,
   determine_function_calls_for_definitions,
-  determine_maybe_multiply_defined_function_definitions,
-  determine_maybe_used_function_definitions,
+  determine_variable_uses_for_declarations,
+  determine_maybe_multiply_declared_variables,
+  determine_maybe_multiply_defined_functions,
+  determine_maybe_used_functions_and_variables,
   cleanup,
 }
 
 return {
-  csname_types = csname_types,
   is_confused = is_confused,
   name = "semantic analysis",
+  name_types = name_types,
   statement_types = statement_types,
   statement_confidences = statement_confidences,
   statement_subtypes = statement_subtypes,

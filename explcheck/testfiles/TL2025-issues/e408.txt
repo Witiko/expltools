@@ -7,13 +7,11 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/datatool/datatool-user-examples/datatool-user-example084.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/datatool/datatool-user-examples/datatool-user-example085.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/expose-expl3-dunkerque-2019/dk19ecrireprem.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex/fontscale/beerydoc.cls
 /usr/local/texlive/2025/texmf-dist/doc/latex/functional/functional.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/hobby/hobby.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3news02.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/l3kernel/l3styleguide.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/prettytok/prettytok-test.tex
-/usr/local/texlive/2025/texmf-dist/doc/latex/scaletextbullet/beerydoc.cls
 /usr/local/texlive/2025/texmf-dist/doc/latex/xstacks/xstacks.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/glossaries-extra/glossaries-extra-stylemods.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/glossaries-extra/glossaries-extra.sty

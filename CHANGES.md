@@ -8,6 +8,13 @@
 
 This version of explcheck has implemented the following new features:
 
+- Add more support for flow analysis. (#218)
+
+  This adds support for the following issues from the document titled
+  [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
+
+  1. W517 (Unused variable or constant)
+
 - In the semantic analysis, add a call type for standalone variable or constant
   control sequences. (#213, #215)
 
@@ -19,6 +26,19 @@ This version of explcheck has implemented the following new features:
 
 - Detect boolean expression segments in calls to control sequences like
   `\bool_if:nTF`. (#215, #217)
+
+- Emit both `VARIABLE_DECLARATION` and `VARIABLE_DEFINITION` statements for
+  constant definitions like `\tl_const:Nn`. (#218)
+
+  Previously, only a `VARIABLE_DEFINITION` statement would have been produced,
+  reqiring special-casing for issues like W415 (Unused variable or constant),
+  W416 (Setting an undeclared variable), and W419 (Using an undeclared variable
+  or constant).
+
+- In flow analysis, draw `VARIABLE_USE` and `VARIABLE_USE_RETURN` edges. (#218)
+
+- Include the number of reaching definition loops in verbose command-line
+  output. (#218)
 
 #### Fixes
 
@@ -32,6 +52,13 @@ This version of explcheck has fixed the following problems:
 
 - In the semantic analysis, consider `\⟨type⟩_log:*` a variable use. (#217)
 
+- Reduce false positive detections of issues E408 (Calling an undefined
+  function), E411 (Indirect function definition from an undefined function),
+  and W416 (Setting an undeclared variable). (#218)
+
+  This was achieved by using pattern-based matching for only partially
+  understood variable declarations and function definitions.
+
 #### Warnings and errors
 
 This version of explcheck has made the following changes to the document titled
@@ -40,6 +67,14 @@ This version of explcheck has made the following changes to the document titled
 - Remove planned issue W511 (Defined an expandable function as protected), since
   it doesn't actually constitute an issue: there are good reasons to protect a
   function from expansion, even if it is otherwise expandable. (#213)
+
+#### Housekeeping
+
+This version of explcheck has completed the following housekeeping tasks:
+
+- Reduce repetition in the function `analyze_group_wide_statements()` from
+  `explcheck-semantic-analysis.lua` by introducing two new mechanisms:
+  maybe-trackers and statement category lists and indices. (#217)
 
 #### Continuous integration
 

@@ -6,6 +6,7 @@ local get_option = require("explcheck-config").get_option
 local utils = require("explcheck-utils")
 
 local new_file_results = evaluation.new_file_results
+local new_group_results = evaluation.new_group_results
 local new_aggregate_results = evaluation.new_aggregate_results
 
 local argument_types = {
@@ -39,11 +40,17 @@ local function process_file_groups(pathname_groups, options)
       assert(#states == #pathname_group)
       for pathname_number, state in ipairs(states) do
         assert(pathname_group[pathname_number] == state.pathname)
-        -- Print warnings and errors.
+        -- Update the aggregate evaluation results with per-file results.
         local file_evaluation_results = new_file_results(state)
         aggregate_evaluation_results:add(file_evaluation_results)
-        local is_last_file = is_last_group and (pathname_number == #pathname_group)
-        format.print_results(state, options, file_evaluation_results, is_last_file)
+        local is_last_file = pathname_number == #pathname_group
+        if is_last_file then
+          -- Update the aggregate evaluation results with group-wide results.
+          local group_evaluation_results = new_group_results(states)
+          aggregate_evaluation_results:add(group_evaluation_results)
+        end
+        -- Print warnings and errors.
+        format.print_results(state, options, file_evaluation_results, is_last_file and is_last_group)
       end
     end, debug.traceback)
     if not is_ok then

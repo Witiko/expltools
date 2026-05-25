@@ -1,4 +1,3 @@
-[defaults]
 config_files = [".explcheckrc"]
 defined_csnames = []
 error_format = "%f:%l:%c: %t%n %M"
@@ -28,7 +27,13 @@ min_simple_tokens_in_csname_pattern = 5
 porcelain = false
 stop_early_when_confused = true
 stop_after = "flow analysis"
-suppressed_issue_map = { w200 = ["s412", "s413", "s414"], e417 = ["e421"], w401 = ["w502"], w402 = ["w503"] }
 terminal_width = 80
 verbose = false
 warnings_are_errors = false
+
+[suppressed_issue_map]
+w200 = ["s412", "s413", "s414"]
+e417 = ["e421"]
+w401 = ["w502"]
+w402 = ["w503"]
+w415 = ["w517"]

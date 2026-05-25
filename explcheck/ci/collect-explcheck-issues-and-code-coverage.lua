@@ -14,6 +14,7 @@ local process_files = utils.process_files
 local group_pathnames = utils.group_pathnames
 
 local new_file_results = evaluation.new_file_results
+local new_group_results = evaluation.new_group_results
 local new_aggregate_results = evaluation.new_aggregate_results
 
 local input_file_pathname_template = arg[1]
@@ -23,7 +24,7 @@ local force_flow_analysis = arg[4]
 local worker_number = tonumber(arg[5])
 
 assert(force_flow_analysis == "true" or force_flow_analysis == "false")
-force_flow_analysis = force_flow_analysis == "true"
+local should_force_flow_analysis = force_flow_analysis == "true"
 
 -- Collect pathnames.
 local input_pathnames, allow_pathname_separators = {}, {}
@@ -43,7 +44,7 @@ local output_issue_file_pathname = string.format(output_issue_file_pathname_temp
 local output_issue_file = assert(io.open(output_issue_file_pathname, "w"))
 local aggregate_evaluation_results = new_aggregate_results()
 local options = {}
-if force_flow_analysis then
+if should_force_flow_analysis then
   -- Force every file to be analyzed with the flow analysis but only run a small number of cycles of the reaching definitions
   -- algorithm, so that the processing doesn't take potentially hours with a large number of packages.
   options.fail_fast = false
@@ -67,10 +68,13 @@ for pathname_group_number, pathname_group in ipairs(input_pathname_groups) do
           assert(output_issue_file:write(string.format('%s %s\n', code, state.pathname)))
         end
       end
-      -- Update the aggregate evaluation results.
+      -- Update the aggregate evaluation results with per-file results.
       local file_evaluation_results = new_file_results(state)
       aggregate_evaluation_results:add(file_evaluation_results)
     end
+    -- Update the aggregate evaluation results with group-wide results.
+    local group_evaluation_results = new_group_results(states)
+    aggregate_evaluation_results:add(group_evaluation_results)
   end, debug.traceback)
   if not is_ok then
     error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
