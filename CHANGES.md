@@ -1,5 +1,16 @@
 # Changes
 
+## expltools 2026-06-XX
+
+### explcheck v0.23.0
+
+#### Dependencies
+
+This version of explcheck has made the following changes to third-party Git
+submodules and other dependencies:
+
+- Update the `latex3` submodule from 2026-05-15-dev to 2026-05-26-dev. (61b5ce2)
+
 ## expltools 2026-05-29
 
 ### explcheck v0.22.0
