@@ -31,7 +31,7 @@ This version of explcheck has implemented the following new features:
   constant definitions like `\tl_const:Nn`. (#218)
 
   Previously, only a `VARIABLE_DEFINITION` statement would have been produced,
-  reqiring special-casing for issues like W415 (Unused variable or constant),
+  requiring special-casing for issues like W415 (Unused variable or constant),
   W416 (Setting an undeclared variable), and W419 (Using an undeclared variable
   or constant).
 
