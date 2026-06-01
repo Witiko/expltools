@@ -104,8 +104,6 @@ submodules and other dependencies:
 
 - Update the `latex3` submodule from 2026-04-28-dev to 2026-05-15-dev. (85b126a)
 
-### explcheck v0.22.0
-
 ## expltools 2026-05-12
 
 ### explcheck v0.21.0
