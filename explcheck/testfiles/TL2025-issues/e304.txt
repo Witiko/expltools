@@ -10,5 +10,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/modernruler/modernruler.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/rwth-ci/beamerinnerthemeRWTH.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/rwth-ci/rwth-sciposter.cls
+/usr/local/texlive/2025/texmf-dist/tex/latex/tcolorbox/tcolorbox.sty
 /usr/local/texlive/2025/texmf-dist/tex/lualatex/luatex-cn/banxin/luatex-cn-banxin.sty
 /usr/local/texlive/2025/texmf-dist/tex/lualatex/luatex-cn/core/luatex-cn-core-metadata.sty
