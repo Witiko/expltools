@@ -321,9 +321,6 @@ ignored_issues = ["e304", "e424"]
 [filename."beamerthemesTeX.sty"]
 ignored_issues = ["e304"]
 
-[package.tcolorbox]
-ignored_issues = ["e304"]
-
 [package.tzplot]
 ignored_issues = ["e304"]
 
