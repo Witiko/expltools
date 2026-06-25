@@ -228,9 +228,6 @@ ignored_issues = ["e300"]
 [filename."siunitx-v2.sty"]
 ignored_issues = ["e300"]
 
-[package.didec]
-ignored_issues = ["w302"]
-
 [package.zhnumber]
 ignored_issues = ["e300"]
 
@@ -272,9 +269,6 @@ ignored_issues = ["e304", "e408"]
 ignored_issues = ["e304"]
 
 [package.hvlogos]
-ignored_issues = ["e304"]
-
-[package.incgraph]
 ignored_issues = ["e304"]
 
 [package.istgame]
@@ -525,9 +519,6 @@ imported_prefixes = ["datatool"]
 
 [filename."latex-lab-testphase-l3doc.sty"]
 imported_prefixes = ["l3doc"]
-
-[filename."latex-lab-testphase-block.sty"]
-imported_prefixes = ["hooks"]
 
 [package.expltools]
 expl3_detection_strategy = "never"
