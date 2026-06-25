@@ -6,6 +6,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/flowfram/flowframtkutils.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/genealogy-profiles/genealogy-profiles.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/genealogytree/gtrlib.fanchart.code.tex
+/usr/local/texlive/2025/texmf-dist/tex/latex/incgraph/incgraph.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/metacapture/metacapture.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/modernruler/modernruler.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/rwth-ci/beamerinnerthemeRWTH.sty

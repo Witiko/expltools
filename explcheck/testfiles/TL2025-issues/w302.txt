@@ -91,6 +91,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/denisbdoc/denisbdoc.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/derivative/derivative.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/diagbox/diagbox.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/didec/didec.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/diffcoeff/diffcoeff.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/diffcoeff/diffcoeff4.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/dlrg-templates/dlrg.mod.Tabellen.code.tex
