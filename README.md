@@ -20,7 +20,7 @@ These devlog posts chronicle the latest updates and progress in the ongoing deve
 10. [Expltools goes to India][16] from July 22, 2025
 11. [Inter-file dependencies, segments, and code coverage][17] from September 30, 2025
 
-The article [Expltools: Development tools for expl3 programmers][14], forthcoming in TUGboat 47(2), is a work in progress that summarizes the devlog posts and provides a coherent overview of the current state of the tool.
+The article [Expltools: Development tools for expl3 programmers][14], forthcoming in a future issue of _TUGboat_, is a work in progress that summarizes the devlog posts and provides a coherent overview of the current state of the tool.
 
 In the future, this repository may also contain the code of other useful development tools for expl3 programmers, such as a command-line utility similar to `grep` that will ignore whitespaces and newlines as well as other tools.
 
@@ -37,7 +37,7 @@ In the future, this repository may also contain the code of other useful develop
  [11]: https://koppor.github.io/explcheck-issues/
  [12]: https://witiko.github.io/Expl3-Linter-7/
  [13]: https://witiko.github.io/Expl3-Linter-8/
- [14]: https://github.com/Witiko/expltools-tug25-paper
+ [14]: https://github.com/Witiko/expltools-tug27-paper
  [15]: https://witiko.github.io/Expl3-Linter-9/
  [16]: https://witiko.github.io/Expl3-Linter-10/
  [17]: https://witiko.github.io/Expl3-Linter-11/
