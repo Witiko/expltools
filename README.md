@@ -158,8 +158,14 @@ The files `explcheck-config.lua` and `explcheck-config.toml` must be installed i
 
 ## Authors
 
+Expltools was started and its initial development led by:
+
 - Vít Starý Novotný (<witiko@mail.muni.cz>)
 - Oliver Kopp (<kopp.dev@gmail.com>)
+
+The project has since benefited from the work of many [contributors][].
+
+ [contributors]: https://github.com/witiko/expltools/graphs/contributors?all=1
 
 ## License
 
