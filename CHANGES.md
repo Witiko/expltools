@@ -4,6 +4,12 @@
 
 ### explcheck v0.23.1
 
+#### Documentation
+
+This version of explcheck has made the following improvements to the documentation:
+
+- Link blog post about TUG 2026 from `README.md`. (0dd48cb)
+
 #### Dependencies
 
 - Update the `latex3` submodule from 2026-05-26-dev to 2026-07-20-dev. (4731ae7)
