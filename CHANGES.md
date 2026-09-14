@@ -12,8 +12,8 @@ This version of explcheck has made the following improvements to the documentati
 
 #### Dependencies
 
-- Update the `latex3` submodule from 2026-05-26-dev to 2026-07-20-dev. (4731ae7)
-- Update the `latex3` submodule from 2026-07-20-dev to 2026-08-10-dev. (8cfa5cc)
+- Update the `latex3` submodule from 2026-05-26-dev to 2026-09-09-dev.
+  (4731ae7, 8cfa5cc, 7e544b0)
 
 ## expltools 2026-06-25
 
