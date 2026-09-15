@@ -24,10 +24,14 @@ local INCLUSIVE = range_flags.INCLUSIVE
 local MAYBE_EMPTY = range_flags.MAYBE_EMPTY
 
 local call_types = syntactic_analysis.call_types
+local csname_origins = syntactic_analysis.csname_origins
 local segment_types = syntactic_analysis.segment_types
 local add_segment = syntactic_analysis.add_segment
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 local transform_replacement_text_tokens = syntactic_analysis.transform_replacement_text_tokens
+
+local AS_WRITTEN = csname_origins.AS_WRITTEN
+local TEX_PRIMITIVE = csname_origins.TEX_PRIMITIVE
 
 local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
@@ -845,10 +849,18 @@ local function collect_statements(states, file_number, options)
             -- determine the properties of the defined function
             local defined_csname_argument = call.arguments[1]
             local _, _, is_creator_function = table.unpack(function_definition)
-            local is_conditional, maybe_redefinition, is_global, is_protected, is_nopar
+            local is_conditional, maybe_definition, maybe_redefinition, is_global, is_protected, is_nopar
             local num_parameters
             if is_creator_function == true then  -- direct application of a creator function
-              _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(function_definition)
+              _, is_conditional, _, maybe_definition, is_global, is_protected, is_nopar = table.unpack(function_definition)
+              assert(call.csname_origin ~= nil)
+              if call.csname_origin == TEX_PRIMITIVE then
+                -- TeX primitives like `\def` and `\let` can be either definitions or redefinitions
+                maybe_definition, maybe_redefinition = true, true
+              else
+                assert(call.csname_origin == AS_WRITTEN)
+                maybe_redefinition = not maybe_definition
+              end
             else  -- indirect application of a creator function
               local num_parameter_argument = call.arguments[3]
               if num_parameter_argument ~= nil and num_parameter_argument.specifier == "n" then
@@ -872,7 +884,8 @@ local function collect_statements(states, file_number, options)
               if actual_function_definition == nil then  -- couldn't understand the creator function, give up
                 goto other_statement
               end
-              _, is_conditional, _, maybe_redefinition, is_global, is_protected, is_nopar = table.unpack(actual_function_definition)
+              _, is_conditional, _, maybe_definition, is_global, is_protected, is_nopar = table.unpack(actual_function_definition)
+              maybe_redefinition = not maybe_definition
             end
             -- determine the name of the defined function
             assert(defined_csname_argument ~= nil)
@@ -997,6 +1010,7 @@ local function collect_statements(states, file_number, options)
                 confidence = confidence,
                 -- The following attributes are specific to the type.
                 subtype = FUNCTION_DEFINITION_DIRECT,
+                maybe_definition = maybe_definition,
                 maybe_redefinition = maybe_redefinition,
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,
@@ -1018,7 +1032,16 @@ local function collect_statements(states, file_number, options)
             end
           else
             -- Process an indirect function definition.
-            local _, is_conditional, maybe_redefinition, is_global = table.unpack(function_definition)
+            local _, is_conditional, maybe_definition, is_global = table.unpack(function_definition)
+            local maybe_redefinition
+            assert(call.csname_origin ~= nil)
+            if call.csname_origin == TEX_PRIMITIVE then
+              -- TeX primitives like `\def` and `\let` can be either definitions or redefinitions
+              maybe_definition, maybe_redefinition = true, true
+            else
+              assert(call.csname_origin == AS_WRITTEN)
+              maybe_redefinition = not maybe_definition
+            end
             -- determine the name of the defined function
             local defined_csname_argument = call.arguments[1]
             assert(defined_csname_argument ~= nil)
@@ -1085,6 +1108,7 @@ local function collect_statements(states, file_number, options)
                 confidence = confidence,
                 -- The following attributes are specific to the type.
                 subtype = FUNCTION_DEFINITION_INDIRECT,
+                maybe_definition = maybe_definition,
                 maybe_redefinition = maybe_redefinition,
                 is_private = is_function_private(defined_csname),
                 is_global = is_global,

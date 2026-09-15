@@ -819,6 +819,7 @@ local substeps = {
 return {
   add_segment = add_segment,
   call_types = call_types,
+  csname_origins = csname_origins,
   extract_text_from_tokens = extract_text_from_tokens,
   get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
