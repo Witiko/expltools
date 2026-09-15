@@ -351,8 +351,8 @@ local function get_calls(results, part_number, segment, issues, content)
       assert(next_token_number == token_number + 2)
       if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1].type == CONTROL_SEQUENCE then  -- followed by a control sequence
-          csname = transformed_tokens[token_number + 1].payload
-          if csname == "let" then  -- \global \let
+          local next_csname = transformed_tokens[token_number + 1].payload
+          if next_csname == "let" then  -- \global \let
             if token_number + 2 <= transformed_token_range_end then
               if transformed_tokens[token_number + 2].type == CONTROL_SEQUENCE then  -- followed by another control sequence
                 if token_number + 3 <= transformed_token_range_end then
@@ -373,20 +373,20 @@ local function get_calls(results, part_number, segment, issues, content)
                 end
               end
             end
-          elseif csname == "def" or csname == "gdef" or csname == "edef" or csname == "xdef" then  -- \global \?def
+          elseif next_csname == "def" or next_csname == "gdef" or next_csname == "edef" or next_csname == "xdef" then  -- \global \?def
             if token_number + 2 <= transformed_token_range_end then
               if transformed_tokens[token_number + 2].type == CONTROL_SEQUENCE then  -- followed by another control sequence
                 csname_origin = TEX_PRIMITIVE
-                if csname == "def" then  -- \global \def \csname
+                if next_csname == "def" then  -- \global \def \csname
                   normalized_csname = "cs_gset:Npn"
-                elseif csname == "gdef" then  -- \global \gdef \csname
+                elseif next_csname == "gdef" then  -- \global \gdef \csname
                   normalized_csname = "cs_gset:Npn"
-                elseif csname == "edef" then  -- \global \edef \csname
+                elseif next_csname == "edef" then  -- \global \edef \csname
                   normalized_csname = "cs_gset:Npe"
-                elseif csname == "xdef" then  -- \global \xdef \csname
+                elseif next_csname == "xdef" then  -- \global \xdef \csname
                   normalized_csname = "cs_gset:Npx"
                 else
-                  error(string.format('Unexpected csname "%s"', csname))
+                  error(string.format('Unexpected csname "%s"', next_csname))
                 end
                 goto skip_decrement
               end
