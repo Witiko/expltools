@@ -51,7 +51,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/l3kernel/expl3.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-enumitem.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-bib.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-block.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-context.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-firstaid.sty
@@ -62,7 +61,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-sec.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-table.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-text.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-title.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-toc.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/tools/array-2024-06-01.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/tools/array.sty
@@ -157,7 +155,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/ducksay/ducksay.code.v1.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/ducksay/ducksay.code.v2.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/duckuments/duckuments.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/dynkin-diagrams/dynkin-diagrams.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/easybook/easybase.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/easyformat/easyformat.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/ebproof/ebproof.sty
@@ -223,7 +220,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/jlreq/jlreq-trimmarks.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/jlreq/jlreq.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/jmsdelim/jmsdelim.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/jobname-suffix/jobname-suffix.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/joinbox/joinbox.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/jsonparse/jsonparse.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/jwjournal/jwjournal.cls
@@ -253,7 +249,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/langsci-avm/langsci-avm.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-bib.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-block.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-context.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-firstaid.sty
@@ -264,7 +259,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-sec.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-table.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-text.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-title.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-toc.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/leadsheets.library.external.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/leadsheets.library.musejazz.code.tex
@@ -272,13 +266,10 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/leadsheets.library.songs.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/leporello/leporello.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/letterswitharrows/letterswitharrows.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/linguistix/linguistix-languages.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/linguistix/linguistix-marathi.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/linguistix/linguistix-nfss.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lisp-on-tex/lisp-mod-l3regex.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/longdivision/longdivision.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lt3graph/lt3graph.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/lt3rawobjects/lt3rawobjects.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/ltx-talk/ltx-talk.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/lwarp/lwarp-fontawesome5-utex-helper.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lydtype/lydtype.sty
@@ -345,7 +336,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/pbalance/pbalance.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pdfmanagement-testphase/l3pdffield.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pdfmanagement-testphase/pdfmanagement-firstaid.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/pegmatch/pegmatch.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-coordinate-parser.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-goban.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-marks.sty
@@ -456,7 +446,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzfxgraph/tikzfxgraph.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzlings/tikzlings.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzmark/tikzlibrarytikzmark.code.tex
-/usr/local/texlive/2025/texmf-dist/tex/latex/tikzquads/tikzquads.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzquests/tikzquests.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzsymbols/tikzsymbols.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tilings/tikzlibrarytilings.code.tex
