@@ -4,6 +4,15 @@
 
 ### explcheck v0.23.1
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Do not report issue W429 (Defined an unexpandable function as unprotected)
+  for indirect function definitions or function variants derived from fully or
+  restricted-expandable functions.
+  (reported by @u-fischer and @muzimuzhi in #223, fixed in #224)
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
