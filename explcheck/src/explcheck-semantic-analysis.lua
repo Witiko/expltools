@@ -2351,10 +2351,10 @@ local function determine_function_variant_definition_and_indirect_definition_exp
         end
       elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT or
           statement.type == FUNCTION_VARIANT_DEFINITION then
-        if not statement.maybe_expandable and not statement.restricted_expandable then
+        if not statement.maybe_fully_expandable and not statement.maybe_restricted_expandable then
           goto next_statement
         end
-        assert(statement.maybe_expandable or statement.restricted_expandable)
+        assert(statement.maybe_fully_expandable or statement.maybe_restricted_expandable)
 
         -- Determine the expandability of an orphaned function variant or indirect function definition based on its base control
         -- sequence name.
@@ -2362,11 +2362,12 @@ local function determine_function_variant_definition_and_indirect_definition_exp
         if statement.base_csname.type ~= TEXT then
           goto next_statement
         end
-        local base_csname = statement.base_csname.payload
+        local base_csname = statement.base_csname
+        assert(type(base_csname.payload) == "string")
 
         -- Check whether the base control sequence is a standard-library function that is expandable.
         do
-          local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(base_csname)
+          local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(base_csname.payload)
           if is_latex3_function then
             if is_fully_expandable then
               maybe_fully_expandable = true
