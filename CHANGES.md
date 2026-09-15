@@ -1,6 +1,6 @@
 # Changes
 
-## expltools 2026-08-XX
+## expltools 2026-09-15
 
 ### explcheck v0.23.1
 
@@ -17,9 +17,14 @@ This version of explcheck has fixed the following problems:
 
 This version of explcheck has made the following improvements to the documentation:
 
-- Link blog post about TUG 2026 from `README.md`. (0dd48cb)
+- Link [blog post about TUG 2026][Expl3-Linter-12] from `README.md`. (0dd48cb)
+
+ [Expl3-Linter-12]: https://witiko.github.io/Expl3-Linter-12/ "Static analysis of expl3 programs (12): Expltools goes to Canada"
 
 #### Dependencies
+
+This version of explcheck has made the following changes to third-party Git
+submodules and other dependencies:
 
 - Update the `latex3` submodule from 2026-05-26-dev to 2026-09-09-dev.
   (4731ae7, 8cfa5cc, 7e544b0)
