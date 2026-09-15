@@ -763,9 +763,9 @@ local expl3_expansion_csname = (
 ---- Functions and conditional functions
 ------ Function definitions
 local expl3_function_definition_type_signifier = (
-  P("new") * Cc(false) * Cc(true)  -- definition
+  P("new") * Cc(true) * Cc(true)  -- definition
   + (  -- assignment
-    C(true)
+    Cc(false)
     * (
       P("gset") * Cc(true)  -- global
       + P("set") * Cc(false)  -- local

@@ -4,6 +4,14 @@
 
 ### explcheck v0.24.0
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Prevent TeX primitives like `\def` and `\let` from producing false positive
+  detections of issue W507 (Setting a function before definition).
+  (reported by @muzimuzhi in #221, fixed in #225)
+
 ## expltools 2026-09-15
 
 ### explcheck v0.23.1

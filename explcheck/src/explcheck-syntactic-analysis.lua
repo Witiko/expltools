@@ -28,6 +28,16 @@ local ARGUMENT = token_types.ARGUMENT
 
 local lpeg = require("lpeg")
 
+local csname_origins = {
+  AS_WRITTEN = "original csname, as written in the source code",
+  TEX_PRIMITIVE = "a primitive of TeX or its extension, translated to its closest expl3 analogue",
+  PLAIN_TEX_MACRO = "plain TeX macro, translated to its closest expl3 analogue"
+}
+
+local AS_WRITTEN = csname_origins.AS_WRITTEN
+local TEX_PRIMITIVE = csname_origins.TEX_PRIMITIVE
+local PLAIN_TEX_MACRO = csname_origins.PLAIN_TEX_MACRO
+
 local call_types = {
   CALL = "expl3 call",
   OTHER_TOKENS = "block of other tokens",
@@ -293,25 +303,25 @@ local function get_calls(results, part_number, segment, issues, content)
   -- Normalize common non-expl3 commands to expl3 equivalents.
   local function normalize_csname(csname)
     local next_token_number = token_number + 1
-    local normalized_csname = csname
+    local normalized_csname, csname_origin = csname, AS_WRITTEN
     local ignored_token_number
 
     if csname == "directlua" then  -- \directlua
-      normalized_csname = "lua_now:e"
+      normalized_csname, csname_origin = "lua_now:e", TEX_PRIMITIVE
     elseif csname == "newtoks" then
-      normalized_csname = "toks_new:N"
+      normalized_csname, csname_origin = "toks_new:N", PLAIN_TEX_MACRO
     elseif csname == "let" then  -- \let
       if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1].type == CONTROL_SEQUENCE then  -- followed by a control sequence
           if token_number + 2 <= transformed_token_range_end then
             if transformed_tokens[token_number + 2].type == CONTROL_SEQUENCE then  -- followed by another control sequence
-              normalized_csname = "cs_set_eq:NN"  -- \let \csname \csname
+              normalized_csname, csname_origin = "cs_set_eq:NN", TEX_PRIMITIVE  -- \let \csname \csname
             elseif transformed_tokens[token_number + 2].type == CHARACTER then  -- followed by a character
               if transformed_tokens[token_number + 2].payload == "=" then  -- that is an equal sign
                 if token_number + 3 <= transformed_token_range_end then
                   if transformed_tokens[token_number + 3].type == CONTROL_SEQUENCE then  -- followed by another control sequence
                     ignored_token_number = token_number + 2
-                    normalized_csname = "cs_set_eq:NN"  -- \let \csname = \csname
+                    normalized_csname, csname_origin = "cs_set_eq:NN", TEX_PRIMITIVE  -- \let \csname = \csname
                   end
                 end
               end
@@ -322,6 +332,7 @@ local function get_calls(results, part_number, segment, issues, content)
     elseif csname == "def" or csname == "gdef" or csname == "edef" or csname == "xdef" then  -- \?def
       if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1].type == CONTROL_SEQUENCE then  -- followed by a control sequence
+          csname_origin = TEX_PRIMITIVE
           if csname == "def" then  -- \def \csname
             normalized_csname = "cs_set:Npn"
           elseif csname == "gdef" then  -- \gdef \csname
@@ -331,7 +342,7 @@ local function get_calls(results, part_number, segment, issues, content)
           elseif csname == "xdef" then  -- \xdef \csname
             normalized_csname = "cs_set:Npx"
           else
-            assert(false, csname)
+            error(string.format('Unexpected csname "%s"', csname))
           end
         end
       end
@@ -340,20 +351,20 @@ local function get_calls(results, part_number, segment, issues, content)
       assert(next_token_number == token_number + 2)
       if token_number + 1 <= transformed_token_range_end then
         if transformed_tokens[token_number + 1].type == CONTROL_SEQUENCE then  -- followed by a control sequence
-          csname = transformed_tokens[token_number + 1].payload
-          if csname == "let" then  -- \global \let
+          local next_csname = transformed_tokens[token_number + 1].payload
+          if next_csname == "let" then  -- \global \let
             if token_number + 2 <= transformed_token_range_end then
               if transformed_tokens[token_number + 2].type == CONTROL_SEQUENCE then  -- followed by another control sequence
                 if token_number + 3 <= transformed_token_range_end then
                   if transformed_tokens[token_number + 3].type == CONTROL_SEQUENCE then  -- followed by another control sequence
-                    normalized_csname = "cs_gset_eq:NN"  -- \global \let \csname \csname
+                    normalized_csname, csname_origin = "cs_gset_eq:NN", TEX_PRIMITIVE  -- \global \let \csname \csname
                     goto skip_decrement
                   elseif transformed_tokens[token_number + 3].type == CHARACTER then  -- followed by a character
                     if transformed_tokens[token_number + 3].payload == "=" then  -- that is an equal sign
                       if token_number + 4 <= transformed_token_range_end then
                         if transformed_tokens[token_number + 4].type == CONTROL_SEQUENCE then  -- followed by another control sequence
                           ignored_token_number = token_number + 3
-                          normalized_csname = "cs_gset_eq:NN"  -- \global \let \csname = \csname
+                          normalized_csname, csname_origin = "cs_gset_eq:NN", TEX_PRIMITIVE  -- \global \let \csname = \csname
                           goto skip_decrement
                         end
                       end
@@ -362,19 +373,20 @@ local function get_calls(results, part_number, segment, issues, content)
                 end
               end
             end
-          elseif csname == "def" or csname == "gdef" or csname == "edef" or csname == "xdef" then  -- \global \?def
+          elseif next_csname == "def" or next_csname == "gdef" or next_csname == "edef" or next_csname == "xdef" then  -- \global \?def
             if token_number + 2 <= transformed_token_range_end then
               if transformed_tokens[token_number + 2].type == CONTROL_SEQUENCE then  -- followed by another control sequence
-                if csname == "def" then  -- \global \def \csname
+                csname_origin = TEX_PRIMITIVE
+                if next_csname == "def" then  -- \global \def \csname
                   normalized_csname = "cs_gset:Npn"
-                elseif csname == "gdef" then  -- \global \gdef \csname
+                elseif next_csname == "gdef" then  -- \global \gdef \csname
                   normalized_csname = "cs_gset:Npn"
-                elseif csname == "edef" then  -- \global \edef \csname
+                elseif next_csname == "edef" then  -- \global \edef \csname
                   normalized_csname = "cs_gset:Npe"
-                elseif csname == "xdef" then  -- \global \xdef \csname
+                elseif next_csname == "xdef" then  -- \global \xdef \csname
                   normalized_csname = "cs_gset:Npx"
                 else
-                  assert(false)
+                  error(string.format('Unexpected csname "%s"', next_csname))
                 end
                 goto skip_decrement
               end
@@ -386,7 +398,10 @@ local function get_calls(results, part_number, segment, issues, content)
       assert(next_token_number == token_number + 1)
       ::skip_decrement::
     end
-    return normalized_csname, next_token_number, ignored_token_number
+    if csname ~= normalized_csname then
+      assert(csname_origin ~= AS_WRITTEN)
+    end
+    return normalized_csname, csname_origin, next_token_number, ignored_token_number
   end
 
   while token_number <= transformed_token_range_end do
@@ -394,7 +409,7 @@ local function get_calls(results, part_number, segment, issues, content)
     local next_token, next_next_token, next_token_range, context
     if token.type == CONTROL_SEQUENCE then  -- a control sequence
       local original_csname = token.payload
-      local csname, next_token_number, ignored_token_number = normalize_csname(original_csname)
+      local csname, csname_origin, next_token_number, ignored_token_number = normalize_csname(original_csname)
       ::retry_control_sequence::
       local csname_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
       local variable_type = lpeg.match(parsers.any_expl3_variable_or_constant_csname, csname)
@@ -408,6 +423,7 @@ local function get_calls(results, part_number, segment, issues, content)
           token_range = csname_token_range,
           -- The following attributes are specific to the type.
           csname = csname,
+          csname_origin = csname_origin,
           variable_type = variable_type,
         })
         token_number = next_token_number
@@ -495,7 +511,7 @@ local function get_calls(results, part_number, segment, issues, content)
           if next_token_number > transformed_token_range_end then  -- missing argument (partial application?), skip all remaining tokens
             if token_range:stop() == #tokens then
               if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
-                csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                csname, csname_origin, next_token_number, ignored_token_number = original_csname, AS_WRITTEN, token_number + 1, nil
                 goto retry_control_sequence
               else
                 issues:add('e301', 'end of expl3 part within function call', token.byte_range)
@@ -517,7 +533,7 @@ local function get_calls(results, part_number, segment, issues, content)
               next_token = transformed_tokens[next_token_number]
               if next_token.type == CHARACTER and next_token.catcode == 2 then  -- end grouping, missing argument (partial application?)
                 if csname ~= original_csname then  -- first, retry without trying to understand non-expl3
-                  csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                  csname, csname_origin, next_token_number, ignored_token_number = original_csname, AS_WRITTEN, token_number + 1, nil
                   goto retry_control_sequence
                 else  -- if this doesn't help, skip all remaining tokens
                   next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
@@ -550,7 +566,7 @@ local function get_calls(results, part_number, segment, issues, content)
             if next_token_number > transformed_token_range_end then  -- missing begin grouping (partial application?)
               if token_range:stop() == #tokens then  -- skip all remaining tokens
                 if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
-                  csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                  csname, csname_origin, next_token_number, ignored_token_number = original_csname, AS_WRITTEN, token_number + 1, nil
                   goto retry_control_sequence
                 else
                   issues:add('e301', 'end of expl3 part within function call', next_token.byte_range)
@@ -569,7 +585,7 @@ local function get_calls(results, part_number, segment, issues, content)
               if next_grouping.stop == nil then  -- an unclosed grouping, skip the control sequence
                 if token_range:stop() == #tokens then
                   if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
-                    csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                  csname, csname_origin, next_token_number, ignored_token_number = original_csname, AS_WRITTEN, token_number + 1, nil
                     goto retry_control_sequence
                   else
                     issues:add('e301', 'end of expl3 part within function call', next_token.byte_range)
@@ -607,7 +623,7 @@ local function get_calls(results, part_number, segment, issues, content)
                   goto continue
                 else  -- no token / more than one token, skip the control sequence
                   if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
-                    csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                    csname, csname_origin, next_token_number, ignored_token_number = original_csname, AS_WRITTEN, token_number + 1, nil
                     goto retry_control_sequence
                   else
                     context = format_tokens(new_range(next_grouping.start, next_grouping.stop, INCLUSIVE, #tokens), tokens, content)
@@ -651,7 +667,7 @@ local function get_calls(results, part_number, segment, issues, content)
               if next_grouping.stop == nil then  -- an unclosed grouping, skip the control sequence
                 if token_range:stop() == #tokens then
                   if csname ~= original_csname then  -- before recording an error, retry without trying to understand non-expl3
-                    csname, next_token_number, ignored_token_number = original_csname, token_number + 1, nil
+                    csname, csname_origin, next_token_number, ignored_token_number = original_csname, AS_WRITTEN, token_number + 1, nil
                     goto retry_control_sequence
                   else
                     issues:add('e301', 'end of expl3 part within function call', next_token.byte_range)
@@ -707,6 +723,7 @@ local function get_calls(results, part_number, segment, issues, content)
           token_range = next_token_range,
           -- The following attributes are specific to the type.
           csname = csname,
+          csname_origin = csname_origin,
           csname_token_range = csname_token_range,
           arguments = arguments,
         })
@@ -802,6 +819,7 @@ local substeps = {
 return {
   add_segment = add_segment,
   call_types = call_types,
+  csname_origins = csname_origins,
   extract_text_from_tokens = extract_text_from_tokens,
   get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,

@@ -1761,7 +1761,8 @@ local function report_issues(states, main_file_number, options)
             end
 
             -- Report setting a function before definition.
-            if statement.type == FUNCTION_DEFINITION and statement.maybe_redefinition and statement.defined_csname.type == TEXT then
+            if statement.type == FUNCTION_DEFINITION and not statement.maybe_definition and statement.maybe_redefinition and
+                statement.defined_csname.type == TEXT then
               local defined_csname = statement.defined_csname.payload
               if lpeg.match(expl3_well_known_csname, defined_csname) == nil and
                   not any_reaching(REACHING_DEFINITION, defined_csname) then
