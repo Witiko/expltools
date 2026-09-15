@@ -1,0 +1,17 @@
+\ExplSyntaxOn
+\cs_generate_variant:Nn \use_i:n { e }
+\cs_new:Npn \mymod_foo: { \use_i:e { } }
+
+% snippet from tagpdf.sty
+\cs_generate_variant:Nn \property_ref:nnn {enn}
+\cs_new:Npn \__tag_struct_mcid_dict:n #1 %#1 MCID absnum
+  {
+     <<
+      /Type \c_space_tl /MCR \c_space_tl
+      /Pg
+        \c_space_tl
+      \pdf_pageobject_ref:n { \property_ref:enn{mcid-#1}{tagabspage}{1} }
+       /MCID \c_space_tl \property_ref:enn{mcid-#1}{tagmcid}{1}
+     >>
+  }
+\ExplSyntaxOff
