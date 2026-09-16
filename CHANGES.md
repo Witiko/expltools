@@ -42,7 +42,7 @@ This version of explcheck has made the following improvements to the documentati
 This version of explcheck has made the following changes to third-party Git
 submodules and other dependencies:
 
-- Update the `latex3` submodule from 2026-05-26-dev to 2026-09-09-dev.
+- Update the `latex3` submodule from 2026-06-19-dev to 2026-09-09-dev.
   (4731ae7, 8cfa5cc, 7e544b0)
 
 ## expltools 2026-06-25
@@ -54,8 +54,8 @@ submodules and other dependencies:
 This version of explcheck has made the following changes to third-party Git
 submodules and other dependencies:
 
-- Update the `latex3` submodule from 2026-05-15-dev to 2026-05-26-dev. (61b5ce2)
-- Update the `latex3` submodule from 2026-05-26-dev to 2026-06-19-dev. (25d108d)
+- Update the `latex3` submodule from 2026-05-15-dev to 2026-06-19-dev.
+  (61b5ce2, 25d108d)
 - Bump `actions/checkout` from 6 to 7. (contributed by @dependabot in #222)
 
 ## expltools 2026-05-29
