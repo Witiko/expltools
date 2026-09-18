@@ -4,6 +4,23 @@
 
 ### explcheck v0.24.0
 
+#### Documentation
+
+This version of explcheck has made the following improvements to the documentation:
+
+- In the document titled
+  [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors],
+  grey out labelled work-in-progress issues. (reported by @muzimuzhi in #227,
+  fixed in #228)
+
+  Previously, labelled issues were assumed to be finished, whereas issues with
+  automatically generated identifiers were assumed to be work-in-progress.
+  However, some recent issues, like W512 (Defined an unexpandable function as
+  unprotected), are labelled, since other issues already refer to them, but
+  they are still marked as a work in progress. After this change, these issues
+  are no longer considered finished and are properly designated as unfinished
+  in the documentation.
+
 ## expltools 2026-09-16
 
 ### explcheck v0.23.2
