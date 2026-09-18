@@ -14,6 +14,8 @@
 \tl_new:N
   \l__expltools_explcheck_current_identifier_tl
 \bool_new:N
+  \l__expltools_explcheck_labeled_bool
+\bool_new:N
   \l__expltools_explcheck_work_in_progress_bool
 \prop_new:N
   \g__expltools_explcheck_labels_prop
@@ -52,8 +54,11 @@
           \label
           \l__expltools_explcheck_current_identifier_tl
       }
-    \bool_if:NTF
-      \l__expltools_explcheck_work_in_progress_bool
+    \bool_if:nTF
+      {
+        \l__expltools_explcheck_work_in_progress_bool ||
+        ! \l__expltools_explcheck_labeled_bool
+      }
       {
         \tl_set:NV
           \l_tmpa_tl
@@ -90,8 +95,11 @@
 \cs_new_protected:Nn
   \__expltools_explcheck_display_heading:Nn
   {
-    \bool_if:NTF
-      \l__expltools_explcheck_work_in_progress_bool
+    \bool_if:nTF
+      {
+        \l__expltools_explcheck_work_in_progress_bool ||
+        ! \l__expltools_explcheck_labeled_bool
+      }
       {
         #1
           {
@@ -202,7 +210,9 @@
       },
       headerAttributeContextBegin = {
         \group_begin:
-        \bool_set_true:N
+        \bool_set_false:N
+          \l__expltools_explcheck_labeled_bool
+        \bool_set_false:N
           \l__expltools_explcheck_work_in_progress_bool
         \markdownSetup
           {
@@ -217,8 +227,8 @@
                   { ##1 }
                   { label }
                   {
-                    \bool_set_false:N
-                      \l__expltools_explcheck_work_in_progress_bool
+                    \bool_set_true:N
+                      \l__expltools_explcheck_labeled_bool
                     \tl_set:Nx
                       \l_tmpa_tl
                       { \str_uppercase:n { ##2 } }
