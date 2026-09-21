@@ -883,7 +883,7 @@ end
 
 -- Generate the file "explcheck-latex3.lua".
 local output_filename = "explcheck-latex3.lua"
-local output_file = assert(io.open(output_filename, "w"), string.format('Could not open "%s" for reading', input_pathname))
+local output_file = assert(io.open(output_filename, "w"), string.format('Could not open "%s" for writing', output_filename))
 
 -- Add a comment, both to an output file and to the standard output.
 local function add_comment(text)

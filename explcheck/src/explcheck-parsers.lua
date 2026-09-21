@@ -483,7 +483,7 @@ end
 
 local function expl3_csname_history(csname)
   local latex3 = require("explcheck-latex3")
-  local version_added, version_updated, version_deprecated
+  local version_added, version_updated
   local added_or_updated_match
   added_or_updated_match = lpeg.match(latex3.definitions["function"], csname)
   if added_or_updated_match == nil then
