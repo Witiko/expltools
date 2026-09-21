@@ -801,7 +801,7 @@ local function generate_definitions_parsers(output_file, definition_types)
         local definition = definitions[path .. node]
         assert(definition ~= nil)
         local options_buffer = {}
-        for _, key in ipairs({"added", "EXP"}) do
+        for _, key in ipairs({"added", "updated", "EXP"}) do
           local value = definition[key]
           if value ~= nil then
             table.insert(options_buffer, string.format('%s="%s"', key, value))
