@@ -721,9 +721,9 @@ local function parse_definitions()
         -- Guess whether the macros are a function or a variable.
         for _, csname in ipairs(csnames) do
           -- First, try seeing if there are any corresponding function or variable definitions.
-          for _, definition_type in ipairs({"function", "variable"}) do
-            if definition_types[definition_type][csname] ~= nil then
-              record_definition(definition_types[definition_type], definition, csnames)
+          for _, guessed_definition_type in ipairs({"function", "variable"}) do
+            if definition_types[guessed_definition_type][csname] ~= nil then
+              record_definition(definition_types[guessed_definition_type], definition, csnames)
               goto next_definition
             end
           end
