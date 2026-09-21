@@ -11,6 +11,11 @@ This version of explcheck has implemented the following new features:
 - Export the version date of the LaTeX3 data files as `expl3_version` in the
   `explcheck-latex3.lua` module. (#219, #231)
 
+- Include the dates when function and variable definitions were last updated in
+  `definitions` from `explcheck-latex3.lua`. (#219, #231)
+
+  This has increased the file size from circa 187K to circa 233K (+25%).
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
