@@ -16,6 +16,24 @@ This version of explcheck has implemented the following new features:
 
   This has increased the file size from circa 187K to circa 233K (+25%).
 
+- Include lone macro definitions with no corresponding function or variable
+  definitions in `explcheck-latex3.lua`. (#219, #231)
+
+  Previously, `\begin{macro}` definitions in `l3*.dtx` files were disregarded
+  unless the same control sequence also had corresponding `\begin{function}` or
+  `\begin{variable}` definitions.
+
+  After this change, macros without corresponding `\begin{function}` or
+  `\begin{variable}` definitions are classified as functions or variables based
+  on their names. This has increased the number of function definitions in
+  `explcheck-latex3.lua` from 4,883 to 5,637 (+15%) and the number of variable
+  definitions from 340 to 371 (+9%).
+
+  This has further increased the file size from circa 233K to circa 247K (+6%).
+
+Overall, the size of `explcheck-latex3.lua` has increased from circa 187K to circa
+247K (+32%) in this version of explcheck.
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
