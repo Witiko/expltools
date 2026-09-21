@@ -18,6 +18,19 @@ local any, eof = P(1), P(-1)
 
 local LATEX3_PATHNAME = "../../third-party/latex3"
 
+-- Extract the version date of the LaTeX3 data files from the file "expl3.dtx".
+local function parse_expl3_dtx()
+  local input_pathname = string.format("%s/l3kernel/expl3.dtx", LATEX3_PATHNAME)
+  local input_file = assert(io.open(input_pathname, "r"), string.format('Could not open "%s" for reading', input_pathname))
+  for line in input_file:lines() do
+    local _, _, date = line:find([[\def\ExplFileDate{(%d%d%d%d%-%d%d%-%d%d)}]])
+    if date ~= nil then
+      return date
+    end
+  end
+  error(string.format('Could not find the version date in "%s"', input_pathname))
+end
+
 -- Perform a depth-first-search algorithm on a tree.
 local function depth_first_search(node, path, visit, leave)
   visit(node, path)
@@ -38,7 +51,7 @@ end
 local function parse_l3obsolete()
   local latest_date, latest_raw_csname, csnames, dates = nil, nil, {}, {}
   local input_pathname = string.format("%s/l3kernel/doc/l3obsolete.txt", LATEX3_PATHNAME)
-  local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
+  local input_file = assert(io.open(input_pathname, "r"), string.format('Could not open "%s" for reading', input_pathname))
   local line, input_state, seen_csnames = input_file:read("*line"), "preamble", {}
   while line ~= nil do
     if input_state == "preamble" and line == "Deprecated functions and variables" then
@@ -226,7 +239,7 @@ end
 local function parse_l3prefixes()
   local latest_date, latest_prefix, prefixes, dates = nil, nil, {}, {}
   local input_pathname = string.format("%s/l3kernel/doc/l3prefixes.csv", LATEX3_PATHNAME)
-  local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
+  local input_file = assert(io.open(input_pathname, "r"), string.format('Could not open "%s" for reading', input_pathname))
   local csv_field = (
     '"' * Cs(((any - P('"')) + P('""') / '"')^0) * '"'  -- quoted field
     + C((any - S(',\n"'))^0)  -- unquoted field
@@ -638,7 +651,7 @@ local function parse_definitions()
   end
 
   for _, input_pathname in ipairs(collect_dtx_files()) do
-    local input_file = assert(io.open(input_pathname, "r"), "Could not open " .. input_pathname .. " for reading")
+    local input_file = assert(io.open(input_pathname, "r"), string.format('Could not open "%s" for reading', input_pathname))
     local content = assert(input_file:read("*all"))
     assert(input_file:close())
 
@@ -848,7 +861,7 @@ end
 
 -- Generate the file "explcheck-latex3.lua".
 local output_filename = "explcheck-latex3.lua"
-local output_file = assert(io.open(output_filename, "w"), "Could not open " .. output_filename .. " for writing")
+local output_file = assert(io.open(output_filename, "w"), string.format('Could not open "%s" for reading', input_pathname))
 
 -- Add a comment, both to an output file and to the standard output.
 local function add_comment(text)
@@ -858,7 +871,8 @@ end
 
 ---- Generate the preamble.
 add_comment("LPEG parsers and other information extracted from LaTeX3 data files.")
-add_comment(string.format("Generated on %s from the following files:", os.date("%Y-%m-%d")))
+local expl3_version = parse_expl3_dtx()
+add_comment(string.format("Generated on %s from version %s of the following files:", os.date("%Y-%m-%d"), expl3_version))
 local csnames, l3obsolete_dates, l3obsolete_latest_date, l3obsolete_latest_raw_csname = parse_l3obsolete()
 add_comment(
   string.format('- "l3obsolete.txt" with the latest obsolete entry from %s: `\\%s`', l3obsolete_latest_date, l3obsolete_latest_raw_csname)
@@ -891,9 +905,11 @@ output_file:write("\n")
 
 ---- Generate the LPEG parsers.
 output_file:write('local lpeg = require("lpeg")\n')
-output_file:write('local Cc, P = lpeg.Cc, lpeg.P\n\n')
-output_file:write('local any, eof = P(1), P(-1)\n\n')
-output_file:write('local M = {}\n\n')
+output_file:write("local Cc, P = lpeg.Cc, lpeg.P\n\n")
+output_file:write("local any, eof = P(1), P(-1)\n\n")
+output_file:write("local M = {}\n")
+assert(expl3_version:find('"') == nil)
+output_file:write(string.format('M.expl3_version = "%s"\n\n', expl3_version))
 generate_l3obsolete_parsers(output_file, l3obsolete_dates, csnames)
 output_file:write("\n")
 generate_l3prefixes_parser(output_file, l3prefixes_dates, prefixes)
