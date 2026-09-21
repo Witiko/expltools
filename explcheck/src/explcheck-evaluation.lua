@@ -71,9 +71,9 @@ end
 -- definitions apparent from the results of the lexical analysis.
 local function get_required_latex3_version(analysis_results)
   local required_latex3_version = {
-    min_added = nil,
-    min_updated = nil,
-    max_deprecated = nil,
+    max_added = nil,
+    max_updated = nil,
+    min_deprecated = nil,
   }
   if analysis_results.tokens ~= nil then
     for _, part_tokens in ipairs(analysis_results.tokens) do
@@ -84,16 +84,16 @@ local function get_required_latex3_version(analysis_results)
         local csname = token.payload
         local csname_version_added, csname_version_updated, csname_version_deprecated = parsers.expl3_csname_history(csname)
         if csname_version_added ~= nil and
-            (required_latex3_version.min_added == nil or required_latex3_version.min_added > csname_version_added) then
-          required_latex3_version.min_added = string.format("%s (%s)", csname_version_added, format_csname(csname))
+            (required_latex3_version.max_added == nil or required_latex3_version.max_added < csname_version_added) then
+          required_latex3_version.max_added = string.format("%s (%s)", csname_version_added, format_csname(csname))
         end
         if csname_version_updated ~= nil and
-            (required_latex3_version.min_updated == nil or required_latex3_version.min_updated > csname_version_updated) then
-          required_latex3_version.min_updated = string.format("%s (%s)", csname_version_updated, format_csname(csname))
+            (required_latex3_version.max_updated == nil or required_latex3_version.max_updated < csname_version_updated) then
+          required_latex3_version.max_updated = string.format("%s (%s)", csname_version_updated, format_csname(csname))
         end
         if csname_version_deprecated ~= nil and
-            (required_latex3_version.max_deprecated == nil or required_latex3_version.max_deprecated < csname_version_deprecated) then
-          required_latex3_version.max_deprecated = string.format("%s (%s)", csname_version_deprecated, format_csname(csname))
+            (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated > csname_version_deprecated) then
+          required_latex3_version.min_deprecated = string.format("%s (%s)", csname_version_deprecated, format_csname(csname))
         end
         ::next_token::
       end
@@ -475,11 +475,11 @@ local function aggregate_table(self_table, evaluation_result_table)
       else
         local key_prefix = key:sub(1, 4)
         if key_prefix == "min_" then  -- minimum date
-          if self_table[key] < value then
+          if self_table[key] > value then
             self_table[key] = value
           end
         elseif key_prefix == "max_" then  -- maximum date
-          if self_table[key] > value then
+          if self_table[key] < value then
             self_table[key] = value
           end
         else
