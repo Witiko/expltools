@@ -479,6 +479,21 @@ local function expl3_deprecated_csname(l3obsolete_max_deprecated_date)
   )
 end
 
+local function expl3_csname_history(csname)
+  local version_added, version_updated, version_deprecated
+  local added_or_updated_match
+  added_or_updated_match = lpeg.match(latex3.definitions["function"], csname)
+  if added_or_updated_match == nil then
+    added_or_updated_match = lpeg.match(latex3.definitions["variable"], csname)
+  end
+  if added_or_updated_match ~= nil and type(added_or_updated_match) == "table" then
+    version_added = added_or_updated_match.added
+    version_updated = updated_or_updated_match.updated
+  end
+  local version_deprecated = lpeg.match(latex3.obsolete.deprecated_csname, csname)
+  return version_added, version_updated, version_deprecated
+end
+
 local expl3like_function_with_underscores_csname = (
   underscore^0
   * letter^1
@@ -1031,6 +1046,7 @@ return {
   eof = eof,
   expansionless_argument_specifier = expansionless_argument_specifier,
   expl3_catcodes = expl3_catcodes,
+  expl3_csname_history = expl3_csname_history,
   expl3_deprecated_csname = expl3_deprecated_csname,
   expl3_endlinechar = expl3_endlinechar,
   expl3_expansion_csname = expl3_expansion_csname,
