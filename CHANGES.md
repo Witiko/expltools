@@ -4,6 +4,13 @@
 
 ### explcheck v0.24.0
 
+#### New features
+
+This version of explcheck has implemented the following new features:
+
+- Export the version date of the LaTeX3 data files as `expl3_version` in the
+  `explcheck-latex3.lua` module. (#219, #231)
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
