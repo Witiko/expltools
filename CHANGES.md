@@ -31,8 +31,67 @@ This version of explcheck has implemented the following new features:
 
   This has further increased the file size from circa 233K to circa 247K (+6%).
 
-Overall, the size of `explcheck-latex3.lua` has increased from circa 187K to circa
-247K (+32%) in this version of explcheck.
+  Overall, the size of `explcheck-latex3.lua` has increased from circa 187K to
+  circa 247K (+32%) in this version of explcheck.
+
+- In the command-line `--verbose` output, display the latest added and updated
+  standard-library LaTeX3 commands and the earliest deprecated command used in
+  each file, together with the earliest required LaTeX3 version in aggregate.
+  (suggested by @dcpurton in #219, added in #231)
+
+  For example, here is the output of running explcheck with the `--verbose`
+  option on the files `markdown.tex` and `markdown.sty` from the current
+  TeX Live 2026:
+
+  ```
+  Checking 2 files
+
+  Checking /usr/local/texlive/2026/texmf-dist/tex/generic/markdown/markdown.tex OK
+
+      [...]
+
+      Lexical analysis results:
+      - 22,299 tokens in expl3 parts
+      - 1,841 groupings in expl3 parts
+      - Required LaTeX3 version:
+          - Latest added LaTeX3 command: 2024-12-08 (\tl_if_regex_match:nNTF)
+          - Latest updated LaTeX3 command: 2026-07-20 (\sys_if_engine_luatex:TF)
+          - Earliest deprecated LaTeX3 command: 2025-05-14 (\regex_match:NnT)
+
+      [...]
+
+  [...]
+
+  Checking /usr/local/texlive/2026/texmf-dist/tex/latex/markdown/markdown.sty   OK
+
+      Lexical analysis results:
+      - 2,642 tokens in expl3 parts
+      - 202 groupings in expl3 parts
+      - Required LaTeX3 version:
+          - Latest added LaTeX3 command: 2021-05-18 (\msg_info:nnnn)
+          - Latest updated LaTeX3 command: 2023-09-27 (\cs_gset_protected:Npn)
+
+      [...]
+
+  [...]
+
+  Aggregate statistics:
+
+  [...]
+
+  - Lexical analysis: 24,941 expl3 tokens and 2,043 groupings, requires LaTeX3 2024-12-08 or later
+
+  [...]
+  ```
+
+  This allows package authors to determine how recent a version of `l3kernel`
+  their code requires.
+
+  Note that some obfuscated LaTeX3 commands may be missed by the analysis and
+  that only the latest added date, not the latest updated date, is considered
+  in the final recommendation in the "Aggregate statistics" section. The
+  reported version should therefore be treated as a lower-bound estimate that
+  requires human verification.
 
 #### Documentation
 
