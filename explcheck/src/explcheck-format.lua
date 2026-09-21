@@ -303,6 +303,12 @@ local function print_summary(options, evaluation_results)
         io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
       end
     end
+    local required_latex3_version = evaluation_results.required_latex3_version
+    if required_latex3_version.max_added ~= nil then
+      local min_version = required_latex3_version.max_added:sub(1, 10)
+      io.write(string.format(", requires LaTeX3 %s or later", min_version))
+    end
+
     -- Evaluate the evalution results of the syntactic and semantic analysis.
     local num_segments_total = evaluation_results.num_segments_total
     local num_calls_total = evaluation_results.num_calls_total
@@ -694,6 +700,42 @@ local function print_results(state, options, evaluation_results, is_last_file)
         if num_unclosed_groupings > 0 then
           local formatted_grouping_ratio = format_ratio(num_unclosed_groupings, num_groupings)
           io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
+        end
+      end
+      local required_latex3_version = evaluation_results.required_latex3_version
+      if required_latex3_version.max_added ~= nil or
+          required_latex3_version.max_updated ~= nil or
+          required_latex3_version.min_deprecated ~= nil then
+        io.write(string.format("\n%s- Required LaTeX3 version:", line_indent))
+        if required_latex3_version.max_added ~= nil then
+          io.write(
+            string.format(
+              "\n%s%s- Latest added LaTeX3 command: %s",
+              line_indent,
+              line_indent,
+              required_latex3_version.max_added
+            )
+          )
+        end
+        if required_latex3_version.max_updated ~= nil then
+          io.write(
+            string.format(
+              "\n%s%s- Latest updated LaTeX3 command: %s",
+              line_indent,
+              line_indent,
+              required_latex3_version.max_updated
+            )
+          )
+        end
+        if required_latex3_version.min_deprecated ~= nil then
+          io.write(
+            string.format(
+              "\n%s%s- Earliest deprecated LaTeX3 command: %s",
+              line_indent,
+              line_indent,
+              required_latex3_version.min_deprecated
+            )
+          )
         end
       end
       -- Evaluate the evalution results of the syntactic analysis.
