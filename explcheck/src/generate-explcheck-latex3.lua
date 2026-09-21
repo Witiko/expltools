@@ -2,6 +2,7 @@
 -- Generates a file with up-to-date LPEG parsers and other information extracted from LaTeX3 data files.
 
 local format = require("explcheck-format")
+local parsers = require("explcheck-parsers")
 local utils = require("explcheck-utils")
 
 local humanize = format.humanize
@@ -600,7 +601,7 @@ local function parse_definitions()
   end
 
   -- Record a definition under one or more control sequence names.
-  local function record_definition(definitions, definition, csnames, only_update_existing)
+  local function record_definition(definitions, definition, csnames)
     -- Record the control sequence names and their definitions.
     for _, csname in ipairs(csnames) do
       for _, key in ipairs({"added", "updated"}) do
@@ -637,13 +638,13 @@ local function parse_definitions()
             else
               error(message)
             end
-          elseif definitions[csname][key] == nil and definition[key] ~= nil and not only_update_existing then
+          elseif definitions[csname][key] == nil and definition[key] ~= nil then
             -- When a definition is repeated and the next definition specifies some new values, record them.
             definitions[csname] = make_shallow_copy(definitions[csname])
             definitions[csname][key] = definition[key]
           end
         end
-      elseif not only_update_existing then
+      else
         definitions[csname] = definition
         table.insert(definitions, csname)
       end
@@ -695,7 +696,7 @@ local function parse_definitions()
 
         local options, definition = interpret_raw_options(input_pathname, definition_type, raw_options)
         local csnames = interpret_raw_csnames(options, raw_csnames)
-        record_definition(definitions, definition, csnames, false)
+        record_definition(definitions, definition, csnames)
       end
     end
 
@@ -716,11 +717,32 @@ local function parse_definitions()
 
         local options, definition = interpret_raw_options(input_pathname, definition_type, raw_options)
         local csnames = interpret_raw_csnames(options, raw_csnames)
-        for _, updated_definition_type in ipairs({"function", "variable"}) do
-          local updated_definitions = definition_types[updated_definition_type]
-          assert(updated_definitions ~= nil)
-          record_definition(updated_definitions, definition, csnames, true)
+
+        -- Guess whether the macros are a function or a variable.
+        for _, csname in ipairs(csnames) do
+          -- First, try seeing if there are any corresponding function or variable definitions.
+          for _, definition_type in ipairs({"function", "variable"}) do
+            if definition_types[definition_type][csname] ~= nil then
+              record_definition(definition_types[definition_type], definition, csnames)
+              goto next_definition
+            end
+          end
         end
+        for _, csname in ipairs(csnames) do
+          -- If not, guess based on the shape of the control sequence name.
+          local looks_like_function = lpeg.match(parsers.expl3_function_csname, csname) ~= nil
+          local looks_like_variable = lpeg.match(parsers.any_expl3_variable_or_constant_csname, csname) ~= nil
+          if not (looks_like_function and looks_like_variable) then
+            if looks_like_function then
+              assert(not looks_like_variable)
+              record_definition(definition_types["function"], definition, csnames)
+            end
+            if looks_like_variable then
+              record_definition(definition_types["variable"], definition, csnames)
+            end
+          end
+        end
+        ::next_definition::
       end
     end
   end

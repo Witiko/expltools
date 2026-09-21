@@ -1,6 +1,5 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
-local latex3 = require("explcheck-latex3")
 local get_option = require("explcheck-config").get_option
 
 local lpeg = require("lpeg")
@@ -370,6 +369,7 @@ local expl3_well_known_prefixes = (
 )
 
 local function latex3_prefixes(options, pathname)
+  local latex3 = require("explcheck-latex3")
   local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
 
   return Cmt(
@@ -384,6 +384,7 @@ local function latex3_prefixes(options, pathname)
   )
 end
 local function latex3_csname(definition_type, options, pathname)
+  local latex3 = require("explcheck-latex3")
   local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
   return (
@@ -467,6 +468,7 @@ local function expl3_well_known_csname(options, pathname)
 end
 
 local function expl3_deprecated_csname(l3obsolete_max_deprecated_date)
+  local latex3 = require("explcheck-latex3")
   return Cmt(
     latex3.obsolete.deprecated_csname,
     function(_, _, maybe_deprecated_date)
@@ -480,6 +482,7 @@ local function expl3_deprecated_csname(l3obsolete_max_deprecated_date)
 end
 
 local function expl3_csname_history(csname)
+  local latex3 = require("explcheck-latex3")
   local version_added, version_updated, version_deprecated
   local added_or_updated_match
   added_or_updated_match = lpeg.match(latex3.definitions["function"], csname)
