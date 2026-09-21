@@ -40,8 +40,8 @@ This version of explcheck has implemented the following new features:
   (suggested by @dcpurton in #219, added in #231)
 
   For example, here is the output of running explcheck with the `--verbose`
-  option on the files `markdown.tex` and `markdown.sty` from the current
-  TeX Live 2026:
+  option on the files `markdown.tex` and `markdown.sty` from version 3.16.0 of
+  the Markdown package for TeX from TeX Live 2026:
 
   ```
   Checking 2 files
