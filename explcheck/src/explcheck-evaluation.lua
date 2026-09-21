@@ -1,12 +1,18 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
+local parsers = require("explcheck-parsers")
+local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local statement_confidences = require("explcheck-semantic-analysis").statement_confidences
 
-local token_types = syntactic_analysis.token_types
+local format_csname = lexical_analysis.format_csname
+
+local lexical_token_types = lexical_analysis.token_types
+local semantic_token_types = syntactic_analysis.token_types
 local call_types = syntactic_analysis.call_types
 
-local ARGUMENT = token_types.ARGUMENT
+local ARGUMENT = semantic_token_types.ARGUMENT
+local CONTROL_SEQUENCE = lexical_token_types.CONTROL_SEQUENCE
 
 local CALL = call_types.CALL
 
@@ -59,6 +65,41 @@ local function count_tokens(analysis_results)
     end
   end
   return num_tokens
+end
+
+-- Determine several bounds for the minimum/maximum apparent version of LaTeX3
+-- definitions apparent from the results of the lexical analysis.
+local function get_required_latex3_version(analysis_results)
+  local required_latex3_version = {
+    min_added = nil,
+    min_updated = nil,
+    max_deprecated = nil,
+  }
+  if analysis_results.tokens ~= nil then
+    for _, part_tokens in ipairs(analysis_results.tokens) do
+      for _, token in ipairs(part_tokens) do
+        if token.type ~= CONTROL_SEQUENCE then
+          goto next_token
+        end
+        local csname = token.payload
+        local csname_version_added, csname_version_updated, csname_version_deprecated = parsers.expl3_csname_history(csname)
+        if csname_version_added ~= nil and
+            (required_latex3_version.min_added == nil or required_latex3_version.min_added > csname_version_added) then
+          required_latex3_version.min_added = string.format("%s (%s)", csname_version_added, format_csname(csname))
+        end
+        if csname_version_updated ~= nil and
+            (required_latex3_version.min_updated == nil or required_latex3_version.min_updated > csname_version_updated) then
+          required_latex3_version.min_updated = string.format("%s (%s)", csname_version_updated, format_csname(csname))
+        end
+        if csname_version_deprecated ~= nil and
+            (required_latex3_version.max_deprecated == nil or required_latex3_version.max_deprecated < csname_version_deprecated) then
+          required_latex3_version.max_deprecated = string.format("%s (%s)", csname_version_deprecated, format_csname(csname))
+        end
+        ::next_token::
+      end
+    end
+  end
+  return required_latex3_version
 end
 
 -- Count the number of segments in analysis results.
@@ -316,6 +357,7 @@ function FileEvaluationResults.new(cls, state)
   -- Evaluate the results of the lexical analysis.
   local num_tokens = count_tokens(analysis_results)
   local num_groupings, num_unclosed_groupings = count_groupings(analysis_results)
+  local required_latex3_version = get_required_latex3_version(analysis_results)
   -- Evaluate the results of the syntactic and semantic analyses.
   local num_segments, num_segments_total = count_segments(analysis_results)
   local num_calls, num_call_tokens, num_calls_total = count_calls(analysis_results)
@@ -336,6 +378,7 @@ function FileEvaluationResults.new(cls, state)
   self.num_tokens = num_tokens
   self.num_groupings = num_groupings
   self.num_unclosed_groupings = num_unclosed_groupings
+  self.required_latex3_version = required_latex3_version
   self.num_segments = num_segments
   self.num_segments_total = num_segments_total
   self.num_calls = num_calls
@@ -393,6 +436,7 @@ function AggregateEvaluationResults.new(cls)
   self.num_tokens = 0
   self.num_groupings = 0
   self.num_unclosed_groupings = 0
+  self.required_latex3_version = {}
   self.num_segments = {}
   self.num_segments_total = 0
   self.num_calls = {}
@@ -425,6 +469,23 @@ local function aggregate_table(self_table, evaluation_result_table)
         self_table[key] = 0
       end
       self_table[key] = self_table[key] + value
+    elseif type(value) == "string" then  -- an aggregate of string dates
+      if self_table[key] == nil then
+        self_table[key] = value
+      else
+        local key_prefix = key:sub(1, 4)
+        if key_prefix == "min_" then  -- minimum date
+          if self_table[key] < value then
+            self_table[key] = value
+          end
+        elseif key_prefix == "max_" then  -- maximum date
+          if self_table[key] > value then
+            self_table[key] = value
+          end
+        else
+          error(string.format('Unknown prefix "%s" of key "%s"', key_prefix, key))
+        end
+      end
     elseif type(value) == "boolean" then  -- a count of files with a certain property
       local count_key = string.format("num_%s", key)
       if self_table[count_key] == nil then

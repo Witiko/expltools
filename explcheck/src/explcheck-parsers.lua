@@ -488,7 +488,7 @@ local function expl3_csname_history(csname)
   end
   if added_or_updated_match ~= nil and type(added_or_updated_match) == "table" then
     version_added = added_or_updated_match.added
-    version_updated = updated_or_updated_match.updated
+    version_updated = added_or_updated_match.updated
   end
   local version_deprecated = lpeg.match(latex3.obsolete.deprecated_csname, csname)
   return version_added, version_updated, version_deprecated
