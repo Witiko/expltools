@@ -21,6 +21,35 @@ This version of explcheck has made the following improvements to the documentati
   are no longer considered finished and are properly designated as unfinished
   in the documentation.
 
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration (CI):
+
+- Check if the `latex3` submodule points to the latest stable release.
+  (reported by @muzimuzhi in #226, fixed in #229)
+
+  Previously, the CI would nudge us to update the `latex3` submodule
+  to the latest development version of LaTeX3, which would cause the file
+  `explcheck-latex3.lua` to include bleeding-edge information from the
+  LaTeX3 files `l3obsolete.txt`, `l3prefixes.csv`, and `l3*.dtx`.
+
+  However, as mentioned by @muzimuzhi in #226, "in most cases, packages
+  are written to work with stable [...] releases". Therefore, after this
+  change, the CI will nudge us towards the latest stable rather than
+  development releases.
+
+- Check if the `latex3` submodule points exactly to a Git tag. (#229)
+
+#### Dependencies
+
+This version of explcheck has made the following changes to third-party Git
+submodules and other dependencies:
+
+- Update the `latex3` submodule from 2026-09-09-dev to 2026-09-09 and continue
+  pinning stable rather than development releases. (reported by @muzimuzhi in
+  #226, fixed in #229)
+
 ## expltools 2026-09-16
 
 ### explcheck v0.23.2
