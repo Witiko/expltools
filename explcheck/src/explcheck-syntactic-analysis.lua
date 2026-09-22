@@ -6,10 +6,12 @@ local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
 
+local cleanup_required_latex3_version = lexical_analysis.cleanup_required_latex3_version
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local format_token = lexical_analysis.format_token
 local format_tokens = lexical_analysis.format_tokens
+local update_required_latex3_version_from_csname = lexical_analysis.update_required_latex3_version_from_csname
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -832,8 +834,38 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   end
 end
 
+-- Tighten the estimated bounds for the minimum/maximum version of LaTeX3 definitions from the lexical analysis using the c- and v-type
+-- function call arguments recorded by `analyze_and_report_issues()`.
+---@diagnostic disable-next-line:unused-local
+local function estimate_required_latex3_version(states, file_number, options)  -- luacheck: ignore options
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.segments ~= nil)
+  assert(results.required_latex3_version ~= nil)
+
+  for _, segment in ipairs(results.segments) do
+    local transformed_tokens = segment.transformed_tokens.tokens
+    local map_forward = segment.transformed_tokens.map_forward
+    for _, call in ipairs(segment.calls) do
+      if call.type ~= CALL then
+        goto next_call
+      end
+      for _, argument in ipairs(call.arguments) do
+        if argument.specifier == "c" or argument.specifier == "v" then
+          local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
+          update_required_latex3_version_from_csname(results.required_latex3_version, argument_text)
+        end
+      end
+      ::next_call::
+    end
+  end
+end
+
 local substeps = {
   analyze_and_report_issues,
+  estimate_required_latex3_version,
+  cleanup_required_latex3_version,
 }
 
 return {

@@ -386,51 +386,54 @@ local function analyze(states, file_number, options)
   results.num_invalid_characters = num_invalid_characters
 end
 
--- Determine several bounds for the minimum/maximum apparent version of LaTeX3
--- definitions apparent from the control sequence tokens recorded by `analyze()`.
----@diagnostic disable-next-line:unused-local
-local function estimate_required_latex3_version(states, file_number, options)  -- luacheck: ignore options
+-- Estimate several bounds for the minimum/maximum version of LaTeX3 definitions using a control sequence.
+local function update_required_latex3_version_from_csname(required_latex3_version, csname)
+  if required_latex3_version.seen_csnames == nil then
+    required_latex3_version.seen_csnames = {}
+  end
+  if required_latex3_version.seen_csnames[csname] ~= nil then
+    return
+  end
+  required_latex3_version.seen_csnames[csname] = true
+
+  local formatted_csname = format_csname(csname)
+  local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
+  if csname_added_date ~= nil and
+      (required_latex3_version.max_added == nil or required_latex3_version.max_added.date < csname_added_date) then
+    required_latex3_version.max_added = {date = csname_added_date, formatted_csname = formatted_csname}
+  end
+  if csname_updated_date ~= nil and
+      (required_latex3_version.max_updated == nil or required_latex3_version.max_updated.date < csname_updated_date) then
+    required_latex3_version.max_updated = {date = csname_updated_date, formatted_csname = formatted_csname}
+  end
+  if csname_deprecated_date ~= nil and
+      (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated.date > csname_deprecated_date) then
+    required_latex3_version.min_deprecated = {date = csname_deprecated_date, formatted_csname = formatted_csname}
+  end
+end
+
+-- Estimate several bounds for the minimum/maximum version of LaTeX3 definitions using the control sequence tokens recorded by `analyze()`.
+local function estimate_required_latex3_version(states, file_number, _)
   local state = states[file_number]
 
   local results = state.results
   assert(results.tokens ~= nil)
 
-  local required_latex3_version = {
+  results.required_latex3_version = {
     max_added = nil,
     max_updated = nil,
     min_deprecated = nil,
   }
-  local seen_csnames = {}
   for _, part_tokens in ipairs(results.tokens) do
     for _, token in ipairs(part_tokens) do
       if token.type ~= CONTROL_SEQUENCE then
         goto next_token
       end
       local csname = token.payload
-      if seen_csnames[csname] then
-        goto next_token
-      end
-      seen_csnames[csname] = true
-
-      local formatted_csname = format_csname(csname)
-      local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
-      if csname_added_date ~= nil and
-          (required_latex3_version.max_added == nil or required_latex3_version.max_added.date < csname_added_date) then
-        required_latex3_version.max_added = {date = csname_added_date, formatted_csname = formatted_csname}
-      end
-      if csname_updated_date ~= nil and
-          (required_latex3_version.max_updated == nil or required_latex3_version.max_updated.date < csname_updated_date) then
-        required_latex3_version.max_updated = {date = csname_updated_date, formatted_csname = formatted_csname}
-      end
-      if csname_deprecated_date ~= nil and
-          (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated.date > csname_deprecated_date) then
-        required_latex3_version.min_deprecated = {date = csname_deprecated_date, formatted_csname = formatted_csname}
-      end
+      update_required_latex3_version_from_csname(results.required_latex3_version, csname)
       ::next_token::
     end
   end
-
-  results.required_latex3_version = required_latex3_version
 end
 
 -- Report any issues.
@@ -483,13 +486,26 @@ local function report_issues(states, file_number, options)
   end
 end
 
+-- Remove auxiliary intermediate results for the minimum/maximum version of LaTeX3 definitions estimation.
+local function cleanup_required_latex3_version(states, file_number, _)
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.required_latex3_version ~= nil)
+
+  -- Remove the tally of seen control sequences.
+  results.required_latex3_version.seen_csnames = nil
+end
+
 local substeps = {
   analyze,
   estimate_required_latex3_version,
   report_issues,
+  cleanup_required_latex3_version,
 }
 
 return {
+  cleanup_required_latex3_version = cleanup_required_latex3_version,
   format_csname = format_csname,
   format_token = format_token,
   format_tokens = format_tokens,
@@ -500,4 +516,5 @@ return {
   name = "lexical analysis",
   substeps = substeps,
   token_types = token_types,
+  update_required_latex3_version_from_csname = update_required_latex3_version_from_csname,
 }
