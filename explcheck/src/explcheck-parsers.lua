@@ -504,18 +504,18 @@ end
 
 local function expl3_csname_history(csname)
   local latex3 = require("explcheck-latex3")
-  local version_added, version_updated
+  local added_date, updated_date
   local added_or_updated_match
   added_or_updated_match = lpeg.match(latex3.definitions["function"], csname)
   if added_or_updated_match == nil then
     added_or_updated_match = lpeg.match(latex3.definitions["variable"], csname)
   end
   if added_or_updated_match ~= nil and type(added_or_updated_match) == "table" then
-    version_added = added_or_updated_match.added
-    version_updated = added_or_updated_match.updated
+    added_date = added_or_updated_match.added
+    updated_date = added_or_updated_match.updated
   end
-  local version_deprecated = lpeg.match(latex3.obsolete.deprecated_csname, csname)
-  return version_added, version_updated, version_deprecated
+  local deprecated_date = lpeg.match(latex3.obsolete.deprecated_csname, csname)
+  return added_date, updated_date, deprecated_date
 end
 
 local expl3like_function_with_underscores_csname = (

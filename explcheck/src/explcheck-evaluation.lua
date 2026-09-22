@@ -82,18 +82,19 @@ local function get_required_latex3_version(analysis_results)
           goto next_token
         end
         local csname = token.payload
-        local csname_version_added, csname_version_updated, csname_version_deprecated = parsers.expl3_csname_history(csname)
-        if csname_version_added ~= nil and
-            (required_latex3_version.max_added == nil or required_latex3_version.max_added < csname_version_added) then
-          required_latex3_version.max_added = string.format("%s (%s)", csname_version_added, format_csname(csname))
+        local formatted_csname = format_csname(csname)
+        local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
+        if csname_added_date ~= nil and
+            (required_latex3_version.max_added == nil or required_latex3_version.max_added.date < csname_added_date) then
+          required_latex3_version.max_added = {date = csname_added_date, formatted_csname = formatted_csname}
         end
-        if csname_version_updated ~= nil and
-            (required_latex3_version.max_updated == nil or required_latex3_version.max_updated < csname_version_updated) then
-          required_latex3_version.max_updated = string.format("%s (%s)", csname_version_updated, format_csname(csname))
+        if csname_updated_date ~= nil and
+            (required_latex3_version.max_updated == nil or required_latex3_version.max_updated.date < csname_updated_date) then
+          required_latex3_version.max_updated = {date = csname_updated_date, formatted_csname = formatted_csname}
         end
-        if csname_version_deprecated ~= nil and
-            (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated > csname_version_deprecated) then
-          required_latex3_version.min_deprecated = string.format("%s (%s)", csname_version_deprecated, format_csname(csname))
+        if csname_deprecated_date ~= nil and
+            (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated.date > csname_deprecated_date) then
+          required_latex3_version.min_deprecated = {date = csname_deprecated_date, formatted_csname = formatted_csname}
         end
         ::next_token::
       end
@@ -436,7 +437,26 @@ function AggregateEvaluationResults.new(cls)
   self.num_tokens = 0
   self.num_groupings = 0
   self.num_unclosed_groupings = 0
-  self.required_latex3_version = {}
+  self.required_latex3_version = {
+    _aggregate_table = function(accumulated_value, key, value)
+      if accumulated_value == nil then
+        return value
+      end
+      local key_prefix = key:sub(1, 4)
+      if key_prefix == "min_" then  -- minimum date
+        if accumulated_value.date > value.date then
+          return value
+        end
+      elseif key_prefix == "max_" then  -- maximum date
+        if accumulated_value.date < value.date then
+          return value
+        end
+      else
+        error(string.format('Unknown prefix "%s" of key "%s"', key_prefix, key))
+      end
+      return accumulated_value
+    end
+  }
   self.num_segments = {}
   self.num_segments_total = 0
   self.num_calls = {}
@@ -464,28 +484,18 @@ end
 -- Update aggregate evaluation results with per-file or group-wide evaluation results.
 local function aggregate_table(self_table, evaluation_result_table)
   for key, value in pairs(evaluation_result_table) do
+    if key == "_aggregate_table" then
+      goto next_item
+    end
+    if self_table._aggregate_table ~= nil then  -- specially handled values in a table
+      self_table[key] = self_table._aggregate_table(self_table[key], key, value)
+      goto next_item
+    end
     if type(value) == "number" then  -- a sum of numeric values
       if self_table[key] == nil then
         self_table[key] = 0
       end
       self_table[key] = self_table[key] + value
-    elseif type(value) == "string" then  -- an aggregate of string dates
-      if self_table[key] == nil then
-        self_table[key] = value
-      else
-        local key_prefix = key:sub(1, 4)
-        if key_prefix == "min_" then  -- minimum date
-          if self_table[key] > value then
-            self_table[key] = value
-          end
-        elseif key_prefix == "max_" then  -- maximum date
-          if self_table[key] < value then
-            self_table[key] = value
-          end
-        else
-          error(string.format('Unknown prefix "%s" of key "%s"', key_prefix, key))
-        end
-      end
     elseif type(value) == "boolean" then  -- a count of files with a certain property
       local count_key = string.format("num_%s", key)
       if self_table[count_key] == nil then
@@ -502,6 +512,7 @@ local function aggregate_table(self_table, evaluation_result_table)
     else
       error('Unexpected field type "' .. type(value) .. '"')
     end
+    ::next_item::
   end
 end
 

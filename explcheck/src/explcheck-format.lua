@@ -305,7 +305,7 @@ local function print_summary(options, evaluation_results)
     end
     local required_latex3_version = evaluation_results.required_latex3_version
     if required_latex3_version.max_added ~= nil then
-      local min_version = required_latex3_version.max_added:sub(1, 10)
+      local min_version = required_latex3_version.max_added.date
       io.write(string.format(", requires LaTeX3 %s or later", min_version))
     end
 
@@ -710,30 +710,33 @@ local function print_results(state, options, evaluation_results, is_last_file)
         if required_latex3_version.max_added ~= nil then
           io.write(
             string.format(
-              "\n%s%s- Latest added LaTeX3 command: %s",
+              "\n%s%s- Latest added LaTeX3 command: %s (%s)",
               line_indent,
               line_indent,
-              required_latex3_version.max_added
+              required_latex3_version.max_added.formatted_csname,
+              required_latex3_version.max_added.date
             )
           )
         end
         if required_latex3_version.max_updated ~= nil then
           io.write(
             string.format(
-              "\n%s%s- Latest updated LaTeX3 command: %s",
+              "\n%s%s- Latest updated LaTeX3 command: %s (%s)",
               line_indent,
               line_indent,
-              required_latex3_version.max_updated
+              required_latex3_version.max_updated.formatted_csname,
+              required_latex3_version.max_updated.date
             )
           )
         end
         if required_latex3_version.min_deprecated ~= nil then
           io.write(
             string.format(
-              "\n%s%s- Earliest deprecated LaTeX3 command: %s",
+              "\n%s%s- Earliest deprecated LaTeX3 command: %s (%s)",
               line_indent,
               line_indent,
-              required_latex3_version.min_deprecated
+              required_latex3_version.min_deprecated.formatted_csname,
+              required_latex3_version.min_deprecated.date
             )
           )
         end
