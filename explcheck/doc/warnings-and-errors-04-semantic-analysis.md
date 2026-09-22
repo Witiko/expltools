@@ -212,33 +212,3 @@ A sorting function is called with a conditional that has a signature different t
 
  /e427-01.tex
  /e427-02.tex
-
-## LaTeX3 standard library commands
-
-### LaTeX3 command too recent {.w label=w430 .work-in-progress}
-A standard-library LaTeX3 command is used that was introduced after the date specified by the Lua option `latex3_definitions_max_added_date`.
-
-``` tex
-\use:c
-  { tl_if_regex_match:nnTF }  % warning on this line if
-  % latex3_definitions_max_added_date < 2024-12-08
-  { foo~bar }
-  { foo }
-  { bar }
-  { baz }
-\tl_count:v
-  { tl_if_regex_match:nnTF }  % warning on this line if
-  % latex3_definitions_max_added_date < 2024-12-08
-  { foo~bar }
-  { foo }
-  { bar }
-  { baz }
-\str_show:c  % warning on this line if
-  % latex3_definitions_max_added_date < 2020-08-20
-  { c_sys_engine_format_str }
-\str_show:v  % warning on this line if
-  % latex3_definitions_max_added_date < 2020-08-20
-  { c_sys_engine_format_str }
-```
-
-This check is a stronger version of <#latex-command-too-recent> and the issue should only be emitted if <#latex-command-too-recent> has not previously been emitted for this function.
