@@ -4,6 +4,16 @@
 
 ### explcheck v0.24.0
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Ignore LaTeX3 standard-library commands newer than the value specified by the
+  Lua option `latex3_definitions_max_added_date`. (#231)
+
+  Since explcheck v0.20.0 from 2026-05-03, the option had no effect due to a
+  typo.
+
 #### New features
 
 This version of explcheck has implemented the following new features:
