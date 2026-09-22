@@ -397,6 +397,7 @@ local function report_issues(states, file_number, options)
   local results = state.results
 
   local too_recent_latex3_csname = parsers.too_recent_latex3_csname(options, pathname)
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
   -- Record issues that are apparent after the lexical analysis.
   local l3obsolete_max_deprecated_date = get_option("l3obsolete_max_deprecated_date", options, pathname)
@@ -406,9 +407,20 @@ local function report_issues(states, file_number, options)
       if token.type ~= CONTROL_SEQUENCE then
         goto next_token
       end
-      if lpeg.match(too_recent_latex3_csname, token.payload) ~= nil then
-        issues:add('w210', 'LaTeX3 command too recent', token.byte_range, format_csname(token.payload))
+
+      local too_recent_latex3_definition = lpeg.match(too_recent_latex3_csname, token.payload)
+      if too_recent_latex3_definition ~= nil then
+        assert(too_recent_latex3_definition.added ~= nil)
+        assert(latex3_definitions_max_added_date ~= nil)
+        local context = string.format(
+          "%s (%s > %s)",
+          format_csname(token.payload),
+          too_recent_latex3_definition.added,
+          latex3_definitions_max_added_date
+        )
+        issues:add('w210', 'LaTeX3 command too recent', token.byte_range, context)
       end
+
       local _, _, argument_specifiers = token.payload:find(":([^:]*)")
       if argument_specifiers ~= nil then
         if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) ~= nil then

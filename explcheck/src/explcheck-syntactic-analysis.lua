@@ -412,6 +412,7 @@ local function get_calls(states, file_number, options, part_number, segment)
   end
 
   local too_recent_latex3_csname = parsers.too_recent_latex3_csname(options, pathname)
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
   while token_number <= transformed_token_range_end do
     local token = transformed_tokens[token_number]
@@ -500,8 +501,15 @@ local function get_calls(states, file_number, options, part_number, segment)
               if argument.specifier == "v" and lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, argument_text) ~= nil then
                 issues:add('t305', 'expanding an unexpandable variable or constant', argument_byte_range, formatted_argument_text)
               end
-              if lpeg.match(too_recent_latex3_csname, argument_text) ~= nil then
-                issues:add('w306', 'LaTeX3 command too recent', argument_byte_range, formatted_argument_text)
+              local too_recent_latex3_definition = lpeg.match(too_recent_latex3_csname, argument_text)
+              if too_recent_latex3_definition ~= nil then
+                local context = string.format(
+                  "%s (%s > %s)",
+                  formatted_argument_text,
+                  too_recent_latex3_definition.added,
+                  latex3_definitions_max_added_date
+                )
+                issues:add('w306', 'LaTeX3 command too recent', argument_byte_range, context)
               end
             end
           end
