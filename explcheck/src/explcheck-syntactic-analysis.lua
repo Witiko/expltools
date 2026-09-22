@@ -237,6 +237,8 @@ local add_segment
 local function get_calls(states, file_number, options, part_number, segment)
   local state = states[file_number]
 
+  local pathname = state.pathname
+
   local content = state.content
   local issues = state.issues
   local results = state.results
