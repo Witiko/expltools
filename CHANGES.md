@@ -103,6 +103,25 @@ This version of explcheck has implemented the following new features:
   reported version should therefore be treated as a lower-bound estimate that
   requires human verification.
 
+- Report a warning when a standard-library LaTeX3 command is too recent.
+  (discussed with @dcpurton in #219, added in #231)
+
+  This adds two new warnings W210 and W306, titled "LaTeX3 command too recent",
+  to sections 2 and 3 of the document titled [_Warnings and errors for the
+  expl3 analysis tool_][warnings-and-errors] and implements them. These
+  warnings are raised when a package file uses standard-library LaTeX3 commands
+  introduced after the date specified by the Lua option
+  `latex3_definitions_max_added_date`.
+
+  A possible workflow is as follows. First, write the package file and run
+  explcheck to determine the required LaTeX3 version from the `--verbose`
+  command-line output, e.g. `2024-12-08` in the example above. You may then pin
+  this version in your code with `\NeedsTeXFormat{LaTeX2e}[2024-12-08]` and set
+  the Lua option `latex3_definitions_max_added_date` to the same date in your
+  `.explcheckrc` config file. If the code later uses LaTeX3 commands introduced
+  after the pinned date, these warnings will be raised, allowing you to either
+  increase the required version or replace the offending commands.
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
