@@ -93,7 +93,6 @@ end
 
 -- Tokenize the content.
 local function analyze(states, file_number, options)
-
   local state = states[file_number]
 
   local pathname = state.pathname
@@ -387,9 +386,55 @@ local function analyze(states, file_number, options)
   results.num_invalid_characters = num_invalid_characters
 end
 
+-- Determine several bounds for the minimum/maximum apparent version of LaTeX3
+-- definitions apparent from the control sequence tokens recorded by `analyze()`.
+---@diagnostic disable-next-line:unused-local
+local function estimate_required_latex3_version(states, file_number, options)  -- luacheck: ignore options
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.tokens ~= nil)
+
+  local required_latex3_version = {
+    max_added = nil,
+    max_updated = nil,
+    min_deprecated = nil,
+  }
+  local seen_csnames = {}
+  for _, part_tokens in ipairs(results.tokens) do
+    for _, token in ipairs(part_tokens) do
+      if token.type ~= CONTROL_SEQUENCE then
+        goto next_token
+      end
+      local csname = token.payload
+      if seen_csnames[csname] then
+        goto next_token
+      end
+      seen_csnames[csname] = true
+
+      local formatted_csname = format_csname(csname)
+      local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
+      if csname_added_date ~= nil and
+          (required_latex3_version.max_added == nil or required_latex3_version.max_added.date < csname_added_date) then
+        required_latex3_version.max_added = {date = csname_added_date, formatted_csname = formatted_csname}
+      end
+      if csname_updated_date ~= nil and
+          (required_latex3_version.max_updated == nil or required_latex3_version.max_updated.date < csname_updated_date) then
+        required_latex3_version.max_updated = {date = csname_updated_date, formatted_csname = formatted_csname}
+      end
+      if csname_deprecated_date ~= nil and
+          (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated.date > csname_deprecated_date) then
+        required_latex3_version.min_deprecated = {date = csname_deprecated_date, formatted_csname = formatted_csname}
+      end
+      ::next_token::
+    end
+  end
+
+  results.required_latex3_version = required_latex3_version
+end
+
 -- Report any issues.
 local function report_issues(states, file_number, options)
-
   local state = states[file_number]
 
   local pathname = state.pathname
@@ -440,6 +485,7 @@ end
 
 local substeps = {
   analyze,
+  estimate_required_latex3_version,
   report_issues,
 }
 
