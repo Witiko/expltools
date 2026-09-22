@@ -75,6 +75,7 @@ local function get_required_latex3_version(analysis_results)
     max_updated = nil,
     min_deprecated = nil,
   }
+  local seen_csnames = {}
   if analysis_results.tokens ~= nil then
     for _, part_tokens in ipairs(analysis_results.tokens) do
       for _, token in ipairs(part_tokens) do
@@ -82,6 +83,11 @@ local function get_required_latex3_version(analysis_results)
           goto next_token
         end
         local csname = token.payload
+        if seen_csnames[csname] then
+          goto next_token
+        end
+        seen_csnames[csname] = true
+
         local formatted_csname = format_csname(csname)
         local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
         if csname_added_date ~= nil and
