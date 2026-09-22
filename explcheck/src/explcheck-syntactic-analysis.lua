@@ -503,7 +503,7 @@ local function get_calls(states, file_number, options, part_number, segment)
               end
               local too_recent_latex3_definition = lpeg.match(too_recent_latex3_csname, argument_text)
               if too_recent_latex3_definition ~= nil then
-                local context = string.format(
+                context = string.format(
                   "%s (%s > %s)",
                   formatted_argument_text,
                   too_recent_latex3_definition.added,
