@@ -394,8 +394,8 @@ local function latex3_csname(definition_type, options, pathname)
       function(_, _, definition)
         return (
           not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
-          or (definition ~= nil and definition.added_date ~= nil)  -- actual added date has been specified in "l3*.dtx" files
-          and definition.added_date <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+          or definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
+          and definition.added <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
         )
       end
     )
