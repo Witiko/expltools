@@ -854,8 +854,12 @@ local function estimate_required_latex3_version(states, file_number, options)  -
       for _, argument in ipairs(call.arguments) do
         if argument.specifier == "c" or argument.specifier == "v" then
           local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
+          if argument_text == nil then
+            goto next_argument
+          end
           update_required_latex3_version_from_csname(results.required_latex3_version, argument_text)
         end
+        ::next_argument::
       end
       ::next_call::
     end

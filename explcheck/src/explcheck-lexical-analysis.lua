@@ -388,6 +388,8 @@ end
 
 -- Estimate several bounds for the minimum/maximum version of LaTeX3 definitions using a control sequence.
 local function update_required_latex3_version_from_csname(required_latex3_version, csname)
+  assert(required_latex3_version ~= nil)
+  assert(csname ~= nil)
   if required_latex3_version.seen_csnames == nil then
     required_latex3_version.seen_csnames = {}
   end
