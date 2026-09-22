@@ -1,18 +1,12 @@
 -- Evaluation the analysis results, both for individual files and in aggregate.
 
-local parsers = require("explcheck-parsers")
-local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local statement_confidences = require("explcheck-semantic-analysis").statement_confidences
 
-local format_csname = lexical_analysis.format_csname
-
-local lexical_token_types = lexical_analysis.token_types
-local semantic_token_types = syntactic_analysis.token_types
+local token_types = syntactic_analysis.token_types
 local call_types = syntactic_analysis.call_types
 
-local ARGUMENT = semantic_token_types.ARGUMENT
-local CONTROL_SEQUENCE = lexical_token_types.CONTROL_SEQUENCE
+local ARGUMENT = token_types.ARGUMENT
 
 local CALL = call_types.CALL
 
