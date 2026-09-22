@@ -388,7 +388,7 @@ local function analyze(states, file_number, options)
 end
 
 -- Report any issues.
-local function report_issues(states, file_number, options)  -- luacheck: ignore options
+local function report_issues(states, file_number, options)
 
   local state = states[file_number]
 
@@ -396,25 +396,32 @@ local function report_issues(states, file_number, options)  -- luacheck: ignore 
   local issues = state.issues
   local results = state.results
 
+  local too_recent_latex3_csname = parsers.too_recent_latex3_csname(options, pathname)
+
   -- Record issues that are apparent after the lexical analysis.
   local l3obsolete_max_deprecated_date = get_option("l3obsolete_max_deprecated_date", options, pathname)
   local expl3_deprecated_csname = parsers.expl3_deprecated_csname(l3obsolete_max_deprecated_date)
   for _, part_tokens in ipairs(results.tokens) do
     for _, token in ipairs(part_tokens) do
-      if token.type == CONTROL_SEQUENCE then
-        local _, _, argument_specifiers = token.payload:find(":([^:]*)")
-        if argument_specifiers ~= nil then
-          if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
-            issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_csname(token.payload))
-          end
-          if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
-            issues:add('e201', 'unknown argument specifiers', token.byte_range, argument_specifiers)
-          end
+      if token.type ~= CONTROL_SEQUENCE then
+        goto next_token
+      end
+      if lpeg.match(too_recent_latex3_csname, token.payload) ~= nil then
+        issues:add('w210', 'LaTeX3 command too recent', token.byte_range, format_csname(token.payload))
+      end
+      local _, _, argument_specifiers = token.payload:find(":([^:]*)")
+      if argument_specifiers ~= nil then
+        if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) ~= nil then
+          issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_csname(token.payload))
         end
-        if lpeg.match(expl3_deprecated_csname, token.payload) then
-          issues:add('w202', 'deprecated control sequences', token.byte_range, format_csname(token.payload))
+        if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
+          issues:add('e201', 'unknown argument specifiers', token.byte_range, argument_specifiers)
         end
       end
+      if lpeg.match(expl3_deprecated_csname, token.payload) ~= nil then
+        issues:add('w202', 'deprecated control sequences', token.byte_range, format_csname(token.payload))
+      end
+      ::next_token::
     end
   end
 end

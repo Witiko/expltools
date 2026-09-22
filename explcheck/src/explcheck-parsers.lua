@@ -369,9 +369,9 @@ local expl3_well_known_prefixes = (
 )
 
 local function latex3_prefixes(options, pathname)
-  local latex3 = require("explcheck-latex3")
   local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
 
+  local latex3 = require("explcheck-latex3")
   return Cmt(
     latex3.prefixes,
     function(_, _, maybe_first_registered_date)
@@ -384,9 +384,9 @@ local function latex3_prefixes(options, pathname)
   )
 end
 local function latex3_csname(definition_type, options, pathname)
-  local latex3 = require("explcheck-latex3")
   local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
+  local latex3 = require("explcheck-latex3")
   return (
     Cg(latex3.definitions[definition_type], "definition")
     * Cmt(
@@ -396,6 +396,27 @@ local function latex3_csname(definition_type, options, pathname)
           not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
           or definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
           and definition.added <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+        )
+      end
+    )
+    * Cb("definition")
+  )
+end
+local function too_recent_latex3_csname(options, pathname)
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+  if not latex3_definitions_max_added_date then  -- no maximum added date has been specified by us
+    return fail  -- no csname is too recent
+  end
+
+  local latex3 = require("explcheck-latex3")
+  return (
+    Cg(latex3.definitions["function"] + latex3.definitions["variable"], "definition")
+    * Cmt(
+      Cb("definition"),
+      function(_, _, definition)
+        return (
+          definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
+          and definition.added > latex3_definitions_max_added_date  -- and this actual date is more than our maximum
         )
       end
     )
@@ -1092,6 +1113,7 @@ return {
   success = success,
   tab = tab,
   tex_lines = tex_lines,
+  too_recent_latex3_csname = too_recent_latex3_csname,
   variant_argument_specifiers = variant_argument_specifiers,
   x_type_argument_specifiers = x_type_argument_specifiers,
 }

@@ -38,17 +38,7 @@ An expl3 part of the input file contains invalid characters.
 
  /e209.tex
 
-## LaTeX3 command too recent {.w label=w210 .work-in-progress #latex-command-too-recent}
+## LaTeX3 command too recent {.w label=w210 #latex-command-too-recent}
 A standard-library LaTeX3 command is used that was introduced after the date specified by the Lua option `latex3_definitions_max_added_date`.
 
-``` tex
-\tl_if_regex_match:nnTF  % warning on this line if
-  % latex3_definitions_max_added_date < 2024-12-08
-  { foo~bar }
-  { foo }
-  { bar }
-  { baz }
-\str_show:N  % warning on this line if
-  % latex3_definitions_max_added_date < 2020-08-20
-  \c_sys_engine_format_str
-```
+ /w210.tex
