@@ -21,13 +21,16 @@ local circumflex = P("^")
 local colon = P(":")
 local comma = P(",")
 local control_character = R("\x00\x1F") + P("\x7F")
+local dash = P("-")
 local dollar_sign = P("$")
 local form_feed = P("\x0C")
 local hash_sign = P("#")
 local lbrace = P("{")
+local lbracket = P("[")
 local letter = R("AZ", "az")
 local percent_sign = P("%")
 local rbrace = P("}")
+local rbracket = P("]")
 local tilde = P("~")
 local underscore = P("_")
 local decimal_digit = R("09")
@@ -45,16 +48,37 @@ local linechar = any - newline
 local space = P(" ")
 local tab = P("\t")
 
+---- Repeated characters
+local function repetition(parser, n)
+  local result = success
+  for _ = 1, n do
+    result = result * parser
+  end
+  return result
+end
+
+---- Back-references
+local function same_character(capturing_parser, group_capture_name)
+  return Cmt(
+    (
+      capturing_parser
+      * Cb(group_capture_name)
+    ),
+    function(_, _, captured_character, previous_character)
+      return captured_character == previous_character
+    end
+  )
+end
+
 ---- Comma-lists
 local function comma_list(item_parser)
   return Ct(
     eof
-    + C(item_parser)
+    + Cs(item_parser)
     * (
-      P(",") * C(item_parser)
+      comma * Cs(item_parser)
     )^0
-    * P(",")^-1
-    * eof
+    * comma^-1
   )
 end
 
@@ -207,7 +231,10 @@ local argument_specifiers = (
   argument_specifier^0
   * eof
 )
-local variant_argument_specifiers = comma_list(argument_specifier^0)
+local variant_argument_specifiers = (
+  comma_list(argument_specifier^0)
+  * eof
+)
 
 local function any_argument_specifiers(parser)
   return (any - parser)^0 * parser
@@ -678,14 +705,7 @@ local provides = (
       + P("Class")
       + P("File")
     )
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
+  * repetition(optional_spaces_and_newline * argument, 4)
 )
 local expl_syntax_on = expl3_catcodes[0] * P("ExplSyntaxOn")
 local expl_syntax_off = expl3_catcodes[0] * P("ExplSyntaxOff")
@@ -698,9 +718,106 @@ local endinput = (
   )
 )
 
+---- Commands that specify the minimum required version of LaTeX3 definitions.
+local normalized_version_date = (
+  -- Required format/package/document class version date, modeled after the `\pkgcls@parse@date@arg` LaTeX2e command.
+  -- See <https://mirrors.ctan.org/macros/latex/base/source2e.pdf>.
+  P("=")^-1  -- treat =YYYY-MM-DD (roll back to this exact version) and YYYY-MM-DD (require this version or later) as equivalent
+  * C(repetition(decimal_digit, 4))  -- YYYY
+  * Cg(C(slash + dash), "separator")
+  * C(repetition(decimal_digit, 2))  -- MM
+  * same_character(C(slash + dash), "separator")
+  * C(repetition(decimal_digit, 2))  -- DD
+  / function(year, month, date_of_month)
+    return string.format("%s-%s-%s", year, month, date_of_month)
+  end
+)
+local requires_expl3_package_with_version = (
+  expl3_catcodes[0]
+  * (
+    P("RequirePackage") * P("WithOptions")^-1
+    + P("usepackage")
+  )
+  * optional_spaces_and_newline
+  * (  -- optional package options
+    lbracket
+    * (any - rbracket)^0
+    * rbracket
+  )^-1
+  * optional_spaces_and_newline
+  * expl3_catcodes[1]  -- comma-list of packages
+  * Cmt(
+    comma_list(
+      (
+        optional_spaces_and_newline
+        / ""
+      )
+      * (
+        P("expl3")
+        + (
+          -#(
+            optional_spaces_and_newline
+            * (
+              comma
+              + expl3_catcodes[2]
+            )
+          )
+          * any
+        )^0
+      )
+      * (
+        optional_spaces_and_newline
+        / ""
+      )
+    ),
+    function(_, _, package_names)
+      for _, package_name in ipairs(package_names) do
+        if package_name == "expl3" then
+          return true
+        end
+      end
+      return false
+    end
+  )
+  * expl3_catcodes[2]
+  * optional_spaces_and_newline
+  * lbracket  -- minimum date
+  * optional_spaces_and_newline
+  * normalized_version_date
+  * optional_spaces_and_newline
+  * rbracket
+)
+local needs_latex3_format_with_version = (
+  expl3_catcodes[0]
+  * P("NeedsTeXFormat")
+  * optional_spaces_and_newline
+  * expl3_catcodes[1]
+  * optional_spaces_and_newline
+  * P("LaTeX2e")
+  * optional_spaces_and_newline
+  * expl3_catcodes[2]
+  * optional_spaces_and_newline
+  * lbracket  -- minimum date
+  * optional_spaces_and_newline
+  * C(
+    Cmt(
+      normalized_version_date,
+      function(_, _, minimum_date)
+        return minimum_date >= "2020-02-02"  -- earlier LaTeX2e formats did not include LaTeX3
+      end
+    )
+  )
+  * optional_spaces_and_newline
+  * rbracket
+)
+
+local requires_latex3_version = (
+  requires_expl3_package_with_version
+  + needs_latex3_format_with_version
+)
+
 ---- Commands from LaTeX style files
-local latex_style_file_csname =
-(
+local latex_style_file_csname = (
   -- LaTeX2e package writer commands
   -- See <https://www.latex-project.org/help/documentation/clsguide.pdf>.
   P("AddToHook")
@@ -764,8 +881,7 @@ local latex_style_file_csname =
   + P("RecordProperties")
   + P("RefProperty")
   + P("RefUndefinedWarn")
-  + P("RequirePackage")
-  + P("RequirePackageWithOptions")
+  + P("RequirePackage") * P("WithOptions")^-1
   + P("SetKeys")
   + P("SetProperty")
   + P("UseInstance")
@@ -840,8 +956,7 @@ local expl3_indirect_function_definition_csname = (
     * P("_eq_conditional")
   )
   * colon
-  * argument_specifier
-  * argument_specifier
+  * repetition(argument_specifier, 2)
 )
 local expl3_function_definition_csname = Ct(
   Cc(true) * expl3_direct_function_definition_csname
@@ -888,7 +1003,10 @@ local condition = (
   + P("T") * P("F")^-1
   + P("F")
 )
-local conditions = comma_list(condition)
+local conditions = (
+  comma_list(condition)
+  * eof
+)
 
 ---- Variables and constants
 ------ Variable names
@@ -1109,6 +1227,7 @@ return {
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
   provides = provides,
+  requires_latex3_version = requires_latex3_version,
   space = space,
   success = success,
   tab = tab,

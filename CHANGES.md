@@ -44,10 +44,9 @@ This version of explcheck has implemented the following new features:
   Overall, the size of `explcheck-latex3.lua` has increased from circa 187K to
   circa 247K (+32%) in this version of explcheck.
 
-- In the command-line `--verbose` output, display the latest added and updated
-  standard-library LaTeX3 commands and the earliest deprecated command used in
-  each file, together with the earliest required LaTeX3 version in aggregate.
-  (suggested by @dcpurton in #219, added in #231)
+- In the command-line `--verbose` output, display the declared and estimated
+  version of LaTeX3 required by the package files. (suggested by @dcpurton in
+  #219, added in #231)
 
   For example, here is the output of running explcheck with the `--verbose`
   option on the files `markdown.tex` and `markdown.sty` from version 3.16.0 of
@@ -57,6 +56,12 @@ This version of explcheck has implemented the following new features:
   Checking 2 files
 
   Checking /usr/local/texlive/2026/texmf-dist/tex/generic/markdown/markdown.tex OK
+
+      [...]
+
+      Preprocessing results:
+      - Doesn't seem like a LaTeX style file
+      - Declares no required LaTeX3 version
 
       [...]
 
@@ -71,6 +76,14 @@ This version of explcheck has implemented the following new features:
 
   Checking /usr/local/texlive/2026/texmf-dist/tex/latex/markdown/markdown.sty   OK
 
+      [...]
+
+      Preprocessing results:
+      - Seems like a LaTeX style file
+      - Declares no required LaTeX3 version
+
+      [...]
+
       Required LaTeX3 version estimates:
       - Latest added LaTeX3 command: \msg_info:nnnn (2021-05-18)
       - Latest updated LaTeX3 command: \cs_gset_protected:Npn (2023-09-27)
@@ -83,7 +96,7 @@ This version of explcheck has implemented the following new features:
 
   [...]
 
-  - Required LaTeX3 version: 2024-12-08 or later
+  - Required LaTeX3 version: undeclared, estimated at 2024-12-08 or later
 
   [...]
   ```
@@ -107,14 +120,14 @@ This version of explcheck has implemented the following new features:
   introduced after the date specified by the Lua option
   `latex3_definitions_max_added_date`.
 
-  A possible workflow is as follows. First, write the package file and run
-  explcheck to determine the required LaTeX3 version from the `--verbose`
-  command-line output, e.g. `2024-12-08` in the example above. You may then pin
-  this version in your code with `\NeedsTeXFormat{LaTeX2e}[2024-12-08]` and set
-  the Lua option `latex3_definitions_max_added_date` to the same date in your
-  `.explcheckrc` config file. If the code later uses LaTeX3 commands introduced
-  after the pinned date, these warnings will be raised, allowing you to either
-  increase the required version or replace the offending commands.
+  A possible workflow is to run `explcheck --verbose` on your package and pin
+  the reported required LaTeX3 version (e.g., `2024-12-08` in the example
+  above) using `\NeedsTeXFormat{LaTeX2e}[2024-12-08]` and/or
+  `\RequirePackage{expl3}[2024-12-08]`. Alternatively or additionally, set the
+  Lua option `latex3_definitions_max_added_date` to `"2024-12-08"` in your
+  `.explcheckrc` config file. If you later use newer LaTeX3 commands, these
+  warnings will prompt you to either raise the required version or replace
+  those commands.
 
 #### Documentation
 

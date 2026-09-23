@@ -834,8 +834,8 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
   end
 end
 
--- Tighten the estimated bounds for the minimum/maximum version of LaTeX3 definitions from the lexical analysis using the c- and v-type
--- function call arguments recorded by `analyze_and_report_issues()`.
+-- Tighten the estimated bounds for the minimum/maximum required version of LaTeX3 definitions from the lexical analysis using the c- and
+-- v-type function call arguments recorded by `analyze_and_report_issues()`.
 ---@diagnostic disable-next-line:unused-local
 local function estimate_required_latex3_version(states, file_number, options)  -- luacheck: ignore options
   local state = states[file_number]

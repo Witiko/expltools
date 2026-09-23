@@ -386,12 +386,21 @@ local function print_summary(options, evaluation_results)
         )
       end
     end
-    -- Evaluate required LaTeX3 version estimates.
+    -- Evaluate required LaTeX3 version.
     ::skip_to_required_latex3_version::
     local required_latex3_version = evaluation_results.required_latex3_version
-    if evaluation_results.required_latex3_version.max_added ~= nil then
-      local min_version = required_latex3_version.max_added.date
-      io.write(string.format("\n- %s %s or later", colorize("Required LaTeX3 version:", BOLD), min_version))
+    local min_declared_required_latex3_version = evaluation_results.required_latex3_version.min_declared
+    local min_estimated_required_latex3_version = required_latex3_version.max_added
+    if min_declared_required_latex3_version ~= nil or min_estimated_required_latex3_version ~= nil then
+      io.write(string.format("\n- %s ", colorize("Required LaTeX3 version:", BOLD)))
+      if min_declared_required_latex3_version ~= nil then
+        io.write(string.format("declares %s", min_declared_required_latex3_version.date))
+      else
+        io.write("undeclared")
+      end
+      if min_estimated_required_latex3_version ~= nil then
+        io.write(string.format(", estimated at %s or later", min_estimated_required_latex3_version.date))
+      end
     end
     -- Evaluate code coverage.
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
@@ -640,6 +649,12 @@ local function print_results(state, options, evaluation_results, is_last_file)
         else
           io.write(string.format("\n%s- Doesn't seem like a LaTeX style file", line_indent))
         end
+      end
+      local min_declared_required_latex3_version = evaluation_results.required_latex3_version.min_declared
+      if min_declared_required_latex3_version ~= nil then
+        io.write(string.format("\n%s- Declares required LaTeX3 version: %s", line_indent, min_declared_required_latex3_version.date))
+      else
+        io.write(string.format("\n%s- Declares no required LaTeX3 version", line_indent))
       end
       local num_expl_bytes = evaluation_results.num_expl_bytes
       if num_expl_bytes == 0 or num_expl_bytes == nil then

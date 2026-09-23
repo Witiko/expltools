@@ -156,9 +156,24 @@ local function analyze_and_report_issues(states, file_number, options)
     end
   end
 
+  -- Estimate the minimum declared required version of LaTeX3 definítions.
+  results.required_latex3_version = {}
+  local Any = (
+    Cmt(
+      parsers.requires_latex3_version,
+      function(_, _, minimum_date)
+        if results.required_latex3_version.min_declared == nil or (results.required_latex3_version.min_declared.date > minimum_date) then
+          results.required_latex3_version.min_declared = {date = minimum_date}
+        end
+        return true
+      end
+    )
+    + parsers.any
+  )
+
+  local FirstLineProvides, FirstLineExplSyntaxOn, HeadlessCloser, Head =
+    parsers.fail, parsers.fail, parsers.fail, parsers.fail
   local num_provides = 0
-  local FirstLineProvides, FirstLineExplSyntaxOn, HeadlessCloser, Head, Any =
-    parsers.fail, parsers.fail, parsers.fail, parsers.fail, parsers.any
   local expl3_detection_strategy = get_option('expl3_detection_strategy', options, pathname)
   if expl3_detection_strategy ~= 'never' and expl3_detection_strategy ~= 'always' then
     FirstLineProvides = unexpected_pattern(
@@ -198,7 +213,7 @@ local function analyze_and_report_issues(states, file_number, options)
           return true
         end
       )
-      + parsers.any
+      + Any
     )
     -- Allow indent before a standard delimiter outside a TeX grouping.
     Head = (

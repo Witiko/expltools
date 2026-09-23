@@ -414,30 +414,6 @@ local function update_required_latex3_version_from_csname(required_latex3_versio
   end
 end
 
--- Estimate several bounds for the minimum/maximum version of LaTeX3 definitions using the control sequence tokens recorded by `analyze()`.
-local function estimate_required_latex3_version(states, file_number, _)
-  local state = states[file_number]
-
-  local results = state.results
-  assert(results.tokens ~= nil)
-
-  results.required_latex3_version = {
-    max_added = nil,
-    max_updated = nil,
-    min_deprecated = nil,
-  }
-  for _, part_tokens in ipairs(results.tokens) do
-    for _, token in ipairs(part_tokens) do
-      if token.type ~= CONTROL_SEQUENCE then
-        goto next_token
-      end
-      local csname = token.payload
-      update_required_latex3_version_from_csname(results.required_latex3_version, csname)
-      ::next_token::
-    end
-  end
-end
-
 -- Report any issues.
 local function report_issues(states, file_number, options)
   local state = states[file_number]
@@ -488,6 +464,27 @@ local function report_issues(states, file_number, options)
   end
 end
 
+-- Estimate several bounds for the minimum/maximum required version of LaTeX3 definitions using the control sequence tokens recorded by
+-- `analyze()`.
+local function estimate_required_latex3_version(states, file_number, _)
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.tokens ~= nil)
+  assert(results.required_latex3_version ~= nil)
+
+  for _, part_tokens in ipairs(results.tokens) do
+    for _, token in ipairs(part_tokens) do
+      if token.type ~= CONTROL_SEQUENCE then
+        goto next_token
+      end
+      local csname = token.payload
+      update_required_latex3_version_from_csname(results.required_latex3_version, csname)
+      ::next_token::
+    end
+  end
+end
+
 -- Remove auxiliary intermediate results for the minimum/maximum version of LaTeX3 definitions estimation.
 local function cleanup_required_latex3_version(states, file_number, _)
   local state = states[file_number]
@@ -501,8 +498,8 @@ end
 
 local substeps = {
   analyze,
-  estimate_required_latex3_version,
   report_issues,
+  estimate_required_latex3_version,
   cleanup_required_latex3_version,
 }
 
