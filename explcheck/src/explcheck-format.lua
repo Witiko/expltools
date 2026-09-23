@@ -389,12 +389,12 @@ local function print_summary(options, evaluation_results)
     -- Evaluate required LaTeX3 version.
     ::skip_to_required_latex3_version::
     local required_latex3_version = evaluation_results.required_latex3_version
-    local min_declared_required_latex3_version = evaluation_results.required_latex3_version.min_declared
+    local max_declared_required_latex3_version = evaluation_results.required_latex3_version.max_declared
     local min_estimated_required_latex3_version = required_latex3_version.max_added
-    if min_declared_required_latex3_version ~= nil or min_estimated_required_latex3_version ~= nil then
+    if max_declared_required_latex3_version ~= nil or min_estimated_required_latex3_version ~= nil then
       io.write(string.format("\n- %s ", colorize("Required LaTeX3 version:", BOLD)))
-      if min_declared_required_latex3_version ~= nil then
-        io.write(string.format("declares %s", min_declared_required_latex3_version.date))
+      if max_declared_required_latex3_version ~= nil then
+        io.write(string.format("declares %s", max_declared_required_latex3_version.date))
       else
         io.write("undeclared")
       end
@@ -650,11 +650,29 @@ local function print_results(state, options, evaluation_results, is_last_file)
           io.write(string.format("\n%s- Doesn't seem like a LaTeX style file", line_indent))
         end
       end
-      local min_declared_required_latex3_version = evaluation_results.required_latex3_version.min_declared
-      if min_declared_required_latex3_version ~= nil then
-        io.write(string.format("\n%s- Declares required LaTeX3 version: %s", line_indent, min_declared_required_latex3_version.date))
-      else
-        io.write(string.format("\n%s- Declares no required LaTeX3 version", line_indent))
+      if evaluation_results.required_latex3_version ~= nil then
+        if evaluation_results.required_latex3_version.max_declared ~= nil then
+          io.write(
+            string.format(
+              "\n%s- Declares required LaTeX3 version: %s from %s",
+              line_indent,
+              evaluation_results.required_latex3_version.max_declared.date,
+              evaluation_results.required_latex3_version.max_declared.source
+            )
+          )
+        else
+          io.write(string.format("\n%s- Declares no required LaTeX3 version", line_indent))
+          if evaluation_results.effective_required_latex3_version ~= nil and
+              evaluation_results.effective_required_latex3_version.max_declared ~= nil then
+            io.write(
+              string.format(
+                ", assuming %s from %s",
+                evaluation_results.effective_required_latex3_version.max_declared.date,
+                evaluation_results.effective_required_latex3_version.max_declared.source
+              )
+            )
+          end
+        end
       end
       local num_expl_bytes = evaluation_results.num_expl_bytes
       if num_expl_bytes == 0 or num_expl_bytes == nil then

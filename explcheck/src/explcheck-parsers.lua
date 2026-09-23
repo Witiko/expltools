@@ -429,8 +429,7 @@ local function latex3_csname(definition_type, options, pathname)
     * Cb("definition")
   )
 end
-local function too_recent_latex3_csname(options, pathname)
-  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+local function too_recent_latex3_csname(latex3_definitions_max_added_date)
   if not latex3_definitions_max_added_date then  -- no maximum added date has been specified by us
     return fail  -- no csname is too recent
   end
@@ -733,11 +732,14 @@ local normalized_version_date = (
   end
 )
 local requires_expl3_package_with_version = (
-  expl3_catcodes[0]
-  * (
-    P("RequirePackage") * P("WithOptions")^-1
-    + P("usepackage")
+  C(
+    expl3_catcodes[0]
+    * (
+      P("RequirePackage") * P("WithOptions")^-1
+      + P("usepackage")
+    )
   )
+  / "%1{expl3}[...]"
   * optional_spaces_and_newline
   * (  -- optional package options
     lbracket
@@ -788,8 +790,11 @@ local requires_expl3_package_with_version = (
   * rbracket
 )
 local needs_latex3_format_with_version = (
-  expl3_catcodes[0]
-  * P("NeedsTeXFormat")
+  C(
+    expl3_catcodes[0]
+    * P("NeedsTeXFormat")
+  )
+  / "%1{LaTeX2e}[...]"
   * optional_spaces_and_newline
   * expl3_catcodes[1]
   * optional_spaces_and_newline

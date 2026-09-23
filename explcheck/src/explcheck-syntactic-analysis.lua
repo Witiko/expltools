@@ -413,8 +413,12 @@ local function get_calls(states, file_number, options, part_number, segment)
     return normalized_csname, csname_origin, next_token_number, ignored_token_number
   end
 
-  local too_recent_latex3_csname = parsers.too_recent_latex3_csname(options, pathname)
-  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+  local latex3_definitions_max_added_date
+  if results.effective_required_latex3_version.max_declared ~= nil then
+    latex3_definitions_max_added_date = results.effective_required_latex3_version.max_declared.date
+    assert(latex3_definitions_max_added_date ~= nil)
+  end
+  local too_recent_latex3_csname = parsers.too_recent_latex3_csname(latex3_definitions_max_added_date)
 
   while token_number <= transformed_token_range_end do
     local token = transformed_tokens[token_number]
@@ -505,6 +509,8 @@ local function get_calls(states, file_number, options, part_number, segment)
               end
               local too_recent_latex3_definition = lpeg.match(too_recent_latex3_csname, argument_text)
               if too_recent_latex3_definition ~= nil then
+                assert(too_recent_latex3_definition.added ~= nil)
+                assert(latex3_definitions_max_added_date ~= nil)
                 context = string.format(
                   "%s (%s > %s)",
                   formatted_argument_text,

@@ -386,34 +386,6 @@ local function analyze(states, file_number, options)
   results.num_invalid_characters = num_invalid_characters
 end
 
--- Estimate several bounds for the minimum/maximum version of LaTeX3 definitions using a control sequence.
-local function update_required_latex3_version_from_csname(required_latex3_version, csname)
-  assert(required_latex3_version ~= nil)
-  assert(csname ~= nil)
-  if required_latex3_version.seen_csnames == nil then
-    required_latex3_version.seen_csnames = {}
-  end
-  if required_latex3_version.seen_csnames[csname] ~= nil then
-    return
-  end
-  required_latex3_version.seen_csnames[csname] = true
-
-  local formatted_csname = format_csname(csname)
-  local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
-  if csname_added_date ~= nil and
-      (required_latex3_version.max_added == nil or required_latex3_version.max_added.date < csname_added_date) then
-    required_latex3_version.max_added = {date = csname_added_date, formatted_csname = formatted_csname}
-  end
-  if csname_updated_date ~= nil and
-      (required_latex3_version.max_updated == nil or required_latex3_version.max_updated.date < csname_updated_date) then
-    required_latex3_version.max_updated = {date = csname_updated_date, formatted_csname = formatted_csname}
-  end
-  if csname_deprecated_date ~= nil and
-      (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated.date > csname_deprecated_date) then
-    required_latex3_version.min_deprecated = {date = csname_deprecated_date, formatted_csname = formatted_csname}
-  end
-end
-
 -- Report any issues.
 local function report_issues(states, file_number, options)
   local state = states[file_number]
@@ -422,8 +394,12 @@ local function report_issues(states, file_number, options)
   local issues = state.issues
   local results = state.results
 
-  local too_recent_latex3_csname = parsers.too_recent_latex3_csname(options, pathname)
-  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+  local latex3_definitions_max_added_date
+  if results.effective_required_latex3_version.max_declared ~= nil then
+    latex3_definitions_max_added_date = results.effective_required_latex3_version.max_declared.date
+    assert(latex3_definitions_max_added_date ~= nil)
+  end
+  local too_recent_latex3_csname = parsers.too_recent_latex3_csname(latex3_definitions_max_added_date)
 
   -- Record issues that are apparent after the lexical analysis.
   local l3obsolete_max_deprecated_date = get_option("l3obsolete_max_deprecated_date", options, pathname)
@@ -461,6 +437,34 @@ local function report_issues(states, file_number, options)
       end
       ::next_token::
     end
+  end
+end
+
+-- Estimate several bounds for the minimum/maximum version of LaTeX3 definitions using a control sequence.
+local function update_required_latex3_version_from_csname(required_latex3_version, csname)
+  assert(required_latex3_version ~= nil)
+  assert(csname ~= nil)
+  if required_latex3_version.seen_csnames == nil then
+    required_latex3_version.seen_csnames = {}
+  end
+  if required_latex3_version.seen_csnames[csname] ~= nil then
+    return
+  end
+  required_latex3_version.seen_csnames[csname] = true
+
+  local formatted_csname = format_csname(csname)
+  local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
+  if csname_added_date ~= nil and
+      (required_latex3_version.max_added == nil or required_latex3_version.max_added.date < csname_added_date) then
+    required_latex3_version.max_added = {date = csname_added_date, formatted_csname = formatted_csname}
+  end
+  if csname_updated_date ~= nil and
+      (required_latex3_version.max_updated == nil or required_latex3_version.max_updated.date < csname_updated_date) then
+    required_latex3_version.max_updated = {date = csname_updated_date, formatted_csname = formatted_csname}
+  end
+  if csname_deprecated_date ~= nil and
+      (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated.date > csname_deprecated_date) then
+    required_latex3_version.min_deprecated = {date = csname_deprecated_date, formatted_csname = formatted_csname}
   end
 end
 

@@ -313,10 +313,11 @@ function FileEvaluationResults.new(cls, state)
   local num_errors = #issues.errors
   -- Evaluate the results of the preprocessing.
   local num_expl_bytes = count_expl3_bytes(analysis_results)
+  local effective_required_latex3_version = analysis_results.effective_required_latex3_version
+  local required_latex3_version = analysis_results.required_latex3_version
   -- Evaluate the results of the lexical analysis.
   local num_tokens = count_tokens(analysis_results)
   local num_groupings, num_unclosed_groupings = count_groupings(analysis_results)
-  local required_latex3_version = analysis_results.required_latex3_version or {}
   -- Evaluate the results of the syntactic and semantic analyses.
   local num_segments, num_segments_total = count_segments(analysis_results)
   local num_calls, num_call_tokens, num_calls_total = count_calls(analysis_results)
@@ -337,6 +338,7 @@ function FileEvaluationResults.new(cls, state)
   self.num_tokens = num_tokens
   self.num_groupings = num_groupings
   self.num_unclosed_groupings = num_unclosed_groupings
+  self.effective_required_latex3_version = effective_required_latex3_version
   self.required_latex3_version = required_latex3_version
   self.num_segments = num_segments
   self.num_segments_total = num_segments_total
@@ -380,6 +382,26 @@ function GroupEvaluationResults.new(cls, states)
   return self
 end
 
+-- Accumulate values in the required LaTeX version tables.
+local function aggregate_required_latex3_version(accumulated_value, key, value)
+  if accumulated_value == nil then
+    return value
+  end
+  local key_prefix = key:sub(1, 4)
+  if key_prefix == "min_" then  -- minimum date
+    if accumulated_value.date > value.date then
+      return value
+    end
+  elseif key_prefix == "max_" then  -- maximum date
+    if accumulated_value.date < value.date then
+      return value
+    end
+  else
+    error(string.format('Unknown prefix "%s" of key "%s"', key_prefix, key))
+  end
+  return accumulated_value
+end
+
 -- Create an aggregate evaluation results.
 function AggregateEvaluationResults.new(cls)
   -- Instantiate the class.
@@ -395,26 +417,8 @@ function AggregateEvaluationResults.new(cls)
   self.num_tokens = 0
   self.num_groupings = 0
   self.num_unclosed_groupings = 0
-  self.required_latex3_version = {
-    _aggregate_table = function(accumulated_value, key, value)
-      if accumulated_value == nil then
-        return value
-      end
-      local key_prefix = key:sub(1, 4)
-      if key_prefix == "min_" then  -- minimum date
-        if accumulated_value.date > value.date then
-          return value
-        end
-      elseif key_prefix == "max_" then  -- maximum date
-        if accumulated_value.date < value.date then
-          return value
-        end
-      else
-        error(string.format('Unknown prefix "%s" of key "%s"', key_prefix, key))
-      end
-      return accumulated_value
-    end
-  }
+  self.effective_required_latex3_version = {_aggregate_table = aggregate_required_latex3_version}
+  self.required_latex3_version = {_aggregate_table = aggregate_required_latex3_version}
   self.num_segments = {}
   self.num_segments_total = 0
   self.num_calls = {}

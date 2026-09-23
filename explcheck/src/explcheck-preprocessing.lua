@@ -156,14 +156,14 @@ local function analyze_and_report_issues(states, file_number, options)
     end
   end
 
-  -- Estimate the minimum declared required version of LaTeX3 definítions.
+  -- Estimate the maximum declared required version of LaTeX3 definítions.
   results.required_latex3_version = {}
   local Any = (
     Cmt(
       parsers.requires_latex3_version,
-      function(_, _, minimum_date)
-        if results.required_latex3_version.min_declared == nil or (results.required_latex3_version.min_declared.date > minimum_date) then
-          results.required_latex3_version.min_declared = {date = minimum_date}
+      function(_, _, source, date)
+        if results.required_latex3_version.max_declared == nil or results.required_latex3_version.max_declared.date < date then
+          results.required_latex3_version.max_declared = {date = date, source = source}
         end
         return true
       end
@@ -403,8 +403,57 @@ local function analyze_and_report_issues(states, file_number, options)
   results.seems_like_latex_style_file = seems_like_latex_style_file
 end
 
+-- Estimate the group-wide declared required LaTeX3 version for package files within the group that don't declare it themselves.
+local function estimate_group_wide_required_latex3_version(states, file_number, _)
+  if states.results.required_latex3_version == nil then
+    states.results.required_latex3_version = {}
+  end
+
+  local state = states[file_number]
+
+  local results = state.results
+  local pathname = state.pathname
+
+  if results.required_latex3_version ~= nil and results.required_latex3_version.max_declared ~= nil and
+      (states.results.required_latex3_version.max_declared == nil or
+       states.results.required_latex3_version.max_declared.date < results.required_latex3_version.max_declared.date) then
+    states.results.required_latex3_version.max_declared = {
+      date = results.required_latex3_version.max_declared.date,
+      source = string.format('%s in the grouped file %s', results.required_latex3_version.max_declared.source, pathname)
+    }
+  end
+end
+
+-- For each package file, record either the default required version of LaTeX3 definitions from the options, the version that it declares,
+-- or the group-wide estimate.
+local function estimate_effective_required_latex3_version(states, file_number, options)
+  local state = states[file_number]
+
+  local results = state.results
+  local pathname = state.pathname
+
+  results.effective_required_latex3_version = {}
+
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+  if latex3_definitions_max_added_date then
+    -- As our first option, check the Lua options.
+    results.effective_required_latex3_version.max_declared = {
+      date = latex3_definitions_max_added_date,
+      source = 'the Lua option latex3_definitions_max_added_date',
+    }
+  elseif results.required_latex3_version ~= nil and results.required_latex3_version.max_declared ~= nil then
+    -- Otherwise, see if the current file declares a required LaTeX3 version.
+    results.effective_required_latex3_version.max_declared = results.required_latex3_version.max_declared
+  elseif states.results.required_latex3_version ~= nil and states.results.required_latex3_version.max_declared ~= nil then
+    -- Fall back on the group-wide estimate.
+    results.effective_required_latex3_version.max_declared = states.results.required_latex3_version.max_declared
+  end
+end
+
 local substeps = {
   analyze_and_report_issues,
+  estimate_group_wide_required_latex3_version,
+  estimate_effective_required_latex3_version,
 }
 
 return {
