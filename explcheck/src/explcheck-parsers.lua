@@ -804,14 +804,14 @@ local needs_latex3_format_with_version = (
   * optional_spaces_and_newline
   * lbracket  -- minimum date
   * optional_spaces_and_newline
-  * C(
-    Cmt(
-      normalized_version_date,
-      function(_, _, minimum_date)
-        return minimum_date >= "2020-02-02"  -- earlier LaTeX2e formats did not include LaTeX3
-      end
-    )
+  * Cg(normalized_version_date, "date")
+  * Cmt(
+    Cb("date"),
+    function(_, _, date)
+      return date >= "2020-02-02"  -- earlier LaTeX2e formats did not include LaTeX3
+    end
   )
+  * Cb("date")
   * optional_spaces_and_newline
   * rbracket
 )
