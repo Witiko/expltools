@@ -60,13 +60,10 @@ This version of explcheck has implemented the following new features:
 
       [...]
 
-      Lexical analysis results:
-      - 22,299 tokens in expl3 parts
-      - 1,841 groupings in expl3 parts
-      - Required LaTeX3 version:
-          - Latest added LaTeX3 command: 2024-12-08 (\tl_if_regex_match:nNTF)
-          - Latest updated LaTeX3 command: 2026-07-20 (\sys_if_engine_luatex:TF)
-          - Earliest deprecated LaTeX3 command: 2025-05-14 (\regex_match:NnT)
+      Required LaTeX3 version estimates:
+      - Latest added LaTeX3 command: \tl_if_regex_match:nNTF (2024-12-08)
+      - Latest updated LaTeX3 command: \sys_if_engine_luatex:TF (2026-07-20)
+      - Earliest deprecated LaTeX3 command: \regex_match:Nn (2025-05-14)
 
       [...]
 
@@ -74,12 +71,9 @@ This version of explcheck has implemented the following new features:
 
   Checking /usr/local/texlive/2026/texmf-dist/tex/latex/markdown/markdown.sty   OK
 
-      Lexical analysis results:
-      - 2,642 tokens in expl3 parts
-      - 202 groupings in expl3 parts
-      - Required LaTeX3 version:
-          - Latest added LaTeX3 command: 2021-05-18 (\msg_info:nnnn)
-          - Latest updated LaTeX3 command: 2023-09-27 (\cs_gset_protected:Npn)
+      Required LaTeX3 version estimates:
+      - Latest added LaTeX3 command: \msg_info:nnnn (2021-05-18)
+      - Latest updated LaTeX3 command: \cs_gset_protected:Npn (2023-09-27)
 
       [...]
 
@@ -89,7 +83,7 @@ This version of explcheck has implemented the following new features:
 
   [...]
 
-  - Lexical analysis: 24,941 expl3 tokens and 2,043 groupings, requires LaTeX3 2024-12-08 or later
+  - Required LaTeX3 version: 2024-12-08 or later
 
   [...]
   ```
