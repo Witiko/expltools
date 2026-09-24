@@ -37,3 +37,8 @@ An expl3 part of the input file contains too many closing braces.
 An expl3 part of the input file contains invalid characters.
 
  /e209.tex
+
+## LaTeX3 command too recent {.w label=w210 #latex-command-too-recent}
+A standard-library LaTeX3 command is used that was introduced after the date specified by the Lua option `latex3_definitions_max_added_date`.
+
+ /w210.tex

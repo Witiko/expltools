@@ -93,7 +93,6 @@ end
 
 -- Tokenize the content.
 local function analyze(states, file_number, options)
-
   local state = states[file_number]
 
   local pathname = state.pathname
@@ -388,43 +387,128 @@ local function analyze(states, file_number, options)
 end
 
 -- Report any issues.
-local function report_issues(states, file_number, options)  -- luacheck: ignore options
-
+local function report_issues(states, file_number, options)
   local state = states[file_number]
 
   local pathname = state.pathname
   local issues = state.issues
   local results = state.results
 
+  local latex3_definitions_max_added_date
+  if results.effective_required_latex3_version.max_declared ~= nil then
+    latex3_definitions_max_added_date = results.effective_required_latex3_version.max_declared.date
+    assert(latex3_definitions_max_added_date ~= nil)
+  end
+  local too_recent_latex3_csname = parsers.too_recent_latex3_csname(latex3_definitions_max_added_date)
+
   -- Record issues that are apparent after the lexical analysis.
   local l3obsolete_max_deprecated_date = get_option("l3obsolete_max_deprecated_date", options, pathname)
   local expl3_deprecated_csname = parsers.expl3_deprecated_csname(l3obsolete_max_deprecated_date)
   for _, part_tokens in ipairs(results.tokens) do
     for _, token in ipairs(part_tokens) do
-      if token.type == CONTROL_SEQUENCE then
-        local _, _, argument_specifiers = token.payload:find(":([^:]*)")
-        if argument_specifiers ~= nil then
-          if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) then
-            issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_csname(token.payload))
-          end
-          if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
-            issues:add('e201', 'unknown argument specifiers', token.byte_range, argument_specifiers)
-          end
+      if token.type ~= CONTROL_SEQUENCE then
+        goto next_token
+      end
+
+      local too_recent_latex3_definition = lpeg.match(too_recent_latex3_csname, token.payload)
+      if too_recent_latex3_definition ~= nil then
+        assert(too_recent_latex3_definition.added ~= nil)
+        assert(latex3_definitions_max_added_date ~= nil)
+        local context = string.format(
+          "%s (%s > %s)",
+          format_csname(token.payload),
+          too_recent_latex3_definition.added,
+          latex3_definitions_max_added_date
+        )
+        issues:add('w210', 'LaTeX3 command too recent', token.byte_range, context)
+      end
+
+      local _, _, argument_specifiers = token.payload:find(":([^:]*)")
+      if argument_specifiers ~= nil then
+        if lpeg.match(parsers.do_not_use_argument_specifiers, argument_specifiers) ~= nil then
+          issues:add('w200', '"do not use" argument specifiers', token.byte_range, format_csname(token.payload))
         end
-        if lpeg.match(expl3_deprecated_csname, token.payload) then
-          issues:add('w202', 'deprecated control sequences', token.byte_range, format_csname(token.payload))
+        if lpeg.match(parsers.argument_specifiers, argument_specifiers) == nil then
+          issues:add('e201', 'unknown argument specifiers', token.byte_range, argument_specifiers)
         end
       end
+      if lpeg.match(expl3_deprecated_csname, token.payload) ~= nil then
+        issues:add('w202', 'deprecated control sequences', token.byte_range, format_csname(token.payload))
+      end
+      ::next_token::
     end
   end
+end
+
+-- Estimate several bounds for the minimum/maximum version of LaTeX3 definitions using a control sequence.
+local function update_required_latex3_version_from_csname(required_latex3_version, csname)
+  assert(required_latex3_version ~= nil)
+  assert(csname ~= nil)
+  if required_latex3_version.seen_csnames == nil then
+    required_latex3_version.seen_csnames = {}
+  end
+  if required_latex3_version.seen_csnames[csname] ~= nil then
+    return
+  end
+  required_latex3_version.seen_csnames[csname] = true
+
+  local formatted_csname = format_csname(csname)
+  local csname_added_date, csname_updated_date, csname_deprecated_date = parsers.expl3_csname_history(csname)
+  if csname_added_date ~= nil and
+      (required_latex3_version.max_added == nil or required_latex3_version.max_added.date < csname_added_date) then
+    required_latex3_version.max_added = {date = csname_added_date, formatted_csname = formatted_csname}
+  end
+  if csname_updated_date ~= nil and
+      (required_latex3_version.max_updated == nil or required_latex3_version.max_updated.date < csname_updated_date) then
+    required_latex3_version.max_updated = {date = csname_updated_date, formatted_csname = formatted_csname}
+  end
+  if csname_deprecated_date ~= nil and
+      (required_latex3_version.min_deprecated == nil or required_latex3_version.min_deprecated.date > csname_deprecated_date) then
+    required_latex3_version.min_deprecated = {date = csname_deprecated_date, formatted_csname = formatted_csname}
+  end
+end
+
+-- Estimate several bounds for the minimum/maximum required version of LaTeX3 definitions using the control sequence tokens recorded by
+-- `analyze()`.
+local function estimate_required_latex3_version(states, file_number, _)
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.tokens ~= nil)
+  assert(results.required_latex3_version ~= nil)
+
+  for _, part_tokens in ipairs(results.tokens) do
+    for _, token in ipairs(part_tokens) do
+      if token.type ~= CONTROL_SEQUENCE then
+        goto next_token
+      end
+      local csname = token.payload
+      update_required_latex3_version_from_csname(results.required_latex3_version, csname)
+      ::next_token::
+    end
+  end
+end
+
+-- Remove auxiliary intermediate results for the minimum/maximum version of LaTeX3 definitions estimation.
+local function cleanup_required_latex3_version(states, file_number, _)
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.required_latex3_version ~= nil)
+
+  -- Remove the tally of seen control sequences.
+  results.required_latex3_version.seen_csnames = nil
 end
 
 local substeps = {
   analyze,
   report_issues,
+  estimate_required_latex3_version,
+  cleanup_required_latex3_version,
 }
 
 return {
+  cleanup_required_latex3_version = cleanup_required_latex3_version,
   format_csname = format_csname,
   format_token = format_token,
   format_tokens = format_tokens,
@@ -435,4 +519,5 @@ return {
   name = "lexical analysis",
   substeps = substeps,
   token_types = token_types,
+  update_required_latex3_version_from_csname = update_required_latex3_version_from_csname,
 }

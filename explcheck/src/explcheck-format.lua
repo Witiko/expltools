@@ -303,89 +303,106 @@ local function print_summary(options, evaluation_results)
         io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
       end
     end
-    -- Evaluate the evalution results of the syntactic and semantic analysis.
-    local num_segments_total = evaluation_results.num_segments_total
-    local num_calls_total = evaluation_results.num_calls_total
-    if num_segments_total == 0 or num_calls_total == 0 then
-      goto skip_remaining_additional_information
-    end
-    io.write(
-      string.format(
-        "\n- %s %s code %s containing %s %s",
-        colorize("Syntactic and semantic analysis:", BOLD),
-        titlecase(humanize(num_segments_total)),
-        pluralize("segment", num_segments_total),
-        humanize(num_calls_total),
-        pluralize("call", num_calls_total)
-      )
-    )
-    local num_statements_total = evaluation_results.num_statements_total
-    if num_statements_total == 0 then
-      goto skip_remaining_additional_information
-    end
-    if num_statements_total == num_calls_total then
-      io.write(string.format(" and %s", pluralize("statement", num_statements_total)))
-    else
-      io.write(string.format(", %s %s", humanize(num_statements_total), pluralize("statement", num_statements_total)))
-    end
-    -- Evaluate the evalution results of the flow analysis.
-    local num_macro_statements_total = evaluation_results.num_macro_statements_total
-    local num_chunks = evaluation_results.num_chunks
-    local num_edges_total = evaluation_results.num_edges_total
-    local num_inner_loops = evaluation_results.num_inner_loops
-    local num_inner_loops_total = evaluation_results.num_inner_loops_total
-    local num_outer_loops = evaluation_results.num_outer_loops
-    if num_macro_statements_total == 0 or num_chunks == 0 then
-      goto skip_to_code_coverage
-    end
-    io.write(
-      string.format(
-        "\n- %s %s %s over %s %s",
-        colorize("Flow analysis:", BOLD),
-        titlecase(humanize(num_chunks)),
-        pluralize("chunk", num_chunks),
-        humanize(num_macro_statements_total),
-        pluralize("macro-statement", num_macro_statements_total)
-      )
-    )
-    if num_edges_total == 0 then
-      goto skip_to_code_coverage
-    end
-    io.write(
-      string.format(
-        ", %s %s between the %s\n%s- %s reaching definition inner %s",
-        humanize(num_edges_total),
-        pluralize("edge", num_edges_total),
-        pluralize("chunk", num_chunks),
-        line_indent,
-        titlecase(humanize(num_inner_loops_total)),
-        pluralize("loop", num_inner_loops_total)
-      )
-    )
-    if num_outer_loops > 1 then
+    do
+      -- Evaluate the evalution results of the syntactic and semantic analysis.
+      local num_segments_total = evaluation_results.num_segments_total
+      local num_calls_total = evaluation_results.num_calls_total
+      if num_segments_total == 0 or num_calls_total == 0 then
+        goto skip_to_required_latex3_version
+      end
       io.write(
         string.format(
-          " over %s outer %s",
-          humanize(num_outer_loops),
-          pluralize("loop", num_outer_loops)
+          "\n- %s %s code %s containing %s %s",
+          colorize("Syntactic and semantic analysis:", BOLD),
+          titlecase(humanize(num_segments_total)),
+          pluralize("segment", num_segments_total),
+          humanize(num_calls_total),
+          pluralize("call", num_calls_total)
         )
       )
-    end
-    io.write(":")
-    for reaching_definition_type, num_loops in pairs_sorted_by_descending_values(num_inner_loops) do
+      local num_statements_total = evaluation_results.num_statements_total
+      if num_statements_total == 0 then
+        goto skip_to_required_latex3_version
+      end
+      if num_statements_total == num_calls_total then
+        io.write(string.format(" and %s", pluralize("statement", num_statements_total)))
+      else
+        io.write(string.format(", %s %s", humanize(num_statements_total), pluralize("statement", num_statements_total)))
+      end
+      -- Evaluate the evalution results of the flow analysis.
+      local num_macro_statements_total = evaluation_results.num_macro_statements_total
+      local num_chunks = evaluation_results.num_chunks
+      local num_edges_total = evaluation_results.num_edges_total
+      local num_inner_loops = evaluation_results.num_inner_loops
+      local num_inner_loops_total = evaluation_results.num_inner_loops_total
+      local num_outer_loops = evaluation_results.num_outer_loops
+      if num_macro_statements_total == 0 or num_chunks == 0 then
+        goto skip_to_required_latex3_version
+      end
       io.write(
         string.format(
-          "\n%s%s- %s %s inner %s",
-          line_indent,
-          line_indent,
-          titlecase(humanize(num_loops)),
-          reaching_definition_type,
-          pluralize("loop", num_loops)
+          "\n- %s %s %s over %s %s",
+          colorize("Flow analysis:", BOLD),
+          titlecase(humanize(num_chunks)),
+          pluralize("chunk", num_chunks),
+          humanize(num_macro_statements_total),
+          pluralize("macro-statement", num_macro_statements_total)
         )
       )
+      if num_edges_total == 0 then
+        goto skip_to_required_latex3_version
+      end
+      io.write(
+        string.format(
+          ", %s %s between the %s\n%s- %s reaching definition inner %s",
+          humanize(num_edges_total),
+          pluralize("edge", num_edges_total),
+          pluralize("chunk", num_chunks),
+          line_indent,
+          titlecase(humanize(num_inner_loops_total)),
+          pluralize("loop", num_inner_loops_total)
+        )
+      )
+      if num_outer_loops > 1 then
+        io.write(
+          string.format(
+            " over %s outer %s",
+            humanize(num_outer_loops),
+            pluralize("loop", num_outer_loops)
+          )
+        )
+      end
+      io.write(":")
+      for reaching_definition_type, num_loops in pairs_sorted_by_descending_values(num_inner_loops) do
+        io.write(
+          string.format(
+            "\n%s%s- %s %s inner %s",
+            line_indent,
+            line_indent,
+            titlecase(humanize(num_loops)),
+            reaching_definition_type,
+            pluralize("loop", num_loops)
+          )
+        )
+      end
+    end
+    -- Evaluate required LaTeX3 version.
+    ::skip_to_required_latex3_version::
+    local required_latex3_version = evaluation_results.required_latex3_version
+    local max_declared_required_latex3_version = evaluation_results.required_latex3_version.max_declared
+    local min_estimated_required_latex3_version = required_latex3_version.max_added
+    if max_declared_required_latex3_version ~= nil or min_estimated_required_latex3_version ~= nil then
+      io.write(string.format("\n- %s ", colorize("Required LaTeX3 version:", BOLD)))
+      if max_declared_required_latex3_version ~= nil then
+        io.write(string.format("declares %s", max_declared_required_latex3_version.date))
+      else
+        io.write("undeclared")
+      end
+      if min_estimated_required_latex3_version ~= nil then
+        io.write(string.format(", estimated at %s or later", min_estimated_required_latex3_version.date))
+      end
     end
     -- Evaluate code coverage.
-    ::skip_to_code_coverage::
     local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
     io.write(string.format("\n- %s ", colorize("Code coverage:", BOLD)))
     if num_well_understood_tokens == 0 then
@@ -633,6 +650,43 @@ local function print_results(state, options, evaluation_results, is_last_file)
           io.write(string.format("\n%s- Doesn't seem like a LaTeX style file", line_indent))
         end
       end
+      if evaluation_results.required_latex3_version ~= nil then
+        if evaluation_results.required_latex3_version.max_declared ~= nil then
+          io.write(
+            string.format(
+              "\n%s- Declares required LaTeX3 version: %s from %s",
+              line_indent,
+              evaluation_results.required_latex3_version.max_declared.date,
+              evaluation_results.required_latex3_version.max_declared.source
+            )
+          )
+          if evaluation_results.effective_required_latex3_version ~= nil and
+            evaluation_results.effective_required_latex3_version.max_declared ~= nil and
+            evaluation_results.effective_required_latex3_version.max_declared.source
+              ~= evaluation_results.required_latex3_version.max_declared.source
+          then
+            io.write(
+              string.format(
+                ", but we assume %s from %s",
+                evaluation_results.effective_required_latex3_version.max_declared.date,
+                evaluation_results.effective_required_latex3_version.max_declared.source
+              )
+            )
+          end
+        else
+          io.write(string.format("\n%s- Declares no required LaTeX3 version", line_indent))
+          if evaluation_results.effective_required_latex3_version ~= nil and
+              evaluation_results.effective_required_latex3_version.max_declared ~= nil then
+            io.write(
+              string.format(
+                ", assuming %s from %s",
+                evaluation_results.effective_required_latex3_version.max_declared.date,
+                evaluation_results.effective_required_latex3_version.max_declared.source
+              )
+            )
+          end
+        end
+      end
       local num_expl_bytes = evaluation_results.num_expl_bytes
       if num_expl_bytes == 0 or num_expl_bytes == nil then
         io.write(string.format("\n%s- No expl3 material", line_indent))
@@ -696,211 +750,252 @@ local function print_results(state, options, evaluation_results, is_last_file)
           io.write(string.format(" (%s unclosed, %s of groupings)", humanize(num_unclosed_groupings), formatted_grouping_ratio))
         end
       end
-      -- Evaluate the evalution results of the syntactic analysis.
-      if evaluation_results.num_segments == nil or evaluation_results.num_calls == nil then
-        goto skip_remaining_additional_information
-      end
-      if evaluation_results.num_statements == nil then
-        io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
-      else
-        io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic and semantic analysis results:", BOLD)))
-      end
-      local num_segments_total = evaluation_results.num_segments_total
-      assert(num_segments_total ~= nil)
-      if num_segments_total == 0 then
-        io.write(string.format("\n%s- No code %s", line_indent, pluralize("segment")))
-        goto skip_remaining_additional_information
-      end
-      io.write(
-        string.format(
-          "\n%s- %s code %s:",
-          line_indent,
-          titlecase(humanize(num_segments_total)),
-          pluralize("segment", num_segments_total)
-        )
-      )
-      for segment_type, num_segments in pairs_sorted_by_descending_values(evaluation_results.num_segments) do
-        io.write(
-          string.format(
-            "\n%s%s- %s %s",
-            line_indent,
-            line_indent,
-            titlecase(humanize(num_segments)),
-            pluralize(segment_type, num_segments)
-          )
-        )
-      end
-      local num_calls_total = evaluation_results.num_calls_total
-      assert(num_calls_total ~= nil)
-      if num_calls_total == 0 then
-        io.write(string.format("\n%s- No %s", line_indent, pluralize("call")))
-        goto skip_remaining_additional_information
-      end
-      io.write(
-        string.format(
-          "\n%s- %s %s:",
-          line_indent,
-          titlecase(humanize(num_calls_total)),
-          pluralize("call", num_calls_total)
-        )
-      )
-      for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
-        local num_calls = evaluation_results.num_calls[call_type]
-        assert(num_calls ~= nil)
-        io.write(
-          string.format(
-            "\n%s%s- %s %s spanning %s %s",
-            line_indent,
-            line_indent,
-            titlecase(humanize(num_calls)),
-            pluralize(call_type, num_calls),
-            humanize(num_call_tokens),
-            pluralize("token", num_call_tokens)
-          )
-        )
-      end
-      -- Evaluate the evalution results of the semantic analysis.
-      if evaluation_results.num_statements == nil then
-        goto skip_remaining_additional_information
-      end
-      local num_statements_total = evaluation_results.num_statements_total
-      assert(num_statements_total ~= nil)
-      if num_statements_total == 0 then
-        io.write(string.format("\n%s- No %s", line_indent, pluralize("statement")))
-        goto skip_remaining_additional_information
-      end
-      io.write(
-        string.format(
-          "\n%s- %s %s:",
-          line_indent,
-          titlecase(humanize(num_statements_total)),
-          pluralize("statement", num_statements_total)
-        )
-      )
-      for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens) do
-        local num_statements = evaluation_results.num_statements[statement_type]
-        local num_statement_calls = evaluation_results.num_statement_calls[statement_type]
-        assert(num_statements ~= nil)
-        assert(num_statement_calls ~= nil)
-        io.write(
-          string.format(
-            "\n%s%s- %s %s spanning %s %s",
-            line_indent,
-            line_indent,
-            titlecase(humanize(num_statements)),
-            pluralize(statement_type, num_statements),
-            humanize(num_statement_tokens),
-            pluralize("token", num_statement_tokens)
-          )
-        )
-        if num_statement_calls ~= num_statements then
-          io.write(string.format(" and %s %s", humanize(num_statement_calls), pluralize("call", num_statement_calls)))
+      do
+        -- Evaluate the evalution results of the syntactic analysis.
+        if evaluation_results.num_segments == nil or evaluation_results.num_calls == nil then
+          goto skip_to_required_latex3_version
         end
-      end
-      local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
-      assert(num_well_understood_tokens ~= nil)
-      if num_well_understood_tokens == 0 then
-        io.write(string.format("\n%s- No well-understood expl3 %s", line_indent, pluralize("token")))
-      else
+        if evaluation_results.num_statements == nil then
+          io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic analysis results:", BOLD)))
+        else
+          io.write(string.format("\n\n%s%s", line_indent, colorize("Syntactic and semantic analysis results:", BOLD)))
+        end
+        local num_segments_total = evaluation_results.num_segments_total
+        assert(num_segments_total ~= nil)
+        if num_segments_total == 0 then
+          io.write(string.format("\n%s- No code %s", line_indent, pluralize("segment")))
+          goto skip_to_required_latex3_version
+        end
         io.write(
           string.format(
-            "\n%s- %s well-understood expl3 %s ",
+            "\n%s- %s code %s:",
             line_indent,
-            titlecase(humanize(num_well_understood_tokens)),
-            pluralize("token", num_well_understood_tokens)
+            titlecase(humanize(num_segments_total)),
+            pluralize("segment", num_segments_total)
           )
         )
-        if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
-          io.write("(all expl3 tokens and bytes)")
+        for segment_type, num_segments in pairs_sorted_by_descending_values(evaluation_results.num_segments) do
+          io.write(
+            string.format(
+              "\n%s%s- %s %s",
+              line_indent,
+              line_indent,
+              titlecase(humanize(num_segments)),
+              pluralize(segment_type, num_segments)
+            )
+          )
+        end
+        local num_calls_total = evaluation_results.num_calls_total
+        assert(num_calls_total ~= nil)
+        if num_calls_total == 0 then
+          io.write(string.format("\n%s- No %s", line_indent, pluralize("call")))
+          goto skip_to_required_latex3_version
+        end
+        io.write(
+          string.format(
+            "\n%s- %s %s:",
+            line_indent,
+            titlecase(humanize(num_calls_total)),
+            pluralize("call", num_calls_total)
+          )
+        )
+        for call_type, num_call_tokens in pairs_sorted_by_descending_values(evaluation_results.num_call_tokens) do
+          local num_calls = evaluation_results.num_calls[call_type]
+          assert(num_calls ~= nil)
+          io.write(
+            string.format(
+              "\n%s%s- %s %s spanning %s %s",
+              line_indent,
+              line_indent,
+              titlecase(humanize(num_calls)),
+              pluralize(call_type, num_calls),
+              humanize(num_call_tokens),
+              pluralize("token", num_call_tokens)
+            )
+          )
+        end
+        -- Evaluate the evalution results of the semantic analysis.
+        if evaluation_results.num_statements == nil then
+          goto skip_to_required_latex3_version
+        end
+        local num_statements_total = evaluation_results.num_statements_total
+        assert(num_statements_total ~= nil)
+        if num_statements_total == 0 then
+          io.write(string.format("\n%s- No %s", line_indent, pluralize("statement")))
+          goto skip_to_required_latex3_version
+        end
+        io.write(
+          string.format(
+            "\n%s- %s %s:",
+            line_indent,
+            titlecase(humanize(num_statements_total)),
+            pluralize("statement", num_statements_total)
+          )
+        )
+        for statement_type, num_statement_tokens in pairs_sorted_by_descending_values(evaluation_results.num_statement_tokens) do
+          local num_statements = evaluation_results.num_statements[statement_type]
+          local num_statement_calls = evaluation_results.num_statement_calls[statement_type]
+          assert(num_statements ~= nil)
+          assert(num_statement_calls ~= nil)
+          io.write(
+            string.format(
+              "\n%s%s- %s %s spanning %s %s",
+              line_indent,
+              line_indent,
+              titlecase(humanize(num_statements)),
+              pluralize(statement_type, num_statements),
+              humanize(num_statement_tokens),
+              pluralize("token", num_statement_tokens)
+            )
+          )
+          if num_statement_calls ~= num_statements then
+            io.write(string.format(" and %s %s", humanize(num_statement_calls), pluralize("call", num_statement_calls)))
+          end
+        end
+        local num_well_understood_tokens = evaluation_results.num_well_understood_tokens
+        assert(num_well_understood_tokens ~= nil)
+        if num_well_understood_tokens == 0 then
+          io.write(string.format("\n%s- No well-understood expl3 %s", line_indent, pluralize("token")))
         else
           io.write(
             string.format(
-              "(%s of expl3 tokens, ~%s of total bytes)",
-              format_ratio(num_well_understood_tokens, num_tokens),
-              format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+              "\n%s- %s well-understood expl3 %s ",
+              line_indent,
+              titlecase(humanize(num_well_understood_tokens)),
+              pluralize("token", num_well_understood_tokens)
+            )
+          )
+          if num_expl_bytes == num_total_bytes and num_well_understood_tokens == num_tokens then
+            io.write("(all expl3 tokens and bytes)")
+          else
+            io.write(
+              string.format(
+                "(%s of expl3 tokens, ~%s of total bytes)",
+                format_ratio(num_well_understood_tokens, num_tokens),
+                format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes)
+              )
+            )
+          end
+        end
+        -- Evaluate the evalution results of the flow analysis.
+        if evaluation_results.num_macro_statements == nil then
+          goto skip_to_required_latex3_version
+        end
+        io.write(string.format("\n\n%s%s", line_indent, colorize("Flow analysis results:", BOLD)))
+        local num_macro_statements_total = evaluation_results.num_macro_statements_total
+        assert(num_macro_statements_total ~= nil)
+        if num_macro_statements_total == 0 then
+          io.write(string.format("\n%s- No %s", line_indent, pluralize("macro-statement")))
+          goto skip_to_required_latex3_version
+        end
+        io.write(
+          string.format(
+            "\n%s- %s %s:",
+            line_indent,
+            titlecase(humanize(num_macro_statements_total)),
+            pluralize("macro-statement", num_macro_statements_total)
+          )
+        )
+        for macro_statement_type, num_macro_statement_tokens
+            in pairs_sorted_by_descending_values(evaluation_results.num_macro_statement_tokens) do
+          local num_macro_statements = evaluation_results.num_macro_statements[macro_statement_type]
+          local num_macro_statement_calls = evaluation_results.num_macro_statement_calls[macro_statement_type]
+          assert(num_macro_statements ~= nil)
+          assert(num_macro_statement_calls ~= nil)
+          io.write(
+            string.format(
+              "\n%s%s- %s %s spanning %s %s",
+              line_indent,
+              line_indent,
+              titlecase(humanize(num_macro_statements)),
+              pluralize(macro_statement_type, num_macro_statements),
+              humanize(num_macro_statement_tokens),
+              pluralize("token", num_macro_statement_tokens)
+            )
+          )
+          if num_macro_statement_calls ~= num_macro_statements then
+            io.write(string.format(" and %s %s", humanize(num_macro_statement_calls), pluralize("call", num_macro_statement_calls)))
+          end
+        end
+        local num_chunks = evaluation_results.num_chunks
+        assert(num_chunks ~= nil)
+        if num_chunks == 0 then
+          io.write(string.format("\n%s- No chunks of known statements in code segments", line_indent))
+          goto skip_to_required_latex3_version
+        end
+        io.write(
+          string.format(
+            "\n%s- %s %s of known macro-statements in code segments",
+            line_indent,
+            titlecase(humanize(num_chunks)),
+            pluralize("chunk", num_chunks)
+          )
+        )
+        local num_edges_total = evaluation_results.num_edges_total
+        assert(num_edges_total ~= nil)
+        if num_edges_total == 0 then
+          io.write(string.format("\n%s- No edges between the chunks", line_indent))
+          goto skip_to_required_latex3_version
+        end
+        io.write(
+          string.format(
+            "\n%s- %s %s between the chunks:",
+            line_indent,
+            titlecase(humanize(num_edges_total)),
+            pluralize("edge", num_edges_total)
+          )
+        )
+        assert(evaluation_results.num_edges ~= nil)
+        for edge_type, num_edges in pairs_sorted_by_descending_values(evaluation_results.num_edges) do
+          io.write(
+            string.format(
+              "\n%s%s- %s %s",
+              line_indent,
+              line_indent,
+              titlecase(humanize(num_edges)),
+              pluralize(edge_type, num_edges)
             )
           )
         end
       end
-      -- Evaluate the evalution results of the flow analysis.
-      if evaluation_results.num_macro_statements == nil then
-        goto skip_remaining_additional_information
-      end
-      io.write(string.format("\n\n%s%s", line_indent, colorize("Flow analysis results:", BOLD)))
-      local num_macro_statements_total = evaluation_results.num_macro_statements_total
-      assert(num_macro_statements_total ~= nil)
-      if num_macro_statements_total == 0 then
-        io.write(string.format("\n%s- No %s", line_indent, pluralize("macro-statement")))
-        goto skip_remaining_additional_information
-      end
-      io.write(
-        string.format(
-          "\n%s- %s %s:",
-          line_indent,
-          titlecase(humanize(num_macro_statements_total)),
-          pluralize("macro-statement", num_macro_statements_total)
-        )
-      )
-      for macro_statement_type, num_macro_statement_tokens
-          in pairs_sorted_by_descending_values(evaluation_results.num_macro_statement_tokens) do
-        local num_macro_statements = evaluation_results.num_macro_statements[macro_statement_type]
-        local num_macro_statement_calls = evaluation_results.num_macro_statement_calls[macro_statement_type]
-        assert(num_macro_statements ~= nil)
-        assert(num_macro_statement_calls ~= nil)
-        io.write(
-          string.format(
-            "\n%s%s- %s %s spanning %s %s",
-            line_indent,
-            line_indent,
-            titlecase(humanize(num_macro_statements)),
-            pluralize(macro_statement_type, num_macro_statements),
-            humanize(num_macro_statement_tokens),
-            pluralize("token", num_macro_statement_tokens)
+
+      -- Evaluate required LaTeX3 version estimates.
+      ::skip_to_required_latex3_version::
+      local required_latex3_version = evaluation_results.required_latex3_version
+      if required_latex3_version.max_added ~= nil or
+          required_latex3_version.max_updated ~= nil or
+          required_latex3_version.min_deprecated ~= nil then
+        io.write(string.format("\n\n%s%s", line_indent, colorize("Required LaTeX3 version estimates:", BOLD)))
+        if required_latex3_version.max_added ~= nil then
+          io.write(
+            string.format(
+              "\n%s- Latest added LaTeX3 command: %s (%s)",
+              line_indent,
+              required_latex3_version.max_added.formatted_csname,
+              required_latex3_version.max_added.date
+            )
           )
-        )
-        if num_macro_statement_calls ~= num_macro_statements then
-          io.write(string.format(" and %s %s", humanize(num_macro_statement_calls), pluralize("call", num_macro_statement_calls)))
         end
-      end
-      local num_chunks = evaluation_results.num_chunks
-      assert(num_chunks ~= nil)
-      if num_chunks == 0 then
-        io.write(string.format("\n%s- No chunks of known statements in code segments", line_indent))
-        goto skip_remaining_additional_information
-      end
-      io.write(
-        string.format(
-          "\n%s- %s %s of known macro-statements in code segments",
-          line_indent,
-          titlecase(humanize(num_chunks)),
-          pluralize("chunk", num_chunks)
-        )
-      )
-      local num_edges_total = evaluation_results.num_edges_total
-      assert(num_edges_total ~= nil)
-      if num_edges_total == 0 then
-        io.write(string.format("\n%s- No edges between the chunks", line_indent))
-        goto skip_remaining_additional_information
-      end
-      io.write(
-        string.format(
-          "\n%s- %s %s between the chunks:",
-          line_indent,
-          titlecase(humanize(num_edges_total)),
-          pluralize("edge", num_edges_total)
-        )
-      )
-      assert(evaluation_results.num_edges ~= nil)
-      for edge_type, num_edges in pairs_sorted_by_descending_values(evaluation_results.num_edges) do
-        io.write(
-          string.format(
-            "\n%s%s- %s %s",
-            line_indent,
-            line_indent,
-            titlecase(humanize(num_edges)),
-            pluralize(edge_type, num_edges)
+        if required_latex3_version.max_updated ~= nil then
+          io.write(
+            string.format(
+              "\n%s- Latest updated LaTeX3 command: %s (%s)",
+              line_indent,
+              required_latex3_version.max_updated.formatted_csname,
+              required_latex3_version.max_updated.date
+            )
           )
-        )
+        end
+        if required_latex3_version.min_deprecated ~= nil then
+          io.write(
+            string.format(
+              "\n%s- Earliest deprecated LaTeX3 command: %s (%s)",
+              line_indent,
+              required_latex3_version.min_deprecated.formatted_csname,
+              required_latex3_version.min_deprecated.date
+            )
+          )
+        end
       end
     end
 
