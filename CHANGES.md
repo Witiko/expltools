@@ -160,9 +160,10 @@ integration (CI):
   LaTeX3 files `l3obsolete.txt`, `l3prefixes.csv`, and `l3*.dtx`.
 
   However, as mentioned by @muzimuzhi in #226, "in most cases, packages
-  are written to work with stable [...] releases". Therefore, after this
-  change, the CI will nudge us towards the latest stable rather than
-  development releases.
+  are written to work with stable [...] releases". This preference was
+  corroborated by @u-fischer in the same ticket. Therefore, after this change,
+  the CI will nudge us towards the latest stable rather than development
+  releases.
 
 - Check if the `latex3` submodule points exactly to a Git tag. (#229)
 
