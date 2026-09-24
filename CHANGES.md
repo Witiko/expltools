@@ -4,6 +4,12 @@
 
 ### explcheck v0.25.0
 
+#### Documentation
+
+This version of explcheck has made the following improvements to the documentation:
+
+- Bump GitHub Actions in `README.md`. (01ec993)
+
 ## expltools 2026-09-24
 
 ### explcheck v0.24.0
