@@ -89,7 +89,7 @@ jobs:
     container:
       image: ghcr.io/witiko/expltools/explcheck
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: explcheck *.tex
 ```
 
