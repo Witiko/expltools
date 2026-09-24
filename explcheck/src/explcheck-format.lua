@@ -399,7 +399,7 @@ local function print_summary(options, evaluation_results)
         io.write("undeclared")
       end
       if min_estimated_required_latex3_version ~= nil then
-        io.write(string.format(", estimated at %s or later", min_estimated_required_latex3_version.date))
+        io.write(string.format(", estimated %s or later", min_estimated_required_latex3_version.date))
       end
     end
     -- Evaluate code coverage.
