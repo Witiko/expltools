@@ -660,6 +660,19 @@ local function print_results(state, options, evaluation_results, is_last_file)
               evaluation_results.required_latex3_version.max_declared.source
             )
           )
+          if evaluation_results.effective_required_latex3_version ~= nil and
+            evaluation_results.effective_required_latex3_version.max_declared ~= nil and
+            evaluation_results.effective_required_latex3_version.max_declared.source
+              ~= evaluation_results.required_latex3_version.max_declared.source
+          then
+            io.write(
+              string.format(
+                ", but we assume %s from %s",
+                evaluation_results.effective_required_latex3_version.max_declared.date,
+                evaluation_results.effective_required_latex3_version.max_declared.source
+              )
+            )
+          end
         else
           io.write(string.format("\n%s- Declares no required LaTeX3 version", line_indent))
           if evaluation_results.effective_required_latex3_version ~= nil and
