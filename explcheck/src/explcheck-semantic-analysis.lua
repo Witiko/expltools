@@ -1718,20 +1718,20 @@ local function analyze_group_wide_statements(states, _, options)
     },
 
     -- Set of csnames definitely defined somewhere in the file group, with a side-index of the file numbers.
-    defined_csname_texts_anywhere = {},
-    defined_csname_texts_anywhere_file_numbers = {},
+    defined_csname_texts = {},
+    defined_csname_texts_file_numbers = {},
 
     -- Set of csnames maybe defined somewhere in the file group; populated only from argument scanning (looser than
     -- `maybe.defined_csname`).
-    maybe_defined_csname_texts_anywhere = {},
+    maybe_defined_csname_texts = {},
 
     -- Index of segments that potentially call each given function csname, plus a parallel list for ordered iteration.
-    called_functions_anywhere_segments_index = {},
-    called_functions_anywhere_segments_list = {},
+    called_functions_segments_index = {},
+    called_functions_segments_list = {},
 
     -- Index of segments that potentially use each given variable csname, plus a parallel list for ordered iteration.
-    used_variables_anywhere_segments_index = {},
-    used_variables_anywhere_segments_list = {},
+    used_variables_segments_index = {},
+    used_variables_segments_list = {},
 
     -- Per-message-name min/max number of text parameters across all definitions.
     defined_message_nums_text_parameters = {},
@@ -1885,18 +1885,18 @@ local function analyze_group_wide_statements(states, _, options)
                   -- Record potential function definitions.
                   if lpeg.match(parsers.expl3_function_definition_csname, token.payload) ~= nil then
                     record_maybe_text_name(maybe.defined_csname, next_token.payload)
-                    states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
+                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
                   end
                   -- Record potential variable declarations and definitions.
                   if lpeg.match(parsers.expl3_variable_declaration_csname, token.payload) ~= nil then
                     record_maybe_text_name(maybe.declared_variable_csname, next_token.payload)
                     record_maybe_text_name(maybe.defined_csname, next_token.payload)
-                    states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
+                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
                   end
                   local variable_definition = lpeg.match(parsers.expl3_variable_definition_csname, token.payload)
                   if variable_definition ~= nil then
                     record_maybe_text_name(maybe.defined_csname, next_token.payload)
-                    states.results.statement_analysis.maybe_defined_csname_texts_anywhere[next_token.payload] = true
+                    states.results.statement_analysis.maybe_defined_csname_texts[next_token.payload] = true
                   end
                 -- Record message name definitions and uses.
                 elseif next_token.type == CHARACTER and next_token.catcode == 1 then  -- begin grouping, try to collect the module name
@@ -1968,11 +1968,11 @@ local function analyze_group_wide_statements(states, _, options)
             table.insert(results.statement_analysis.defined_csname_texts, {statement.defined_csname.payload, base_csname_byte_range})
             if statement.confidence == DEFINITELY then
               local defined_csname = statement.defined_csname.payload
-              states.results.statement_analysis.defined_csname_texts_anywhere[defined_csname] = true
-              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] == nil then
-                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] = {}
+              states.results.statement_analysis.defined_csname_texts[defined_csname] = true
+              if states.results.statement_analysis.defined_csname_texts_file_numbers[defined_csname] == nil then
+                states.results.statement_analysis.defined_csname_texts_file_numbers[defined_csname] = {}
               end
-              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname][file_number] = true
+              states.results.statement_analysis.defined_csname_texts_file_numbers[defined_csname][file_number] = true
             end
             -- Record private function variant definitions.
             if statement.is_private then
@@ -1999,11 +1999,11 @@ local function analyze_group_wide_statements(states, _, options)
             local defined_csname_byte_range = token_range_to_byte_range(statement.defined_csname_argument.token_range)
             table.insert(results.statement_analysis.defined_csname_texts, {defined_csname, defined_csname_byte_range})
             if statement.confidence == DEFINITELY then
-              states.results.statement_analysis.defined_csname_texts_anywhere[defined_csname] = true
-              if states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] == nil then
-                states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname] = {}
+              states.results.statement_analysis.defined_csname_texts[defined_csname] = true
+              if states.results.statement_analysis.defined_csname_texts_file_numbers[defined_csname] == nil then
+                states.results.statement_analysis.defined_csname_texts_file_numbers[defined_csname] = {}
               end
-              states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[defined_csname][file_number] = true
+              states.results.statement_analysis.defined_csname_texts_file_numbers[defined_csname][file_number] = true
             end
             -- Record private function definition.
             if statement.is_private then
@@ -2114,13 +2114,13 @@ local function analyze_group_wide_statements(states, _, options)
               results.statement_analysis.used_variable_csname_texts,
               {used_csname, statement.is_standalone, used_csname_byte_range}
             )
-            if states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname] == nil then
-              states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname] = {}
-              states.results.statement_analysis.used_variables_anywhere_segments_list[used_csname] = {}
+            if states.results.statement_analysis.used_variables_segments_index[used_csname] == nil then
+              states.results.statement_analysis.used_variables_segments_index[used_csname] = {}
+              states.results.statement_analysis.used_variables_segments_list[used_csname] = {}
             end
-            if states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname][segment] == nil then
-              states.results.statement_analysis.used_variables_anywhere_segments_index[used_csname][segment] = true
-              table.insert(states.results.statement_analysis.used_variables_anywhere_segments_list[used_csname], segment)
+            if states.results.statement_analysis.used_variables_segments_index[used_csname][segment] == nil then
+              states.results.statement_analysis.used_variables_segments_index[used_csname][segment] = true
+              table.insert(states.results.statement_analysis.used_variables_segments_list[used_csname], segment)
             end
           end
         -- Process a message definition.
@@ -2170,13 +2170,13 @@ local function analyze_group_wide_statements(states, _, options)
         elseif statement.type == OTHER_STATEMENT or statement.type == FUNCTION_CALL then
           -- Record control sequence name usage and definitions.
           for _, call in statement.call_range:enumerate(segment.calls) do
-            if states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname] == nil then
-              states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname] = {}
-              states.results.statement_analysis.called_functions_anywhere_segments_list[call.csname] = {}
+            if states.results.statement_analysis.called_functions_segments_index[call.csname] == nil then
+              states.results.statement_analysis.called_functions_segments_index[call.csname] = {}
+              states.results.statement_analysis.called_functions_segments_list[call.csname] = {}
             end
-            if states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname][segment] == nil then
-              states.results.statement_analysis.called_functions_anywhere_segments_index[call.csname][segment] = true
-              table.insert(states.results.statement_analysis.called_functions_anywhere_segments_list[call.csname], segment)
+            if states.results.statement_analysis.called_functions_segments_index[call.csname][segment] == nil then
+              states.results.statement_analysis.called_functions_segments_index[call.csname][segment] = true
+              table.insert(states.results.statement_analysis.called_functions_segments_list[call.csname], segment)
             end
             record_maybe_text_name(maybe.used_csname, call.csname)
             local csname_byte_range = token_range_to_byte_range(call.csname_token_range)
@@ -2686,8 +2686,8 @@ local function report_issues(states, file_number, options)
         and lpeg.match(expl3_well_known_csname, csname) == nil
         and not matches_maybe_text_name(maybe.defined_csname, csname) then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
-    elseif states.results.statement_analysis.defined_csname_texts_anywhere[csname]
-        or states.results.statement_analysis.maybe_defined_csname_texts_anywhere[csname] then
+    elseif states.results.statement_analysis.defined_csname_texts[csname]
+        or states.results.statement_analysis.maybe_defined_csname_texts[csname] then
       -- For defined functions and function variants, reclassify the statement as a function call.
       statement.type = FUNCTION_CALL
       -- The following attributes are specific to the type.
@@ -2696,15 +2696,15 @@ local function report_issues(states, file_number, options)
         transcript = csname,
         type = TEXT
       }
-      if states.results.statement_analysis.maybe_defined_csname_texts_anywhere[csname] then
+      if states.results.statement_analysis.maybe_defined_csname_texts[csname] then
         -- If there are low-confidence function definitions for this control sequence, make the statement low-confidence also.
         statement.confidence = MAYBE
-      elseif states.results.statement_analysis.defined_csname_texts_anywhere[csname] then
+      elseif states.results.statement_analysis.defined_csname_texts[csname] then
         statement.confidence = DEFINITELY
         -- For definite function calls, record also the file numbers of the definite function definitions.
-        assert(states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[csname] ~= nil)
+        assert(states.results.statement_analysis.defined_csname_texts_file_numbers[csname] ~= nil)
         statement.definition_file_numbers = {}
-        for definition_file_number, _ in pairs(states.results.statement_analysis.defined_csname_texts_anywhere_file_numbers[csname]) do
+        for definition_file_number, _ in pairs(states.results.statement_analysis.defined_csname_texts_file_numbers[csname]) do
           table.insert(statement.definition_file_numbers, definition_file_number)
         end
         assert(#statement.definition_file_numbers > 0)
@@ -2937,7 +2937,7 @@ local function determine_function_calls_for_definitions(states, file_number, _)
     assert(statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
     assert(statement.defined_csname.type == TEXT)
     local defined_csname = statement.defined_csname.payload
-    statement.call_segments = states.results.statement_analysis.called_functions_anywhere_segments_list[defined_csname]
+    statement.call_segments = states.results.statement_analysis.called_functions_segments_list[defined_csname]
   end
 end
 
@@ -2954,7 +2954,7 @@ local function determine_variable_uses_for_declarations(states, file_number, _)
     assert(statement.type == VARIABLE_DECLARATION)
     assert(statement.declared_csname.type == TEXT)
     local declared_csname = statement.declared_csname.payload
-    statement.use_segments = states.results.statement_analysis.used_variables_anywhere_segments_list[declared_csname]
+    statement.use_segments = states.results.statement_analysis.used_variables_segments_list[declared_csname]
   end
 end
 
