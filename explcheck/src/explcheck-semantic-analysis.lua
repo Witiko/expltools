@@ -292,7 +292,8 @@ local function parse_expl3_csname(csname)
   end
 end
 
-local function _is_latex3_function_expandable(parser, csname)
+---@diagnostic disable-next-line:unused-function, unused-local
+local function _is_latex3_function_expandable(parser, csname)  -- luacheck: ignore
   local is_latex3_function, is_fully_expandable, is_restricted_expandable
   local csname_properties = lpeg.match(parser, csname)
   if csname_properties == nil then
@@ -2212,7 +2213,8 @@ local function analyze_group_wide_statements(states, _, options)
 end
 
 -- Determine which direct function definitions might be expandable.
-local function determine_direct_function_definition_expandability(states, file_number, _)
+---@diagnostic disable-next-line:unused-function, unused-local
+local function determine_direct_function_definition_expandability(states, file_number, _)  -- luacheck: ignore
   local state = states[file_number]
 
   local results = state.results
@@ -2248,7 +2250,8 @@ local function determine_direct_function_definition_expandability(states, file_n
 end
 
 -- Determine which function variant and indirect function definitions might be expandable.
-local function determine_function_variant_definition_and_indirect_definition_expandability(states, file_number, options)
+---@diagnostic disable-next-line:unused-function, unused-local
+local function determine_function_variant_definition_and_indirect_definition_expandability(states, file_number, options)  -- luacheck: ignore
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -2259,6 +2262,7 @@ local function determine_function_variant_definition_and_indirect_definition_exp
 
   local latex3_function_csname = parsers.latex3_csname("function", options, pathname)
 
+  ---@diagnostic disable-next-line:unused-function, unused-local
   local function is_latex3_function_expandable(csname)
     return _is_latex3_function_expandable(latex3_function_csname, csname)
   end
@@ -2289,6 +2293,7 @@ local function determine_function_variant_definition_and_indirect_definition_exp
       local defined_csname = statement.defined_csname.payload
 
       -- Record an originating statement.
+      ---@diagnostic disable-next-line:unused-function, unused-local
       local function record_originating_statement()
         if originating_function_and_variant_definition_index[defined_csname] == nil then
           originating_function_and_variant_definition_index[defined_csname] = {}
@@ -2483,7 +2488,8 @@ local function determine_function_variant_definition_and_indirect_definition_exp
 end
 
 -- Determine which segments of a certain type might be expandable.
-local function determine_segment_type_expandability(segment_type, states, file_number, options)
+---@diagnostic disable-next-line:unused-function, unused-local
+local function determine_segment_type_expandability(segment_type, states, file_number, options)  -- luacheck: ignore
   assert(states.results.statement_analysis ~= nil)
 
   local state = states[file_number]
@@ -2494,6 +2500,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
   local might_any_function_definitions_be_expandable = {}
 
   -- Determine which control sequences have some function definitions that might be expandable.
+  ---@diagnostic disable-next-line:unused-function, unused-local
   local function has_non_expandable_function_definitions(expandability_type, csname)
     if might_any_function_definitions_be_expandable[expandability_type] == nil then
       might_any_function_definitions_be_expandable[expandability_type] = {}
@@ -2522,6 +2529,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
 
   local latex3_function_csname = parsers.latex3_csname("function", options, pathname)
 
+  ---@diagnostic disable-next-line:unused-function, unused-local
   local function is_latex3_function_expandable(csname)
     return _is_latex3_function_expandable(latex3_function_csname, csname)
   end
@@ -2534,6 +2542,7 @@ local function determine_segment_type_expandability(segment_type, states, file_n
     end
 
     -- Check whether a top-level control sequence might be expandable.
+    ---@diagnostic disable-next-line:unused-function, unused-local
     local function check_csname(csname)
       -- Check whether the control sequence is a standard-library function that is expandable.
       local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(csname)
@@ -2585,7 +2594,8 @@ local function determine_segment_type_expandability(segment_type, states, file_n
 end
 
 -- Determine which function definitions might be expandable.
-local function determine_function_definition_expandability(states, file_number, options)
+---@diagnostic disable-next-line:unused-function, unused-local
+local function determine_function_definition_expandability(states, file_number, options)  -- luacheck: ignore
   -- Update the replacement text and statement expandability until fixed point.
   local any_direct_statement_changes, any_indirect_statement_changes
   repeat
@@ -2597,8 +2607,89 @@ local function determine_function_definition_expandability(states, file_number, 
 end
 
 -- Determine which boolean expression segments might be expandable.
-local function determine_boolean_expression_expandability(states, file_number, options)
+---@diagnostic disable-next-line:unused-function, unused-local
+local function determine_boolean_expression_expandability(states, file_number, options)  -- luacheck: ignore
   determine_segment_type_expandability(BOOLEAN_EXPRESSION, states, file_number, options)
+end
+
+-- Determine the expandability of function definitions and segments, using a provided function to determine the potential
+-- function definitions for a function call.
+---@diagnostic disable-next-line:unused-local
+local function _determine_expandability(states, file_number, options, get_function_definitions, get_function_calls)  -- luacheck: ignore
+  -- TODO: Implement the algorithm described in the following places:
+  -- - <https://github.com/witiko/expltools/issues/215>, under the list item "In the flow analysis, perform an expandability
+  --   analysis. This will be different ..." and
+  -- - <https://www.tug.org/tug2026/av/d2-t13-starynovotny-expl3tools/d2-t13-starynovotny-expl3tools-slides.pdf>, page 16.
+  --
+  -- This algorithm replaces the existing functions `determine_{function_definition,boolean_expression}_expandability()`,
+  -- as discussed in <https://github.com/witiko/expltools/issues/215#issuecomment-5702222008> and below.
+  -- Besides the implementation, the purpose of these functions is outlined in `../doc/warnings-and-errors-05-flow-analysis.md`,
+  -- in the striked-out comment within the description of issue E508, starting with "First, in the semantic analysis, we'll ...".
+  -- These functions should be removed following the implementation of this function.
+
+  -- 1. Collect a local list `changed_statements` of all statements that have `type` equal to `FUNCTION_CALL` and `confidence`
+  --    equal to `DEFINITELY`. TODO: This will require decoupling the creation of `FUNCTION_CALL` statements from the step
+  --    `report_issues()` to a separate new step `detect_user_defined_function_calls()` that precedes this step and recording
+  --    the list of all definite `FUNCTION_CALL` statements in
+  --    `states[file_number].results.statement_analysis.statement_lists.DEFINITE_FUNCTION_CALLS` from which we can copy it.
+  -- 2. While `changed_statements` is non-empty:
+  --     a) Pop a statement off of the end of the list.
+  --     b) Use `get_function_definitions()` to get an iterator of potential `FUNCTION_DEFINITION` statements for the
+  --        `FUNCTION_CALL` statement, each as a non-empty list of hops that starts with zero or more intermediate
+  --        `FUNCTION_DEFINITION_INDIRECT` or `FUNCTION_VARIANT_DEFINITION` statements and ends in at most one
+  --        `FUNCTION_DEFINITION_DIRECT` statement.
+  --     c) Set the `maybe_expandable` and `maybe_restricted_expandable` fields of the `FUNCTION_CALL` statement as the
+  --        maximum over the minimum corresponding field values of the statements from each list.
+  --     d) Set the `maybe_expandable` and `maybe_restricted_expandable` fields of the segment containing the `FUNCTION_CALL`
+  --        statement as the minimum of the current values and the corresponding field value of the statement.
+  --     e) If any of the field values of the segment changed, use `get_function_calls()` to get an iterator of potential
+  --        `FUNCTION_CALL` statements into the segment. For each statement:
+  --         i. If any of the `maybe_expandable` and `maybe_restricted_expandable` fields of the `FUNCTION_CALL` statement
+  --            would change when set to the minimum of the current value and the corresponding field value of the segment,
+  --            append the statement to the end of the `changed_statements` list.
+  --     f) Set the `maybe_expandable` and `maybe_restricted_expandable` fields of the parent statement of the segment
+  --        containing the `FUNCTION_CALL` statement, if any, as the minimum of the current values and the corresponding
+  --        field value of the segment. TODO: This will require adding a new field `parent_statement` to `BOOLEAN_EXPRESSION`
+  --        and `REPLACEMENT_TEXT` segments.
+end
+
+-- Determine the potential function definitions for a function call, using approximate name-based matching.
+---@diagnostic disable-next-line:unused-local
+local function get_function_definitions(states, file_number, options, statement)  -- luacheck: ignore
+  -- TODO: This will require adding a separate new step `resolve_function_variants_and_indirect_function_definitions()`
+  -- that precedes `determine_expandability()` and that will, for all function variant and indirect function definitions,
+  -- produce a tree of potential (not necessarily reaching) originating function definitions, similar to the first part of
+  -- `determine_function_variant_definition_and_indirect_definition_expandability()`. Pointers to the nodes of this tree
+  -- are going to be stored in `states.results.statement_analysis.resolved_definition_tree`, indexed by the statements.
+  --
+  -- Then, when this function has been called, for the `FUNCTION_CALL` statement:
+  -- 1. Determine the potential function (variant) definitions from
+  --    `states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION`.
+  -- 2. For each function (variant) definition:
+  --     a) If it's `FUNCTION_DEFINITION_DIRECT`, yield it as a single-item list.
+  --     b) Otherwise, perform a depth-first search into the corresponding node from
+  --        `states.results.statement_analysis.resolved_definition_tree`, accumulating the statements along each branch
+  --        and yielding a copy of the list at each leaf.
+end
+
+-- Determine the potential function calls for a direct function definition, using approximate name-based matching.
+---@diagnostic disable-next-line:unused-local
+local function get_function_calls(states, file_number, options, statement)  -- luacheck: ignore
+  -- TODO: This will require adding `states.results.statement_analysis.text_name_indexes.FUNCTION_CALL` in
+  -- `detect_user_defined_function_calls()`.
+  --
+  -- Then, when this function has been called with a `FUNCTION_DEFINITION_DIRECT` statement, yield from the list for
+  -- that particular statement.
+end
+
+-- Determine the expandability of function definitions and segments, using approximate name-based matching to determine
+-- the possible function definitions for a function call.
+local function determine_expandability(...)
+  -- TODO: In the syntactic analysis, for all calls, set the `maybe_expandable` and `maybe_restricted_expandable` fields
+  -- based on `parsers.x_type_argument_specifiers` and `_is_latex3_function_expandable()`. Also, set the same fields for
+  -- the parent segment, similar to `determine_segment_type_expandability()`. Then, in `collect_statements()`, set these
+  -- fields also for any corresponding `FUNCTION_DEFINITION` and `VARIABLE_DEFINITION` statements.
+  return _determine_expandability(..., get_function_definitions, get_function_calls)
 end
 
 -- Report any issues.
@@ -3120,8 +3211,9 @@ end
 local substeps = {
   collect_statements,
   analyze_group_wide_statements,
-  determine_function_definition_expandability,
-  determine_boolean_expression_expandability,
+--  determine_function_definition_expandability,
+--  determine_boolean_expression_expandability,
+  determine_expandability,
   report_issues,
   determine_function_calls_for_definitions,
   determine_variable_uses_for_declarations,
@@ -3132,6 +3224,7 @@ local substeps = {
 }
 
 return {
+  determine_expandability = _determine_expandability,
   is_confused = is_confused,
   name = "semantic analysis",
   name_types = name_types,
