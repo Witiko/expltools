@@ -1,6 +1,5 @@
 -- Common LPEG parsers used by different modules of the static analyzer explcheck.
 
-local latex3 = require("explcheck-latex3")
 local get_option = require("explcheck-config").get_option
 
 local lpeg = require("lpeg")
@@ -22,13 +21,16 @@ local circumflex = P("^")
 local colon = P(":")
 local comma = P(",")
 local control_character = R("\x00\x1F") + P("\x7F")
+local dash = P("-")
 local dollar_sign = P("$")
 local form_feed = P("\x0C")
 local hash_sign = P("#")
 local lbrace = P("{")
+local lbracket = P("[")
 local letter = R("AZ", "az")
 local percent_sign = P("%")
 local rbrace = P("}")
+local rbracket = P("]")
 local tilde = P("~")
 local underscore = P("_")
 local decimal_digit = R("09")
@@ -46,16 +48,37 @@ local linechar = any - newline
 local space = P(" ")
 local tab = P("\t")
 
+---- Repeated characters
+local function repetition(parser, n)
+  local result = success
+  for _ = 1, n do
+    result = result * parser
+  end
+  return result
+end
+
+---- Back-references
+local function same_character(capturing_parser, group_capture_name)
+  return Cmt(
+    (
+      capturing_parser
+      * Cb(group_capture_name)
+    ),
+    function(_, _, captured_character, previous_character)
+      return captured_character == previous_character
+    end
+  )
+end
+
 ---- Comma-lists
 local function comma_list(item_parser)
   return Ct(
     eof
-    + C(item_parser)
+    + Cs(item_parser)
     * (
-      P(",") * C(item_parser)
+      comma * Cs(item_parser)
     )^0
-    * P(",")^-1
-    * eof
+    * comma^-1
   )
 end
 
@@ -184,7 +207,7 @@ local argument = (
 local N_type_argument_specifier = S("NV")
 local n_type_argument_specifier = S("ncvoxefTF")
 local x_type_argument_specifier = S("x")
-local csname_argument_specifier = S("Nc")
+local defined_csname_argument_specifier = S("Nc")
 local expansionless_argument_specifier = S("NVnTF")
 local parameter_argument_specifier = S("p")
 local weird_argument_specifier = S("w")
@@ -208,7 +231,10 @@ local argument_specifiers = (
   argument_specifier^0
   * eof
 )
-local variant_argument_specifiers = comma_list(argument_specifier^0)
+local variant_argument_specifiers = (
+  comma_list(argument_specifier^0)
+  * eof
+)
 
 local function any_argument_specifiers(parser)
   return (any - parser)^0 * parser
@@ -372,6 +398,7 @@ local expl3_well_known_prefixes = (
 local function latex3_prefixes(options, pathname)
   local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
 
+  local latex3 = require("explcheck-latex3")
   return Cmt(
     latex3.prefixes,
     function(_, _, maybe_first_registered_date)
@@ -386,6 +413,7 @@ end
 local function latex3_csname(definition_type, options, pathname)
   local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
 
+  local latex3 = require("explcheck-latex3")
   return (
     Cg(latex3.definitions[definition_type], "definition")
     * Cmt(
@@ -393,8 +421,28 @@ local function latex3_csname(definition_type, options, pathname)
       function(_, _, definition)
         return (
           not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
-          or (definition ~= nil and definition.added_date ~= nil)  -- actual added date has been specified in "l3*.dtx" files
-          and definition.added_date <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+          or definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
+          and definition.added <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+        )
+      end
+    )
+    * Cb("definition")
+  )
+end
+local function too_recent_latex3_csname(latex3_definitions_max_added_date)
+  if not latex3_definitions_max_added_date then  -- no maximum added date has been specified by us
+    return fail  -- no csname is too recent
+  end
+
+  local latex3 = require("explcheck-latex3")
+  return (
+    Cg(latex3.definitions["function"] + latex3.definitions["variable"], "definition")
+    * Cmt(
+      Cb("definition"),
+      function(_, _, definition)
+        return (
+          definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
+          and definition.added > latex3_definitions_max_added_date  -- and this actual date is more than our maximum
         )
       end
     )
@@ -467,6 +515,7 @@ local function expl3_well_known_csname(options, pathname)
 end
 
 local function expl3_deprecated_csname(l3obsolete_max_deprecated_date)
+  local latex3 = require("explcheck-latex3")
   return Cmt(
     latex3.obsolete.deprecated_csname,
     function(_, _, maybe_deprecated_date)
@@ -477,6 +526,22 @@ local function expl3_deprecated_csname(l3obsolete_max_deprecated_date)
       )
     end
   )
+end
+
+local function expl3_csname_history(csname)
+  local latex3 = require("explcheck-latex3")
+  local added_date, updated_date
+  local added_or_updated_match
+  added_or_updated_match = lpeg.match(latex3.definitions["function"], csname)
+  if added_or_updated_match == nil then
+    added_or_updated_match = lpeg.match(latex3.definitions["variable"], csname)
+  end
+  if added_or_updated_match ~= nil and type(added_or_updated_match) == "table" then
+    added_date = added_or_updated_match.added
+    updated_date = added_or_updated_match.updated
+  end
+  local deprecated_date = lpeg.match(latex3.obsolete.deprecated_csname, csname)
+  return added_date, updated_date, deprecated_date
 end
 
 local expl3like_function_with_underscores_csname = (
@@ -639,14 +704,7 @@ local provides = (
       + P("Class")
       + P("File")
     )
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
-  * optional_spaces_and_newline
-  * argument
+  * repetition(optional_spaces_and_newline * argument, 4)
 )
 local expl_syntax_on = expl3_catcodes[0] * P("ExplSyntaxOn")
 local expl_syntax_off = expl3_catcodes[0] * P("ExplSyntaxOff")
@@ -659,9 +717,112 @@ local endinput = (
   )
 )
 
+---- Commands that specify the minimum required version of LaTeX3 definitions.
+local normalized_version_date = (
+  -- Required format/package/document class version date, modeled after the `\pkgcls@parse@date@arg` LaTeX2e command.
+  -- See <https://mirrors.ctan.org/macros/latex/base/source2e.pdf>.
+  P("=")^-1  -- treat =YYYY-MM-DD (roll back to this exact version) and YYYY-MM-DD (require this version or later) as equivalent
+  * C(repetition(decimal_digit, 4))  -- YYYY
+  * Cg(C(slash + dash), "separator")
+  * C(repetition(decimal_digit, 2))  -- MM
+  * same_character(C(slash + dash), "separator")
+  * C(repetition(decimal_digit, 2))  -- DD
+  / function(year, month, date_of_month)
+    return string.format("%s-%s-%s", year, month, date_of_month)
+  end
+)
+local requires_expl3_package_with_version = (
+  C(
+    expl3_catcodes[0]
+    * (
+      P("RequirePackage") * P("WithOptions")^-1
+      + P("usepackage")
+    )
+  )
+  / "%1{expl3}[...]"
+  * optional_spaces_and_newline
+  * (  -- optional package options
+    lbracket
+    * (any - rbracket)^0
+    * rbracket
+  )^-1
+  * optional_spaces_and_newline
+  * expl3_catcodes[1]  -- comma-list of packages
+  * Cmt(
+    comma_list(
+      (
+        optional_spaces_and_newline
+        / ""
+      )
+      * (
+        P("expl3")
+        + (
+          -#(
+            optional_spaces_and_newline
+            * (
+              comma
+              + expl3_catcodes[2]
+            )
+          )
+          * any
+        )^0
+      )
+      * (
+        optional_spaces_and_newline
+        / ""
+      )
+    ),
+    function(_, _, package_names)
+      for _, package_name in ipairs(package_names) do
+        if package_name == "expl3" then
+          return true
+        end
+      end
+      return false
+    end
+  )
+  * expl3_catcodes[2]
+  * optional_spaces_and_newline
+  * lbracket  -- minimum date
+  * optional_spaces_and_newline
+  * normalized_version_date
+  * optional_spaces_and_newline
+  * rbracket
+)
+local needs_latex3_format_with_version = (
+  C(
+    expl3_catcodes[0]
+    * P("NeedsTeXFormat")
+  )
+  / "%1{LaTeX2e}[...]"
+  * optional_spaces_and_newline
+  * expl3_catcodes[1]
+  * optional_spaces_and_newline
+  * P("LaTeX2e")
+  * optional_spaces_and_newline
+  * expl3_catcodes[2]
+  * optional_spaces_and_newline
+  * lbracket  -- minimum date
+  * optional_spaces_and_newline
+  * Cg(normalized_version_date, "date")
+  * Cmt(
+    Cb("date"),
+    function(_, _, date)
+      return date >= "2020-02-02"  -- earlier LaTeX2e formats did not include LaTeX3
+    end
+  )
+  * Cb("date")
+  * optional_spaces_and_newline
+  * rbracket
+)
+
+local requires_latex3_version = (
+  requires_expl3_package_with_version
+  + needs_latex3_format_with_version
+)
+
 ---- Commands from LaTeX style files
-local latex_style_file_csname =
-(
+local latex_style_file_csname = (
   -- LaTeX2e package writer commands
   -- See <https://www.latex-project.org/help/documentation/clsguide.pdf>.
   P("AddToHook")
@@ -725,8 +886,7 @@ local latex_style_file_csname =
   + P("RecordProperties")
   + P("RefProperty")
   + P("RefUndefinedWarn")
-  + P("RequirePackage")
-  + P("RequirePackageWithOptions")
+  + P("RequirePackage") * P("WithOptions")^-1
   + P("SetKeys")
   + P("SetProperty")
   + P("UseInstance")
@@ -801,8 +961,7 @@ local expl3_indirect_function_definition_csname = (
     * P("_eq_conditional")
   )
   * colon
-  * argument_specifier
-  * argument_specifier
+  * repetition(argument_specifier, 2)
 )
 local expl3_function_definition_csname = Ct(
   Cc(true) * expl3_direct_function_definition_csname
@@ -849,7 +1008,10 @@ local condition = (
   + P("T") * P("F")^-1
   + P("F")
 )
-local conditions = comma_list(condition)
+local conditions = (
+  comma_list(condition)
+  * eof
+)
 
 ---- Variables and constants
 ------ Variable names
@@ -933,10 +1095,10 @@ local expl3_variable_definition_csname = Ct(
       * Cg(expl3_variable_or_constant_type, "base_variable_type")
     )
     * P(":")
-    * csname_argument_specifier
+    * defined_csname_argument_specifier
     * (
       Cc(false)  -- indirect
-      * csname_argument_specifier
+      * defined_csname_argument_specifier
       + Cc(true)  -- direct
     )
     + Cc(true)  -- direct
@@ -1031,6 +1193,7 @@ return {
   eof = eof,
   expansionless_argument_specifier = expansionless_argument_specifier,
   expl3_catcodes = expl3_catcodes,
+  expl3_csname_history = expl3_csname_history,
   expl3_deprecated_csname = expl3_deprecated_csname,
   expl3_endlinechar = expl3_endlinechar,
   expl3_expansion_csname = expl3_expansion_csname,
@@ -1069,10 +1232,12 @@ return {
   n_type_argument_specifier = n_type_argument_specifier,
   N_type_argument_specifier = N_type_argument_specifier,
   provides = provides,
+  requires_latex3_version = requires_latex3_version,
   space = space,
   success = success,
   tab = tab,
   tex_lines = tex_lines,
+  too_recent_latex3_csname = too_recent_latex3_csname,
   variant_argument_specifiers = variant_argument_specifiers,
   x_type_argument_specifiers = x_type_argument_specifiers,
 }

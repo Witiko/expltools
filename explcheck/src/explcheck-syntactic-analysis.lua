@@ -6,10 +6,12 @@ local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
 
+local cleanup_required_latex3_version = lexical_analysis.cleanup_required_latex3_version
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local format_token = lexical_analysis.format_token
 local format_tokens = lexical_analysis.format_tokens
+local update_required_latex3_version_from_csname = lexical_analysis.update_required_latex3_version_from_csname
 
 local new_range = ranges.new_range
 local range_flags = ranges.range_flags
@@ -234,7 +236,12 @@ end
 local add_segment
 
 -- Extract function calls from TeX tokens and groupings.
-local function get_calls(results, part_number, segment, issues, content)
+local function get_calls(states, file_number, options, part_number, segment)
+  local state = states[file_number]
+
+  local content = state.content
+  local issues = state.issues
+  local results = state.results
 
   local tokens = results.tokens[part_number]
   local groupings = results.groupings[part_number]
@@ -404,6 +411,13 @@ local function get_calls(results, part_number, segment, issues, content)
     return normalized_csname, csname_origin, next_token_number, ignored_token_number
   end
 
+  local latex3_definitions_max_added_date
+  if results.effective_required_latex3_version.max_declared ~= nil then
+    latex3_definitions_max_added_date = results.effective_required_latex3_version.max_declared.date
+    assert(latex3_definitions_max_added_date ~= nil)
+  end
+  local too_recent_latex3_csname = parsers.too_recent_latex3_csname(latex3_definitions_max_added_date)
+
   while token_number <= transformed_token_range_end do
     local token = transformed_tokens[token_number]
     local next_token, next_next_token, next_token_range, context
@@ -455,7 +469,7 @@ local function get_calls(results, part_number, segment, issues, content)
                 maybe_fully_expandable = true,  -- later refined by the semantic analysis
                 maybe_restricted_expandable = true,  -- later refined by the semantic analysis
               }
-              argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
+              argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
             end
           elseif argument.specifier == "T" or argument.specifier == "F" then
             local nested_segment = {
@@ -470,7 +484,7 @@ local function get_calls(results, part_number, segment, issues, content)
                 map_forward = map_forward,
               },
             }
-            argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
+            argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
           elseif argument.specifier == "V" then
             for _, argument_token in argument.token_range:enumerate(transformed_tokens, map_forward) do
               if argument_token.type == CONTROL_SEQUENCE and
@@ -483,16 +497,26 @@ local function get_calls(results, part_number, segment, issues, content)
                 )
               end
             end
-          elseif argument.specifier == "v" then
+          elseif argument.specifier == "c" or argument.specifier == "v" then
             local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
-            if argument_text ~= nil and lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, argument_text) ~= nil then
+            if argument_text ~= nil then
               local argument_byte_range = argument.token_range:new_range_from_subranges(get_token_byte_range(tokens), #content)
-              issues:add(
-                't305',
-                'expanding an unexpandable variable or constant',
-                argument_byte_range,
-                format_tokens(argument.outer_token_range or argument.token_range, tokens, content)
-              )
+              local formatted_argument_text = format_tokens(argument.outer_token_range or argument.token_range, tokens, content)
+              if argument.specifier == "v" and lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, argument_text) ~= nil then
+                issues:add('t305', 'expanding an unexpandable variable or constant', argument_byte_range, formatted_argument_text)
+              end
+              local too_recent_latex3_definition = lpeg.match(too_recent_latex3_csname, argument_text)
+              if too_recent_latex3_definition ~= nil then
+                assert(too_recent_latex3_definition.added ~= nil)
+                assert(latex3_definitions_max_added_date ~= nil)
+                context = string.format(
+                  "%s (%s > %s)",
+                  formatted_argument_text,
+                  too_recent_latex3_definition.added,
+                  latex3_definitions_max_added_date
+                )
+                issues:add('w306', 'LaTeX3 command too recent', argument_byte_range, context)
+              end
             end
           end
           table.insert(arguments, argument)
@@ -765,7 +789,11 @@ local function get_calls(results, part_number, segment, issues, content)
 end
 
 -- Add a new nested segment to the list of segments.
-add_segment = function(results, part_number, segment, issues, content)
+add_segment = function(states, file_number, options, part_number, segment)
+  local state = states[file_number]
+
+  local results = state.results
+
   assert(results.segments ~= nil)
   assert(results.segment_type_index ~= nil)
   if segment.min_reaching_nesting_depth == nil then
@@ -778,7 +806,7 @@ add_segment = function(results, part_number, segment, issues, content)
   end
   table.insert(results.segment_type_index[segment.type], segment)
   local segment_number = #results.segments
-  segment.calls = get_calls(results, part_number, segment, issues, content)
+  segment.calls = get_calls(states, file_number, options, part_number, segment)
   assert(results.segments[segment_number] == segment)
   return segment_number
 end
@@ -788,8 +816,6 @@ end
 local function analyze_and_report_issues(states, file_number, options)  -- luacheck: ignore options
   local state = states[file_number]
 
-  local content = state.content
-  local issues = state.issues
   local results = state.results
 
   results.segments, results.segment_type_index = {}, {}
@@ -808,12 +834,46 @@ local function analyze_and_report_issues(states, file_number, options)  -- luach
         map_forward = identity,
       },
     }
-    add_segment(results, part_number, segment, issues, content)
+    add_segment(states, file_number, options, part_number, segment)
+  end
+end
+
+-- Tighten the estimated bounds for the minimum/maximum required version of LaTeX3 definitions from the lexical analysis using the c- and
+-- v-type function call arguments recorded by `analyze_and_report_issues()`.
+---@diagnostic disable-next-line:unused-local
+local function estimate_required_latex3_version(states, file_number, options)  -- luacheck: ignore options
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.segments ~= nil)
+  assert(results.required_latex3_version ~= nil)
+
+  for _, segment in ipairs(results.segments) do
+    local transformed_tokens = segment.transformed_tokens.tokens
+    local map_forward = segment.transformed_tokens.map_forward
+    for _, call in ipairs(segment.calls) do
+      if call.type ~= CALL then
+        goto next_call
+      end
+      for _, argument in ipairs(call.arguments) do
+        if argument.specifier == "c" or argument.specifier == "v" then
+          local argument_text = extract_text_from_tokens(argument.token_range, transformed_tokens, map_forward)
+          if argument_text == nil then
+            goto next_argument
+          end
+          update_required_latex3_version_from_csname(results.required_latex3_version, argument_text)
+        end
+        ::next_argument::
+      end
+      ::next_call::
+    end
   end
 end
 
 local substeps = {
   analyze_and_report_issues,
+  estimate_required_latex3_version,
+  cleanup_required_latex3_version,
 }
 
 return {

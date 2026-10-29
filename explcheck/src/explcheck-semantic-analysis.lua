@@ -956,7 +956,7 @@ local function collect_statements(states, file_number, options)
                 maybe_fully_expandable = true,  -- later refined by `determine_function_definition_expandability()`
                 maybe_restricted_expandable = true,  -- later refined by `determine_function_definition_expandability()`
               }
-              replacement_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
+              replacement_text_argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
               assert(results.segments[replacement_text_argument.segment_number].type == REPLACEMENT_TEXT)
             end
             ::skip_replacement_text::
@@ -1301,7 +1301,7 @@ local function collect_statements(states, file_number, options)
                 maybe_fully_expandable = true,  -- later refined by `determine_boolean_expression_expandability()`
                 maybe_restricted_expandable = true,  -- later refined by `determine_boolean_expression_expandability()`
               }
-              definition_text_argument.segment_number = add_segment(results, part_number, nested_segment, issues, content)
+              definition_text_argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
             end
           else
             -- determine the name of the base variable or constant

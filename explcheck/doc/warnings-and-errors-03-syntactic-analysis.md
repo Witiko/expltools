@@ -39,3 +39,10 @@ A parameter or replacement text contains parameter tokens (`#`) followed by unex
 A function with a `V`-type argument is called with a variable or constant that does not support `V`-type expansion [@latexteam2024interfaces, Section 1.1].
 
  /t305.tex
+
+## LaTeX3 command too recent {.w label=w306}
+A standard-library LaTeX3 command is used that was introduced after the date specified by the Lua option `latex3_definitions_max_added_date`.
+
+ /w306.tex
+
+This check is a stronger version of <#latex-command-too-recent> and the issue should only be emitted if <#latex-command-too-recent> has not previously been emitted for this function.
