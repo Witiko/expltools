@@ -844,6 +844,7 @@ local function collect_statements(states, file_number, options)
         -- Process a function definition.
         function_definition = lpeg.match(parsers.expl3_function_definition_csname, call.csname)
         if function_definition ~= nil then
+          local nested_segment
           local is_direct = table.unpack(function_definition)
           -- Process a direct function definition.
           if is_direct then
@@ -943,7 +944,7 @@ local function collect_statements(states, file_number, options)
               assert(second_map_forward ~= nil)
               local function map_back(...) return first_map_back(second_map_back(...)) end
               local function map_forward(...) return second_map_forward(first_map_forward(...)) end
-              local nested_segment = {
+              nested_segment = {
                 type = REPLACEMENT_TEXT,
                 location = segment.location,
                 nesting_depth = segment.nesting_depth + 1,
@@ -1029,6 +1030,9 @@ local function collect_statements(states, file_number, options)
                 is_nopar = is_nopar,
                 replacement_text_argument = replacement_text_argument,
               }
+              if nested_segment ~= nil then
+                nested_segment.parent_statement = statement
+              end
               table.insert(statements, statement)
             end
           else
@@ -1292,6 +1296,7 @@ local function collect_statements(states, file_number, options)
                 type = BOOLEAN_EXPRESSION,
                 location = segment.location,
                 nesting_depth = segment.nesting_depth + 1,
+                parent_statement = statement,
                 transformed_tokens = {
                   tokens = transformed_tokens,
                   token_range = definition_text_argument.token_range,
@@ -2649,7 +2654,7 @@ local function _determine_expandability(states, file_number, options, get_functi
   --            append the statement to the end of the `changed_statements` list.
   --     f) Set the `maybe_expandable` and `maybe_restricted_expandable` fields of the parent statement of the segment
   --        containing the `FUNCTION_CALL` statement, if any, as the minimum of the current values and the corresponding
-  --        field value of the segment. TODO: This will require adding a new field `parent_statement` to `BOOLEAN_EXPRESSION`
+  --        field value of the segment. DONE: This will require adding a new field `parent_statement` to `BOOLEAN_EXPRESSION`
   --        and `REPLACEMENT_TEXT` segments.
 end
 
