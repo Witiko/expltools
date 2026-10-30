@@ -1595,8 +1595,7 @@ local function analyze_group_wide_statements(states, _, options)
     },
     CALL_OR_INDIRECT_DEFINITION_OR_VARIABLE_USE = {
       match = function(statement)
-        return statement.type == FUNCTION_CALL
-          or statement.type == FUNCTION_VARIANT_DEFINITION
+        return statement.type == FUNCTION_VARIANT_DEFINITION
           or statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
           or statement.type == VARIABLE_USE
           or statement.type == VARIABLE_DEFINITION and statement.subtype == VARIABLE_DEFINITION_INDIRECT
@@ -2171,7 +2170,7 @@ local function analyze_group_wide_statements(states, _, options)
             process_argument_tokens(argument)
           end
         -- Process an unrecognized statement.
-        elseif statement.type == OTHER_STATEMENT or statement.type == FUNCTION_CALL then
+        elseif statement.type == OTHER_STATEMENT then
           -- Record control sequence name usage and definitions.
           for _, call in statement.call_range:enumerate(segment.calls) do
             if states.results.statement_analysis.called_functions_segments_index[call.csname] == nil then
@@ -2605,6 +2604,63 @@ local function determine_boolean_expression_expandability(states, file_number, o
   determine_segment_type_expandability(BOOLEAN_EXPRESSION, states, file_number, options)
 end
 
+-- Reclassify user-defined function calls as a separate statement type.
+local function detect_user_defined_function_calls(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  state.results.statement_analysis.statement_lists.DEFINITE_FUNCTION_CALLS = {}
+  for _, called_function_or_variant in ipairs(results.statement_analysis.called_functions_and_variants) do
+    local segment, statement, csname, _ = table.unpack(called_function_or_variant)
+    assert(statement.type == OTHER_STATEMENT)
+    if states.results.statement_analysis.defined_csname_texts[csname]
+        or states.results.statement_analysis.maybe_defined_csname_texts[csname] then
+      statement.type = FUNCTION_CALL
+      -- The following attributes are specific to the type.
+      statement.used_csname = {
+        payload = csname,
+        transcript = csname,
+        type = TEXT
+      }
+      table.insert(state.results.statement_analysis.statement_lists.DEFINITE_FUNCTION_CALLS, statement)
+      if states.results.statement_analysis.maybe_defined_csname_texts[csname] then
+        -- If there are low-confidence function definitions for this control sequence, make the statement low-confidence also.
+        statement.confidence = MAYBE
+      elseif states.results.statement_analysis.defined_csname_texts[csname] then
+        statement.confidence = DEFINITELY
+        -- For definite function calls, record also the file numbers of the definite function definitions.
+        assert(states.results.statement_analysis.defined_csname_texts_file_numbers[csname] ~= nil)
+        statement.definition_file_numbers = {}
+        for definition_file_number, _ in pairs(states.results.statement_analysis.defined_csname_texts_file_numbers[csname]) do
+          table.insert(statement.definition_file_numbers, definition_file_number)
+        end
+        assert(#statement.definition_file_numbers > 0)
+        table.sort(statement.definition_file_numbers)
+      else
+        error("Failed to determine statement confidence")
+      end
+      -- Mark expansionless call arguments as analyzed.
+      for _, call in statement.call_range:enumerate(segment.calls) do
+        for _, argument in ipairs(call.arguments) do
+          assert(argument ~= nil)
+          if lpeg.match(parsers.expansionless_argument_specifier, argument.specifier) ~= nil then
+            argument.analyzed = true
+          end
+        end
+      end
+      -- Index the function call.
+      table.insert(
+        results.statement_analysis.statement_lists.CALL_OR_INDIRECT_DEFINITION_OR_VARIABLE_USE,
+        statement
+      )
+    end
+  end
+end
+
 -- Determine the expandability of function definitions and segments, using a provided function to determine the potential
 -- function definitions for a function call.
 ---@diagnostic disable-next-line:unused-function, unused-local
@@ -2621,7 +2677,7 @@ local function _determine_expandability(states, file_number, options, get_functi
   -- These functions should be removed following the implementation of this function.
 
   -- 1. Collect a local list `changed_statements` of all statements that have `type` equal to `FUNCTION_CALL` and `confidence`
-  --    equal to `DEFINITELY`. TODO: This will require decoupling the creation of `FUNCTION_CALL` statements from the step
+  --    equal to `DEFINITELY`. DONE: This will require decoupling the creation of `FUNCTION_CALL` statements from the step
   --    `report_issues()` to a separate new step `detect_user_defined_function_calls()` that precedes this step and recording
   --    the list of all definite `FUNCTION_CALL` statements in
   --    `states[file_number].results.statement_analysis.statement_lists.DEFINITE_FUNCTION_CALLS` from which we can copy it.
@@ -2766,51 +2822,11 @@ local function report_issues(states, file_number, options)
 
   ---- Report calls to undefined functions and function variants.
   for _, called_function_or_variant in ipairs(results.statement_analysis.called_functions_and_variants) do
-    local segment, statement, csname, byte_range = table.unpack(called_function_or_variant)
+    local _, _, csname, byte_range = table.unpack(called_function_or_variant)
     if lpeg.match(parsers.expl3like_function_csname, csname) ~= nil
         and lpeg.match(expl3_well_known_csname, csname) == nil
         and not matches_maybe_text_name(maybe.defined_csname, csname) then
       issues:add('e408', 'calling an undefined function', byte_range, format_csname(csname))
-    elseif states.results.statement_analysis.defined_csname_texts[csname]
-        or states.results.statement_analysis.maybe_defined_csname_texts[csname] then
-      -- For defined functions and function variants, reclassify the statement as a function call.
-      statement.type = FUNCTION_CALL
-      -- The following attributes are specific to the type.
-      statement.used_csname = {
-        payload = csname,
-        transcript = csname,
-        type = TEXT
-      }
-      if states.results.statement_analysis.maybe_defined_csname_texts[csname] then
-        -- If there are low-confidence function definitions for this control sequence, make the statement low-confidence also.
-        statement.confidence = MAYBE
-      elseif states.results.statement_analysis.defined_csname_texts[csname] then
-        statement.confidence = DEFINITELY
-        -- For definite function calls, record also the file numbers of the definite function definitions.
-        assert(states.results.statement_analysis.defined_csname_texts_file_numbers[csname] ~= nil)
-        statement.definition_file_numbers = {}
-        for definition_file_number, _ in pairs(states.results.statement_analysis.defined_csname_texts_file_numbers[csname]) do
-          table.insert(statement.definition_file_numbers, definition_file_number)
-        end
-        assert(#statement.definition_file_numbers > 0)
-        table.sort(statement.definition_file_numbers)
-      else
-        error("Failed to determine statement confidence")
-      end
-      -- Mark expansionless call arguments as analyzed.
-      for _, call in statement.call_range:enumerate(segment.calls) do
-        for _, argument in ipairs(call.arguments) do
-          assert(argument ~= nil)
-          if lpeg.match(parsers.expansionless_argument_specifier, argument.specifier) ~= nil then
-            argument.analyzed = true
-          end
-        end
-      end
-      -- Index the function call.
-      table.insert(
-        results.statement_analysis.statement_lists.CALL_OR_INDIRECT_DEFINITION_OR_VARIABLE_USE,
-        statement
-      )
     end
   end
 
@@ -3205,6 +3221,7 @@ end
 local substeps = {
   collect_statements,
   analyze_group_wide_statements,
+  detect_user_defined_function_calls,
   -- TODO: Remove the following two steps.
   determine_function_definition_expandability,
   determine_boolean_expression_expandability,
