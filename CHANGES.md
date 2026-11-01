@@ -10,6 +10,17 @@ This version of explcheck has made the following improvements to the documentati
 
 - Bump GitHub Actions in `README.md`. (01ec993)
 
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration (CI):
+
+- Print code coverage report also separately for package files outside the
+  `/doc` tree, in addition to all package and documentation files.
+  (8fb7908, 08f14df)
+- As a part of the code coverage report, print the number of files, groupings,
+  and the percentage of expl3 bytes in all bytes. (b70b29b, 08f14df)
+
 ## expltools 2026-09-24
 
 ### explcheck v0.24.0
