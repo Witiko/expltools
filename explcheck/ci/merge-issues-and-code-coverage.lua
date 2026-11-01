@@ -53,9 +53,11 @@ end
 -- Collect the code coverages.
 local all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results = {}, {}
 for _, aggregate_evaluation_results in ipairs({all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results}) do
+  aggregate_evaluation_results.num_files = 0
   aggregate_evaluation_results.num_total_bytes = 0
   aggregate_evaluation_results.num_expl_bytes = 0
   aggregate_evaluation_results.num_tokens = 0
+  aggregate_evaluation_results.num_groupings = 0
   aggregate_evaluation_results.num_well_understood_tokens = 0
 end
 
@@ -65,11 +67,14 @@ for input_coverage_file_number = 1, num_input_files do
 
   for _, aggregate_evaluation_results in ipairs({all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results}) do
     local coverage_values = assert(input_coverage_file:read("*line"))
-    local current_num_total_bytes, current_num_expl_bytes, current_num_tokens, current_num_well_understood_tokens
-      = coverage_values:match("^(%d+) (%d+) (%d+) (%d+)$")
+    local current_num_files, current_num_total_bytes, current_num_expl_bytes, current_num_tokens,
+      current_num_groupings, current_num_well_understood_tokens
+      = coverage_values:match("^(%d+) (%d+) (%d+) (%d+) (%d+) (%d+)$")
+    aggregate_evaluation_results.num_files = aggregate_evaluation_results.num_files + tonumber(current_num_files)
     aggregate_evaluation_results.num_total_bytes = aggregate_evaluation_results.num_total_bytes + tonumber(current_num_total_bytes)
     aggregate_evaluation_results.num_expl_bytes = aggregate_evaluation_results.num_expl_bytes + tonumber(current_num_expl_bytes)
     aggregate_evaluation_results.num_tokens = aggregate_evaluation_results.num_tokens + tonumber(current_num_tokens)
+    aggregate_evaluation_results.num_groupings = aggregate_evaluation_results.num_groupings + tonumber(current_num_groupings)
     aggregate_evaluation_results.num_well_understood_tokens
       = aggregate_evaluation_results.num_well_understood_tokens + tonumber(current_num_well_understood_tokens)
   end
@@ -79,25 +84,39 @@ end
 
 -- Export the code coverage.
 local output_coverage_file = assert(io.open(output_coverage_file_pathname, "w"))
-for _, aggregate_evaluation_title_and_results in ipairs({
+for aggregate_evaluation_number, aggregate_evaluation_title_and_results in ipairs({
   {"Package files outside the `/doc` tree", nondoc_aggregate_evaluation_results},
-  {"All package files", all_aggregate_evaluation_results},
+  {"All package and documentation files", all_aggregate_evaluation_results},
 }) do
+  if aggregate_evaluation_number > 1 then
+    assert(output_coverage_file:write("\n"))
+  end
   local result_title, aggregate_evaluation_results = table.unpack(aggregate_evaluation_title_and_results)
   assert(
     output_coverage_file:write(
       string.format(
-        "%s: %s well-understood expl3 %s (%s of %s expl3 tokens, ~%s of %s total bytes)\n",
+        "%s:\n- %s total %s in %s %s\n"
+          .. "- %s expl3 %s (%s of total bytes) containing %s %s and %s %s\n"
+          .. "- %s well-understood expl3 %s (%s of expl3 tokens, ~%s of total bytes)\n",
         result_title,
+        titlecase(humanize(aggregate_evaluation_results.num_total_bytes)),
+        pluralize("byte", aggregate_evaluation_results.num_total_bytes),
+        humanize(aggregate_evaluation_results.num_files),
+        pluralize("file", aggregate_evaluation_results.num_files),
+        titlecase(humanize(aggregate_evaluation_results.num_expl_bytes)),
+        pluralize("byte", aggregate_evaluation_results.num_expl_bytes),
+        format_ratio(aggregate_evaluation_results.num_expl_bytes, aggregate_evaluation_results.num_total_bytes),
+        humanize(aggregate_evaluation_results.num_tokens),
+        pluralize("token", aggregate_evaluation_results.num_tokens),
+        humanize(aggregate_evaluation_results.num_groupings),
+        pluralize("grouping", aggregate_evaluation_results.num_groupings),
         titlecase(humanize(aggregate_evaluation_results.num_well_understood_tokens)),
         pluralize("token", aggregate_evaluation_results.num_well_understood_tokens),
         format_ratio(aggregate_evaluation_results.num_well_understood_tokens, aggregate_evaluation_results.num_tokens),
-        humanize(aggregate_evaluation_results.num_tokens),
         format_ratio(
           aggregate_evaluation_results.num_well_understood_tokens * aggregate_evaluation_results.num_expl_bytes,
           aggregate_evaluation_results.num_tokens * aggregate_evaluation_results.num_total_bytes
-        ),
-        humanize(aggregate_evaluation_results.num_total_bytes)
+        )
       )
     )
   )

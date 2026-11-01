@@ -127,10 +127,12 @@ local output_coverage_file = assert(io.open(output_coverage_file_pathname, "w"))
 for _, aggregate_evaluation_results in ipairs({all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results}) do
   assert(
     output_coverage_file:write(
-      string.format("%d %d %d %d\n",
+      string.format("%d %d %d %d %d %d\n",
+        aggregate_evaluation_results.num_files,
         aggregate_evaluation_results.num_total_bytes,
         aggregate_evaluation_results.num_expl_bytes,
         aggregate_evaluation_results.num_tokens,
+        aggregate_evaluation_results.num_groupings,
         aggregate_evaluation_results.num_well_understood_tokens
       )
     )
