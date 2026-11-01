@@ -42,7 +42,8 @@ local input_pathname_groups = group_pathnames(input_pathnames, nil, allow_pathna
 -- Collect and export issues.
 local output_issue_file_pathname = string.format(output_issue_file_pathname_template, worker_number)
 local output_issue_file = assert(io.open(output_issue_file_pathname, "w"))
-local aggregate_evaluation_results = new_aggregate_results()
+local all_aggregate_evaluation_results = new_aggregate_results()
+local nondoc_aggregate_evaluation_results = new_aggregate_results()
 local options = {}
 if should_force_flow_analysis then
   -- Force every file to be analyzed with the flow analysis but only run a small number of cycles of the reaching definitions
@@ -55,6 +56,7 @@ if should_force_flow_analysis then
 end
 for pathname_group_number, pathname_group in ipairs(input_pathname_groups) do
   local is_ok, error_message = xpcall(function()
+    local is_any_file_doc = false
     -- Run all processing steps and collect issues and analysis results.
     local states = process_files(pathname_group, options)
     assert(#states == #pathname_group)
@@ -70,11 +72,21 @@ for pathname_group_number, pathname_group in ipairs(input_pathname_groups) do
       end
       -- Update the aggregate evaluation results with per-file results.
       local file_evaluation_results = new_file_results(state)
-      aggregate_evaluation_results:add(file_evaluation_results)
+      all_aggregate_evaluation_results:add(file_evaluation_results)
+      -- Also collect separate aggregates for files from outside the `/doc` tree.
+      if state.pathname:match('/doc/') ~= nil then
+        is_any_file_doc = true
+      else
+        nondoc_aggregate_evaluation_results:add(file_evaluation_results)
+      end
     end
     -- Update the aggregate evaluation results with group-wide results.
     local group_evaluation_results = new_group_results(states)
-    aggregate_evaluation_results:add(group_evaluation_results)
+    all_aggregate_evaluation_results:add(group_evaluation_results)
+      -- Also collect separate aggregates for files from outside the `/doc` tree.
+    if not is_any_file_doc then
+      nondoc_aggregate_evaluation_results:add(group_evaluation_results)
+    end
   end, debug.traceback)
   if not is_ok then
     error("Failed to process " .. table.concat(pathname_group, ', ') .. ": " .. tostring(error_message), 0)
@@ -112,14 +124,16 @@ assert(output_issue_file:close())
 -- Export code coverage.
 local output_coverage_file_pathname = string.format(output_coverage_file_pathname_template, worker_number)
 local output_coverage_file = assert(io.open(output_coverage_file_pathname, "w"))
-assert(
-  output_coverage_file:write(
-    string.format("%d %d %d %d\n",
-      aggregate_evaluation_results.num_total_bytes,
-      aggregate_evaluation_results.num_expl_bytes,
-      aggregate_evaluation_results.num_tokens,
-      aggregate_evaluation_results.num_well_understood_tokens
+for _, aggregate_evaluation_results in ipairs({all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results}) do
+  assert(
+    output_coverage_file:write(
+      string.format("%d %d %d %d\n",
+        aggregate_evaluation_results.num_total_bytes,
+        aggregate_evaluation_results.num_expl_bytes,
+        aggregate_evaluation_results.num_tokens,
+        aggregate_evaluation_results.num_well_understood_tokens
+      )
     )
   )
-)
+end
 assert(output_coverage_file:close())

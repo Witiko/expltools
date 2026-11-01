@@ -51,35 +51,55 @@ for code, _ in pairs(output_issue_files) do
 end
 
 -- Collect the code coverages.
-local num_total_bytes, num_expl_bytes, num_tokens, num_well_understood_tokens = 0, 0, 0, 0
+local all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results = {}, {}
+for _, aggregate_evaluation_results in ipairs({all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results}) do
+  aggregate_evaluation_results.num_total_bytes = 0
+  aggregate_evaluation_results.num_expl_bytes = 0
+  aggregate_evaluation_results.num_tokens = 0
+  aggregate_evaluation_results.num_well_understood_tokens = 0
+end
+
 for input_coverage_file_number = 1, num_input_files do
   local input_coverage_file_pathname = string.format(input_coverage_file_pathname_template, input_coverage_file_number)
   local input_coverage_file = assert(io.open(input_coverage_file_pathname, "r"))
 
-  local coverage_values = assert(input_coverage_file:read("*line"))
-  local current_num_total_bytes, current_num_expl_bytes, current_num_tokens, current_num_well_understood_tokens
-    = coverage_values:match("^(%d+) (%d+) (%d+) (%d+)$")
-  num_total_bytes = num_total_bytes + tonumber(current_num_total_bytes)
-  num_expl_bytes = num_expl_bytes + tonumber(current_num_expl_bytes)
-  num_tokens = num_tokens + tonumber(current_num_tokens)
-  num_well_understood_tokens = num_well_understood_tokens + tonumber(current_num_well_understood_tokens)
+  for _, aggregate_evaluation_results in ipairs({all_aggregate_evaluation_results, nondoc_aggregate_evaluation_results}) do
+    local coverage_values = assert(input_coverage_file:read("*line"))
+    local current_num_total_bytes, current_num_expl_bytes, current_num_tokens, current_num_well_understood_tokens
+      = coverage_values:match("^(%d+) (%d+) (%d+) (%d+)$")
+    aggregate_evaluation_results.num_total_bytes = aggregate_evaluation_results.num_total_bytes + tonumber(current_num_total_bytes)
+    aggregate_evaluation_results.num_expl_bytes = aggregate_evaluation_results.num_expl_bytes + tonumber(current_num_expl_bytes)
+    aggregate_evaluation_results.num_tokens = aggregate_evaluation_results.num_tokens + tonumber(current_num_tokens)
+    aggregate_evaluation_results.num_well_understood_tokens
+      = aggregate_evaluation_results.num_well_understood_tokens + tonumber(current_num_well_understood_tokens)
+  end
 
   assert(input_coverage_file:close())
 end
 
 -- Export the code coverage.
 local output_coverage_file = assert(io.open(output_coverage_file_pathname, "w"))
-assert(
-  output_coverage_file:write(
-    string.format(
-      "%s well-understood expl3 %s (%s of %s expl3 tokens, ~%s of %s total bytes)\n",
-      titlecase(humanize(num_well_understood_tokens)),
-      pluralize("token", num_well_understood_tokens),
-      format_ratio(num_well_understood_tokens, num_tokens),
-      humanize(num_tokens),
-      format_ratio(num_well_understood_tokens * num_expl_bytes, num_tokens * num_total_bytes),
-      humanize(num_total_bytes)
+for _, aggregate_evaluation_title_and_results in ipairs({
+  {"Package files outside the `/doc` tree", nondoc_aggregate_evaluation_results},
+  {"All package files", all_aggregate_evaluation_results},
+}) do
+  local result_title, aggregate_evaluation_results = table.unpack(aggregate_evaluation_title_and_results)
+  assert(
+    output_coverage_file:write(
+      string.format(
+        "%s: %s well-understood expl3 %s (%s of %s expl3 tokens, ~%s of %s total bytes)\n",
+        result_title,
+        titlecase(humanize(aggregate_evaluation_results.num_well_understood_tokens)),
+        pluralize("token", aggregate_evaluation_results.num_well_understood_tokens),
+        format_ratio(aggregate_evaluation_results.num_well_understood_tokens, aggregate_evaluation_results.num_tokens),
+        humanize(aggregate_evaluation_results.num_tokens),
+        format_ratio(
+          aggregate_evaluation_results.num_well_understood_tokens * aggregate_evaluation_results.num_expl_bytes,
+          aggregate_evaluation_results.num_tokens * aggregate_evaluation_results.num_total_bytes
+        ),
+        humanize(aggregate_evaluation_results.num_total_bytes)
+      )
     )
   )
-)
+end
 assert(output_coverage_file:close())
