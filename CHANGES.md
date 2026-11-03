@@ -20,7 +20,8 @@ integration (CI):
   (8fb7908, 08f14df)
 - As a part of the code coverage report, print the number of files, groupings,
   and the percentage of expl3 bytes in all bytes. (b70b29b, 08f14df)
-- Add automatic code review via Claude Sonnet. (sponsored by @koppor, f9b9d33)
+- Add automatic code review via Claude Sonnet. (sponsored by @koppor, f9b9d33,
+  6b0762e, 5ca64ff)
 
 ## expltools 2026-09-24
 
