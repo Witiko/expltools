@@ -1,6 +1,6 @@
 # Changes
 
-## expltools 2026-10-XX
+## expltools 2026-11-XX
 
 ### explcheck v0.25.0
 
@@ -20,8 +20,9 @@ integration (CI):
   (8fb7908, 08f14df)
 - As a part of the code coverage report, print the number of files, groupings,
   and the percentage of expl3 bytes in all bytes. (b70b29b, 08f14df)
-- Add automatic code review via Claude Sonnet. (sponsored by @koppor, f9b9d33,
-  6b0762e, 5ca64ff)
+- Add a new workflow file `.github/workflows/automatic-review.yml` for
+  automatic code review when a PR is marked as _Ready for review_. (sponsored
+  by @koppor, f9b9d33, 6b0762e, 5ca64ff, 898136e)
 
 ## expltools 2026-09-24
 
