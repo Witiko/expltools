@@ -221,6 +221,8 @@ jobs:
             Use `gh pr comment` for top-level feedback.
             Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) to highlight specific code issues.
             Only post GitHub comments - don't submit review text as messages.
+
+            Use `git` commands to inspect the history of commits in the current PR.
           claude_args: |
             --model sonnet
             --max-turns 12
