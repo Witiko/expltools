@@ -225,7 +225,6 @@ jobs:
             Use `git` commands to inspect the history of commits in the current PR.
           claude_args: |
             --model sonnet
-            --max-turns 12
             --max-budget-usd 3.00
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git log:*),Bash(git show:*),Bash(git blame:*),Bash(git diff:*)"
   regression-tests:
