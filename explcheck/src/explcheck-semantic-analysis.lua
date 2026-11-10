@@ -2661,6 +2661,85 @@ local function detect_user_defined_function_calls(states, file_number, _)
   end
 end
 
+-- For all function variant and indirect function definitions, produce a forest of potential (not necessarily reaching) originating
+-- function definitions.
+local function resolve_function_variants_and_indirect_function_definitions(states, file_number, _)
+  assert(states.results.statement_analysis ~= nil)
+
+  local state = states[file_number]
+
+  local results = state.results
+  assert(results.statement_analysis ~= nil)
+
+  -- First, create a list of all function variant and indirect function definitions.
+  local function_and_variant_definition_list = {}
+  for _, statement in ipairs(results.statement_analysis.statement_lists.FUNCTION_VARIANT_OR_INDIRECT_DEFINITION) do
+    assert(statement.defined_csname ~= nil)
+    if statement.defined_csname.type == TEXT then
+      table.insert(function_and_variant_definition_list, statement)
+    end
+  end
+
+  -- Next, construct a forest of their potential originating function definitions, where the roots of the forest come from the
+  -- previous list and the leaves are either (a) direct function definitions or (b) orphaned function variant and indirect
+  -- function definitions that have no known potential originating direct function definitions.
+  if states.results.statement_analysis.resolved_definition_tree == nil then
+    states.results.statement_analysis.resolved_definition_tree = {}
+  end
+  local statement_number, seen_statements = 1, {}
+  while statement_number <= #function_and_variant_definition_list do
+    local statement = function_and_variant_definition_list[statement_number]
+
+    -- Prevent any cycles within the graph.
+    if seen_statements[statement] ~= nil then
+      goto next_statement
+    end
+    seen_statements[statement] = true
+
+    assert(statement.defined_csname ~= nil)
+    assert(statement.defined_csname.type == TEXT)
+
+    do
+      -- Record a function definition node in the tree.
+      local defined_csname = statement.defined_csname.payload
+      if states.results.statement_analysis.resolved_definition_tree[defined_csname] == nil then
+        states.results.statement_analysis.resolved_definition_tree[defined_csname] = {}
+      end
+      table.insert(states.results.statement_analysis.resolved_definition_tree[defined_csname], statement)
+
+      states.results.statement_analysis.resolved_definition_tree[defined_csname] = {}
+      if statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT then
+        -- Case (a): Record potential originating direct function definitions as leaves of the forest.
+      elseif statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT or
+          statement.type == FUNCTION_VARIANT_DEFINITION then
+        if statement.base_csname.type ~= TEXT then
+          goto next_statement
+        end
+        local base_csname = statement.base_csname.payload
+        local other_statements
+          = states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION[base_csname]
+        if other_statements == nil then
+          -- Case (b): Record orphaned function variant and indirect function definitions as leaves of the forest.
+        else
+          -- Record non-orphaned function variant and indirect function definitions as intermediate nodes.
+          assert(#other_statements > 0)
+          for _, other_statement in ipairs(other_statements) do
+            assert(other_statement.type == FUNCTION_DEFINITION or other_statement.type == FUNCTION_VARIANT_DEFINITION)
+            assert(other_statement.defined_csname ~= nil)
+            assert(other_statement.defined_csname.type == TEXT)
+            table.insert(function_and_variant_definition_list, other_statement)
+          end
+        end
+      else
+        error('Unexpected statement type "' .. statement.type .. '" and subtype "' .. statement.subtype .. '"')
+      end
+    end
+
+    ::next_statement::
+    statement_number = statement_number + 1
+  end
+end
+
 -- Determine the expandability of function definitions and segments, using a provided function to determine the potential
 -- function definitions for a function call.
 ---@diagnostic disable-next-line:unused-function, unused-local
@@ -2705,13 +2784,7 @@ end
 -- Determine the potential function definitions for a function call, using approximate name-based matching.
 ---@diagnostic disable-next-line:unused-function, unused-local
 local function get_function_definitions(states, file_number, options, statement)  -- luacheck: ignore
-  -- TODO: This will require adding a separate new step `resolve_function_variants_and_indirect_function_definitions()`
-  -- that precedes `determine_expandability()` and that will, for all function variant and indirect function definitions,
-  -- produce a tree of potential (not necessarily reaching) originating function definitions, similar to the first part of
-  -- `determine_function_variant_definition_and_indirect_definition_expandability()`. Pointers to the nodes of this tree
-  -- are going to be stored in `states.results.statement_analysis.resolved_definition_tree`, indexed by the statements.
-  --
-  -- Then, when this function has been called, for the `FUNCTION_CALL` statement:
+  -- TODO: When this function has been called, for the `FUNCTION_CALL` statement:
   -- 1. Determine the potential function (variant) definitions from
   --    `states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION`.
   -- 2. For each function (variant) definition:
@@ -3222,6 +3295,7 @@ local substeps = {
   collect_statements,
   analyze_group_wide_statements,
   detect_user_defined_function_calls,
+  resolve_function_variants_and_indirect_function_definitions,
   -- TODO: Remove the following two steps.
   determine_function_definition_expandability,
   determine_boolean_expression_expandability,
