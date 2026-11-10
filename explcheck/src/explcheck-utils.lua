@@ -68,6 +68,11 @@ local function identity(...)
   return ...
 end
 
+-- An empty iterator that produces no items.
+local function empty_iterator()
+  return nil
+end
+
 -- Check that a pathname specifies a file that we can process.
 local function check_pathname(pathname)
   local suffix = get_suffix(pathname)
@@ -299,6 +304,7 @@ end
 return {
   check_pathname = check_pathname,
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
+  empty_iterator,
   get_basename = get_basename,
   get_parent = get_parent,
   get_prefixes = get_prefixes,

@@ -1,5 +1,6 @@
 -- The semantic analysis step of static analysis determines the meaning of the different function calls.
 
+local empty_iterator = require("explcheck-utils").empty_iterator
 local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
 local get_option = require("explcheck-config").get_option
@@ -2700,7 +2701,7 @@ local function resolve_function_variants_and_indirect_function_definitions(state
     assert(statement.defined_csname.type == TEXT)
 
     do
-      -- Record a function definition node in the tree.
+      -- Record a function definition node in the forest.
       local defined_csname = statement.defined_csname.payload
       if states.results.statement_analysis.resolved_definition_tree[defined_csname] == nil then
         states.results.statement_analysis.resolved_definition_tree[defined_csname] = {}
@@ -2782,16 +2783,101 @@ local function _determine_expandability(states, file_number, options, get_functi
 end
 
 -- Determine the potential function definitions for a function call, using approximate name-based matching.
----@diagnostic disable-next-line:unused-function, unused-local
-local function get_function_definitions(states, file_number, options, statement)  -- luacheck: ignore
-  -- TODO: When this function has been called, for the `FUNCTION_CALL` statement:
-  -- 1. Determine the potential function (variant) definitions from
-  --    `states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION`.
-  -- 2. For each function (variant) definition:
-  --     a) If it's `FUNCTION_DEFINITION_DIRECT`, yield it as a single-item list.
-  --     b) Otherwise, perform a depth-first search into the corresponding node from
-  --        `states.results.statement_analysis.resolved_definition_tree`, accumulating the statements along each branch
-  --        and yielding a copy of the list at each leaf.
+---@diagnostic disable-next-line:unused-function
+local function get_function_definitions(states, _, _, statement)
+  assert(statement.type == FUNCTION_CALL)
+  assert(states.results.statement_analysis ~= nil)
+
+  -- Determine the potential function (variant) definitions for the function call.
+  if statement.base_csname.type ~= TEXT then
+    return empty_iterator
+  end
+  local base_csname = statement.base_csname.payload
+  local other_statements
+    = states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION[base_csname]
+  if other_statements == nil then
+    return empty_iterator
+  end
+  assert(#other_statements > 0)
+
+  -- For every potential function (variant) definition, find all potential originating function definitions and yield them,
+  -- together with the chain of potential function variant and indirect function definitions leading up to them.
+  local all_potential_definitions, potential_definition_numbers, current_path = {other_statements}, {1}, {other_statements[1]}
+  return function()
+    -- Advance to the next potential function (variant) definition.
+    local function next_statement()
+      local potential_definition_number = potential_definition_numbers[#potential_definition_numbers] + 1
+      local potential_definitions = all_potential_definitions[#all_potential_definitions]
+      potential_definition_numbers[#potential_definition_numbers] = potential_definition_number
+      if potential_definition_number <= #potential_definitions then
+        current_path[#current_path] = potential_definitions[potential_definition_number]
+      end
+    end
+
+    -- If we are finished with the current forest node, traverse upwards to find the next unfinished node, if any.
+    local function update_current_node()
+      while #all_potential_definitions > 0
+        and potential_definition_numbers[#potential_definition_numbers] > #all_potential_definitions[#all_potential_definitions]
+      do
+        table.remove(all_potential_definitions)
+        table.remove(potential_definition_numbers)
+        table.remove(current_path)
+        assert(#all_potential_definitions == #potential_definition_numbers and #potential_definition_numbers == #current_path)
+      end
+
+      if #all_potential_definitions == 0 then
+        return false
+      else
+        return true
+      end
+    end
+
+    while true do
+      if not update_current_node() then
+        -- If we are done with the whole forest, stop the iterator.
+        return nil
+      end
+
+      -- Otherwise, inspect the current function definition.
+      local potential_definition_number = potential_definition_numbers[#potential_definition_numbers]
+      local potential_definitions = all_potential_definitions[#all_potential_definitions]
+      local potential_definition = potential_definitions[potential_definition_number]
+      assert(potential_definition.type == FUNCTION_DEFINITION or potential_definition.type == FUNCTION_VARIANT_DEFINITION)
+      assert(potential_definition.defined_csname ~= nil)
+      assert(potential_definition.defined_csname.type == TEXT)
+      assert(potential_definition.defined_csname.payload == base_csname)
+
+      if potential_definition.type == FUNCTION_DEFINITION and potential_definition.subtype == FUNCTION_DEFINITION_DIRECT then
+        -- Direct function definitions are always leaves of the forest, so return them directly.
+        next_statement()
+        return current_path
+      elseif potential_definition.type == FUNCTION_DEFINITION and potential_definition.subtype == FUNCTION_DEFINITION_INDIRECT
+        or potential_definition.type == FUNCTION_VARIANT_DEFINITION
+      then
+        -- Traverse downwards into function variant and indirect function definitions, unless they are orphaned.
+        if potential_definition.base_csname.type ~= TEXT then
+          next_statement()
+          goto next_statement
+        end
+        local other_base_csname = potential_definition.base_csname.payload
+        local next_potential_definitions = states.results.statement_analysis.resolved_definition_tree[other_base_csname]
+        if next_potential_definitions == nil then
+          next_statement()
+          goto next_statement
+        end
+        assert(#next_potential_definitions > 0)
+        table.insert(all_potential_definitions, next_potential_definitions)
+        table.insert(potential_definition_numbers, 1)
+        table.insert(current_path, next_potential_definitions[1])
+        assert(#all_potential_definitions == #potential_definition_numbers and #potential_definition_numbers == #current_path)
+        goto next_statement
+      else
+        error('Unexpected statement type "' .. potential_definition.type .. '" and subtype "' .. potential_definition.subtype .. '"')
+      end
+
+      ::next_statement::
+    end
+  end
 end
 
 -- Determine the potential function calls for a direct function definition, using approximate name-based matching.
