@@ -245,9 +245,6 @@ ignored_issues = ["e304"]
 [package.numerica-tables]
 imported_prefixes = ["nmcC"]
 
-[package.asmejour]
-ignored_issues = ["e304"]
-
 [package.beamertheme-gotham]
 ignored_issues = ["e304"]
 
