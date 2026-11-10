@@ -1,6 +1,7 @@
 /usr/local/texlive/2025/texmf-dist/doc/latex/codedescribe/codedescribe.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/rescansync/rescansync.tex
 /usr/local/texlive/2025/texmf-dist/doc/latex/updatemarks/updatemarks.tex
+/usr/local/texlive/2025/texmf-dist/tex/generic/scontents/scontents-code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-sec-template.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/diffcoeff/diffcoeff.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/gzt/gzt.cls
