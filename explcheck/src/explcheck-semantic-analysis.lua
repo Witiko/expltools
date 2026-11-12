@@ -2608,6 +2608,7 @@ end
 -- Reclassify user-defined function calls as a separate statement type.
 local function detect_user_defined_function_calls(states, file_number, _)
   assert(states.results.statement_analysis ~= nil)
+  assert(states.results.statement_analysis.text_name_indexes ~= nil)
 
   local state = states[file_number]
 
@@ -2628,6 +2629,13 @@ local function detect_user_defined_function_calls(states, file_number, _)
         type = TEXT
       }
       table.insert(state.results.statement_analysis.statement_lists.DEFINITE_FUNCTION_CALLS, statement)
+      if states.results.statement_analysis.text_name_indexes.FUNCTION_CALL == nil then
+        states.results.statement_analysis.text_name_indexes.FUNCTION_CALL = {}
+      end
+      if states.results.statement_analysis.text_name_indexes.FUNCTION_CALL[csname] == nil then
+        states.results.statement_analysis.text_name_indexes.FUNCTION_CALL[csname] = {}
+      end
+      table.insert(states.results.statement_analysis.text_name_indexes.FUNCTION_CALL[csname], statement)
       if states.results.statement_analysis.maybe_defined_csname_texts[csname] then
         -- If there are low-confidence function definitions for this control sequence, make the statement low-confidence also.
         statement.confidence = MAYBE
@@ -2881,13 +2889,26 @@ local function get_function_definitions(states, _, _, statement)
 end
 
 -- Determine the potential function calls for a direct function definition, using approximate name-based matching.
----@diagnostic disable-next-line:unused-function, unused-local
-local function get_function_calls(states, file_number, options, statement)  -- luacheck: ignore
-  -- TODO: This will require adding `states.results.statement_analysis.text_name_indexes.FUNCTION_CALL` in
-  -- `detect_user_defined_function_calls()`.
-  --
-  -- Then, when this function has been called with a `FUNCTION_DEFINITION_DIRECT` statement, yield from the list for
-  -- that particular statement.
+---@diagnostic disable-next-line:unused-function
+local function get_function_calls(states, _, _, statement)
+  assert(statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_DIRECT)
+  assert(states.results.statement_analysis ~= nil)
+  assert(states.results.statement_analysis.text_name_indexes ~= nil)
+
+  if states.results.statement_analysis.text_name_indexes.FUNCTION_CALL == nil then
+    return nil
+  end
+
+  if statement.defined_csname.type ~= TEXT then
+    return nil
+  end
+  local csname = statement.defined_csname.payload
+
+  if states.results.statement_analysis.text_name_indexes.FUNCTION_CALL[csname] == nil then
+    return nil
+  end
+
+  return states.results.statement_analysis.text_name_indexes.FUNCTION_CALL[csname]
 end
 
 -- Determine the expandability of function definitions and segments, using approximate name-based matching to determine
