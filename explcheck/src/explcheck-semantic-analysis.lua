@@ -13,6 +13,7 @@ local token_types = lexical_analysis.token_types
 local format_csname = lexical_analysis.format_csname
 
 local extract_text_from_tokens = syntactic_analysis.extract_text_from_tokens
+local _is_latex3_function_expandable = syntactic_analysis.is_latex3_function_expandable
 
 local CONTROL_SEQUENCE = token_types.CONTROL_SEQUENCE
 local CHARACTER = token_types.CHARACTER
@@ -291,31 +292,6 @@ local function parse_expl3_csname(csname)
   else
     error('Unexpected csname type "' .. csname.type .. '"')
   end
-end
-
-local function _is_latex3_function_expandable(parser, csname)
-  local is_latex3_function, is_fully_expandable, is_restricted_expandable
-  local csname_properties = lpeg.match(parser, csname)
-  if csname_properties == nil then
-    is_latex3_function, is_fully_expandable, is_restricted_expandable = false, false, false
-  else
-    is_latex3_function = true
-    if type(csname_properties) == "table" then
-      if csname_properties.EXP == "full" then
-        is_fully_expandable, is_restricted_expandable = true, true
-      elseif csname_properties.EXP == "restricted" then
-        is_fully_expandable, is_restricted_expandable = false, true
-      else
-        is_fully_expandable, is_restricted_expandable = false, false
-      end
-    else
-      is_fully_expandable, is_restricted_expandable = false, false
-    end
-  end
-  assert(is_latex3_function ~= nil)
-  assert(is_fully_expandable ~= nil)
-  assert(is_restricted_expandable ~= nil)
-  return is_latex3_function, is_fully_expandable, is_restricted_expandable
 end
 
 -- Determine the meaning of function calls, producing statements.
@@ -832,8 +808,8 @@ local function collect_statements(states, file_number, options)
               is_conditional = is_conditional,
               maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
               maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
-              maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
-              maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
+              maybe_fully_expandable = maybe_expandable,  -- later weakened by `determine_expandability()` and the flow analysis
+              maybe_restricted_expandable = maybe_expandable,  -- later weakened by `determine_expandability()` and the flow analysis
               call_file_numbers = nil,  -- later filled in by `determine_function_calls_for_definitions()`
             }
             table.insert(statements, statement)
@@ -955,8 +931,8 @@ local function collect_statements(states, file_number, options)
                   map_forward = map_forward,
                 },
                 -- The following attributes are specific to the type.
-                maybe_fully_expandable = true,  -- later refined by `determine_function_definition_expandability()`
-                maybe_restricted_expandable = true,  -- later refined by `determine_function_definition_expandability()`
+                maybe_fully_expandable = true,  -- later weakened by `determine_expandability()` and the flow analysis
+                maybe_restricted_expandable = true,  -- later weakened by `determine_expandability()` and the flow analysis
               }
               replacement_text_argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
               assert(results.segments[replacement_text_argument.segment_number].type == REPLACEMENT_TEXT)
@@ -1021,8 +997,8 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = definition_token_range,
                 maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
                 maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
-                maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
-                maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
+                maybe_fully_expandable = maybe_expandable,  -- later weakened by `determine_expandability()` and the flow analysis
+                maybe_restricted_expandable = maybe_expandable,  -- later weakened by `determine_expandability()` and the flow analysis
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 is_conditional = is_conditional,
@@ -1122,8 +1098,8 @@ local function collect_statements(states, file_number, options)
                 definition_token_range = token_range,
                 maybe_used = false,  -- later filled in by `determine_maybe_used_functions_and_variables()`
                 maybe_multiply_defined = false,  -- later filled in by `determine_maybe_multiply_defined_functions()`
-                maybe_fully_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
-                maybe_restricted_expandable = maybe_expandable,  -- later refined by `determine_function_definition_expandability()`
+                maybe_fully_expandable = maybe_expandable,  -- later weakened by `determine_expandability()` and the flow analysis
+                maybe_restricted_expandable = maybe_expandable,  -- later weakened by `determine_expandability()` and the flow analysis
                 call_segments = nil,  -- later filled in by `determine_function_calls_for_definitions()`
                 -- The following attributes are specific to the subtype.
                 base_csname = effective_base_csname,
@@ -1304,8 +1280,8 @@ local function collect_statements(states, file_number, options)
                   map_forward = first_map_forward,
                 },
                 -- The following attributes are specific to the type.
-                maybe_fully_expandable = true,  -- later refined by `determine_boolean_expression_expandability()`
-                maybe_restricted_expandable = true,  -- later refined by `determine_boolean_expression_expandability()`
+                maybe_fully_expandable = true,  -- later weakened by `determine_expandability()` and the flow analysis
+                maybe_restricted_expandable = true,  -- later weakened by `determine_expandability()` and the flow analysis
               }
               definition_text_argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
             end
@@ -2915,10 +2891,6 @@ end
 -- the possible function definitions for a function call.
 ---@diagnostic disable-next-line:unused-function, unused-local
 local function determine_expandability(...)  -- luacheck: ignore
-  -- TODO: In the syntactic analysis, for all calls, set the `maybe_expandable` and `maybe_restricted_expandable` fields
-  -- based on `parsers.x_type_argument_specifiers` and `_is_latex3_function_expandable()`. Also, set the same fields for
-  -- the parent segment, similar to `determine_segment_type_expandability()`. Then, in `collect_statements()`, set these
-  -- fields also for any corresponding `FUNCTION_DEFINITION` and `VARIABLE_DEFINITION` statements.
   return _determine_expandability(..., get_function_definitions, get_function_calls)
 end
 
