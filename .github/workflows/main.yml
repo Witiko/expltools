@@ -267,8 +267,7 @@ jobs:
       - name: Install GNU Parallel
         run: apt -qy install --no-install-recommends parallel
       - name: Run explcheck
-        # TODO: Reduce back to 10 / 5 minutes after the functions `determine_function_definition_expandability()` and `determine_boolean_expression_expandability()` have been replaced with `determine_expandability()` in the semantic analysis.
-        timeout-minutes: ${{ matrix.force-flow-analysis && 15 || 10 }}
+        timeout-minutes: ${{ matrix.force-flow-analysis && 10 || 5 }}
         env:
           LUA_PATH: explcheck/src/?.lua
         run: |

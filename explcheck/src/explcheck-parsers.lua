@@ -395,59 +395,80 @@ local expl3_well_known_prefixes = (
   + P("withargs")  -- part of the withargs package
 )
 
+local latex3_prefixes_cache = {}
 local function latex3_prefixes(options, pathname)
   local l3prefixes_max_first_registered_date = get_option("l3prefixes_max_first_registered_date", options, pathname)
-
-  local latex3 = require("explcheck-latex3")
-  return Cmt(
-    latex3.prefixes,
-    function(_, _, maybe_first_registered_date)
-      return (
-        not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
-        or maybe_first_registered_date ~= nil  -- actual first registered date has been specified in the file "l3prefixes.csv"
-        and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
-      )
-    end
-  )
-end
-local function latex3_csname(definition_type, options, pathname)
-  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
-
-  local latex3 = require("explcheck-latex3")
-  return (
-    Cg(latex3.definitions[definition_type], "definition")
-    * Cmt(
-      Cb("definition"),
-      function(_, _, definition)
+  assert(l3prefixes_max_first_registered_date ~= nil)
+  if latex3_prefixes_cache[l3prefixes_max_first_registered_date] == nil then
+    local latex3 = require("explcheck-latex3")
+    latex3_prefixes_cache[l3prefixes_max_first_registered_date] = Cmt(
+      latex3.prefixes,
+      function(_, _, maybe_first_registered_date)
         return (
-          not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
-          or definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
-          and definition.added <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+          not l3prefixes_max_first_registered_date  -- no maximum first registered date has been specified by us
+          or maybe_first_registered_date ~= nil  -- actual first registered date has been specified in the file "l3prefixes.csv"
+          and maybe_first_registered_date <= l3prefixes_max_first_registered_date  -- and this actual date is less than our maximum
         )
       end
     )
-    * Cb("definition")
-  )
+  end
+  assert(latex3_prefixes_cache[l3prefixes_max_first_registered_date] ~= nil)
+  return latex3_prefixes_cache[l3prefixes_max_first_registered_date]
 end
+
+local latex3_csname_cache = {}
+local function latex3_csname(definition_type, options, pathname)
+  local latex3_definitions_max_added_date = get_option("latex3_definitions_max_added_date", options, pathname)
+  assert(latex3_definitions_max_added_date ~= nil)
+  if latex3_csname_cache[definition_type] == nil or latex3_csname_cache[definition_type][latex3_definitions_max_added_date] == nil then
+    local latex3 = require("explcheck-latex3")
+    if latex3_csname_cache[definition_type] == nil then
+      latex3_csname_cache[definition_type] = {}
+    end
+    latex3_csname_cache[definition_type][latex3_definitions_max_added_date] = (
+      Cg(latex3.definitions[definition_type], "definition")
+      * Cmt(
+        Cb("definition"),
+        function(_, _, definition)
+          return (
+            not latex3_definitions_max_added_date  -- no maximum added date has been specified by us
+            or definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
+            and definition.added <= latex3_definitions_max_added_date  -- and this actual date is less than our maximum
+          )
+        end
+      )
+      * Cb("definition")
+    )
+  end
+  assert(latex3_csname_cache[definition_type] ~= nil)
+  assert(latex3_csname_cache[definition_type][latex3_definitions_max_added_date] ~= nil)
+  return latex3_csname_cache[definition_type][latex3_definitions_max_added_date]
+end
+
+local too_recent_latex3_csname_cache = {}
 local function too_recent_latex3_csname(latex3_definitions_max_added_date)
   if not latex3_definitions_max_added_date then  -- no maximum added date has been specified by us
     return fail  -- no csname is too recent
   end
-
-  local latex3 = require("explcheck-latex3")
-  return (
-    Cg(latex3.definitions["function"] + latex3.definitions["variable"], "definition")
-    * Cmt(
-      Cb("definition"),
-      function(_, _, definition)
-        return (
-          definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
-          and definition.added > latex3_definitions_max_added_date  -- and this actual date is more than our maximum
-        )
-      end
+  assert(latex3_definitions_max_added_date ~= nil)
+  if too_recent_latex3_csname_cache[latex3_definitions_max_added_date] == nil then
+    local latex3 = require("explcheck-latex3")
+    too_recent_latex3_csname_cache[latex3_definitions_max_added_date] = (
+      Cg(latex3.definitions["function"] + latex3.definitions["variable"], "definition")
+      * Cmt(
+        Cb("definition"),
+        function(_, _, definition)
+          return (
+            definition ~= nil and definition.added ~= nil  -- actual added date has been specified in "l3*.dtx" files
+            and definition.added > latex3_definitions_max_added_date  -- and this actual date is more than our maximum
+          )
+        end
+      )
+      * Cb("definition")
     )
-    * Cb("definition")
-  )
+  end
+  assert(too_recent_latex3_csname_cache[latex3_definitions_max_added_date] ~= nil)
+  return too_recent_latex3_csname_cache[latex3_definitions_max_added_date]
 end
 
 local function expl3_well_known_csname(options, pathname)
@@ -514,18 +535,24 @@ local function expl3_well_known_csname(options, pathname)
   )
 end
 
+local expl3_deprecated_csname_cache = {}
 local function expl3_deprecated_csname(l3obsolete_max_deprecated_date)
-  local latex3 = require("explcheck-latex3")
-  return Cmt(
-    latex3.obsolete.deprecated_csname,
-    function(_, _, maybe_deprecated_date)
-      return (
-        not l3obsolete_max_deprecated_date  -- no maximum deprecation date has been specified by us
-        or maybe_deprecated_date  -- actual deprecation date has been specified in the file `l3obsolete.txt`
-        and maybe_deprecated_date <= l3obsolete_max_deprecated_date  -- and this actual date is less than our maximum
-      )
-    end
-  )
+  assert(l3obsolete_max_deprecated_date ~= nil)
+  if expl3_deprecated_csname_cache[l3obsolete_max_deprecated_date] == nil then
+    local latex3 = require("explcheck-latex3")
+    expl3_deprecated_csname_cache[l3obsolete_max_deprecated_date] = Cmt(
+      latex3.obsolete.deprecated_csname,
+      function(_, _, maybe_deprecated_date)
+        return (
+          not l3obsolete_max_deprecated_date  -- no maximum deprecation date has been specified by us
+          or maybe_deprecated_date  -- actual deprecation date has been specified in the file `l3obsolete.txt`
+          and maybe_deprecated_date <= l3obsolete_max_deprecated_date  -- and this actual date is less than our maximum
+        )
+      end
+    )
+  end
+  assert(expl3_deprecated_csname_cache[l3obsolete_max_deprecated_date] ~= nil)
+  return expl3_deprecated_csname_cache[l3obsolete_max_deprecated_date]
 end
 
 local function expl3_csname_history(csname)

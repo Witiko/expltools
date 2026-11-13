@@ -4,6 +4,17 @@
 
 ### explcheck v0.25.0
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Cache dynamically produced LPEG parsers. (#230)
+
+  Previously, many LPeg parsers parameterized by configuration options were
+  repeatedly constructed during analysis, unnecessarily consuming memory and
+  CPU time. Most of these parsers are now cached by their corresponding
+  parameters, so they are constructed only once per configuration.
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
