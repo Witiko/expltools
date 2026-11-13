@@ -304,7 +304,7 @@ end
 return {
   check_pathname = check_pathname,
   convert_byte_to_line_and_column = convert_byte_to_line_and_column,
-  empty_iterator,
+  empty_iterator = empty_iterator,
   get_basename = get_basename,
   get_parent = get_parent,
   get_prefixes = get_prefixes,

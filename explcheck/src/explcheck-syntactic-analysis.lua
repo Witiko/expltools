@@ -289,11 +289,38 @@ local function get_calls(states, file_number, options, part_number, segment)
     return _is_latex3_function_expandable(latex3_function_csname, csname)
   end
 
+  -- Weaken the segment's expandability estimate if the control sequence is an unexpandable variable or constant.
+  local function update_segment_expandability_from_variable(csname)
+    local unexpandable_variable_type = lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, csname)
+    if unexpandable_variable_type ~= nil and
+        not (unexpandable_variable_type == "bool" and segment.type == BOOLEAN_EXPRESSION) then
+      segment.maybe_fully_expandable = false
+      segment.maybe_restricted_expandable = false
+    end
+  end
+
   local token_number = map_forward(token_range:start())
   local transformed_token_range_end = map_forward(token_range:stop())
 
   -- Record a range of unrecognized tokens.
   local function record_other_tokens(other_token_range)  -- the range is in tokens, not transformed_tokens
+    -- Estimate the expandability of unrecognized control sequences.
+    for _, token in other_token_range:enumerate(transformed_tokens, map_forward) do
+      if token.type == CONTROL_SEQUENCE then
+        local csname = token.payload
+        local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(csname)
+        if is_latex3_function then
+          if not is_fully_expandable then
+            segment.maybe_fully_expandable = false
+          end
+          if not is_restricted_expandable then
+            segment.maybe_restricted_expandable = false
+          end
+        end
+        update_segment_expandability_from_variable(csname)
+      end
+    end
+    -- Record the tokens.
     local previous_call = #calls > 0 and calls[#calls] or nil
     if previous_call == nil or previous_call.type ~= OTHER_TOKENS then  -- record a new span of other tokens between calls
       table.insert(calls, {
@@ -465,6 +492,9 @@ local function get_calls(states, file_number, options, part_number, segment)
         boolean_expression_argument_numbers_index[argument_number] = true
       end
       if variable_type ~= nil then  -- a standalone variable or constant, record it
+        -- Estimate the expandability of the standalone variable or constant.
+        update_segment_expandability_from_variable(csname)
+        -- Record the standalone variable or constant.
         table.insert(calls, {
           type = STANDALONE_VARIABLE,
           token_range = csname_token_range,
