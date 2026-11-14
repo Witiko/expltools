@@ -35,7 +35,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/generic/babel/babel-ca-chinese.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/ctex/ctxdocstrip.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/embedfile/embedfile.sty
-/usr/local/texlive/2025/texmf-dist/tex/generic/gtl/gtl.sty
 /usr/local/texlive/2025/texmf-dist/tex/generic/lt3luabridge/lt3luabridge.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/markdown/markdown.tex
 /usr/local/texlive/2025/texmf-dist/tex/generic/markdown/markdownthemewitiko_markdown_defaults.tex
@@ -53,7 +52,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/l3kernel/l3doc.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-enumitem.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-block.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-context.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-firstaid.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-graphic.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex-dev/latex-lab/latex-lab-testphase-l3doc.sty
@@ -249,11 +247,9 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/l3kernel/l3doc.cls
 /usr/local/texlive/2025/texmf-dist/tex/latex/l3packages/xparse/xparse-generic.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate-2023-10-10.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/l3packages/xtemplate/xtemplate.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/lambdax/lambdax.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/langsci-avm/langsci-avm.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-block.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-context.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-firstaid.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-graphic.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-l3doc.sty
@@ -344,6 +340,7 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-goban.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-marks.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-players.sty
+/usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-profiles.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-remember.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go-stones.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/pgf-go/pgf-go.sty
@@ -448,7 +445,6 @@
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzfill/tikzlibraryfill.hexagon.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzfill/tikzlibraryfill.image.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzfxgraph/tikzfxgraph.sty
-/usr/local/texlive/2025/texmf-dist/tex/latex/tikzlings/tikzlings.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzmark/tikzlibrarytikzmark.code.tex
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzquests/tikzquests.sty
 /usr/local/texlive/2025/texmf-dist/tex/latex/tikzsymbols/tikzsymbols.sty
