@@ -15,6 +15,13 @@ This version of explcheck has fixed the following problems:
   CPU time. Most of these parsers are now cached by their corresponding
   parameters, so they are constructed only once per configuration.
 
+- In expandability estimation, do not treat control sequences in unrecognized
+  token sequences (`OTHER_TOKENS`) as definite function calls. (#230)
+
+  Such control sequences may be used as data rather than expanded, potentially
+  causing false-positive W429 (Defined an unexpandable function as unprotected)
+  detections.
+
 - Improve the time complexity of expandability estimation in semantic analysis.
   (discussed in #215, fixed in #230)
 
