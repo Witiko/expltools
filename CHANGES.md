@@ -2,7 +2,36 @@
 
 ## expltools 2026-11-XX
 
-### explcheck v0.25.0
+### explcheck v0.24.1
+
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Cache dynamically produced LPEG parsers. (#230)
+
+  Previously, many LPEG parsers parameterized by configuration options were
+  repeatedly constructed during analysis, unnecessarily consuming memory and
+  CPU time. Most of these parsers are now cached by their corresponding
+  parameters, so they are constructed only once per configuration.
+
+- In expandability estimation, do not treat control sequences in unrecognized
+  token sequences (`OTHER_TOKENS`) as definite function calls. (#230)
+
+  Such control sequences may be used as data rather than expanded, potentially
+  causing false-positive W429 (Defined an unexpandable function as unprotected)
+  detections.
+
+- Improve the time complexity of expandability estimation in semantic analysis.
+  (discussed in #215, fixed in #230)
+
+  Previously, the algorithm had worst-case time complexity O(D³), where D is
+  the number of function definitions. The new algorithm uses a worklist to
+  propagate expandability estimates through a dependency graph, reducing the
+  complexity to O(D² + DC), where C is the number of definite function calls.
+
+  The algorithm can now also be reused by flow analysis to weaken the
+  expandability estimates produced by semantic analysis once #215 is resolved.
 
 #### Documentation
 
