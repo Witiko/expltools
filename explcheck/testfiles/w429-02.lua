@@ -13,7 +13,11 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 3)
 
 local expected_line_numbers = {{1, 9}, {1, 9}, {1, 9}}
-local expected_contexts = {[[\example_unexpandable:F]], [[\example_unexpandable:T]], [[\example_unexpandable:TF]]}
+local expected_contexts = {
+  [[\example_unexpandable:F -> \tl_set:Nn]],
+  [[\example_unexpandable:T -> \tl_set:Nn]],
+  [[\example_unexpandable:TF -> \tl_set:Nn]],
+}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w429")
   assert(warning[2] == "defined an unexpandable function as unprotected")

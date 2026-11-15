@@ -13,6 +13,7 @@ assert(#issues.errors == 3)
 assert(#issues.warnings == 0)
 
 local expected_line_numbers = {{7, 8}, {16, 17}, {25, 26}}
+local expected_contexts = {[[\example_foo:n]], [[\example_bar:n -> \example_foo:n]], [[\example_bar:V -> \example_bar:n -> \example_foo:n]]}
 for index, err in ipairs(sort_issues(issues.errors)) do
   assert(err[1] == "e428")
   assert(err[2] == "unexpandable or restricted-expandable boolean expression")
@@ -21,5 +22,5 @@ for index, err in ipairs(sort_issues(issues.errors)) do
   local end_line_number = utils.convert_byte_to_line_and_column(results.line_starting_byte_numbers, byte_range:stop())
   assert(start_line_number == expected_line_numbers[index][1])
   assert(end_line_number == expected_line_numbers[index][2])
-  assert(err[4] == nil)
+  assert(err[4] == expected_contexts[index])
 end

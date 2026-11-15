@@ -13,7 +13,7 @@ assert(#issues.errors == 0)
 assert(#issues.warnings == 1)
 
 local expected_line_numbers = {{1, 7}}
-local expected_contexts = {[[\example_unexpandable:]]}
+local expected_contexts = {[[\example_unexpandable: -> \tl_set:Nn]]}
 for index, warning in ipairs(sort_issues(issues.warnings)) do
   assert(warning[1] == "w429")
   assert(warning[2] == "defined an unexpandable function as unprotected")

@@ -124,6 +124,12 @@ local function humanize(number)
   end
 end
 
+-- Format a representative chain of control sequences explaining lost expandability.
+local function format_expandability_reason(formatted_csname_list)
+  assert(#formatted_csname_list > 0)
+  return table.concat(formatted_csname_list, " -> ")
+end
+
 -- Strip leading and trailing whitespace in a text string.
 local function strip(text)
   return text:gsub("^[%s\n]*", ""):gsub("[%s\n]*$", "")
@@ -131,14 +137,50 @@ end
 
 -- Strip leading and trailing whitespace, collapse internal whitespace and optionally shorten issue context.
 local function format_context(context, max_length)
-  local ellipsis = "..."
   -- Strip any leading or trailing whitespace.
   context = strip(context)
   -- Collapse internal whitespace.
   context = context:gsub("%s+", " ")
-  -- Strip all text that exceeds the max length.
-  if #context + #ellipsis > max_length then
-    return string.format("%s%s", context:sub(1, max_length - #ellipsis), ellipsis)
+  -- Collapse a chain of control sequences if it exceeds the max length.
+  if #context > max_length and context:find(" -> ") then
+    -- First, replace chain segments with `-> ... ->`, keeping other segments.
+    local first_iteration = true
+    while #context > max_length and not context:find("^%.%.%. %-> ") do
+      local pattern
+      if first_iteration then
+        pattern = "^(.- %-> ).- %->"
+      else
+        pattern = "^(.- %-> )%.%.%. %-> .- %->"
+      end
+      local number_of_replacements
+      context, number_of_replacements = context:gsub(pattern, "%1... ->")
+      if number_of_replacements == 0 then
+        break
+      end
+      first_iteration = false
+    end
+    -- If this isn't enough, remove the initial path segment and prefix the filename with `...`.
+    if #context > max_length then
+      local pattern
+      if first_iteration then
+        pattern = "^(.- %-> )(.*)"
+      else
+        pattern = "^(.- %-> %.%.%. %-> )(.*)"
+      end
+      local prefix_start, _, _, suffix = context:find(pattern)
+      if prefix_start == nil or prefix_start > 1 then
+        context = "..." .. context:sub(math.min(-1, -(max_length - #("..."))))
+      else
+        context = "... -> " .. suffix
+        if #context > max_length then
+          context = "..." .. suffix:sub(math.min(-1, -(max_length - #("..."))))
+        end
+      end
+    end
+  end
+  -- Truncate all text that exceeds the max length.
+  if #context + #("...") > max_length then
+    return string.format("%s%s", context:sub(1, max_length - #("...")), "...")
   end
   return context
 end
@@ -1020,6 +1062,7 @@ local function print_results(state, options, evaluation_results, is_last_file)
 end
 
 return {
+  format_expandability_reason = format_expandability_reason,
   format_issue_identifier = format_issue_identifier,
   format_percentage = format_percentage,
   format_ratio = format_ratio,

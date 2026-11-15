@@ -33,6 +33,22 @@ This version of explcheck has fixed the following problems:
   The algorithm can now also be reused by flow analysis to weaken the
   expandability estimates produced by semantic analysis once #215 is resolved.
 
+- Explain issues E428 and W429 with chains of control sequences. (#230)
+
+  When reporting issues E428 (Unexpandable or restricted-expandable boolean
+  expression) and W429 (Defined an unexpandable function as unprotected),
+  a representative chain of control sequences responsible for the expandability
+  estimate is now included as the issue context.
+
+  The chain traces dependencies through user-defined functions, function
+  variants, and indirect function definitions to the underlying cause, where
+  known. For example, `\pgfgo_profile_use_goban:n -> \pgfgo_set:e ->
+  \pgfgo_set:n -> \keys_set:nn` is now the context for a W429 issue reported
+  in the file `pgf-go-profiles.sty` in TeX Live 2025.
+
+  Note that there may be multiple causes for the expandability estimate.
+  In that case, the context traces only one of them.
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:

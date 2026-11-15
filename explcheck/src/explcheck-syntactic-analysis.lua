@@ -50,6 +50,27 @@ local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
+local expandability_reason_types = {
+  CALL = CALL,
+  CSNAME = "control sequence name",
+}
+
+assert(CALL == expandability_reason_types.CALL)
+local CSNAME = expandability_reason_types.CSNAME
+
+-- Weaken an expandability estimate and remember what caused each lost property.
+local function weaken_expandability(target, maybe_fully_expandable, maybe_restricted_expandable, expandability_reason)
+  assert(expandability_reason ~= nil)
+  if target.maybe_fully_expandable and not maybe_fully_expandable then
+    target.maybe_fully_expandable = false
+    target.not_fully_expandable_reason = expandability_reason
+  end
+  if target.maybe_restricted_expandable and not maybe_restricted_expandable then
+    target.maybe_restricted_expandable = false
+    target.not_restricted_expandable_reason = expandability_reason
+  end
+end
+
 local segment_types = {
   BOOLEAN_EXPRESSION = "boolean expression",
   PART = "expl3 part",
@@ -292,10 +313,14 @@ local function get_calls(states, file_number, options, part_number, segment)
   -- Weaken the segment's expandability estimate if the control sequence is an unexpandable variable or constant.
   local function update_segment_expandability_from_variable(csname)
     local unexpandable_variable_type = lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, csname)
-    if unexpandable_variable_type ~= nil and
-        not (unexpandable_variable_type == "bool" and segment.type == BOOLEAN_EXPRESSION) then
-      segment.maybe_fully_expandable = false
-      segment.maybe_restricted_expandable = false
+    if unexpandable_variable_type ~= nil
+      and not (unexpandable_variable_type == "bool" and segment.type == BOOLEAN_EXPRESSION)
+    then
+      local expandability_reason = {
+        type = CSNAME,
+        payload = csname,
+      }
+      weaken_expandability(segment, false, false, expandability_reason)
     end
   end
 
@@ -309,13 +334,12 @@ local function get_calls(states, file_number, options, part_number, segment)
       if token.type == CONTROL_SEQUENCE then
         local csname = token.payload
         local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(csname)
-        if is_latex3_function then
-          if not is_fully_expandable then
-            segment.maybe_fully_expandable = false
-          end
-          if not is_restricted_expandable then
-            segment.maybe_restricted_expandable = false
-          end
+        if is_latex3_function and (not is_fully_expandable or not is_restricted_expandable) then
+          local expandability_reason = {
+            type = CSNAME,
+            payload = csname,
+          }
+          weaken_expandability(segment, is_fully_expandable, is_restricted_expandable, expandability_reason)
         end
         update_segment_expandability_from_variable(csname)
       end
@@ -820,16 +844,9 @@ local function get_calls(states, file_number, options, part_number, segment)
             -- This has already taken place in `record_argument()`.
           end
         end
-        -- Using the expandability estimate for the function call, weaken the estimate of the parent segment.
-        if not maybe_fully_expandable then
-          segment.maybe_fully_expandable = false
-        end
-        if not maybe_restricted_expandable then
-          segment.maybe_restricted_expandable = false
-        end
-        -- Record the function call.
+        -- Record the function call and link any weakened segment estimate to it.
         next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
-        table.insert(calls, {
+        local call = {
           type = CALL,
           token_range = next_token_range,
           -- The following attributes are specific to the type.
@@ -839,7 +856,17 @@ local function get_calls(states, file_number, options, part_number, segment)
           csname_token_range = csname_token_range,
           maybe_fully_expandable = maybe_fully_expandable,
           maybe_restricted_expandable = maybe_restricted_expandable,
-        })
+          not_fully_expandable_reason = nil,  -- later filled in by `weaken_expandability()`
+          not_restricted_expandable_reason = nil,  -- later filled in by `weaken_expandability()`
+        }
+        if not maybe_fully_expandable or not maybe_restricted_expandable then
+          local expandability_reason = {
+            type = CALL,
+            payload = call,
+          }
+          weaken_expandability(segment, maybe_fully_expandable, maybe_restricted_expandable, expandability_reason)
+        end
+        table.insert(calls, call)
         token_number = next_token_number
         goto continue
       else  -- a non-expl3 control sequence, skip it
@@ -887,6 +914,8 @@ add_segment = function(states, file_number, options, part_number, segment)
   assert(results.segment_type_index ~= nil)
   segment.maybe_fully_expandable = true  -- later weakened by `get_calls()` and following analyses
   segment.maybe_restricted_expandable = true  -- later weakened by `get_calls()` and following analyses
+  segment.not_fully_expandable_reason = nil  -- later filled in by `weaken_expandability()`
+  segment.not_restricted_expandable_reason = nil  -- later filled in by `weaken_expandability()`
   if segment.min_reaching_nesting_depth == nil then
     assert(segment.nesting_depth ~= nil)
     segment.min_reaching_nesting_depth = segment.nesting_depth  -- later refined by the flow analysis
@@ -971,6 +1000,7 @@ return {
   add_segment = add_segment,
   call_types = call_types,
   csname_origins = csname_origins,
+  expandability_reason_types = expandability_reason_types,
   extract_text_from_tokens = extract_text_from_tokens,
   get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
@@ -982,4 +1012,5 @@ return {
   substeps = substeps,
   token_types = token_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
+  weaken_expandability = weaken_expandability,
 }
