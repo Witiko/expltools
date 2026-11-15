@@ -49,6 +49,12 @@ This version of explcheck has fixed the following problems:
   Note that there may be multiple causes for the expandability estimate.
   In that case, the context traces only one of them.
 
+- Avoid unnecessary truncation of issue contexts in non-porcelain command-line
+  output. (#230)
+
+  Previously, issue contexts were truncated if they fit within the maximum
+  width but would exceed it with an appended ellipsis.
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:

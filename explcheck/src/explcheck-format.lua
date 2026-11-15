@@ -179,7 +179,7 @@ local function format_context(context, max_length)
     end
   end
   -- Truncate all text that exceeds the max length.
-  if #context + #("...") > max_length then
+  if #context > max_length then
     return string.format("%s%s", context:sub(1, max_length - #("...")), "...")
   end
   return context
