@@ -50,6 +50,27 @@ local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
+local expandability_reason_types = {
+  CALL = CALL,
+  CSNAME = "control sequence name",
+}
+
+assert(CALL == expandability_reason_types.CALL)
+local CSNAME = expandability_reason_types.CSNAME
+
+-- Weaken an expandability estimate and remember what caused each lost property.
+local function weaken_expandability(target, maybe_fully_expandable, maybe_restricted_expandable, expandability_reason)
+  assert(expandability_reason ~= nil)
+  if target.maybe_fully_expandable and not maybe_fully_expandable then
+    target.maybe_fully_expandable = false
+    target.not_fully_expandable_reason = expandability_reason
+  end
+  if target.maybe_restricted_expandable and not maybe_restricted_expandable then
+    target.maybe_restricted_expandable = false
+    target.not_restricted_expandable_reason = expandability_reason
+  end
+end
+
 local segment_types = {
   BOOLEAN_EXPRESSION = "boolean expression",
   PART = "expl3 part",
@@ -233,12 +254,39 @@ local function is_confused(pathname, results, options)
   return false
 end
 
+-- Determine whether a function comes from a LaTeX3 standard library and, if it is, whether it's expandable.
+local function _is_latex3_function_expandable(parser, csname)
+  local is_latex3_function, is_fully_expandable, is_restricted_expandable
+  local csname_properties = lpeg.match(parser, csname)
+  if csname_properties == nil then
+    is_latex3_function, is_fully_expandable, is_restricted_expandable = false, false, false
+  else
+    is_latex3_function = true
+    if type(csname_properties) == "table" then
+      if csname_properties.EXP == "full" then
+        is_fully_expandable, is_restricted_expandable = true, true
+      elseif csname_properties.EXP == "restricted" then
+        is_fully_expandable, is_restricted_expandable = false, true
+      else
+        is_fully_expandable, is_restricted_expandable = false, false
+      end
+    else
+      is_fully_expandable, is_restricted_expandable = false, false
+    end
+  end
+  assert(is_latex3_function ~= nil)
+  assert(is_fully_expandable ~= nil)
+  assert(is_restricted_expandable ~= nil)
+  return is_latex3_function, is_fully_expandable, is_restricted_expandable
+end
+
 local add_segment
 
 -- Extract function calls from TeX tokens and groupings.
 local function get_calls(states, file_number, options, part_number, segment)
   local state = states[file_number]
 
+  local pathname = state.pathname
   local content = state.content
   local issues = state.issues
   local results = state.results
@@ -256,11 +304,47 @@ local function get_calls(states, file_number, options, part_number, segment)
     return calls
   end
 
+  local latex3_function_csname = parsers.latex3_csname("function", options, pathname)
+
+  local function is_latex3_function_expandable(csname)
+    return _is_latex3_function_expandable(latex3_function_csname, csname)
+  end
+
+  -- Weaken the segment's expandability estimate if the control sequence is an unexpandable variable or constant.
+  local function update_segment_expandability_from_variable(csname)
+    local unexpandable_variable_type = lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, csname)
+    if unexpandable_variable_type ~= nil
+      and not (unexpandable_variable_type == "bool" and segment.type == BOOLEAN_EXPRESSION)
+    then
+      local expandability_reason = {
+        type = CSNAME,
+        payload = csname,
+      }
+      weaken_expandability(segment, false, false, expandability_reason)
+    end
+  end
+
   local token_number = map_forward(token_range:start())
   local transformed_token_range_end = map_forward(token_range:stop())
 
   -- Record a range of unrecognized tokens.
   local function record_other_tokens(other_token_range)  -- the range is in tokens, not transformed_tokens
+    -- Estimate the expandability of unrecognized control sequences.
+    for _, token in other_token_range:enumerate(transformed_tokens, map_forward) do
+      if token.type == CONTROL_SEQUENCE then
+        local csname = token.payload
+        local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(csname)
+        if is_latex3_function and (not is_fully_expandable or not is_restricted_expandable) then
+          local expandability_reason = {
+            type = CSNAME,
+            payload = csname,
+          }
+          weaken_expandability(segment, is_fully_expandable, is_restricted_expandable, expandability_reason)
+        end
+        update_segment_expandability_from_variable(csname)
+      end
+    end
+    -- Record the tokens.
     local previous_call = #calls > 0 and calls[#calls] or nil
     if previous_call == nil or previous_call.type ~= OTHER_TOKENS then  -- record a new span of other tokens between calls
       table.insert(calls, {
@@ -432,6 +516,9 @@ local function get_calls(states, file_number, options, part_number, segment)
         boolean_expression_argument_numbers_index[argument_number] = true
       end
       if variable_type ~= nil then  -- a standalone variable or constant, record it
+        -- Estimate the expandability of the standalone variable or constant.
+        update_segment_expandability_from_variable(csname)
+        -- Record the standalone variable or constant.
         table.insert(calls, {
           type = STANDALONE_VARIABLE,
           token_range = csname_token_range,
@@ -446,13 +533,16 @@ local function get_calls(states, file_number, options, part_number, segment)
       local _, _, argument_specifiers = csname:find(":([^:]*)")  -- try to extract a call
       if argument_specifiers ~= nil and lpeg.match(parsers.argument_specifiers, argument_specifiers) ~= nil then
         local arguments = {}
+        local maybe_fully_expandable, maybe_restricted_expandable = true, true
 
         local function record_argument(argument)
           local argument_number = #arguments + 1
           if argument.analyzed == nil then
             argument.analyzed = false  -- later refined by the semantic and flow analyses
           end
-          if argument.specifier == "n" then
+          if argument.specifier == "x" then
+            maybe_fully_expandable, maybe_restricted_expandable = false, false
+          elseif argument.specifier == "n" then
             if boolean_expression_argument_numbers_index[argument_number] then
               argument.analyzed = true
               local nested_segment = {
@@ -465,9 +555,6 @@ local function get_calls(states, file_number, options, part_number, segment)
                   map_back = map_back,
                   map_forward = map_forward,
                 },
-                -- The following attributes are specific to the type.
-                maybe_fully_expandable = true,  -- later refined by the semantic analysis
-                maybe_restricted_expandable = true,  -- later refined by the semantic analysis
               }
               argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
             end
@@ -741,16 +828,45 @@ local function get_calls(states, file_number, options, part_number, segment)
           end
           next_token_number = next_token_number + 1
         end
+        -- Estimate the expandability of the called function.
+        if maybe_fully_expandable or maybe_restricted_expandable then
+          local is_latex3_function, is_fully_expandable, is_restricted_expandable = is_latex3_function_expandable(csname)
+          if is_latex3_function then
+            -- If the variable or constant comes from the LaTeX3 standard library, assume the expandability declared by LaTeX3.
+            if not is_fully_expandable then
+              maybe_fully_expandable = false
+            end
+            if not is_restricted_expandable then
+              maybe_restricted_expandable = false
+            end
+          else
+            -- Otherwise, (over)estimate the expandability by analyzing the arguments of the function call.
+            -- This has already taken place in `record_argument()`.
+          end
+        end
+        -- Record the function call and link any weakened segment estimate to it.
         next_token_range = new_range(token_number, next_token_number, EXCLUSIVE, #transformed_tokens, map_back, #tokens)
-        table.insert(calls, {
+        local call = {
           type = CALL,
           token_range = next_token_range,
           -- The following attributes are specific to the type.
+          arguments = arguments,
           csname = csname,
           csname_origin = csname_origin,
           csname_token_range = csname_token_range,
-          arguments = arguments,
-        })
+          maybe_fully_expandable = maybe_fully_expandable,
+          maybe_restricted_expandable = maybe_restricted_expandable,
+          not_fully_expandable_reason = nil,  -- later filled in by `weaken_expandability()`
+          not_restricted_expandable_reason = nil,  -- later filled in by `weaken_expandability()`
+        }
+        if not maybe_fully_expandable or not maybe_restricted_expandable then
+          local expandability_reason = {
+            type = CALL,
+            payload = call,
+          }
+          weaken_expandability(segment, maybe_fully_expandable, maybe_restricted_expandable, expandability_reason)
+        end
+        table.insert(calls, call)
         token_number = next_token_number
         goto continue
       else  -- a non-expl3 control sequence, skip it
@@ -796,6 +912,10 @@ add_segment = function(states, file_number, options, part_number, segment)
 
   assert(results.segments ~= nil)
   assert(results.segment_type_index ~= nil)
+  segment.maybe_fully_expandable = true  -- later weakened by `get_calls()` and following analyses
+  segment.maybe_restricted_expandable = true  -- later weakened by `get_calls()` and following analyses
+  segment.not_fully_expandable_reason = nil  -- later filled in by `weaken_expandability()`
+  segment.not_restricted_expandable_reason = nil  -- later filled in by `weaken_expandability()`
   if segment.min_reaching_nesting_depth == nil then
     assert(segment.nesting_depth ~= nil)
     segment.min_reaching_nesting_depth = segment.nesting_depth  -- later refined by the flow analysis
@@ -880,14 +1000,17 @@ return {
   add_segment = add_segment,
   call_types = call_types,
   csname_origins = csname_origins,
+  expandability_reason_types = expandability_reason_types,
   extract_text_from_tokens = extract_text_from_tokens,
   get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
   is_confused = is_confused,
+  is_latex3_function_expandable = _is_latex3_function_expandable,
   name = "syntactic analysis",
   segment_types = segment_types,
   segment_subtypes = segment_subtypes,
   substeps = substeps,
   token_types = token_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
+  weaken_expandability = weaken_expandability,
 }

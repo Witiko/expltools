@@ -2,7 +2,58 @@
 
 ## expltools 2026-11-XX
 
-### explcheck v0.25.0
+### explcheck v0.24.1
+
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Cache dynamically produced LPEG parsers. (#230)
+
+  Previously, many LPEG parsers parameterized by configuration options were
+  repeatedly constructed during analysis, unnecessarily consuming memory and
+  CPU time. Most of these parsers are now cached by their corresponding
+  parameters, so they are constructed only once per configuration.
+
+- In expandability estimation, do not treat control sequences in unrecognized
+  token sequences (`OTHER_TOKENS`) as definite function calls. (#230)
+
+  Such control sequences may be used as data rather than expanded, potentially
+  causing false-positive W429 (Defined an unexpandable function as unprotected)
+  detections.
+
+- Improve the time complexity of expandability estimation in semantic analysis.
+  (discussed in #215, fixed in #230)
+
+  Previously, the algorithm had worst-case time complexity O(D³), where D is
+  the number of function definitions. The new algorithm uses a worklist to
+  propagate expandability estimates through a dependency graph, reducing the
+  complexity to O(D² + DC), where C is the number of definite function calls.
+
+  The algorithm can now also be reused by flow analysis to weaken the
+  expandability estimates produced by semantic analysis once #215 is resolved.
+
+- Explain issues E428 and W429 with chains of control sequences. (#230)
+
+  When reporting issues E428 (Unexpandable or restricted-expandable boolean
+  expression) and W429 (Defined an unexpandable function as unprotected),
+  a representative chain of control sequences responsible for the expandability
+  estimate is now included as the issue context.
+
+  The chain traces dependencies through user-defined functions, function
+  variants, and indirect function definitions to the underlying cause, where
+  known. For example, `\pgfgo_profile_use_goban:n -> \pgfgo_set:e ->
+  \pgfgo_set:n -> \keys_set:nn` is now the context for a W429 issue reported
+  in the file `pgf-go-profiles.sty` in TeX Live 2025.
+
+  Note that there may be multiple causes for the expandability estimate.
+  In that case, the context traces only one of them.
+
+- Avoid unnecessary truncation of issue contexts in non-porcelain command-line
+  output. (#230)
+
+  Previously, issue contexts were truncated if they fit within the maximum
+  width but would exceed it with an appended ellipsis.
 
 #### Documentation
 

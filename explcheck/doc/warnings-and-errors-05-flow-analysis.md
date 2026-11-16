@@ -83,16 +83,16 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
   Here's what we'll need to do before we can report this issue:
 
-  First, in the semantic analysis, we'll need to determine in a flow-unaware
+  ~~First, in the semantic analysis, we'll need to determine in a flow-unaware
   fashion which user-defined functions are definitely not fully-expandable. We
   should be able to achieve this by looking at (a) whether the function is defined
   as protected and (b) whether any built-in functions within the top segments
   of the replacement texts of these functions are not fully-expandable, likely
   by parsing l3kernel .dtx files and distilling this information in
-  `explcheck-latex3.lua`.
+  `explcheck-latex3.lua`.~~
 
-  Incidentally, this should allow us to report a weaker version of this issue
-  during the semantic analysis (E428).
+  ~~Incidentally, this should allow us to report a weaker version of this issue
+  during the semantic analysis (E428).~~
 
   Then, in the flow analysis, we'll need to determine in a flow-aware
   fashion which user-defined functions are definitely not fully-expandable. We
