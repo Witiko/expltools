@@ -22,7 +22,7 @@ integration (CI):
   and the percentage of expl3 bytes in all bytes. (b70b29b, 08f14df)
 - Add a new workflow file `.github/workflows/automatic-review.yml` for
   automatic code review when a PR is marked as _Ready for review_. (sponsored
-  by @koppor, f9b9d33, 6b0762e, 5ca64ff, 898136e)
+  by @koppor, f9b9d33, 6b0762e, 5ca64ff, 898136e, b3221c5)
 
 ## expltools 2026-09-24
 
