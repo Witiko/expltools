@@ -395,15 +395,13 @@ jobs:
     name: Build and publish artifacts
     needs: [code-changes, luacheck, explcheck, shellcheck, unit-tests, regression-tests]
     if: >-
-      ${{
-        !cancelled() &&
-        needs.code-changes.result == 'success' &&
-        (needs.luacheck.result == 'success' || needs.luacheck.result == 'skipped') &&
-        (needs.explcheck.result == 'success' || needs.explcheck.result == 'skipped') &&
-        (needs.shellcheck.result == 'success' || needs.shellcheck.result == 'skipped') &&
-        (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
-        (needs.regression-tests.result == 'success' || needs.regression-tests.result == 'skipped')
-      }}
+      !cancelled() &&
+      needs.code-changes.result == 'success' &&
+      (needs.luacheck.result == 'success' || needs.luacheck.result == 'skipped') &&
+      (needs.explcheck.result == 'success' || needs.explcheck.result == 'skipped') &&
+      (needs.shellcheck.result == 'success' || needs.shellcheck.result == 'skipped') &&
+      (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
+      (needs.regression-tests.result == 'success' || needs.regression-tests.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -451,6 +449,9 @@ jobs:
   docker-image:
     name: Build and publish Docker image
     needs: artifacts
+    if: >-
+      !cancelled() &&
+      needs.artifacts.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -487,8 +488,11 @@ jobs:
         run: docker push ${{ env.IMAGE_TAG }}
   prerelease:
     name: Publish prerelease
-    if: github.ref == 'refs/heads/main'
     needs: artifacts
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      !cancelled() &&
+      needs.artifacts.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
