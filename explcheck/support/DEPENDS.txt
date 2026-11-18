@@ -24,7 +24,6 @@ lua-uni-algos
 lua-widow-control
 markdown
 microtype
-minted
 paralist
 pgf
 scheme-basic

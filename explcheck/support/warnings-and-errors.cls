@@ -1,12 +1,10 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass%
   {warnings-and-errors}%
-  [2024-12-04 0.0.4 Document class for typesetting the documentation of the %
+  [2026-11-18 0.0.5 Document class for typesetting the documentation of the %
    warnings and errors for the expl3 analysis tool]
 \LoadClass{article}
 \RequirePackage{lua-widow-control}
-\RequirePackage{minted}
-\setminted{breaklines, linenos}
 \RequirePackage{markdown}
 \markdownSetup {
   import = {
