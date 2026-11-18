@@ -16,6 +16,13 @@ This version of explcheck has made the following improvements to the documentati
   add an explicit textual description "Not yet implemented" next to the section
   headings.
 
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration (CI):
+
+- Check the PDF/UA-2 compliance of the documentation with VeraPDF. (#233, #234)
+
 ## expltools 2026-11-16
 
 ### explcheck v0.24.1
