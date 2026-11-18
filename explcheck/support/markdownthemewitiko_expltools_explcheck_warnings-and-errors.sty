@@ -1,8 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesExplPackage
   {markdownthemewitiko_expltools_explcheck_warnings-and-errors}%
-  {2025-06-19}%
-  {0.0.6}%
+  {2026-11-18}%
+  {0.0.7}%
   {Snippets for typesetting the documentation of the warnings and errors for %
    the expl3 analysis tool}
 \int_new:N
@@ -102,10 +102,25 @@
       }
       {
         #1
+          [
+            \textcolor
+              { gray }
+              { #2 }
+          ]
           {
             \textcolor
               { gray }
               { #2 }
+            \protect \marginpar
+              {
+                \raggedright
+                \textcolor
+                  { gray }
+                  {
+                    \textsc
+                      { Not~yet~implemented }
+                  }
+              }
            }
         \markdownSetup
           {
@@ -113,7 +128,6 @@
               headerAttributeContextEnd += {
                 \color_select:n
                   { __expltools_explcheck_gray }
-                \usemintedstyle { bw }
               },
             }
           }
@@ -223,6 +237,34 @@
                   { ##1 }
               },
               attributeKeyValue = {
+                \str_if_eq:nnT
+                  { ##1 }
+                  { code-size }
+                  {
+                    \markdownSetup
+                      {
+                        renderers = {
+                          headerAttributeContextEnd += {
+                            \group_begin:
+                            \markdownSetup
+                              {
+                                renderers = {
+                                  contentBlock ^= {
+                                    \group_begin:
+                                    \use:c { ##2 }
+                                  },
+                                  contentBlock $= {
+                                    \group_end:
+                                  },
+                                  sectionEnd += {
+                                    \group_end:
+                                  },
+                                }
+                              }
+                          },
+                        }
+                      }
+                  }
                 \str_if_eq:nnT
                   { ##1 }
                   { label }

@@ -60,8 +60,52 @@ jobs:
           else
             printf 'Submodule "third-party/lua-toml" (%s) is up-to-date with the remote branch "dev".\n' "$CURRENT_SHA"
           fi
+  code-changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      luacheck: ${{ steps.filter.outputs.luacheck }}
+      explcheck: ${{ steps.filter.outputs.explcheck }}
+      shellcheck: ${{ steps.filter.outputs.shellcheck }}
+      unit-tests: ${{ steps.filter.outputs.unit-tests }}
+      regression-tests: ${{ steps.filter.outputs.regression-tests }}
+    steps:
+      - name: Checkout repository
+        if: github.event_name != 'schedule'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Detect code changes
+        if: github.event_name != 'schedule'
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          base: ${{ github.ref }}
+          filters: |
+            luacheck:
+              - .luacheckrc
+              - README.md
+              - '**/*.lua'
+            explcheck:
+              - 'explcheck/support/**.tex'
+              - 'explcheck/support/**.sty'
+              - 'explcheck/support/**.cls'
+            shellcheck:
+              - '**/*.sh'
+            unit-tests:
+              - 'explcheck/src/**'
+              - 'explcheck/testfiles/**'
+            regression-tests:
+              - .explcheckrc
+              - 'explcheck/src/**'
+              - 'explcheck/testfiles/**'
   luacheck:
     name: Check code style (Lua)
+    needs: code-changes
+    if: github.event_name != 'schedule' && needs.code-changes.outputs.luacheck == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -123,6 +167,8 @@ jobs:
           lua-language-server --check=. --checklevel=Hint
   explcheck:
     name: Check code style (expl3)
+    needs: code-changes
+    if: github.event_name != 'schedule' && needs.code-changes.outputs.explcheck == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -151,6 +197,8 @@ jobs:
             texlua explcheck/src/explcheck.lua {} +
   shellcheck:
     name: Check code style (Bash)
+    needs: code-changes
+    if: github.event_name != 'schedule' && needs.code-changes.outputs.shellcheck == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -159,6 +207,8 @@ jobs:
         uses: ludeeus/action-shellcheck@2.0.0
   unit-tests:
     name: Run unit tests
+    needs: code-changes
+    if: github.event_name != 'schedule' && needs.code-changes.outputs.unit-tests == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -180,6 +230,8 @@ jobs:
         run: l3build check
   regression-tests:
     name: Run regression tests
+    needs: code-changes
+    if: github.event_name != 'schedule' && needs.code-changes.outputs.regression-tests == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -340,7 +392,17 @@ jobs:
           echo 'Could not remove any sections or options.'
   artifacts:
     name: Build and publish artifacts
-    needs: [luacheck, explcheck, shellcheck, unit-tests, regression-tests]
+    needs: [code-changes, luacheck, explcheck, shellcheck, unit-tests, regression-tests]
+    if: >-
+      ${{
+        !cancelled() &&
+        needs.code-changes.result == 'success' &&
+        (needs.luacheck.result == 'success' || needs.luacheck.result == 'skipped') &&
+        (needs.explcheck.result == 'success' || needs.explcheck.result == 'skipped') &&
+        (needs.shellcheck.result == 'success' || needs.shellcheck.result == 'skipped') &&
+        (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
+        (needs.regression-tests.result == 'success' || needs.regression-tests.result == 'skipped')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -369,6 +431,10 @@ jobs:
         run: |
           set -e
           l3build ctan
+      - name: Check PDF/UA-2 compliance of the documentation
+        run: |
+          cd build/doc
+          docker run --rm -v .:/data:ro verapdf/cli --flavour ua2 --format text *.pdf
       - name: Upload CTAN archive
         uses: actions/upload-artifact@v7
         with:

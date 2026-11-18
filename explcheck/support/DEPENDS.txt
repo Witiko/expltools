@@ -7,6 +7,7 @@ csvsimple
 datetime2
 embedfile
 etoolbox
+fancyvrb
 gobble
 graphics
 grffile
@@ -24,8 +25,6 @@ lua-uni-algos
 lua-widow-control
 markdown
 microtype
-minted
-paralist
 pgf
 scheme-basic
 soul

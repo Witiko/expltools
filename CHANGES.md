@@ -1,5 +1,29 @@
 # Changes
 
+## expltools 2026-11-XX
+
+### explcheck v0.25.0
+
+#### Documentation
+
+This version of explcheck has made the following improvements to the documentation:
+
+- Make documentation PDF/UA-2-compliant (#233, #234)
+
+  This makes the documentation use `\DocumentMetadata` to produce
+  PDF/UA-2-compilant output. For gray issues from the document titled
+  [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors], we
+  add an explicit textual description "Not yet implemented" next to the section
+  headings.
+
+#### Continuous integration
+
+This version of explcheck has made the following changes to our continuous
+integration (CI):
+
+- Check the PDF/UA-2 compliance of the documentation with VeraPDF. (#233, #234)
+- Skip steps in non-scheduled CI runs unless relevant code has changed. (#234)
+
 ## expltools 2026-11-16
 
 ### explcheck v0.24.1

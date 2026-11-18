@@ -16,7 +16,7 @@ An input file contains what looks like expl3 material [@latexteam2024interfaces,
 
  /e102.tex
 
-## Line too long {.s label=s103}
+## Line too long {.s label=s103 code-size=footnotesize}
 Some lines in expl3 parts are longer than 80 characters [@latexteam2024style, Section 2].
 
  /s103.tex
