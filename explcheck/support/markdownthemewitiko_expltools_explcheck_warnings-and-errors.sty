@@ -239,6 +239,34 @@
               attributeKeyValue = {
                 \str_if_eq:nnT
                   { ##1 }
+                  { code-size }
+                  {
+                    \markdownSetup
+                      {
+                        renderers = {
+                          headerAttributeContextEnd += {
+                            \group_begin:
+                            \markdownSetup
+                              {
+                                renderers = {
+                                  contentBlock ^= {
+                                    \group_begin:
+                                    \use:c { ##2 }
+                                  },
+                                  contentBlock $= {
+                                    \group_end:
+                                  },
+                                  sectionEnd += {
+                                    \group_end:
+                                  },
+                                }
+                              }
+                          },
+                        }
+                      }
+                  }
+                \str_if_eq:nnT
+                  { ##1 }
                   { label }
                   {
                     \bool_set_true:N
