@@ -1,0 +1,11 @@
+\documentclass{article}
+
+\ExplSyntaxOn
+    \NewDocumentCommand { \foo } { } {
+        \tl_set_eq:NN \g_tmpa_tl \g_tmpb_tl
+        \tl_set:Nn \g_tmpa_tl { foo }
+    }
+\ExplSyntaxOff
+
+\begin{document}
+\end{document}

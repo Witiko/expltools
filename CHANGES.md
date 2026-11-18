@@ -4,6 +4,19 @@
 
 ### explcheck v0.25.0
 
+#### Fixes
+
+This version of explcheck has fixed the following problems:
+
+- Report issues E420 (Locally setting a global variable) and E421 (Globally
+  setting a local variable) in top-level code. (reported by @jasperhabicht and
+  @cfr42 in #232, fixed in #235)
+
+  Previously, these issues were not reported in top-level code, since the
+  semantics of local and global assignments are equivalent there. However,
+  since l3debug explicitly rejects inconsistent local/global assignments in
+  top-level code, explcheck should do the same.
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
@@ -23,6 +36,7 @@ integration (CI):
 
 - Check the PDF/UA-2 compliance of the documentation with VeraPDF. (#233, #234)
 - Skip steps in non-scheduled CI runs unless relevant code has changed. (#234)
+- Only check third-party submodules in scheduled CI runs. (#235)
 
 ## expltools 2026-11-16
 
