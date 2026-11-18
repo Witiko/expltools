@@ -1258,13 +1258,11 @@ local function collect_statements(states, file_number, options)
             if not is_constant and defined_csname_scope == "c" then
               issues:add('e418', 'setting a constant', defined_csname_byte_range, format_csname(defined_csname.transcript))
             end
-            if segment.nesting_depth > 1 then
-              if not is_global and defined_csname_scope == "g" then
-                issues:add('e420', 'locally setting a global variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
-              end
-              if is_global and defined_csname_scope == "l" then
-                issues:add('e421', 'globally setting a local variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
-              end
+            if not is_global and defined_csname_scope == "g" then
+              issues:add('e420', 'locally setting a global variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
+            end
+            if is_global and defined_csname_scope == "l" then
+              issues:add('e421', 'globally setting a local variable', defined_csname_byte_range, format_csname(defined_csname.transcript))
             end
           end
           local confidence = defined_csname.type == TEXT and DEFINITELY or MAYBE
