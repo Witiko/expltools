@@ -22,6 +22,7 @@ This version of explcheck has made the following changes to our continuous
 integration (CI):
 
 - Check the PDF/UA-2 compliance of the documentation with VeraPDF. (#233, #234)
+- Skip steps in non-scheduled CI runs unless relevant code has changed. (#234)
 
 ## expltools 2026-11-16
 
