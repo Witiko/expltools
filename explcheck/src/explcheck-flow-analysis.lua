@@ -1,5 +1,6 @@
 -- The flow analysis step of static analysis determines additional emergent properties of the code.
 --
+local empty_iterator = require("explcheck-utils").empty_iterator
 local get_option = require("explcheck-config").get_option
 local ranges = require("explcheck-ranges")
 local lexical_analysis = require("explcheck-lexical-analysis")
@@ -15,6 +16,7 @@ local segment_types = syntactic_analysis.segment_types
 local segment_subtypes = syntactic_analysis.segment_subtypes
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 
+local _determine_expandability = semantic_analysis.determine_expandability
 local name_types = semantic_analysis.name_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
@@ -187,6 +189,19 @@ end
 local function get_statement(states, chunk, macro_statement_number, statement_number)
   assert(not states[chunk.segment.location.file_number].results.stopped_early)
   return _get_statement(chunk, macro_statement_number, statement_number)
+end
+
+-- Resolve a reaching definition or a from-/to-location of an edge to a statement.
+local function get_statement_from_location(states, statement_location)
+  local chunk = statement_location.chunk
+  local macro_statement_number, statement_number
+  if statement_location.macro_statement_number == nil then
+    assert(statement_location.statement_number ~= nil)
+    macro_statement_number = statement_location.statement_number
+  else
+    macro_statement_number, statement_number = statement_location.macro_statement_number, statement_location.statement_number
+  end
+  return get_statement(states, chunk, macro_statement_number, statement_number)
 end
 
 -- Get a text representation of a statement or a pseudo-statement "after" a chunk.
@@ -736,12 +751,7 @@ local function get_current_reaching_definitions(
         for _, incoming_definition_number in ipairs(definition_index[csname] or {}) do
           local incoming_definition = definition_list[incoming_definition_number]
           assert(incoming_definition.csname == csname)
-          local incoming_statement = get_statement(
-            states,
-            incoming_definition.chunk,
-            incoming_definition.macro_statement_number,
-            incoming_definition.statement_number
-          )
+          local incoming_statement = get_statement_from_location(states, incoming_definition)
           if incoming_statement ~= statement and not invalidated_statement_index[incoming_statement] then
             invalidated_statement_index[incoming_statement] = true
           end
@@ -842,8 +852,7 @@ local function _iterate_reaching_definitions(reaching_definition_type, states, c
       local definition_number = definition_index[current_definition_number]
       current_definition_number = current_definition_number + 1
       local definition = definition_list[definition_number]
-      local other_statement
-        = get_statement(states, definition.chunk, definition.macro_statement_number, definition.statement_number)
+      local other_statement = get_statement_from_location(states, definition)
       if not invalidated_statement_index[other_statement] then
         return definition
       end
@@ -858,7 +867,7 @@ local function get_outgoing_reaching_definitions(states, incoming_definition_lis
   local current_reaching_statement_index = {}
   for _, definition_list in ipairs({incoming_definition_list, current_definition_list}) do
     for _, definition in ipairs(definition_list) do
-      local statement = get_statement(states, definition.chunk, definition.macro_statement_number, definition.statement_number)
+      local statement = get_statement_from_location(states, definition)
       assert(is_well_behaved(statement))
       -- Skip invalidated definitions.
       if invalidated_statement_index[statement] then
@@ -921,12 +930,7 @@ local function have_reaching_changed(
 
   -- Check that the definitions and their confidences are the same.
   for _, previous_definition in ipairs(previous_definition_list) do
-    local statement = get_statement(
-      states,
-      previous_definition.chunk,
-      previous_definition.macro_statement_number,
-      previous_definition.statement_number
-    )
+    local statement = get_statement_from_location(states, previous_definition)
     if current_reaching_statement_index[statement] == nil then
       return true
     end
@@ -1406,6 +1410,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                 else
                   combined_definition = other_definition
                 end
+                -- Record the next hop towards the function call or variable use.
+                combined_definition.next_hop = definition
                 table.insert(intermediate_reaching_definition_list, combined_definition)
               end
             end
@@ -1422,12 +1428,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
 
         -- Draw the function call and variable use edges.
         for _, csname_definition in ipairs(reaching_definition_list) do
-          local csname_definition_statement = get_statement(
-            states,
-            csname_definition.chunk,
-            csname_definition.macro_statement_number,
-            csname_definition.statement_number
-          )
+          local csname_definition_statement = get_statement_from_location(states, csname_definition)
           assert(is_well_behaved(csname_definition_statement))
 
           -- Index the definitions used in the function calls / variable uses.
@@ -1476,6 +1477,16 @@ local function draw_group_wide_dynamic_edges(states, _, options)
           end
           assert(edge_confidence >= MAYBE)
 
+          -- Determine the list of hops from the direct function/variable definitions to the function/variable calls.
+          local hops = {csname_definition}
+          do
+            local definition = csname_definition
+            while definition.next_hop ~= nil do
+              table.insert(hops, definition)
+              definition = definition.next_hop
+            end
+          end
+
           -- Draw the edges.
           local use_edge_to_chunk = to_segment.chunks[1]
           local use_edge_to_statement_number = use_edge_to_chunk.statement_range:start()
@@ -1490,6 +1501,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
               statement_number = use_edge_to_statement_number,
             },
             confidence = edge_confidence,
+            -- The following attributes are specific to the edge type.
+            hops = hops,
           }
           local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
           local return_edge_from_statement_number = return_edge_from_chunk.statement_range:stop() + 1
@@ -1505,7 +1518,6 @@ local function draw_group_wide_dynamic_edges(states, _, options)
             },
             confidence = edge_confidence,
           }
-          -- The following attributes are specific to the edge types.
           table.insert(current_edges, use_edge)
           table.insert(current_edges, return_edge)
           ::next_csname_definition::
@@ -1521,25 +1533,161 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   )
   states.results.num_outer_loops = num_outer_loops
 
-  -- Record edges.
+  -- Record and index the determined edges.
   local edge_indexes = states.results.edge_indexes[REACHING_DEFINITION]
-  for _, current_edges_and_edge_index_name in ipairs({
-    {current_function_call_edges, "function_call_out"},
-    {current_variable_use_edges, "variable_use_out"},
+
+  states.results.csname_use = {}
+
+  states.results.csname_use.statement_lists, states.results.csname_use.statement_indexes = {}, {}
+  local statement_lists, statement_indexes = states.results.csname_use.statement_lists, states.results.csname_use.statement_indexes
+
+  states.results.csname_use.hop_lists, states.results.csname_use.next_hop_indexes = {}, {}
+  local hop_lists, next_hop_indexes = states.results.csname_use.hop_lists, states.results.csname_use.next_hop_indexes
+
+  for _, current_edges_edge_index_name_and_edge_type in ipairs({
+    {current_function_call_edges, "function_call_out", FUNCTION_CALL},
+    {current_variable_use_edges, "variable_use_out", VARIABLE_USE},
   }) do
-    local current_edges, edge_index_name = table.unpack(current_edges_and_edge_index_name)
+    local current_edges, edge_index_name, edge_type = table.unpack(current_edges_edge_index_name_and_edge_type)
     assert(type(current_edges) == "table")
+
     edge_indexes[edge_index_name] = {}
+
+    statement_lists[edge_type], statement_indexes[edge_type] = {}, {}
+    local statement_list, statement_index = statement_lists[edge_type], statement_indexes[edge_type]
+
+    hop_lists[edge_type], next_hop_indexes[edge_type] = {}, {}
+    local hop_list, next_hop_index, seen_hops = hop_lists[edge_type], next_hop_indexes[edge_type], {}
+
     for _, edge in ipairs(current_edges) do
+
+      -- Record the edges.
       local results = states[edge.from.chunk.segment.location.file_number].results
       assert(results.edges ~= nil)
       if results.edges[DYNAMIC] == nil then
         results.edges[DYNAMIC] = {}
       end
       table.insert(results.edges[DYNAMIC], edge)
+
+      -- Skip further processing for the return edges.
+      if edge.type ~= edge_type then
+        goto next_edge
+      end
+
+      assert(#edge.hops > 0)
+
+      local csname_use_statement_location = edge.from
+      local csname_use_statement = get_statement_from_location(states, csname_use_statement_location)
+      local definition = edge.hops[1]
+      local definition_statement = get_statement_from_location(states, definition)
+
+      -- Index the edges by their originating statements.
       _index_edge(REACHING_DEFINITION, edge_index_name, 'from', edge)
+
+      -- Record the statements used in the edges.
+      table.insert(statement_list, csname_use_statement_location)
+      if statement_index[definition_statement] == nil then
+        statement_index[definition_statement] = {}
+      end
+      table.insert(statement_index[definition_statement], edge.from)
+
+      -- Index the hops from the direct function/variable definitions to the function/variable calls.
+      if next_hop_index[csname_use_statement] == nil then
+        next_hop_index[csname_use_statement] = {}
+      end
+      table.insert(next_hop_index[csname_use_statement], definition)
+      for hop_number, other_definition in ipairs(edge.hops) do
+        if hop_number < #edge.hops then
+          local other_statement = get_statement_from_location(states, other_definition)
+          if next_hop_index[other_statement] == nil then
+            next_hop_index[other_statement] = {}
+          end
+          local next_definition = edge.hops[hop_number + 1]
+          table.insert(next_hop_index[other_statement], next_definition)
+        end
+        if seen_hops[other_definition] == nil then
+          seen_hops[other_definition] = true
+          table.insert(hop_list, other_definition)
+        end
+      end
+
+      ::next_edge::
     end
   end
+end
+
+-- Determine the immediate potential function definitions for a function call or indirect/variant definition using function call
+-- edges. If no function call is provided, produce all indirect/variant definitions relevant for the expandability analysis.
+local function get_function_definitions(states, statement)
+  local other_statement_locations
+  if statement == nil then
+    other_statement_locations = states.results.csname_use.hop_lists[FUNCTION_CALL]
+  else
+    assert(
+      statement.type == FUNCTION_CALL or
+      statement.type == FUNCTION_VARIANT_DEFINITION or
+      statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+    )
+    other_statement_locations = states.results.csname_use.next_hop_indexes[FUNCTION_CALL][statement]
+    if other_statement_locations == nil then
+      return empty_iterator
+    end
+  end
+  assert(other_statement_locations ~= nil)
+
+  local other_statement_number = 1
+  return function()
+    if other_statement_number > #other_statement_locations then
+      return nil
+    else
+      local other_statement_location = other_statement_locations[other_statement_number]
+      local other_statement = get_statement_from_location(states, other_statement_location)
+      other_statement_number = other_statement_number + 1
+      return other_statement
+    end
+  end
+end
+
+-- Determine the potential function calls for a function (variant) definition using function call edges.
+-- If no function (variant) definition is provided, produce all function calls relevant for the expandability analysis.
+local function get_function_calls(states, statement)
+  local other_statement_locations
+  if statement == nil then
+    other_statement_locations = states.results.csname_use.statement_lists[FUNCTION_CALL]
+  else
+    assert(statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
+    other_statement_locations = states.results.csname_use.statement_indexes[FUNCTION_CALL][statement]
+    if other_statement_locations == nil then
+      return empty_iterator
+    end
+  end
+  assert(other_statement_locations ~= nil)
+
+  local other_statement_number = 1
+  return function()
+    if other_statement_number > #other_statement_locations then
+      return nil
+    else
+      local other_statement_location = other_statement_locations[other_statement_number]
+      local other_statement = get_statement_from_location(states, other_statement_location)
+      other_statement_number = other_statement_number + 1
+      return other_statement_location.chunk.segment, other_statement
+    end
+  end
+end
+
+-- Determine the expandability of function definitions and segments, using function call edges to determine the correspondence
+-- between function (variant) definitions and function calls.
+local function determine_expandability(states, ...)
+  -- Estimate expandability once for all files in the file group, not just individual files.
+  if states.results.determined_expandability ~= nil then
+    return
+  end
+  states.results.determined_expandability = true
+
+  assert(states.results.drew_dynamic_edges)
+
+  return _determine_expandability(get_function_definitions, get_function_calls, states, ...)
 end
 
 -- For each segment, determine the minimum reaching nesting depth from other segments.
@@ -1884,12 +2032,14 @@ end
 -- Remove auxiliary intermediate results to free up memory.
 local function cleanup(states, _, _)
   -- Remove group-wide intermediate results.
+  states.results.determined_expandability = nil
   states.results.determined_min_reaching_nesting_depth = nil
   states.results.drew_dynamic_edges = nil
   states.results.drew_static_edges = nil
   states.results.edge_indexes = nil
   states.results.csname_declaration_in_edge_index = nil
   states.results.csname_definition_in_edge_index = nil
+  states.results.csname_use = nil
   states.results.elided_csname_use_out_edge_index = nil
   states.results.reaching_definitions = nil
 end
@@ -1900,6 +2050,7 @@ local substeps = {
   draw_file_local_static_edges,
   draw_group_wide_static_edges,
   draw_group_wide_dynamic_edges,
+  determine_expandability,
   determine_min_reaching_nesting_depth,
   report_issues,
   cleanup,

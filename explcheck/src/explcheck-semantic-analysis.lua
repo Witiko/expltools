@@ -3282,6 +3282,7 @@ local substeps = {
 }
 
 return {
+  determine_expandability = _determine_expandability,
   is_confused = is_confused,
   name = "semantic analysis",
   name_types = name_types,
