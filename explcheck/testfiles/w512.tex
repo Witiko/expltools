@@ -1,0 +1,17 @@
+\cs_new:Nn
+  \example_actually_expandable:
+  { foo }
+\cs_new_eq:NN
+  \example_unexpandable:
+  \example_actually_expandable:
+\cs_set_protected:Nn
+  \example_unexpandable:
+  {
+    \tl_set:Nn
+      \l_tmpa_tl
+      { bar }
+  }
+\cs_new:Nn  % error on this line
+  \example_also_unexpandable:
+  { \example_unexpandable: }
+\example_also_unexpandable:

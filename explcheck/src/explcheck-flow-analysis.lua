@@ -17,6 +17,7 @@ local segment_subtypes = syntactic_analysis.segment_subtypes
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
 
 local _determine_expandability = semantic_analysis.determine_expandability
+local format_expandability_reason = semantic_analysis.format_expandability_reason
 local name_types = semantic_analysis.name_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
@@ -1133,7 +1134,8 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                       goto next_statement
                     end
                     -- For outgoing T- and F-branches of conditional functions, the behavior depends on whether both branches
-                    -- are present. If the conditional function has a function call edge, we use the previously described behavior.
+                    -- are present. If the conditional function has a function call or variable use edge, we use the previously
+                    -- described behavior.
                     if edge.type == TF_BRANCH then
                       if edge.subtype == T_BRANCH then
                         has_t_branch = true
@@ -1143,9 +1145,10 @@ local function draw_group_wide_dynamic_edges(states, _, options)
                       end
                     end
                   end
-                  -- If the conditional function has no function call edge and has both a T- and an F-branch, cancel the implicit
-                  -- pseudo-edge towards the next interesting statement; instead, the reaching definitions will be routed through
-                  -- the branches, at whose end we'll return to the (interesting) statement following the conditional function call.
+                  -- If the conditional function has no function call or variable use edge and has both a T- and an F-branch,
+                  -- cancel the implicit pseudo-edge towards the next interesting statement; instead, the reaching definitions
+                  -- will be routed through the branches, at whose end we'll return to the (interesting) statement following the
+                  -- conditional function call.
                   if has_t_branch and has_f_branch then
                     previous_interesting_statement_number = nil
                   end
@@ -1541,6 +1544,9 @@ local function draw_group_wide_dynamic_edges(states, _, options)
   states.results.csname_use.statement_lists, states.results.csname_use.statement_indexes = {}, {}
   local statement_lists, statement_indexes = states.results.csname_use.statement_lists, states.results.csname_use.statement_indexes
 
+  states.results.csname_use.unprotected_function_definition_lists = {}
+  local unprotected_function_definition_lists = states.results.csname_use.unprotected_function_definition_lists
+
   states.results.csname_use.hop_lists, states.results.csname_use.next_hop_indexes = {}, {}
   local hop_lists, next_hop_indexes = states.results.csname_use.hop_lists, states.results.csname_use.next_hop_indexes
 
@@ -1579,6 +1585,7 @@ local function draw_group_wide_dynamic_edges(states, _, options)
       local csname_use_statement_location = edge.from
       local csname_use_statement = get_statement_from_location(states, csname_use_statement_location)
       local definition = edge.hops[1]
+      local definition_file_number = definition.chunk.segment.location.file_number
       local definition_statement = get_statement_from_location(states, definition)
 
       -- Index the edges by their originating statements.
@@ -1590,6 +1597,17 @@ local function draw_group_wide_dynamic_edges(states, _, options)
         statement_index[definition_statement] = {}
       end
       table.insert(statement_index[definition_statement], edge.from)
+
+      if definition_statement.type == FUNCTION_DEFINITION and
+        definition_statement.subtype == FUNCTION_DEFINITION_DIRECT and
+        not definition_statement.is_protected
+      then
+        assert(edge.type == FUNCTION_CALL)
+        if unprotected_function_definition_lists[definition_file_number] == nil then
+          unprotected_function_definition_lists[definition_file_number] = {}
+        end
+        table.insert(unprotected_function_definition_lists[definition_file_number], definition)
+      end
 
       -- Index the hops from the direct function/variable definitions to the function/variable calls.
       if next_hop_index[csname_use_statement] == nil then
@@ -1690,6 +1708,36 @@ local function determine_expandability(states, ...)
   return _determine_expandability(get_function_definitions, get_function_calls, states, ...)
 end
 
+-- Report any issues related to the expandability analysis.
+local function report_expandability_issues(states, file_number, _)
+  local state = states[file_number]
+
+  local content = state.content
+  local results = state.results
+  local issues = state.issues
+
+  -- Report unexpandable functions defined as unprotected.
+  for _, statement_location in ipairs(states.results.csname_use.unprotected_function_definition_lists[file_number] or {}) do
+    local statement = get_statement_from_location(states, statement_location)
+    assert(statement.maybe_fully_expandable ~= nil)
+    assert(statement.maybe_restricted_expandable ~= nil)
+    if not statement.maybe_fully_expandable and not statement.maybe_restricted_expandable then
+      local segment = statement_location.chunk.segment
+      local part_number = segment.location.part_number
+      local tokens = results.tokens[part_number]
+
+      local call_range_to_token_range = get_call_range_to_token_range(segment.calls, #tokens)
+      local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+
+      local token_range = call_range_to_token_range(statement.call_range)
+      local byte_range = token_range_to_byte_range(token_range)
+
+      local context = format_expandability_reason(statement, "not_restricted_expandable_reason", statement.defined_csname.transcript)
+      issues:add("w512", "defined an unexpandable function as unprotected", byte_range, context)
+    end
+  end
+end
+
 -- For each segment, determine the minimum reaching nesting depth from other segments.
 local function determine_min_reaching_nesting_depth(states, _, _)
   -- Determine the minimum reaching nesting depth once for all files in the file group, not just individual files.
@@ -1775,8 +1823,8 @@ local function determine_min_reaching_nesting_depth(states, _, _)
   end
 end
 
--- Report any issues.
-local function report_issues(states, main_file_number, options)
+-- Report any issues related to the reaching definition analysis.
+local function report_reaching_definition_issues(states, main_file_number, options)
   local state = states[main_file_number]
 
   local issues = state.issues
@@ -2051,8 +2099,9 @@ local substeps = {
   draw_group_wide_static_edges,
   draw_group_wide_dynamic_edges,
   determine_expandability,
+  report_expandability_issues,
   determine_min_reaching_nesting_depth,
-  report_issues,
+  report_reaching_definition_issues,
   cleanup,
 }
 

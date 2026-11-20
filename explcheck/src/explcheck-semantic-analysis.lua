@@ -2737,8 +2737,9 @@ local function determine_expandability(states, ...)
 end
 
 -- Format a representative chain of control sequences explaining lost expandability.
-local function format_expandability_reason(expandability_reason, expandability_reason_field, initial_csname)
+local function format_expandability_reason(object, expandability_reason_field, initial_csname)
   local formatted_csname_list, seen_expandability_reasons = {}, {}
+  local expandability_reason = object[expandability_reason_field]
 
   local function append_csname(csname)
     assert(csname ~= nil)
@@ -3044,7 +3045,7 @@ local function report_issues(states, file_number, options)
 
       local token_range = segment.transformed_tokens.token_range
       local byte_range = token_range_to_byte_range(token_range)
-      local context = format_expandability_reason(segment.not_fully_expandable_reason, "not_fully_expandable_reason")
+      local context = format_expandability_reason(segment, "not_fully_expandable_reason")
       issues:add("e428", "unexpandable or restricted-expandable boolean expression", byte_range, context)
     end
   end
@@ -3058,11 +3059,7 @@ local function report_issues(states, file_number, options)
     assert(statement.maybe_restricted_expandable ~= nil)
     if not statement.maybe_fully_expandable and not statement.maybe_restricted_expandable then
       local byte_range = results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement]
-      local context = format_expandability_reason(
-        statement.not_restricted_expandable_reason,
-        "not_restricted_expandable_reason",
-        statement.defined_csname.transcript
-      )
+      local context = format_expandability_reason(statement, "not_restricted_expandable_reason", statement.defined_csname.transcript)
       issues:add("w429", "defined an unexpandable function as unprotected", byte_range, context)
     end
   end
@@ -3283,6 +3280,7 @@ local substeps = {
 
 return {
   determine_expandability = _determine_expandability,
+  format_expandability_reason = format_expandability_reason,
   is_confused = is_confused,
   name = "semantic analysis",
   name_types = name_types,
