@@ -111,19 +111,10 @@ A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expand
 
 This check is a stronger version of <#unexpandable-or-restricted-expandable-boolean-expression> and the issue should only be emitted if <#unexpandable-or-restricted-expandable-boolean-expression> has not previously been emitted for this function.
 
-### Defined an unexpandable function as unprotected {.w label=w512 .work-in-progress}
+### Defined an unexpandable function as unprotected {.w label=w512}
 An unexpandable function or conditional function is defined using a creator function `\cs_new:*` or `\prg_new_conditional:*`. [@latexteam2024style, Section 4]
 
- /w512-01.tex
- /w512-02.tex
-
-<!--
-
-  The same considerations apply as for the previous issue E508,
-  except for the fact that we care not just about full but also
-  restricted expandability.
-
--->
+ /w512.tex
 
 This check is a stronger version of <#defined-unexpandable-function-as-unprotected> and the issue should only be emitted if <#defined-unexpandable-function-as-unprotected> has not previously been emitted for this function.
 

@@ -2351,15 +2351,6 @@ end
 
 -- Determine the expandability of function definitions and segments.
 local function _determine_expandability(get_function_definitions, get_function_calls, states, _, _)
-  -- Estimate expandability once for all files in the file group, not just individual files.
-  if states.results.determined_expandability ~= nil then
-    return
-  end
-  states.results.determined_expandability = true
-
-  assert(states.results.statement_analysis ~= nil)
-  assert(states.results.statement_analysis.statement_lists ~= nil)
-
   local changed_statement_list, changed_statement_index = {}, {}
   local aggregate_expandabilities, supports, parent_definitions = {}, {}, {}
 
@@ -2372,7 +2363,7 @@ local function _determine_expandability(get_function_definitions, get_function_c
     end
   end
 
-  -- Enqueue a call and its enclosing segment only once until it has been processed.
+  -- Enqueue a function call and its enclosing segment only once until it has been processed.
   local function enqueue_function_call(segment, statement)
     assert(statement.type == FUNCTION_CALL)
     if not changed_statement_index[statement] then
@@ -2394,50 +2385,45 @@ local function _determine_expandability(get_function_definitions, get_function_c
   end
 
   -- Record function (variant) definitions from all files in the group.
-  for _, state in ipairs(states) do
-    for _, statement in ipairs(state.results.statement_analysis.statement_lists.FUNCTION_AND_VARIANT_DEFINITION) do
-      record_function_definition(statement)
-    end
+  for statement in get_function_definitions(states) do
+    record_function_definition(statement)
   end
   -- Furthermore, also initialize their support counts.
-  for _, state in ipairs(states) do
-    for _, statement in ipairs(state.results.statement_analysis.statement_lists.FUNCTION_AND_VARIANT_DEFINITION) do
-      if statement.type == FUNCTION_VARIANT_DEFINITION
-          or statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
-      then
-        local support = {
-          maybe_fully_expandable = 0,
-          maybe_restricted_expandable = 0
-        }
-        local has_base_function_definitions = false
-        for other_statement in get_function_definitions(states, statement) do
-          has_base_function_definitions = true
+  for statement in get_function_definitions(states) do
+    if statement.type == FUNCTION_VARIANT_DEFINITION
+        or statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+    then
+      local support = {
+        maybe_fully_expandable = 0,
+        maybe_restricted_expandable = 0
+      }
+      local has_base_function_definitions = false
+      for other_statement in get_function_definitions(states, statement) do
+        has_base_function_definitions = true
 
-          local aggregate_expandability = aggregate_expandabilities[other_statement]
-          assert(aggregate_expandability ~= nil)
-          if aggregate_expandability.maybe_fully_expandable then
-            support.maybe_fully_expandable = support.maybe_fully_expandable + 1
-          end
-          if aggregate_expandability.maybe_restricted_expandable then
-            support.maybe_restricted_expandable = support.maybe_restricted_expandable + 1
-          end
+        local aggregate_expandability = aggregate_expandabilities[other_statement]
+        assert(aggregate_expandability ~= nil)
+        if aggregate_expandability.maybe_fully_expandable then
+          support.maybe_fully_expandable = support.maybe_fully_expandable + 1
+        end
+        if aggregate_expandability.maybe_restricted_expandable then
+          support.maybe_restricted_expandable = support.maybe_restricted_expandable + 1
+        end
 
-          -- For each base definition, record its potential parent definitions.
-          if parent_definitions[other_statement] == nil then
-            parent_definitions[other_statement] = {}
-          end
-          table.insert(parent_definitions[other_statement], statement)
+        -- For each base definition, record its potential parent definitions.
+        if parent_definitions[other_statement] == nil then
+          parent_definitions[other_statement] = {}
         end
-        if has_base_function_definitions then
-          supports[statement] = support
-        end
+        table.insert(parent_definitions[other_statement], statement)
+      end
+      if has_base_function_definitions then
+        supports[statement] = support
       end
     end
   end
 
-  -- Enqueue all definite calls from all files in the group.
-  for _, segment_and_statement in ipairs(states.results.statement_analysis.statement_lists.DEFINITE_FUNCTION_CALLS) do
-    local segment, statement = table.unpack(segment_and_statement)
+  -- Enqueue all function calls from all files in the group.
+  for segment, statement in get_function_calls(states) do
     enqueue_function_call(segment, statement)
     -- Furthermore, also initialize their support counts.
     local support = {
@@ -2462,10 +2448,8 @@ local function _determine_expandability(get_function_definitions, get_function_c
   end
 
   -- Initially prioritize function (variant) definitions over calls.
-  for _, state in ipairs(states) do
-    for _, statement in ipairs(state.results.statement_analysis.statement_lists.FUNCTION_AND_VARIANT_DEFINITION) do
-      enqueue_function_definition(statement)
-    end
+  for statement in get_function_definitions(states) do
+    enqueue_function_definition(statement)
   end
 
   -- Find a potential definition witnessing lost expandability.
@@ -2535,8 +2519,7 @@ local function _determine_expandability(get_function_definitions, get_function_c
     end
 
     -- Notify calls potentially using this definition.
-    for segment_and_statement in get_function_calls(states, statement) do
-      local segment, other_statement = table.unpack(segment_and_statement)
+    for segment, other_statement in get_function_calls(states, statement) do
       reduce_support(other_statement)
       enqueue_function_call(segment, other_statement)
     end
@@ -2616,67 +2599,147 @@ local function _determine_expandability(get_function_definitions, get_function_c
   end
 end
 
--- Determine the immediate potential function definitions for a call or an indirect/variant definition.
+-- Determine the immediate potential function definitions for a function call or indirect/variant definition using approximate
+-- name-based matching. If no function call is provided, produce all indirect/variant definitions relevant for the expandability
+-- analysis.
 local function get_function_definitions(states, statement)
-  assert(statement.type == FUNCTION_CALL or statement.type == FUNCTION_VARIANT_DEFINITION or
-    statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT)
   assert(states.results.statement_analysis ~= nil)
 
-  local csname = statement.type == FUNCTION_CALL and statement.used_csname or statement.base_csname
-  if csname.type ~= TEXT then
-    return empty_iterator
-  end
+  if statement == nil then
+    local file_number, statement_number = 1, 0
+    return function()
 
-  local potential_definitions = states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION[csname.payload]
-  if potential_definitions == nil then
-    return empty_iterator
-  end
-  assert(#potential_definitions > 0)
+      -- Advance to the next file.
+      local function next_file()
+        if file_number < #states then
+          file_number, statement_number = file_number + 1, 0
+          return true
+        else
+          assert(file_number == #states)
+          return false
+        end
+      end
 
-  local statement_number = 0
-  return function()
-    statement_number = statement_number + 1
-    return potential_definitions[statement_number]
+      -- Advance to the next statement.
+      local function next_statement()
+        while true do
+          assert(file_number <= #states)
+          local state = states[file_number]
+          local other_statements = state.results.statement_analysis.statement_lists.FUNCTION_AND_VARIANT_DEFINITION
+          if #other_statements == 0 then
+            if not next_file() then
+              return false
+            end
+          else
+            assert(#other_statements > 0)
+            if statement_number < #other_statements then
+              statement_number = statement_number + 1
+              local other_statement = other_statements[statement_number]
+              return true, other_statement
+            else
+              assert(statement_number == #other_statements)
+              if not next_file() then
+                return false
+              end
+            end
+          end
+        end
+      end
+
+      local has_next_statement, other_statement = next_statement()
+      if not has_next_statement then
+        return nil
+      else
+        assert(other_statement ~= nil)
+        return other_statement
+      end
+    end
+  else
+    assert(
+      statement.type == FUNCTION_CALL or
+      statement.type == FUNCTION_VARIANT_DEFINITION or
+      statement.type == FUNCTION_DEFINITION and statement.subtype == FUNCTION_DEFINITION_INDIRECT
+    )
+
+    local csname = statement.type == FUNCTION_CALL and statement.used_csname or statement.base_csname
+    if csname.type ~= TEXT then
+      return empty_iterator
+    end
+
+    local other_statements = states.results.statement_analysis.text_name_indexes.FUNCTION_AND_VARIANT_DEFINITION[csname.payload]
+    if other_statements == nil then
+      return empty_iterator
+    end
+    assert(#other_statements > 0)
+
+    local statement_number = 1
+    return function()
+      if statement_number > #other_statements then
+        return nil
+      else
+        local other_statement = other_statements[statement_number]
+        statement_number = statement_number + 1
+        return other_statement
+      end
+    end
   end
 end
 
 -- Determine the potential function calls for a function (variant) definition, using approximate name-based matching.
+-- If no function (variant) definition is provided, produce all function calls relevant for the expandability analysis.
 local function get_function_calls(states, statement)
-  assert(statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
   assert(states.results.statement_analysis ~= nil)
-  assert(states.results.statement_analysis.text_name_indexes ~= nil)
 
-  if statement.defined_csname.type ~= TEXT then
-    return empty_iterator
-  end
-  local csname = statement.defined_csname.payload
-  if states.results.statement_analysis.text_name_indexes.DEFINITE_FUNCTION_CALL[csname] == nil then
-    return empty_iterator
-  end
+  local segments_and_statements
+  if statement == nil then
+    segments_and_statements = states.results.statement_analysis.statement_lists.DEFINITE_FUNCTION_CALLS
+    if #segments_and_statements == 0 then
+      return empty_iterator
+    end
+  else
+    assert(statement.type == FUNCTION_DEFINITION or statement.type == FUNCTION_VARIANT_DEFINITION)
+    if statement.defined_csname.type ~= TEXT then
+      return empty_iterator
+    end
 
-  local segments_and_statements = states.results.statement_analysis.text_name_indexes.DEFINITE_FUNCTION_CALL[csname]
+    local csname = statement.defined_csname.payload
+    if states.results.statement_analysis.text_name_indexes.DEFINITE_FUNCTION_CALL[csname] == nil then
+      return empty_iterator
+    end
+
+    segments_and_statements = states.results.statement_analysis.text_name_indexes.DEFINITE_FUNCTION_CALL[csname]
+  end
   assert(#segments_and_statements > 0)
+
   local statement_number = 1
   return function()
     if statement_number > #segments_and_statements then
       return nil
     else
-      local segment_and_statement = segments_and_statements[statement_number]
+      local segment, other_statement = table.unpack(segments_and_statements[statement_number])
+      assert(other_statement.type == FUNCTION_CALL)
       statement_number = statement_number + 1
-      return segment_and_statement
+      return segment, other_statement
     end
   end
 end
 
 -- Determine the expandability of function definitions and segments, using approximate name-based matching to determine
--- the possible function definitions for a function call.
-local function determine_expandability(...)
-  return _determine_expandability(get_function_definitions, get_function_calls, ...)
+-- the correspondence between function (variant) definitions and function calls.
+local function determine_expandability(states, ...)
+  -- Estimate expandability once for all files in the file group, not just individual files.
+  if states.results.determined_expandability ~= nil then
+    return
+  end
+  states.results.determined_expandability = true
+
+  return _determine_expandability(get_function_definitions, get_function_calls, states, ...)
 end
 
 -- Format a representative chain of control sequences explaining lost expandability.
-local function format_expandability_reason(expandability_reason, expandability_reason_field, initial_csname)
+local function format_expandability_reason(object, expandability_reason_field, initial_csname)
   local formatted_csname_list, seen_expandability_reasons = {}, {}
+  local expandability_reason = object[expandability_reason_field]
 
   local function append_csname(csname)
     assert(csname ~= nil)
@@ -2982,7 +3045,7 @@ local function report_issues(states, file_number, options)
 
       local token_range = segment.transformed_tokens.token_range
       local byte_range = token_range_to_byte_range(token_range)
-      local context = format_expandability_reason(segment.not_fully_expandable_reason, "not_fully_expandable_reason")
+      local context = format_expandability_reason(segment, "not_fully_expandable_reason")
       issues:add("e428", "unexpandable or restricted-expandable boolean expression", byte_range, context)
     end
   end
@@ -2996,11 +3059,7 @@ local function report_issues(states, file_number, options)
     assert(statement.maybe_restricted_expandable ~= nil)
     if not statement.maybe_fully_expandable and not statement.maybe_restricted_expandable then
       local byte_range = results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement]
-      local context = format_expandability_reason(
-        statement.not_restricted_expandable_reason,
-        "not_restricted_expandable_reason",
-        statement.defined_csname.transcript
-      )
+      local context = format_expandability_reason(statement, "not_restricted_expandable_reason", statement.defined_csname.transcript)
       issues:add("w429", "defined an unexpandable function as unprotected", byte_range, context)
     end
   end
@@ -3220,6 +3279,8 @@ local substeps = {
 }
 
 return {
+  determine_expandability = _determine_expandability,
+  format_expandability_reason = format_expandability_reason,
   is_confused = is_confused,
   name = "semantic analysis",
   name_types = name_types,
