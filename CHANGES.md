@@ -28,6 +28,13 @@ This version of explcheck has fixed the following problems:
   since l3debug explicitly rejects inconsistent local/global assignments in
   top-level code, explcheck should do the same.
 
+#### Architecture
+
+This version of explcheck has made the following architectural changes:
+
+- Add the module `explcheck-expandability.lua` for tracking expandability
+  estimates. (#236)
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
