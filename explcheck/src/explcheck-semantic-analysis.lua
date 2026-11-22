@@ -12,7 +12,7 @@ local parsers = require("explcheck-parsers")
 local expandability_types = _expandability.expandability_types
 local new_expandability = _expandability.new_expandability
 
-local BASIC = expandability_types.BASIC
+local BOOLEAN_EXPRESSION_EXPANDABILITY = expandability_types.BOOLEAN_EXPRESSION
 
 local get_token_range_to_byte_range = lexical_analysis.get_token_range_to_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
@@ -46,7 +46,7 @@ local CALL = call_types.CALL
 local OTHER_TOKENS = call_types.OTHER_TOKENS
 local STANDALONE_VARIABLE = call_types.STANDALONE_VARIABLE
 
-local BOOLEAN_EXPRESSION = segment_types.BOOLEAN_EXPRESSION
+local BOOLEAN_EXPRESSION_SEGMENT = segment_types.BOOLEAN_EXPRESSION
 
 local new_segment_types = {
   REPLACEMENT_TEXT = "function definition replacement text",
@@ -818,7 +818,7 @@ local function collect_statements(states, file_number, options)
                 type = CSNAME,
                 payload = defined_csname.transcript,
               }
-              expandability[BASIC]:weaken(false, false, expandability_reason)
+              expandability:weaken_all(false, false, expandability_reason)
             end
             local statement = {
               type = FUNCTION_VARIANT_DEFINITION,
@@ -995,33 +995,36 @@ local function collect_statements(states, file_number, options)
               -- estimate the expandability of the defined function
               local expandability = new_expandability()
               if nested_segment ~= nil then
-                local maybe_fully_expandable = nested_segment.expandability[BASIC].maybe_fully_expandable
-                local maybe_restricted_expandable = nested_segment.expandability[BASIC].maybe_restricted_expandable
                 local expandability_reason = {
                   type = SEGMENT,
                   payload = nested_segment,
                 }
-                expandability[BASIC]:weaken(maybe_fully_expandable, maybe_restricted_expandable, expandability_reason)
+                for _, expandability_type in ipairs(expandability_types) do
+                  local segment_expandability = nested_segment.expandability[expandability_type]
+                  expandability[expandability_type]:weaken(
+                    segment_expandability.maybe_fully_expandable,
+                    segment_expandability.maybe_restricted_expandable,
+                    expandability_reason
+                  )
+                end
               end
               if is_protected then
                 local expandability_reason = {
                   type = CSNAME,
                   payload = effectively_defined_csname.transcript,
                 }
-                expandability[BASIC]:weaken(false, false, expandability_reason)
+                expandability:weaken_all(false, false, expandability_reason)
               end
-              if expandability[BASIC].maybe_fully_expandable or expandability[BASIC].maybe_restricted_expandable then
-                local _, effectively_defined_argument_specifiers = parse_expl3_csname(effectively_defined_csname)
-                if (
-                  effectively_defined_argument_specifiers ~= nil and
-                  lpeg.match(parsers.x_type_argument_specifiers, effectively_defined_argument_specifiers.transcript) ~= nil
-                ) then
-                  local expandability_reason = {
-                    type = CSNAME,
-                    payload = effectively_defined_csname.transcript,
-                  }
-                  expandability[BASIC]:weaken(false, false, expandability_reason)
-                end
+              local _, effectively_defined_argument_specifiers = parse_expl3_csname(effectively_defined_csname)
+              if (
+                effectively_defined_argument_specifiers ~= nil and
+                lpeg.match(parsers.x_type_argument_specifiers, effectively_defined_argument_specifiers.transcript) ~= nil
+              ) then
+                local expandability_reason = {
+                  type = CSNAME,
+                  payload = effectively_defined_csname.transcript,
+                }
+                expandability:weaken_all(false, false, expandability_reason)
               end
               local statement = {
                 type = FUNCTION_DEFINITION,
@@ -1125,7 +1128,7 @@ local function collect_statements(states, file_number, options)
                   type = CSNAME,
                   payload = effectively_defined_csname.transcript,
                 }
-                expandability[BASIC]:weaken(false, false, expandability_reason)
+                expandability:weaken_all(false, false, expandability_reason)
               end
               local statement = {
                 type = FUNCTION_DEFINITION,
@@ -1310,7 +1313,7 @@ local function collect_statements(states, file_number, options)
             if variable_type == "bool" then
               definition_text_argument.analyzed = true
               local nested_segment = {
-                type = BOOLEAN_EXPRESSION,
+                type = BOOLEAN_EXPRESSION_SEGMENT,
                 location = segment.location,
                 nesting_depth = segment.nesting_depth + 1,
                 parent_statement = statement,
@@ -2332,7 +2335,7 @@ local function weaken_orphaned_latex3_function_definition_expandability(states, 
             type = CSNAME,
             payload = statement.base_csname.transcript,
           }
-          statement.expandability[BASIC]:weaken(is_fully_expandable, is_restricted_expandable, expandability_reason)
+          statement.expandability:weaken_all(is_fully_expandable, is_restricted_expandable, expandability_reason)
         end
       end
     end
@@ -3044,8 +3047,8 @@ local function report_issues(states, file_number, options)
   end
 
   -- Report unexpandable or restricted-expandable boolean expressions.
-  for _, segment in ipairs(results.segment_type_index[BOOLEAN_EXPRESSION] or {}) do
-    local segment_expandability = segment.expandability[BASIC]
+  for _, segment in ipairs(results.segment_type_index[BOOLEAN_EXPRESSION_SEGMENT] or {}) do
+    local segment_expandability = segment.expandability[BOOLEAN_EXPRESSION_EXPANDABILITY]
     if not segment_expandability.maybe_fully_expandable then
       local part_number = segment.location.part_number
       local tokens = results.tokens[part_number]
@@ -3053,7 +3056,7 @@ local function report_issues(states, file_number, options)
 
       local token_range = segment.transformed_tokens.token_range
       local byte_range = token_range_to_byte_range(token_range)
-      local context = format_expandability_reason(segment, BASIC, "not_fully_expandable_reason")
+      local context = format_expandability_reason(segment, BOOLEAN_EXPRESSION_EXPANDABILITY, "not_fully_expandable_reason")
       issues:add("e428", "unexpandable or restricted-expandable boolean expression", byte_range, context)
     end
   end
@@ -3063,10 +3066,11 @@ local function report_issues(states, file_number, options)
     assert(statement.type == FUNCTION_DEFINITION)
     assert(statement.subtype == FUNCTION_DEFINITION_DIRECT)
     assert(not statement.is_protected)
-    local statement_expandability = statement.expandability[BASIC]
-    if not statement_expandability.maybe_fully_expandable and not statement_expandability.maybe_restricted_expandable then
+    local expandability_type, statement_expandability = statement.expandability:get_most_optimistic()
+    if not statement_expandability.maybe_restricted_expandable then
       local byte_range = results.statement_analysis.unprotected_direct_function_definition_byte_range_index[statement]
-      local context = format_expandability_reason(statement, BASIC, "not_restricted_expandable_reason", statement.defined_csname.transcript)
+      local initial_csname = statement.defined_csname.transcript
+      local context = format_expandability_reason(statement, expandability_type, "not_restricted_expandable_reason", initial_csname)
       issues:add("w429", "defined an unexpandable function as unprotected", byte_range, context)
     end
   end

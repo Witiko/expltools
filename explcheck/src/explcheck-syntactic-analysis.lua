@@ -10,7 +10,7 @@ local identity = require("explcheck-utils").identity
 local expandability_types = _expandability.expandability_types
 local new_expandability = _expandability.new_expandability
 
-local BASIC = expandability_types.BASIC
+local BOOLEAN_EXPRESSION_EXPANDABILITY = expandability_types.BOOLEAN_EXPRESSION
 
 local cleanup_required_latex3_version = lexical_analysis.cleanup_required_latex3_version
 local get_token_byte_range = lexical_analysis.get_token_byte_range
@@ -70,7 +70,7 @@ local segment_types = {
   TF_TYPE_ARGUMENTS = "T- or F-type argument",
 }
 
-local BOOLEAN_EXPRESSION = segment_types.BOOLEAN_EXPRESSION
+local BOOLEAN_EXPRESSION_SEGMENT = segment_types.BOOLEAN_EXPRESSION
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
@@ -306,14 +306,16 @@ local function get_calls(states, file_number, options, part_number, segment)
   -- Weaken the segment's expandability estimate if the control sequence is an unexpandable variable or constant.
   local function update_segment_expandability_from_variable(csname)
     local unexpandable_variable_type = lpeg.match(parsers.expl3_unexpandable_variable_or_constant_csname, csname)
-    if unexpandable_variable_type ~= nil
-      and not (unexpandable_variable_type == "bool" and segment.type == BOOLEAN_EXPRESSION)
-    then
+    if unexpandable_variable_type ~= nil then
       local expandability_reason = {
         type = CSNAME,
         payload = csname,
       }
-      segment.expandability[BASIC]:weaken(false, false, expandability_reason)
+      if unexpandable_variable_type == "bool" then
+        segment.expandability:weaken_all_except(BOOLEAN_EXPRESSION_EXPANDABILITY, false, false, expandability_reason)
+      else
+        segment.expandability:weaken_all(false, false, expandability_reason)
+      end
     end
   end
 
@@ -332,7 +334,7 @@ local function get_calls(states, file_number, options, part_number, segment)
             type = CSNAME,
             payload = csname,
           }
-          segment.expandability[BASIC]:weaken(is_fully_expandable, is_restricted_expandable, expandability_reason)
+          segment.expandability:weaken_all(is_fully_expandable, is_restricted_expandable, expandability_reason)
         end
         update_segment_expandability_from_variable(csname)
       end
@@ -539,7 +541,7 @@ local function get_calls(states, file_number, options, part_number, segment)
             if boolean_expression_argument_numbers_index[argument_number] then
               argument.analyzed = true
               local nested_segment = {
-                type = BOOLEAN_EXPRESSION,
+                type = BOOLEAN_EXPRESSION_SEGMENT,
                 location = segment.location,
                 nesting_depth = segment.nesting_depth + 1,
                 transformed_tokens = {
@@ -858,8 +860,8 @@ local function get_calls(states, file_number, options, part_number, segment)
             type = CALL,
             payload = call,
           }
-          call.expandability[BASIC]:weaken(maybe_fully_expandable, maybe_restricted_expandable, call_expandability_reason)
-          segment.expandability[BASIC]:weaken(maybe_fully_expandable, maybe_restricted_expandable, segment_expandability_reason)
+          call.expandability:weaken_all(maybe_fully_expandable, maybe_restricted_expandable, call_expandability_reason)
+          segment.expandability:weaken_all(maybe_fully_expandable, maybe_restricted_expandable, segment_expandability_reason)
         end
         table.insert(calls, call)
         token_number = next_token_number

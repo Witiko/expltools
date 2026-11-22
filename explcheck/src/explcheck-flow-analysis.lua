@@ -2,7 +2,6 @@
 --
 local empty_iterator = require("explcheck-utils").empty_iterator
 local get_option = require("explcheck-config").get_option
-local expandability_types = require("explcheck-expandability").expandability_types
 local ranges = require("explcheck-ranges")
 local lexical_analysis = require("explcheck-lexical-analysis")
 local syntactic_analysis = require("explcheck-syntactic-analysis")
@@ -22,8 +21,6 @@ local format_expandability_reason = semantic_analysis.format_expandability_reaso
 local name_types = semantic_analysis.name_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
-
-local BASIC = expandability_types.BASIC
 
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
@@ -1722,8 +1719,8 @@ local function report_expandability_issues(states, file_number, _)
   -- Report unexpandable functions defined as unprotected.
   for _, statement_location in ipairs(states.results.csname_use.unprotected_function_definition_lists[file_number] or {}) do
     local statement = get_statement_from_location(states, statement_location)
-    local statement_expandability = statement.expandability[BASIC]
-    if not statement_expandability.maybe_fully_expandable and not statement_expandability.maybe_restricted_expandable then
+    local expandability_type, statement_expandability = statement.expandability:get_most_optimistic()
+    if not statement_expandability.maybe_restricted_expandable then
       local segment = statement_location.chunk.segment
       local part_number = segment.location.part_number
       local tokens = results.tokens[part_number]
@@ -1734,7 +1731,8 @@ local function report_expandability_issues(states, file_number, _)
       local token_range = call_range_to_token_range(statement.call_range)
       local byte_range = token_range_to_byte_range(token_range)
 
-      local context = format_expandability_reason(statement, BASIC, "not_restricted_expandable_reason", statement.defined_csname.transcript)
+      local initial_csname = statement.defined_csname.transcript
+      local context = format_expandability_reason(statement, expandability_type, "not_restricted_expandable_reason", initial_csname)
       issues:add("w512", "defined an unexpandable function as unprotected", byte_range, context)
     end
   end

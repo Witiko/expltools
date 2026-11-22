@@ -28,6 +28,16 @@ This version of explcheck has fixed the following problems:
   since l3debug explicitly rejects inconsistent local/global assignments in
   top-level code, explcheck should do the same.
 
+- Consider standalone boolean variables and constants such as `\c_true_bool`
+  expandable within boolean expressions. (#236)
+
+  Previously, these caused enclosing segments and functions to be considered
+  unexpandable for issues E428 (Unexpandable or restricted-expandable boolean
+  expression) and W429 (Defined an unexpandable function as unprotected). While
+  correct for top-level material, this was incorrect for boolean expressions.
+  Expandability is now estimated separately for different contexts, and the
+  issues use the appropriate estimates.
+
 #### Architecture
 
 This version of explcheck has made the following architectural changes:
