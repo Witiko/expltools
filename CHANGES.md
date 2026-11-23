@@ -8,12 +8,13 @@
 
 This version of explcheck has implemented the following new features:
 
-- Add more support for flow analysis. (#236)
+- Add more support for flow analysis. (#215, #236, #239)
 
   This adds support for the following issues from the document titled
   [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
-  1. W512 (Defined an unexpandable function as unprotected)
+  1. E508 (Unexpandable or restricted-expandable boolean expression)
+  2. W512 (Defined an unexpandable function as unprotected)
 
 #### Fixes
 
