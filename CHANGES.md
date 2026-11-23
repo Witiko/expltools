@@ -1,5 +1,18 @@
 # Changes
 
+## expltools 2026-12-XX
+
+### explcheck v0.26.0
+
+#### Documentation
+
+This version of explcheck has made the following improvements to the documentation:
+
+- Link [blog post about reaching definitions and expandability][Expl3-Linter-13]
+  from `README.md`. (40394ca)
+
+ [Expl3-Linter-13]: https://witiko.github.io/Expl3-Linter-13/ "Static analysis of expl3 programs (13): Reaching definitions and expandability"
+
 ## expltools 2026-11-23
 
 ### explcheck v0.25.0
