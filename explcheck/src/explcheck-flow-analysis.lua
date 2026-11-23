@@ -12,6 +12,7 @@ local parsers = require("explcheck-parsers")
 local format_csname = lexical_analysis.format_csname
 local get_token_range_to_byte_range = lexical_analysis.get_token_range_to_byte_range
 
+local expansion_context_types = syntactic_analysis.expansion_context_types
 local segment_types = syntactic_analysis.segment_types
 local segment_subtypes = syntactic_analysis.segment_subtypes
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
@@ -22,11 +23,14 @@ local name_types = semantic_analysis.name_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
 
+local BOOLEAN_EXPRESSION = segment_types.BOOLEAN_EXPRESSION
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
 local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
 local F_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.F_TYPE_ARGUMENTS
+
+assert(BOOLEAN_EXPRESSION == expansion_context_types.BOOLEAN_EXPRESSION)
 
 local TEXT = name_types.TEXT
 
@@ -1715,6 +1719,21 @@ local function report_expandability_issues(states, file_number, _)
   local content = state.content
   local results = state.results
   local issues = state.issues
+
+  -- Report unexpandable or restricted-expandable boolean expressions.
+  for _, segment in ipairs(results.segment_type_index[BOOLEAN_EXPRESSION] or {}) do
+    local segment_estimate = segment.expandability:get_estimate(BOOLEAN_EXPRESSION)
+    if not segment_estimate.maybe_fully_expandable then
+      local part_number = segment.location.part_number
+      local tokens = results.tokens[part_number]
+      local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+
+      local token_range = segment.transformed_tokens.token_range
+      local byte_range = token_range_to_byte_range(token_range)
+      local context = format_expandability_reason(segment, BOOLEAN_EXPRESSION, "not_fully_expandable_reason")
+      issues:add("e508", "unexpandable or restricted-expandable boolean expression", byte_range, context)
+    end
+  end
 
   -- Report unexpandable functions defined as unprotected.
   for _, statement_location in ipairs(states.results.csname_use.unprotected_function_definition_lists[file_number] or {}) do
