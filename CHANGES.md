@@ -35,8 +35,8 @@ This version of explcheck has fixed the following problems:
   unexpandable for issues E428 (Unexpandable or restricted-expandable boolean
   expression) and W429 (Defined an unexpandable function as unprotected). While
   correct for top-level material, this was incorrect for boolean expressions.
-  Expandability is now estimated separately for different contexts, and the
-  issues use the appropriate estimates.
+  Expandability is now estimated separately for different expansion contexts,
+  and the issues use the appropriate estimates.
 
 #### Architecture
 

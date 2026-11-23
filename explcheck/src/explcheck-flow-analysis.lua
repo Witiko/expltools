@@ -1719,8 +1719,8 @@ local function report_expandability_issues(states, file_number, _)
   -- Report unexpandable functions defined as unprotected.
   for _, statement_location in ipairs(states.results.csname_use.unprotected_function_definition_lists[file_number] or {}) do
     local statement = get_statement_from_location(states, statement_location)
-    local expandability_type, statement_expandability = statement.expandability:get_most_optimistic()
-    if not statement_expandability.maybe_restricted_expandable then
+    local expandability_type, statement_estimate = statement.expandability:get_most_optimistic_estimate()
+    if not statement_estimate.maybe_restricted_expandable then
       local segment = statement_location.chunk.segment
       local part_number = segment.location.part_number
       local tokens = results.tokens[part_number]

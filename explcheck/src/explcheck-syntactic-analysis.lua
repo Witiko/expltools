@@ -1,16 +1,11 @@
 -- The syntactic analysis step of static analysis converts TeX tokens into a tree of function calls.
 
 local get_option = require("explcheck-config").get_option
-local _expandability = require("explcheck-expandability")
+local new_expandability = require("explcheck-expandability").new_expandability
 local lexical_analysis = require("explcheck-lexical-analysis")
 local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
-
-local expandability_types = _expandability.expandability_types
-local new_expandability = _expandability.new_expandability
-
-local BOOLEAN_EXPRESSION_EXPANDABILITY = expandability_types.BOOLEAN_EXPRESSION
 
 local cleanup_required_latex3_version = lexical_analysis.cleanup_required_latex3_version
 local get_token_byte_range = lexical_analysis.get_token_byte_range
@@ -70,7 +65,7 @@ local segment_types = {
   TF_TYPE_ARGUMENTS = "T- or F-type argument",
 }
 
-local BOOLEAN_EXPRESSION_SEGMENT = segment_types.BOOLEAN_EXPRESSION
+local BOOLEAN_EXPRESSION = segment_types.BOOLEAN_EXPRESSION
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
@@ -83,6 +78,14 @@ local segment_subtypes = {
 
 local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
 local F_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.F_TYPE_ARGUMENTS
+
+local expansion_context_types = {
+  BOOLEAN_EXPRESSION = BOOLEAN_EXPRESSION,
+}
+
+assert(BOOLEAN_EXPRESSION == expansion_context_types.BOOLEAN_EXPRESSION)
+
+table.insert(expansion_context_types, BOOLEAN_EXPRESSION)
 
 -- Get the token range for a given call.
 local function get_call_token_range(calls)
@@ -312,7 +315,7 @@ local function get_calls(states, file_number, options, part_number, segment)
         payload = csname,
       }
       if unexpandable_variable_type == "bool" then
-        segment.expandability:weaken_all_except(BOOLEAN_EXPRESSION_EXPANDABILITY, false, false, expandability_reason)
+        segment.expandability:weaken_all_except(BOOLEAN_EXPRESSION, false, false, expandability_reason)
       else
         segment.expandability:weaken_all(false, false, expandability_reason)
       end
@@ -541,7 +544,7 @@ local function get_calls(states, file_number, options, part_number, segment)
             if boolean_expression_argument_numbers_index[argument_number] then
               argument.analyzed = true
               local nested_segment = {
-                type = BOOLEAN_EXPRESSION_SEGMENT,
+                type = BOOLEAN_EXPRESSION,
                 location = segment.location,
                 nesting_depth = segment.nesting_depth + 1,
                 transformed_tokens = {
@@ -861,7 +864,7 @@ local function get_calls(states, file_number, options, part_number, segment)
             payload = call,
           }
           call.expandability:weaken_all(maybe_fully_expandable, maybe_restricted_expandable, call_expandability_reason)
-          segment.expandability:weaken_all(maybe_fully_expandable, maybe_restricted_expandable, segment_expandability_reason)
+          segment.expandability:weaken_by(call.expandability, segment_expandability_reason)
         end
         table.insert(calls, call)
         token_number = next_token_number
@@ -995,6 +998,7 @@ return {
   call_types = call_types,
   csname_origins = csname_origins,
   expandability_reason_types = expandability_reason_types,
+  expansion_context_types = expansion_context_types,
   extract_text_from_tokens = extract_text_from_tokens,
   get_call_range_to_token_range = get_call_range_to_token_range,
   get_call_token_range = get_call_token_range,
