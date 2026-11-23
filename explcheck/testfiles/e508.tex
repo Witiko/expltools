@@ -1,0 +1,13 @@
+\cs_new:Nn
+  \example_actually_expandable:
+  { \c_true_bool }
+\cs_new_eq:NN
+  \example_unexpandable:
+  \example_actually_expandable:
+\cs_set_protected:Nn
+  \example_unexpandable:
+  { \l_tmpa_box }
+\bool_if:nTF
+  { \example_unexpandable: }  % error on this line
+  { foo }
+  { bar }
