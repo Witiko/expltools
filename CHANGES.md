@@ -8,12 +8,13 @@
 
 This version of explcheck has implemented the following new features:
 
-- Add more support for flow analysis. (#236)
+- Add more support for flow analysis. (#215, #236, #239)
 
   This adds support for the following issues from the document titled
   [_Warnings and errors for the expl3 analysis tool_][warnings-and-errors]:
 
-  1. W512 (Defined an unexpandable function as unprotected)
+  1. E508 (Unexpandable or restricted-expandable boolean expression)
+  2. W512 (Defined an unexpandable function as unprotected)
 
 #### Fixes
 
@@ -45,7 +46,7 @@ This version of explcheck has made the following architectural changes:
 - Add the module `explcheck-expandability.lua` for tracking expandability
   estimates. (#236)
 
-- Add `outputs` to processing steps, remove `cleanup()` substeps. (#237, #238)
+- Add `outputs` to processing steps, remove `cleanup()` substeps. (#237..#239)
 
   Previously, transient results for passing data around processing substeps
   within a step were removed within `cleanup()` substeps. After this change,

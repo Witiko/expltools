@@ -12,6 +12,7 @@ local parsers = require("explcheck-parsers")
 local format_csname = lexical_analysis.format_csname
 local get_token_range_to_byte_range = lexical_analysis.get_token_range_to_byte_range
 
+local expansion_context_types = syntactic_analysis.expansion_context_types
 local segment_types = syntactic_analysis.segment_types
 local segment_subtypes = syntactic_analysis.segment_subtypes
 local get_call_range_to_token_range = syntactic_analysis.get_call_range_to_token_range
@@ -22,11 +23,14 @@ local name_types = semantic_analysis.name_types
 local statement_types = semantic_analysis.statement_types
 local statement_subtypes = semantic_analysis.statement_subtypes
 
+local BOOLEAN_EXPRESSION = segment_types.BOOLEAN_EXPRESSION
 local PART = segment_types.PART
 local TF_TYPE_ARGUMENTS = segment_types.TF_TYPE_ARGUMENTS
 
 local T_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.T_TYPE_ARGUMENTS
 local F_TYPE_ARGUMENTS = segment_subtypes.TF_TYPE_ARGUMENTS.F_TYPE_ARGUMENTS
+
+assert(BOOLEAN_EXPRESSION == expansion_context_types.BOOLEAN_EXPRESSION)
 
 local TEXT = name_types.TEXT
 
@@ -77,6 +81,7 @@ local DYNAMIC = edge_categories.DYNAMIC
 local TF_BRANCH = "T- or F-branch of conditional function"
 
 local edge_types = {
+  CONDITION = "function condition",
   NEXT_CHUNK = "pair of successive chunks",
   NEXT_INTERESTING_STATEMENT = "pair of successive interesting statements",  -- Only used internally in `draw_dynamic_edges()`.
   NEXT_FILE = "potential insertion of another file from the current file group",
@@ -88,6 +93,7 @@ local edge_types = {
   VARIABLE_USE_RETURN = string.format("%s return", VARIABLE_USE),
 }
 
+local CONDITION = edge_types.CONDITION
 local NEXT_CHUNK = edge_types.NEXT_CHUNK
 local NEXT_INTERESTING_STATEMENT = edge_types.NEXT_INTERESTING_STATEMENT
 local NEXT_FILE = edge_types.NEXT_FILE
@@ -391,7 +397,7 @@ local function draw_file_local_static_edges(states, file_number, _)
     end
   end
 
-  -- Record edges from conditional functions to their branches and back.
+  -- Record edges from conditional functions to their conditions, as well as their branches and back.
   for _, from_segment in ipairs(results.segments or {}) do
     for _, from_chunk in ipairs(from_segment.chunks or {}) do
       for from_statement_number, from_statement in from_chunk.statement_range:enumerate(from_segment.macro_statements) do
@@ -401,55 +407,97 @@ local function draw_file_local_static_edges(states, file_number, _)
           goto next_statement
         end
         for _, call in from_statement.call_range:enumerate(from_segment.calls) do
+          -- For every call, collect all boolean expression and branch segments from the arguments of the call.
+          local boolean_expression_segments, tf_branch_segments = {}, {}
           for _, argument in ipairs(call.arguments or {}) do
             if argument.segment_number ~= nil then
               local to_segment = results.segments[argument.segment_number]
-              if to_segment.type == TF_TYPE_ARGUMENTS and #to_segment.chunks > 0 then
-                local edge_subtype
-                if to_segment.subtype == T_TYPE_ARGUMENTS then
-                  edge_subtype = T_BRANCH
-                elseif to_segment.subtype == F_TYPE_ARGUMENTS then
-                  edge_subtype = F_BRANCH
-                else
-                  error('Unexpected segment subtype "' .. to_segment.subtype .. '"')
+              if #to_segment.chunks > 0 then
+                if to_segment.type == BOOLEAN_EXPRESSION then
+                  table.insert(boolean_expression_segments, to_segment)
+                elseif to_segment.type == TF_TYPE_ARGUMENTS then
+                  table.insert(tf_branch_segments, to_segment)
                 end
-                local branch_edge_to_chunk = to_segment.chunks[1]
-                local branch_edge_to_statement_number = branch_edge_to_chunk.statement_range:start()
-                local branch_edge = {
-                  type = TF_BRANCH,
-                  from = {
-                    chunk = from_chunk,
-                    statement_number = from_statement_number,
-                  },
-                  to = {
-                    chunk = branch_edge_to_chunk,
-                    statement_number = branch_edge_to_statement_number,
-                  },
-                  confidence = DEFINITELY,
-                  -- The following attribute is specific to the type.
-                  subtype = edge_subtype,
-                }
-                local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
-                local return_edge_from_statement_number = branch_edge_to_chunk.statement_range:stop() + 1
-                local return_edge = {
-                  type = TF_BRANCH_RETURN,
-                  from = {
-                    chunk = return_edge_from_chunk,
-                    statement_number = return_edge_from_statement_number,
-                  },
-                  to = {
-                    chunk = from_chunk,
-                    statement_number = from_statement_number + 1,
-                  },
-                  confidence = DEFINITELY,
-                  -- The following attribute is specific to the type.
-                  subtype = edge_subtype,
-                }
-                -- The following attributes are specific to the type.
-                table.insert(results.edges[STATIC], branch_edge)
-                table.insert(results.edges[STATIC], return_edge)
               end
             end
+          end
+          -- If we've found a single boolean expression and at least one branch, consider the boolean expression to be the
+          -- condition of a conditional function and record an edge from the call's statement into the boolean expression segment.
+          local condition_segment
+          if #boolean_expression_segments == 1 and #tf_branch_segments > 0 then
+            condition_segment = boolean_expression_segments[1]
+            local condition_edge_to_chunk = condition_segment.chunks[1]
+            local condition_edge_to_statement_number = condition_edge_to_chunk.statement_range:start()
+            local condition_edge = {
+              type = CONDITION,
+              from = {
+                chunk = from_chunk,
+                statement_number = from_statement_number,
+              },
+              to = {
+                chunk = condition_edge_to_chunk,
+                statement_number = condition_edge_to_statement_number,
+              },
+              confidence = DEFINITELY,
+            }
+            table.insert(results.edges[STATIC], condition_edge)
+          end
+          -- If we've found any branches, record edges from the call's statement into the branch segments.
+          for _, to_segment in ipairs(tf_branch_segments) do
+            local edge_subtype
+            if to_segment.subtype == T_TYPE_ARGUMENTS then
+              edge_subtype = T_BRANCH
+            elseif to_segment.subtype == F_TYPE_ARGUMENTS then
+              edge_subtype = F_BRANCH
+            else
+              error('Unexpected segment subtype "' .. to_segment.subtype .. '"')
+            end
+            local branch_edge_from_chunk, branch_edge_from_statement_number
+            if condition_segment ~= nil then
+              -- If there is a condition, record the edge as originating from the end of the corresponding boolean expression
+              -- segment.
+              branch_edge_from_chunk = condition_segment.chunks[#condition_segment.chunks]
+              branch_edge_from_statement_number = branch_edge_from_chunk.statement_range:stop() + 1
+            else
+              -- Otherwise, record the edge as originating from the call's statement.
+              branch_edge_from_chunk = from_chunk
+              branch_edge_from_statement_number = from_statement_number
+            end
+            local branch_edge_to_chunk = to_segment.chunks[1]
+            local branch_edge_to_statement_number = branch_edge_to_chunk.statement_range:start()
+            local branch_edge = {
+              type = TF_BRANCH,
+              from = {
+                chunk = branch_edge_from_chunk,
+                statement_number = branch_edge_from_statement_number,
+              },
+              to = {
+                chunk = branch_edge_to_chunk,
+                statement_number = branch_edge_to_statement_number,
+              },
+              confidence = DEFINITELY,
+              -- The following attribute is specific to the type.
+              subtype = edge_subtype,
+            }
+            local return_edge_from_chunk = to_segment.chunks[#to_segment.chunks]
+            local return_edge_from_statement_number = branch_edge_to_chunk.statement_range:stop() + 1
+            local return_edge = {
+              type = TF_BRANCH_RETURN,
+              from = {
+                chunk = return_edge_from_chunk,
+                statement_number = return_edge_from_statement_number,
+              },
+              to = {
+                chunk = from_chunk,
+                statement_number = from_statement_number + 1,
+              },
+              confidence = DEFINITELY,
+              -- The following attribute is specific to the type.
+              subtype = edge_subtype,
+            }
+            -- The following attributes are specific to the type.
+            table.insert(results.edges[STATIC], branch_edge)
+            table.insert(results.edges[STATIC], return_edge)
           end
         end
         ::next_statement::
@@ -1716,6 +1764,21 @@ local function report_expandability_issues(states, file_number, _)
   local results = state.results
   local issues = state.issues
 
+  -- Report unexpandable or restricted-expandable boolean expressions.
+  for _, segment in ipairs(results.segment_type_index[BOOLEAN_EXPRESSION] or {}) do
+    local segment_estimate = segment.expandability:get_estimate(BOOLEAN_EXPRESSION)
+    if not segment_estimate.maybe_fully_expandable then
+      local part_number = segment.location.part_number
+      local tokens = results.tokens[part_number]
+      local token_range_to_byte_range = get_token_range_to_byte_range(tokens, #content)
+
+      local token_range = segment.transformed_tokens.token_range
+      local byte_range = token_range_to_byte_range(token_range)
+      local context = format_expandability_reason(segment, BOOLEAN_EXPRESSION, "not_fully_expandable_reason")
+      issues:add("e508", "unexpandable or restricted-expandable boolean expression", byte_range, context)
+    end
+  end
+
   -- Report unexpandable functions defined as unprotected.
   for _, statement_location in ipairs(states.results.csname_use.unprotected_function_definition_lists[file_number] or {}) do
     local statement = get_statement_from_location(states, statement_location)
@@ -2082,7 +2145,13 @@ return {
   is_confused = is_confused,
   name = "flow analysis",
   outputs = {
-    "edges",
+    file_local = {
+      "edges",
+    },
+    group_wide = {
+      "num_inner_loops",
+      "num_outer_loops",
+    },
   },
   substeps = {
     merge_statements,

@@ -599,20 +599,16 @@ local expl3_function_with_boolean_expression_argument_csname = (
   P("bool")
   * underscore
   * (
-    P("do_until:n") * Cc({1})
+    P("g")^-1 * P("set:") * defined_csname_argument_specifier * P("n") * Cc({2})
+    + P("const:") * defined_csname_argument_specifier * P("n") * Cc({2})
+    + P("do_until:n") * Cc({1})
     + P("do_while:n") * Cc({1})
-    + P("if:n") * Cc({1})
-    + P("if_p:n") * Cc({1})
-    + P("lazy_all:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
-    + P("lazy_all_p:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
-    + P("lazy_and:nn") * Cc({1, 2})
-    + P("lazy_and_p:nn") * Cc({1, 2})
-    + P("lazy_any:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
-    + P("lazy_any_p:n") * Cc({1})  -- TODO: Recognize these arguments separately as containing a list of boolean expressions.
-    + P("lazy_or:nn") * Cc({1, 2})
-    + P("lazy_or_p:nn") * Cc({1, 2})
-    + P("lazy_xor:nn") * Cc({1, 2})
-    + P("lazy_xor_p:nn") * Cc({1, 2})
+    + P("if") * P("_p")^-1 * P(":n") * Cc({1})
+    + P("lazy_all") * P("_p")^-1 * P(":n") * Cc({1})
+    + P("lazy_and") * P("_p")^-1 * P(":nn") * Cc({1, 2})
+    + P("lazy_any") * P("_p")^-1 * P(":n") * Cc({1})
+    + P("lazy_or") * P("_p")^-1 * P(":nn") * Cc({1, 2})
+    + P("lazy_xor") * P("_p")^-1 * P(":nn") * Cc({1, 2})
     + P("log:n") * Cc({1})
     + P("show:n") * Cc({1})
     + P("not_p:n") * Cc({1})

@@ -216,11 +216,14 @@ local function process_files(pathnames, options)
   local new_issues = require("explcheck-issues").new_issues
 
   -- Prepare empty processing states for all files in the group.
-  local persistent_output_index = {
-    stopped_early = true,
+  local persistent_output_indexes = {
+    file_local = {
+      stopped_early = true,
+    },
+    group_wide = {},
   }
   local states = {
-    results = {},  -- Allow the processing steps to also record transient group-wide results.
+    results = {},  -- Allow the processing steps to also record group-wide results.
   }
   for _, pathname in ipairs(pathnames) do
     local file = assert(io.open(pathname, "r"))
@@ -240,6 +243,18 @@ local function process_files(pathnames, options)
   local step_filenames = {'preprocessing', 'lexical-analysis', 'syntactic-analysis', 'semantic-analysis', 'flow-analysis'}
   for step_number, step_filename in ipairs(step_filenames) do
     local step = require(string.format('explcheck-%s', step_filename))
+    -- Record all persistent outputs produced by the current step.
+    if step.outputs ~= nil then
+      for persistent_output_type, _ in pairs(step.outputs) do
+        assert(persistent_output_indexes[persistent_output_type] ~= nil)
+      end
+      for persistent_output_type, persistent_output_index in pairs(persistent_output_indexes) do
+        for _, persistent_output in ipairs(step.outputs[persistent_output_type] or {}) do
+          assert(persistent_output_index[persistent_output] == nil)
+          persistent_output_index[persistent_output] = true
+        end
+      end
+    end
     -- Process all files in the group with this step.
     for substep_number, process_with_substep in ipairs(step.substeps) do
       local is_last_substep = step_number == #step_filenames and substep_number == #step.substeps
@@ -295,17 +310,15 @@ local function process_files(pathnames, options)
         ::continue::
       end
     end
-    -- Clean up all transient results produced by the current step.
-    for _, persistent_output in ipairs(step.outputs or {}) do
-      assert(persistent_output_index[persistent_output] == nil)
-      persistent_output_index[persistent_output] = true
-    end
+    -- Clean up the transient results.
     for output, _ in pairs(states.results) do
-      states.results[output] = nil
+      if not persistent_output_indexes.group_wide[output] then
+        states.results[output] = nil
+      end
     end
     for _, state in ipairs(states) do
       for output, _ in pairs(state.results) do
-        if not persistent_output_index[output] then
+        if not persistent_output_indexes.file_local[output] then
           state.results[output] = nil
         end
       end
