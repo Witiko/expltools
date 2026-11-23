@@ -7,7 +7,6 @@ local ranges = require("explcheck-ranges")
 local parsers = require("explcheck-parsers")
 local identity = require("explcheck-utils").identity
 
-local cleanup_required_latex3_version = lexical_analysis.cleanup_required_latex3_version
 local get_token_byte_range = lexical_analysis.get_token_byte_range
 local is_token_simple = lexical_analysis.is_token_simple
 local format_token = lexical_analysis.format_token
@@ -987,12 +986,6 @@ local function estimate_required_latex3_version(states, file_number, options)  -
   end
 end
 
-local substeps = {
-  analyze_and_report_issues,
-  estimate_required_latex3_version,
-  cleanup_required_latex3_version,
-}
-
 return {
   add_segment = add_segment,
   call_types = call_types,
@@ -1005,9 +998,16 @@ return {
   is_confused = is_confused,
   is_latex3_function_expandable = _is_latex3_function_expandable,
   name = "syntactic analysis",
+  outputs = {
+    "segments",
+    "segment_type_index",
+  },
   segment_types = segment_types,
   segment_subtypes = segment_subtypes,
-  substeps = substeps,
+  substeps = {
+    analyze_and_report_issues,
+    estimate_required_latex3_version,
+  },
   token_types = token_types,
   transform_replacement_text_tokens = transform_replacement_text_tokens,
 }

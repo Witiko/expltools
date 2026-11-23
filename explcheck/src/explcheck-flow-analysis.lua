@@ -2077,37 +2077,22 @@ local function report_reaching_definition_issues(states, main_file_number, optio
   end
 end
 
--- Remove auxiliary intermediate results to free up memory.
-local function cleanup(states, _, _)
-  -- Remove group-wide intermediate results.
-  states.results.determined_expandability = nil
-  states.results.determined_min_reaching_nesting_depth = nil
-  states.results.drew_dynamic_edges = nil
-  states.results.drew_static_edges = nil
-  states.results.edge_indexes = nil
-  states.results.csname_declaration_in_edge_index = nil
-  states.results.csname_definition_in_edge_index = nil
-  states.results.csname_use = nil
-  states.results.elided_csname_use_out_edge_index = nil
-  states.results.reaching_definitions = nil
-end
-
-local substeps = {
-  merge_statements,
-  collect_chunks,
-  draw_file_local_static_edges,
-  draw_group_wide_static_edges,
-  draw_group_wide_dynamic_edges,
-  determine_expandability,
-  report_expandability_issues,
-  determine_min_reaching_nesting_depth,
-  report_reaching_definition_issues,
-  cleanup,
-}
-
 return {
   edge_types = edge_types,
   is_confused = is_confused,
   name = "flow analysis",
-  substeps = substeps,
+  outputs = {
+    "edges",
+  },
+  substeps = {
+    merge_statements,
+    collect_chunks,
+    draw_file_local_static_edges,
+    draw_group_wide_static_edges,
+    draw_group_wide_dynamic_edges,
+    determine_expandability,
+    report_expandability_issues,
+    determine_min_reaching_nesting_depth,
+    report_reaching_definition_issues,
+  },
 }

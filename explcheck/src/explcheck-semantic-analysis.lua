@@ -3253,44 +3253,29 @@ local function determine_maybe_multiply_defined_functions(states, file_number, _
   end
 end
 
--- Remove auxiliary intermediate results to free up memory.
-local function cleanup(states, file_number, _)
-  -- Remove group-wide intermediate results.
-  states.results.statement_analysis = nil
-  states.results.determined_expandability = nil
-
-  -- Remove file-local intermediate results.
-  local state = states[file_number]
-
-  local results = state.results
-
-  assert(results.statement_analysis ~= nil)
-  results.statement_analysis = nil
-end
-
-local substeps = {
-  collect_statements,
-  analyze_group_wide_statements,
-  detect_user_defined_function_calls,
-  weaken_orphaned_latex3_function_definition_expandability,
-  determine_expandability,
-  report_issues,
-  determine_function_calls_for_definitions,
-  determine_variable_uses_for_declarations,
-  determine_maybe_multiply_declared_variables,
-  determine_maybe_multiply_defined_functions,
-  determine_maybe_used_functions_and_variables,
-  cleanup,
-}
-
 return {
   determine_expandability = _determine_expandability,
   format_expandability_reason = format_expandability_reason,
   is_confused = is_confused,
   name = "semantic analysis",
   name_types = name_types,
+  outputs = {
+    "statements",
+  },
   statement_types = statement_types,
   statement_confidences = statement_confidences,
   statement_subtypes = statement_subtypes,
-  substeps = substeps,
+  substeps = {
+    collect_statements,
+    analyze_group_wide_statements,
+    detect_user_defined_function_calls,
+    weaken_orphaned_latex3_function_definition_expandability,
+    determine_expandability,
+    report_issues,
+    determine_function_calls_for_definitions,
+    determine_variable_uses_for_declarations,
+    determine_maybe_multiply_declared_variables,
+    determine_maybe_multiply_defined_functions,
+    determine_maybe_used_functions_and_variables,
+  },
 }

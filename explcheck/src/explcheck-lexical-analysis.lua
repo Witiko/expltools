@@ -489,26 +489,7 @@ local function estimate_required_latex3_version(states, file_number, _)
   end
 end
 
--- Remove auxiliary intermediate results for the minimum/maximum version of LaTeX3 definitions estimation.
-local function cleanup_required_latex3_version(states, file_number, _)
-  local state = states[file_number]
-
-  local results = state.results
-  assert(results.required_latex3_version ~= nil)
-
-  -- Remove the tally of seen control sequences.
-  results.required_latex3_version.seen_csnames = nil
-end
-
-local substeps = {
-  analyze,
-  report_issues,
-  estimate_required_latex3_version,
-  cleanup_required_latex3_version,
-}
-
 return {
-  cleanup_required_latex3_version = cleanup_required_latex3_version,
   format_csname = format_csname,
   format_token = format_token,
   format_tokens = format_tokens,
@@ -517,7 +498,16 @@ return {
   is_confused = is_confused,
   is_token_simple = is_token_simple,
   name = "lexical analysis",
-  substeps = substeps,
+  outputs = {
+    "tokens",
+    "groupings",
+    "num_invalid_characters",
+  },
+  substeps = {
+    analyze,
+    report_issues,
+    estimate_required_latex3_version,
+  },
   token_types = token_types,
   update_required_latex3_version_from_csname = update_required_latex3_version_from_csname,
 }
