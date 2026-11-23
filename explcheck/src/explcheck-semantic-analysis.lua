@@ -2320,7 +2320,7 @@ local function weaken_orphaned_latex3_function_definition_expandability(states, 
   end
 end
 
--- Determine the expandability of function definitions and segments.
+-- Determine the expandability of function definitions and segments for a specific expansion context type.
 local function _determine_expandability_for_type(get_function_definitions, get_function_calls, states, expansion_context_type)
   local changed_statement_list, changed_statement_index = {}, {}
   local aggregate_expandabilities, supports, parent_definitions = {}, {}, {}
