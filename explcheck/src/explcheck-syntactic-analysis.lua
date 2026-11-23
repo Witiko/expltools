@@ -999,8 +999,10 @@ return {
   is_latex3_function_expandable = _is_latex3_function_expandable,
   name = "syntactic analysis",
   outputs = {
-    "segments",
-    "segment_type_index",
+    file_local = {
+      "segments",
+      "segment_type_index",
+    },
   },
   segment_types = segment_types,
   segment_subtypes = segment_subtypes,

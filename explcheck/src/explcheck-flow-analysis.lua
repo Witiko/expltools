@@ -2145,7 +2145,13 @@ return {
   is_confused = is_confused,
   name = "flow analysis",
   outputs = {
-    "edges",
+    file_local = {
+      "edges",
+    },
+    group_wide = {
+      "num_inner_loops",
+      "num_outer_loops",
+    },
   },
   substeps = {
     merge_statements,

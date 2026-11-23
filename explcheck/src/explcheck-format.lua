@@ -396,10 +396,18 @@ local function print_summary(options, evaluation_results)
       end
       io.write(
         string.format(
-          ", %s %s between the %s\n%s- %s reaching definition inner %s",
+          ", %s %s between the %s",
           humanize(num_edges_total),
           pluralize("edge", num_edges_total),
-          pluralize("chunk", num_chunks),
+          pluralize("chunk", num_chunks)
+        )
+      )
+      if num_inner_loops_total == 0 then
+        goto skip_to_required_latex3_version
+      end
+      io.write(
+        string.format(
+          "\n%s- %s reaching definition inner %s",
           line_indent,
           titlecase(humanize(num_inner_loops_total)),
           pluralize("loop", num_inner_loops_total)

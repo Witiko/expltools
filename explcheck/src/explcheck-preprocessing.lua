@@ -454,12 +454,14 @@ return {
   is_confused = function() return false end,
   name = "preprocessing",
   outputs = {
-    "effective_required_latex3_version",
-    "required_latex3_version",
-    "line_starting_byte_numbers",
-    "expl_ranges",
-    "outer_expl_ranges",
-    "seems_like_latex_style_file",
+    file_local = {
+      "effective_required_latex3_version",
+      "required_latex3_version",
+      "line_starting_byte_numbers",
+      "expl_ranges",
+      "outer_expl_ranges",
+      "seems_like_latex_style_file",
+    },
   },
   substeps = {
     analyze_and_report_issues,

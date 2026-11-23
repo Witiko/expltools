@@ -3248,7 +3248,9 @@ return {
   name = "semantic analysis",
   name_types = name_types,
   outputs = {
-    "statements",
+    file_local = {
+      "statements",
+    },
   },
   statement_types = statement_types,
   statement_confidences = statement_confidences,

@@ -499,9 +499,11 @@ return {
   is_token_simple = is_token_simple,
   name = "lexical analysis",
   outputs = {
-    "tokens",
-    "groupings",
-    "num_invalid_characters",
+    file_local = {
+      "tokens",
+      "groupings",
+      "num_invalid_characters",
+    },
   },
   substeps = {
     analyze,
