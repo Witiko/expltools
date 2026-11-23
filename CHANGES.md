@@ -1,6 +1,6 @@
 # Changes
 
-## expltools 2026-11-XX
+## expltools 2026-11-23
 
 ### explcheck v0.25.0
 
@@ -58,7 +58,7 @@ This version of explcheck has made the following architectural changes:
 
 This version of explcheck has made the following improvements to the documentation:
 
-- Make documentation PDF/UA-2-compliant (#233, #234)
+- Make documentation PDF/UA-2-compliant. (#233, #234)
 
   This makes the documentation use `\DocumentMetadata` to produce
   PDF/UA-2-compilant output. For gray issues from the document titled
