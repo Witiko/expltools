@@ -1,34 +1,12 @@
 \cs_new:Nn
-  \example_unexpandable_first:
-  {
-    \tl_set:Nn
-      \l_tmpa_tl
-      { bar }
-    \c_true_bool
-  }
-\cs_new_protected:Nn
-  \example_unexpandable_second:
+  \example_actually_expandable:
   { \c_true_bool }
-\cs_new:Nn
-  \example_restricted_expandable:
-  {
-    \bool_do_while:Nn
-      \c_false_bool
-      { }
-    \c_true_bool
-  }
-\cs_new:Nn
-  \example_expandable:
-  { \c_true_bool }
-\bool_set:Nn  % error on this line
+\cs_new_eq:NN
+  \example_unexpandable:
+  \example_actually_expandable:
+\cs_set_protected:Nn
+  \example_unexpandable:
+  { \l_tmpa_box }
+\bool_set:No
   \l_tmpa_bool
-  { \example_unexpandable_first: }
-\bool_set:Nn  % error on this line
-  \l_tmpa_bool
-  { \example_unexpandable_second: }
-\bool_set:Nn  % error on this line
-  \l_tmpa_bool
-  { \example_restricted_expandable: }
-\bool_set:Nn
-  \l_tmpa_bool
-  { \example_expandable: }
+  { \example_unexpandable: }  % error on this line

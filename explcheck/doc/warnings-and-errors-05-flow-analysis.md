@@ -72,42 +72,10 @@ A function is set before it has been defined or after it has been undefined.
  /w507-01.tex
  /w507-02.tex
 
-### Unexpandable or restricted-expandable boolean expression {.e label=e508 .work-in-progress #flow-aware-unexpandable-or-restricted-expandable-boolean-expression}
+### Unexpandable or restricted-expandable boolean expression {.e label=e508 #flow-aware-unexpandable-or-restricted-expandable-boolean-expression}
 A boolean expression [@latexteam2024interfaces, Section 9.2] is not fully-expandable.
 
  /e508.tex
-
-<!--
-
-  We can't really report this issue at this moment at all.
-
-  Here's what we'll need to do before we can report this issue:
-
-  ~~First, in the semantic analysis, we'll need to determine in a flow-unaware
-  fashion which user-defined functions are definitely not fully-expandable. We
-  should be able to achieve this by looking at (a) whether the function is defined
-  as protected and (b) whether any built-in functions within the top segments
-  of the replacement texts of these functions are not fully-expandable, likely
-  by parsing l3kernel .dtx files and distilling this information in
-  `explcheck-latex3.lua`.~~
-
-  ~~Incidentally, this should allow us to report a weaker version of this issue
-  during the semantic analysis (E428).~~
-
-  Then, in the flow analysis, we'll need to determine in a flow-aware
-  fashion which user-defined functions are definitely not fully-expandable. We
-  should be able to achieve this as follows
-
-  1. Functions that were already determined to be definitely not
-     fully-expandable during the semantic analysis are considered as such.
-
-  2. Other functions are considered definitely not fully-expandable if any
-     user-defined functions they call are definitely not fully-expandable.
-
-  To determine the latter, we should be able to use a "backwards may" data-flow
-  analysis.
-
--->
 
 This check is a stronger version of <#unexpandable-or-restricted-expandable-boolean-expression> and the issue should only be emitted if <#unexpandable-or-restricted-expandable-boolean-expression> has not previously been emitted for this function.
 
