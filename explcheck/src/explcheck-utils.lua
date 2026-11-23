@@ -57,6 +57,7 @@ end
 local function make_shallow_copy(original_table)
   assert(type(original_table) == "table")
   local copied_table = {}
+  setmetatable(copied_table, getmetatable(original_table))
   for key, value in pairs(original_table) do
     copied_table[key] = value
   end
