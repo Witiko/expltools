@@ -1300,21 +1300,9 @@ local function collect_statements(states, file_number, options)
             }
             table.insert(statements, statement)
             -- For boolean variables, extract the definition text into a new segment and analyze its calls.
-            if variable_type == "bool" then
-              definition_text_argument.analyzed = true
-              local nested_segment = {
-                type = BOOLEAN_EXPRESSION,
-                location = segment.location,
-                nesting_depth = segment.nesting_depth + 1,
-                parent_statement = statement,
-                transformed_tokens = {
-                  tokens = transformed_tokens,
-                  token_range = definition_text_argument.token_range,
-                  map_back = first_map_back,
-                  map_forward = first_map_forward,
-                },
-              }
-              definition_text_argument.segment_number = add_segment(states, file_number, options, part_number, nested_segment)
+            if variable_type == "bool" and definition_text_argument.specifier == "n" then
+              assert(definition_text_argument.segment_number ~= nil)
+              assert(results.segments[definition_text_argument.segment_number].type == BOOLEAN_EXPRESSION)
             end
           else
             -- determine the name of the base variable or constant
