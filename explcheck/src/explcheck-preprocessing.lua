@@ -450,14 +450,20 @@ local function estimate_effective_required_latex3_version(states, file_number, o
   end
 end
 
-local substeps = {
-  analyze_and_report_issues,
-  estimate_group_wide_required_latex3_version,
-  estimate_effective_required_latex3_version,
-}
-
 return {
   is_confused = function() return false end,
   name = "preprocessing",
-  substeps = substeps,
+  outputs = {
+    "effective_required_latex3_version",
+    "required_latex3_version",
+    "line_starting_byte_numbers",
+    "expl_ranges",
+    "outer_expl_ranges",
+    "seems_like_latex_style_file",
+  },
+  substeps = {
+    analyze_and_report_issues,
+    estimate_group_wide_required_latex3_version,
+    estimate_effective_required_latex3_version,
+  },
 }

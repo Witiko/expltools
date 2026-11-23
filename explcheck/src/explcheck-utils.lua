@@ -216,8 +216,11 @@ local function process_files(pathnames, options)
   local new_issues = require("explcheck-issues").new_issues
 
   -- Prepare empty processing states for all files in the group.
+  local persistent_output_index = {
+    stopped_early = true,
+  }
   local states = {
-    results = {},  -- Allow the processing steps to also record group-wide results.
+    results = {},  -- Allow the processing steps to also record transient group-wide results.
   }
   for _, pathname in ipairs(pathnames) do
     local file = assert(io.open(pathname, "r"))
@@ -268,7 +271,7 @@ local function process_files(pathnames, options)
         if substep_number == #step.substeps then
           -- If the step ended with errors for this file, skip all following steps for this file.
           if is_last_substep then
-state.issues:close()
+            state.issues:close()
           else
             state.issues:commit()
           end
@@ -290,6 +293,21 @@ state.issues:close()
           end
         end
         ::continue::
+      end
+    end
+    -- Clean up all transient results produced by the current step.
+    for _, persistent_output in ipairs(step.outputs or {}) do
+      assert(persistent_output_index[persistent_output] == nil)
+      persistent_output_index[persistent_output] = true
+    end
+    for output, _ in pairs(states.results) do
+      states.results[output] = nil
+    end
+    for _, state in ipairs(states) do
+      for output, _ in pairs(state.results) do
+        if not persistent_output_index[output] then
+          state.results[output] = nil
+        end
       end
     end
   end

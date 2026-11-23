@@ -384,6 +384,9 @@ end
 
 -- Accumulate values in the required LaTeX version tables.
 local function aggregate_required_latex3_version(accumulated_value, key, value)
+  if key == "seen_csnames" then
+    return nil
+  end
   if accumulated_value == nil then
     return value
   end

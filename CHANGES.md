@@ -45,6 +45,14 @@ This version of explcheck has made the following architectural changes:
 - Add the module `explcheck-expandability.lua` for tracking expandability
   estimates. (#236)
 
+- Add `outputs` to processing steps, remove `cleanup()` substeps. (#237, #238)
+
+  Previously, transient results for passing data around processing substeps
+  within a step were removed within `cleanup()` substeps. After this change,
+  steps declare persistent results within `outputs` and all other transient
+  results are automatically removed in the method `process_files()` from
+  `explcheck-utils.lua`. This prevents unintended memory leaks between steps.
+
 #### Documentation
 
 This version of explcheck has made the following improvements to the documentation:
