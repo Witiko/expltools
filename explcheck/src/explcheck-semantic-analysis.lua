@@ -2742,9 +2742,7 @@ local function format_expandability_reason(object, expansion_context_type, expan
     assert(expandability_estimate ~= nil)
     seen_expandability_reasons[expandability_reason.payload] = true
 
-    if expandability_reason.type == CALL then
-      append_csname(expandability_reason.payload.csname)
-    elseif expandability_reason.type == STATEMENT then
+    if expandability_reason.type == STATEMENT then
       if expandability_reason.payload.type == FUNCTION_CALL then
         append_csname(expandability_reason.payload.used_csname.transcript)
       else

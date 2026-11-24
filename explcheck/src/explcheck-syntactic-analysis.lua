@@ -851,19 +851,13 @@ local function get_calls(states, file_number, options, part_number, segment)
           csname = csname,
           csname_origin = csname_origin,
           csname_token_range = csname_token_range,
-          expandability = new_expandability(),
         }
         if not maybe_fully_expandable or not maybe_restricted_expandable then
-          local call_expandability_reason = {
+          local expandability_reason = {
             type = CSNAME,
             payload = csname,
           }
-          local segment_expandability_reason = {
-            type = CALL,
-            payload = call,
-          }
-          call.expandability:weaken_all(maybe_fully_expandable, maybe_restricted_expandable, call_expandability_reason)
-          segment.expandability:weaken_by(call.expandability, segment_expandability_reason)
+          segment.expandability:weaken_all(maybe_fully_expandable, maybe_restricted_expandable, expandability_reason)
         end
         table.insert(calls, call)
         token_number = next_token_number
